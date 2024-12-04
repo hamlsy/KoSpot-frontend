@@ -1,24 +1,24 @@
-# kxteam
+# 코스팟 - KoSpot
 
-## Project setup
-```
-npm install
-```
+## Project Overview
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
+## Frontend
 
-### Compiles and minifies for production
-```
-npm run build
-```
 
-### Lints and fixes files
-```
-npm run lint
-```
+## View
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+### Main
+
+### Mode Select
+
+### Road Map Mode
+
+### Map Mode
+
+### Photo Mode
+
+### My Info
+
+### Rank
+
+### Notice
