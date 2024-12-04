@@ -2,6 +2,8 @@ import Vue from 'vue';
 import VueRouter from 'vue-router';
 import MainPage from "@/components/MainPage.vue";
 import ModeSelect from '@/components/ModeSelect.vue';
+import TempPage from '@/components/TempPage.vue';
+
 
 Vue.use(VueRouter);
 
@@ -19,6 +21,11 @@ const routes = [
         path: '/modeSelect',
         name: "ModeSelect",
         component: ModeSelect
+    },
+    {
+        path: '/tempPage',
+        name: "TempPage",
+        component: TempPage
     }
 
 ]
