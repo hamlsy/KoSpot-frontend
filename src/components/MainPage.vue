@@ -25,7 +25,7 @@
       </div>
 
       <div class="modes-grid">
-        <router-link to="/roadViewModeMain" tag="div" class="mode-card large">
+        <router-link to="/roadViewModeMain" tag="div" class="mode-card">
           <div class="card-content">
             <h3><i class="fas fa-street-view" style="color: #FF5722;"></i>로드뷰 모드</h3>
             <p>실제 거리를 둘러보며 위치를 맞춰보세요</p>
@@ -33,20 +33,20 @@
           </div>
         </router-link>
 
-        <router-link to="/mapModeMain" tag="div" class="mode-card">
+        <!-- <router-link to="/mapModeMain" tag="div" class="mode-card">
           <div class="card-content">
             <h3><i class="fas fa-map" style="color: #4CAF50;"></i>
               지도 모드</h3>
             <p>지도에서 장소 찾기</p>
             <img src="/placeholder.svg?height=60&width=60" alt="지도" class="mode-icon" />
           </div>
-        </router-link>
+        </router-link> -->
 
         <router-link to="/photoModeMain" tag="div" class="mode-card">
           <div class="card-content">
             <h3><i class="fas fa-camera" style="color: #2196F3;"></i>
-              사진 모드</h3>
-            <p>사진 속 장소 맞추기</p>
+              포토 모드</h3>
+            <p>사진을 보고 지역을 맞춰보세요</p>
             <img src="/placeholder.svg?height=60&width=60" alt="사진" class="mode-icon" />
           </div>
         </router-link>

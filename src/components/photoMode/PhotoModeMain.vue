@@ -298,6 +298,188 @@
   </script>
   
   <style scoped>
+
+  .road-view-container {
+    min-height: 100vh;
+    background: #f0f2f5;
+    padding-bottom: 20px;
+  }
+  
+  .header {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background: white;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  .back-button {
+    background: none;
+    border: none;
+    margin-right: 1rem;
+    font-size: 1.2rem;
+    cursor: pointer;
+  }
+  
+  .game-modes {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .game-mode-card {
+    display: flex;
+    align-items: center;
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: transform 0.3s ease;
+  }
+  
+  .game-mode-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .game-mode-icon {
+    background: #f0f2f5;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    font-size: 1.5rem;
+    color: #4CD964;
+  }
+  
+  .game-mode-details {
+    flex-grow: 1;
+  }
+  
+  .game-mode-details h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+  }
+  
+  .game-mode-details p {
+    margin: 0;
+    color: #666;
+    font-size: 0.9rem;
+  }
+  
+  .game-mode-arrow {
+    color: #999;
+    font-size: 1.2rem;
+  }
+  
+  .game-mode-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  
+  .popup-content {
+    background: white;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 1.5rem;
+  }
+  
+  .popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  
+  .close-button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #666;
+    cursor: pointer;
+  }
+  
+  .start-game-button {
+    width: 100%;
+    padding: 1rem;
+    background: #4CD964;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    margin-top: 1rem;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  
+  .start-game-button:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+  }
+  
+  .region-selector, .level-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .region-selector button, .level-selector .level-card {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    background: #f0f2f5;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .region-selector button.selected, 
+  .level-selector .level-card.selected {
+    background: #4CD964;
+    color: white;
+  }
+  
+  .level-card {
+    flex-grow: 1;
+    text-align: center;
+    padding: 1rem;
+  }
+  
+  .popup-slide-enter-active, .popup-slide-leave-active {
+    transition: opacity 0.3s ease;
+  }
+  
+  .popup-slide-enter-from, .popup-slide-leave-to {
+    opacity: 0;
+  }
+  
+  @media (max-width: 640px) {
+    .popup-content {
+      width: 95%;
+    }
+  
+    .region-selector, .level-selector {
+      flex-direction: column;
+    }
+  
+    .region-selector button, .level-selector .level-card {
+      width: 100%;
+    }
+  }
   /* [Previous CSS remains the same, with these additional styles] */
   
   .region-grid {
