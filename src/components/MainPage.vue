@@ -1,406 +1,394 @@
 <template>
-    <div class="game-container">
-      <!-- Animated Korea Map Section -->
-    <div class="logo-section">
-      <div class="map-animation">
-        <img src="../../public/korea.png" alt="한반도 지도" class="korea-map" />
-        <h1 class="main-title">KoSpot</h1>
+  <div class="game-mode-container">
+    <header class="header">
+      <div class="dropdown-header">
+        <h1>KoSpot</h1>
       </div>
-    </div>
+    </header>
 
-    <!-- User Info Section (shown when logged in) -->
-    <div v-if="isLoggedIn" class="user-info-section">
-      <div class="user-profile">
-        <img :src="userAvatar" alt="프로필 사진" class="profile-image" />
-        <div class="user-details">
-          <h2 class="username">{{ username }}</h2>
-          <p class="user-level">Level {{ userLevel }}</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Game Controls Section -->
-    <div class="game-controls">
-      <button @click="startGame" class="start-button">
-        <span class="button-text">게임 시작</span>
-        <div class="button-effect"></div>
-      </button>
-
-      <!-- Social Login Buttons (shown when not logged in) -->
-      <div v-if="!isLoggedIn" class="social-login-section">
-        <button @click="socialLogin('naver')" class="social-button naver">
-          <img src="/placeholder.svg?height=24&width=24" alt="네이버" class="social-icon" />
-          <span>네이버로 시작하기</span>
-        </button>
-        <button @click="socialLogin('kakao')" class="social-button kakao">
-          <img src="/placeholder.svg?height=24&width=24" alt="카카오" class="social-icon" />
-          <span>카카오로 시작하기</span>
-        </button>
-        <button @click="socialLogin('google')" class="social-button google">
-          <img src="/placeholder.svg?height=24&width=24" alt="구글" class="social-icon" />
-          <span>구글로 시작하기</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Side Menu (slides from right) -->
-    <div class="menu-button" @click="toggleMenu">
-      <i class="fas fa-bars"></i>
-    </div>
-
-    <!-- Side Menu Panel -->
-    <transition name="slide-menu">
-      <div v-if="showMenu" class="menu-overlay" @click="toggleMenu">
-        <div class="side-menu" @click.stop>
-          <div class="menu-header">
-            <img :src="userAvatar" alt="프로필 사진" class="menu-profile-image" />
-            <h3 class="menu-username">{{ username }}</h3>
+    <div class="main-content">
+      <div class="banner-container">
+        <div class="banner-wrapper" :style="{ transform: `translateX(-${currentBanner * 100}%)` }">
+          <div v-for="(banner, index) in banners" :key="index" class="banner">
+            <h2>{{ banner.title }}</h2>
+            <p>{{ banner.description }}</p>
           </div>
-          <nav class="menu-nav">
-            <a href="#" class="menu-item">내 정보</a>
-            <a href="#" class="menu-item">설정</a>
-            <a href="#" class="menu-item">공지사항</a>
-            <a href="#" class="menu-item">버그 제보</a>
-            <a href="#" class="menu-item">도움말</a>
-          </nav>
         </div>
+        <div class="banner-dots">
+          <span 
+            v-for="(banner, index) in banners" 
+            :key="index" 
+            :class="{ active: index === currentBanner }"
+            @click="setCurrentBanner(index)"
+          ></span>
+        </div>
+      </div>
+
+      <div class="modes-grid">
+        <router-link to="/roadViewModeMain" tag="div" class="mode-card large">
+          <div class="card-content">
+            <h3><i class="fas fa-street-view" style="color: #FF5722;"></i>로드뷰 모드</h3>
+            <p>실제 거리를 둘러보며 위치를 맞춰보세요</p>
+            <img src="/placeholder.svg?height=80&width=80" alt="로드뷰" class="mode-icon" />
+          </div>
+        </router-link>
+
+        <router-link to="/mapModeMain" tag="div" class="mode-card">
+          <div class="card-content">
+            <h3><i class="fas fa-map" style="color: #4CAF50;"></i>
+              지도 모드</h3>
+            <p>지도에서 장소 찾기</p>
+            <img src="/placeholder.svg?height=60&width=60" alt="지도" class="mode-icon" />
+          </div>
+        </router-link>
+
+        <router-link to="/photoModeMain" tag="div" class="mode-card">
+          <div class="card-content">
+            <h3><i class="fas fa-camera" style="color: #2196F3;"></i>
+              사진 모드</h3>
+            <p>사진 속 장소 맞추기</p>
+            <img src="/placeholder.svg?height=60&width=60" alt="사진" class="mode-icon" />
+          </div>
+        </router-link>
+
+        <div class="mode-card">
+          <div class="card-content">
+            <h3><i class="fas fa-bullhorn"></i> 공지사항</h3>
+            <p>최신 업데이트 및 이벤트 정보를 확인하세요</p>
+          </div>
+        </div>
+
+        <div class="mode-card">
+          <div class="card-content">
+            <h3><i class="fas fa-trophy" style="color: yellow;"></i> 랭킹</h3>
+            <p>상위 플레이어들의 점수를 확인해보세요</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="bottom-nav">
+      <button class="nav-item active">
+        <i class="fas fa-home"></i>
+      </button>
+      <button class="nav-item">
+        <i class="fas fa-history"></i>
+        <span></span>
+      </button>
+      <button class="nav-item" @click="toggleProfileMenu">
+        <i class="fas fa-user"></i>
+      </button>
+    </nav>
+
+    <transition name="slide-menu">
+      <div v-if="showProfileMenu" class="profile-menu">
+        <div class="profile-menu-header">
+          <h2>내 정보</h2>
+          <button @click="toggleProfileMenu" class="close-menu">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <nav class="profile-menu-nav">
+          <a href="#" class="menu-item">설정</a>
+          <a href="#" class="menu-item">공지사항</a>
+          <a href="#" class="menu-item">도움말</a>
+          <a href="#" class="menu-item">로그아웃</a>
+        </nav>
       </div>
     </transition>
+    <div v-if="showProfileMenu" class="overlay" @click="toggleProfileMenu"></div>
   </div>
-  </template>
-  
-  <script setup>
-  import { ref } from 'vue'
-  
-  const isLoggedIn = ref(false)
-  const username = ref('Player123')
-  const userLevel = ref(15)
-  const userAvatar = ref('/placeholder.svg?height=100&width=100')
-  const showMenu = ref(false)
-  
-  const toggleMenu = () => {
-    showMenu.value = !showMenu.value
-  }
-  
-  const startGame = () => {
-    // Implement game start logic
-  }
-  
-  const socialLogin = (platform) => {
-    console.log(`${platform} 로그인 시도`)
-    // Implement social login logic
-  }
-  </script>
-  
-  <style scoped>
-.game-container {
+</template>
+
+<script setup>
+import { ref, onMounted, onUnmounted } from 'vue'
+
+const banners = [
+  { title: "신규 이벤트", description: "친구 초대하고 포인트 받으세요!" },
+  { title: "업데이트 안내", description: "새로운 지역이 추가되었습니다." },
+  { title: "주간 랭킹", description: "이번 주 최고 점수를 확인하세요." }
+]
+
+const currentBanner = ref(0)
+let intervalId
+
+const setCurrentBanner = (index) => {
+  currentBanner.value = index
+}
+
+const nextBanner = () => {
+  currentBanner.value = (currentBanner.value + 1) % banners.length
+}
+
+onMounted(() => {
+  intervalId = setInterval(nextBanner, 8000)
+})
+
+onUnmounted(() => {
+  clearInterval(intervalId)
+})
+
+const showProfileMenu = ref(false)
+
+const toggleProfileMenu = () => {
+  showProfileMenu.value = !showProfileMenu.value
+}
+</script>
+
+<style scoped>
+.game-mode-container {
   min-height: 100vh;
-  /* background: #ffffff; */
-  background: linear-gradient(to bottom, #ffffff, #f3f3f3);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 2rem;
-  position: relative;
-  overflow-x: hidden;
+  background: #f0f2f5;
+  padding-bottom: 70px;
 }
 
-.logo-section {
-  margin-top: 4rem;
-  margin-bottom: 2rem;
-}
-
-.map-animation {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.header {
+  padding: 0.5rem 1rem;
+  background: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
   width: 100%;
-  height: 400px;
 }
 
-.korea-map {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  opacity: 0.1;
-  position: absolute;
-  z-index: 0;
-}
-
-.main-title {
-  font-size: 4rem;
-  font-weight: 800;
-  color: #1a1a1a;
-  text-align: center;
-  position: relative;
-  z-index: 1;
-  animation: fadeIn 1.5s ease-out;
-}
-
-.user-info-section {
-  margin: 2rem 0;
-  width: 100%;
-  max-width: 320px;
-}
-
-.user-profile {
+.dropdown-header {
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 1rem;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  gap: 0.5rem;
 }
 
-.profile-image {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid #fff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.user-details {
-  margin-left: 1rem;
-}
-
-.username {
-  font-size: 1.25rem;
+.dropdown-header h1 {
+  font-size: 1rem;
   font-weight: 600;
-  color: #1a1a1a;
-  margin: 0;
+  color: #333;
 }
 
-.user-level {
-  font-size: 0.9rem;
-  color: #666;
-  margin: 0.25rem 0 0 0;
+.main-content {
+  padding: 0 1rem 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-.game-controls {
-  width: 100%;
-  max-width: 320px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.5rem;
-}
-
-.start-button {
-  width: 100%;
-  padding: 1rem;
-  border-radius: 12px;
-  border: none;
-  background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
-  color: white;
-  font-size: 1.25rem;
-  font-weight: 600;
-  cursor: pointer;
+.banner-container {
   position: relative;
   overflow: hidden;
-  transition: transform 0.3s ease;
+  margin-bottom: 1rem;
 }
 
-.start-button:hover {
-  transform: translateY(-2px);
-}
-
-.button-effect {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.2));
-  transform: translateX(-100%);
-  transition: transform 0.6s ease;
-}
-
-.start-button:hover .button-effect {
-  transform: translateX(100%);
-}
-
-.social-login-section {
-  width: 100%;
+.banner-wrapper {
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.social-button {
-  width: 100%;
-  padding: 0.75rem;
-  border-radius: 8px;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-}
-
-.social-button:hover {
-  transform: translateY(-1px);
-}
-
-.social-button.naver {
-  background-color: #03C75A;
-  color: white;
-}
-
-.social-button.kakao {
-  background-color: #FEE500;
-  color: #000000;
-}
-
-.social-button.google {
-  background-color: #ffffff;
-  color: #000000;
-  border: 1px solid #dadce0;
-}
-
-.social-icon {
-  width: 24px;
-  height: 24px;
-}
-
-.menu-button {
-  position: absolute;
-  top: 1.5rem;
-  right: 1.5rem;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: #4facfe;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  z-index: 100;
-  transition: background-color 0.3s ease, transform 0.3s ease;
-}
-
-.menu-button:hover {
-  background: #00f2fe;
-  transform: scale(1.1);
-}
-
-.menu-button i {
-  color: white;
-  font-size: 1.5rem;
-}
-
-.menu-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 150;
-}
-
-.side-menu {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 280px;
-  height: 100%;
-  background: white;
-  padding: 2rem;
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-  z-index: 200;
   transition: transform 0.5s ease;
 }
 
-.menu-header {
+.banner {
+  flex: 0 0 100%;
+  background: #ffffff;
+  padding: 1.75rem 1rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.banner h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.banner p {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.banner-dots {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.5rem;
+}
+
+.banner-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ccc;
+  cursor: pointer;
+}
+
+.banner-dots span.active {
+  background: #4CD964;
+}
+
+.modes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.mode-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid #e0e0e0;
+  height: 130px;
+}
+
+.mode-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.mode-card.large {
+  grid-column: span 2;
+  height: 180px;
+}
+
+.card-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.card-content h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
+}
+
+.card-content p {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0;
+}
+
+.mode-icon {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  display: flex;
+  justify-content: space-around;
+  padding: 0.8rem;
+  border-top: 1px solid #e0e0e0;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  font-size: 1rem; /* Updated font size */
+}
+
+.nav-item i {
+  font-size: 1.5rem;
+}
+
+.nav-item.active {
+  color: #4CD964;
+}
+
+.profile-menu {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 80%;
+  max-width: 300px;
+  background: #ffffff;
+  z-index: 1000;
+  padding: 2rem 1rem;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease-in-out;
+}
+
+.profile-menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 2rem;
 }
 
-.menu-profile-image {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.menu-username {
-  font-size: 1.1rem;
+.profile-menu-header h2 {
+  font-size: 1.5rem;
   font-weight: 600;
-  color: #1a1a1a;
 }
 
-.menu-nav {
+.close-menu {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.profile-menu-nav {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
 .menu-item {
-  padding: 0.75rem;
-  color: #1a1a1a;
+  font-size: 1rem;
+  color: #333;
   text-decoration: none;
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
+  padding: 0.5rem 0;
 }
 
-.menu-item:hover {
-  background-color: #f5f5f5;
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
 }
 
 .slide-menu-enter-active,
 .slide-menu-leave-active {
-  transition: all 0.5s ease;
+  transition: transform 0.3s ease;
 }
 
 .slide-menu-enter-from,
 .slide-menu-leave-to {
-  opacity: 0;
-}
-
-.slide-menu-enter-from .side-menu,
-.slide-menu-leave-to .side-menu {
   transform: translateX(100%);
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (max-width: 768px) {
-  .main-title {
-    font-size: 2.5rem;
-  }
-  
-  .game-container {
-    padding: 1rem;
-  }
-  
-  .logo-section {
-    margin-top: 3rem;
+@media (max-width: 640px) {
+  .main-content {
+    padding: 0 0.5rem 0.75rem;
   }
 
-  .map-animation {
-    width: 200px;
+  .mode-card {
+    padding: 1.25rem;
+    height: 160px;
+  }
+
+  .mode-card.large {
     height: 200px;
+  }
+
+  .banner {
+    padding: 1.5rem 0.75rem;
   }
 }
 </style>
 
-  
