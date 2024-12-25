@@ -159,65 +159,77 @@ export default {
     },
   },
   mounted() {
-    this.loadNaverMapsAPI();
+    this.loadKakaoMapsAPI();
   },
   methods: {
-    loadNaverMapsAPI() {
-      if (window.naver && window.naver.maps) {
-        this.initializeNaverMap();
+    loadKakaoMapsAPI() {
+      if (window.kakao && window.kakao.maps) {
+        this.initializeKakaoRoadView();
       } else {
-        const clientId = "px4m850civ"; // naver client id
+        // const clientId = "px4m850civ"; // naver client id
+        const appKey = "c66fbf360458039285570a638bad813a";
         const script = document.createElement("script");
-        script.src = `https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${clientId}&submodules=panorama`;
+        // script.src = `https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${clientId}&submodules=panorama`;
+        script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&libraries=services,clusterer,drawing,geometry&autoload=false`;
         script.onload = () => {
-          this.initializeNaverMap();
+          kakao.maps.load(() => {
+            console.log("Kakao Maps API loaded.");
+            this.$root.$emit("kakao-loaded");
+          });
+        };
+        script.onerror = () => {
+          console.error("Failed to load Kakao Maps API.");
         };
         document.head.appendChild(script);
       }
+      this.$root.$on("kakao-loaded", this.initializeKakaoRoadview);
     },
-    initializeNaverRoadview() {
-      /* global naver */
-      const roadviewContainer = this.$refs.roadviewElement;
-      this.roadview = new naver.maps.Panorama(roadviewContainer, {
-        position: new naver.maps.LatLng(
-          this.currentLocation.lat,
-          this.currentLocation.lng
-        ),
-        pov: {
-          pan: 0,
-          tilt: 0,
-          zoom: 0,
-        },
-        // 도로명 숨기기 설정
-        showRoadLayer: false,
-        showMarker: false,
-        flightSpot: false,
-        addressControl: false, // 주소명 표시 비활성화
-        arrows: false // 화살표 비활성화
-      });
+    initializeKakaoRoadview() {
+      var roadviewContainer = this.$refs.roadviewElement; // 로드뷰를 표시할 div
+      this.roadview = new kakao.maps.Roadview(roadviewContainer); // 로드뷰 객체
+      var roadviewClient = new kakao.maps.RoadviewClient(); // 좌표로부터 로드뷰 파노ID를 가져올 로드뷰 helper 객체
 
-      // 파노라마 위치 변경 이벤트
-      naver.maps.Event.addListener(this.roadview, "pano_changed", () => {
-        const position = this.roadview.getPosition();
-        this.currentLocation.lat = position.lat();
-        this.currentLocation.lng = position.lng();
-      });
+      var position = new kakao.maps.LatLng(
+        this.currentLocation.lat,
+        this.currentLocation.lng
+      );
+
+      const findPanoId = (distance) => {
+        roadviewClient.getNearestPanoId(position, distance, (panoId) => {
+          if (panoId) {
+            this.roadview.setPanoId(panoId, position); // panoId와 중심좌표를 통해 로드뷰 실행
+            this.roadview.addListener("position_changed", () => {
+              var rvPosition = this.roadview.getPosition();
+              console.log(
+                `로드뷰가 보여지는 실제 좌표: ${rvPosition.getLat()}, ${rvPosition.getLng()}`
+              );
+            });
+          } else {
+            console.log("거리 조정 중");
+            // 거리 값을 늘려가며 다시 시도
+            findPanoId(distance + 10);
+          }
+        });
+      };
+
+      // 초기 거리 값으로 시도
+      findPanoId(30);
     },
-    initializeNaverMap() {
-      const mapContainer = this.$refs.mapElement;
-      this.map = new naver.maps.Map(mapContainer, {
-        center: new naver.maps.LatLng(38.950701, 121.9558),
-        zoom: 7,
-        mapTypeControl: false,
-      });
+    initializeKakaoMap() {
+      var mapContainer = this.$refs.mapElement; // 지도를 표시할 div
+      var mapOption = {
+        center: new kakao.maps.LatLng(37.5665, 126.978), // 지도의 중심좌표
+        level: 13, // 지도의 확대 레벨
+      };
+      this.map = new kakao.maps.Map(mapContainer, mapOption); // 지도를 생성합니다
 
       // 클릭 이벤트 리스너
-      naver.maps.Event.addListener(this.map, "click", (e) => {
-        const latlng = e.coord;
+      kakao.maps.event.addListener(this.map, "click", (mouseEvent) => {
+        const latlng = mouseEvent.latLng;
         if (this.marker) {
           this.marker.setPosition(latlng);
         } else {
-          this.marker = new naver.maps.Marker({
+          this.marker = new kakao.maps.Marker({
             position: latlng,
             map: this.map,
           });
@@ -235,82 +247,78 @@ export default {
           clearInterval(countdownInterval);
           this.showCountdown = false;
           this.gameStarted = true;
-          this.initializeNaverRoadview();
+          this.initializeKakaoRoadview();
         }
       }, 1000);
     },
     toggleMap() {
       this.isMapView = !this.isMapView;
       if (this.isMapView) {
-        this.$nextTick(() => {
-          this.map.relayout();
-        });
+        this.initializeKakaoMap();
+      } else {
+        this.initializeKakaoRoadview();
       }
     },
     checkAnswer() {
       if (this.marker) {
         const markerPosition = this.marker.getPosition();
-        const correctPosition = new naver.maps.LatLng(
+        const correctPosition = new kakao.maps.LatLng(
           this.currentLocation.lat,
           this.currentLocation.lng
         );
-
-        // 거리 계산
-        this.distance = this.calculateDistance(
-          markerPosition.lat(),
-          markerPosition.lng(),
-          this.currentLocation.lat,
-          this.currentLocation.lng
-        );
+        
+        this.distance = kakao.maps.geometry.getDistance(markerPosition, correctPosition) / 1000;
         this.score = Math.max(100 - Math.floor(this.distance * 2), 0);
-
+        
         // 결과 지도 초기화
         this.$nextTick(() => {
           const resultMapContainer = this.$refs.resultMapElement;
-          const resultMap = new naver.maps.Map(resultMapContainer, {
+          const resultMap = new kakao.maps.Map(resultMapContainer, {
             center: markerPosition,
-            zoom: 11,
+            level: 7
           });
 
           // 사용자 마커
-          new naver.maps.Marker({
+          new kakao.maps.Marker({
             position: markerPosition,
             map: resultMap,
-            icon: {
-              content:
-                '<div style="background-color: #1EC800; width: 15px; height: 15px; border-radius: 50%;"></div>',
-              anchor: new naver.maps.Point(7, 7),
-            },
+            title: '선택한 위치'
           });
 
           // 실제 위치 마커
-          new naver.maps.Marker({
+          new kakao.maps.Marker({
             position: correctPosition,
             map: resultMap,
-            icon: {
-              content:
-                '<div style="background-color: #FF4757; width: 15px; height: 15px; border-radius: 50%;"></div>',
-              anchor: new naver.maps.Point(7, 7),
-            },
+            title: '실제 위치',
+            image: new kakao.maps.MarkerImage(
+              'path_to_different_marker_image', // 다른 마커 이미지 사용
+              new kakao.maps.Size(24, 35)
+            )
           });
 
-          // 두 지점을 연결하는 선
-          new naver.maps.Polyline({
-            path: [markerPosition, correctPosition],
-            strokeColor: "#5B9DFF",
-            strokeOpacity: 0.7,
+          // 선 그리기
+          const linePath = [markerPosition, correctPosition];
+          const polyline = new kakao.maps.Polyline({
+            path: linePath,
             strokeWeight: 3,
-            map: resultMap,
+            strokeColor: '#5B9DFF',
+            strokeOpacity: 0.7,
+            strokeStyle: 'solid'
           });
+          
+          polyline.setMap(resultMap);
 
           // 지도 범위 재설정
-          const bounds = this.getBounds([markerPosition, correctPosition]);
-          resultMap.fitBounds(bounds);
+          const bounds = new kakao.maps.LatLngBounds();
+          bounds.extend(markerPosition);
+          bounds.extend(correctPosition);
+          resultMap.setBounds(bounds);
         });
 
         this.showResult = true;
       }
     },
+
     restartGame() {
       this.showResult = false;
       this.showSpotButton = false;
@@ -329,27 +337,6 @@ export default {
     closeResult() {
       this.showResult = false;
     },
-  },
-  calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // 지구 반지름 (km)
-    const dLat = this.deg2rad(lat2 - lat1);
-    const dLon = this.deg2rad(lon2 - lon1);
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(this.deg2rad(lat1)) *
-        Math.cos(this.deg2rad(lat2)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  },
-  deg2rad(deg) {
-    return deg * (Math.PI / 180);
-  },
-  getBounds(positions) {
-    const bounds = new naver.maps.LatLngBounds();
-    positions.forEach((position) => bounds.extend(position));
-    return bounds;
   },
 };
 </script>
@@ -499,10 +486,6 @@ export default {
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
 }
 
-#map {
-  width: 100%;
-  height: 100%;
-}
 
 .result-details {
   margin: 1.5rem 0;
@@ -695,7 +678,8 @@ export default {
 }
 
 /* 로드뷰 */
-#roadview {
+#roadview,
+#map {
   width: 100%;
   height: 100%;
 }
