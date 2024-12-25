@@ -145,6 +145,8 @@ export default {
       map: null,
       roadview: null,
       marker: null,
+      isMapInitialized: false,
+      isRoadviewInitialized: false,
       // Dummy data for testing
       currentLocation: {
         lat: 33.480401,
@@ -185,57 +187,58 @@ export default {
       this.$root.$on("kakao-loaded", this.initializeKakaoRoadview);
     },
     initializeKakaoRoadview() {
-      var roadviewContainer = this.$refs.roadviewElement; // 로드뷰를 표시할 div
-      this.roadview = new kakao.maps.Roadview(roadviewContainer); // 로드뷰 객체
-      var roadviewClient = new kakao.maps.RoadviewClient(); // 좌표로부터 로드뷰 파노ID를 가져올 로드뷰 helper 객체
+      if (!this.isRoadviewInitialized) {
+        var roadviewContainer = this.$refs.roadviewElement;
+        this.roadview = new kakao.maps.Roadview(roadviewContainer);
+        var roadviewClient = new kakao.maps.RoadviewClient();
 
-      var position = new kakao.maps.LatLng(
-        this.currentLocation.lat,
-        this.currentLocation.lng
-      );
+        var position = new kakao.maps.LatLng(
+          this.currentLocation.lat,
+          this.currentLocation.lng
+        );
 
-      const findPanoId = (distance) => {
-        roadviewClient.getNearestPanoId(position, distance, (panoId) => {
-          if (panoId) {
-            this.roadview.setPanoId(panoId, position); // panoId와 중심좌표를 통해 로드뷰 실행
-            this.roadview.addListener("position_changed", () => {
-              var rvPosition = this.roadview.getPosition();
-              console.log(
-                `로드뷰가 보여지는 실제 좌표: ${rvPosition.getLat()}, ${rvPosition.getLng()}`
-              );
-            });
-          } else {
-            console.log("거리 조정 중");
-            // 거리 값을 늘려가며 다시 시도
-            findPanoId(distance + 10);
-          }
-        });
-      };
-
-      // 초기 거리 값으로 시도
-      findPanoId(30);
+        const findPanoId = (distance) => {
+          roadviewClient.getNearestPanoId(position, distance, (panoId) => {
+            if (panoId) {
+              this.roadview.setPanoId(panoId, position);
+              this.isRoadviewInitialized = true;
+            } else {
+              findPanoId(distance + 10);
+            }
+          });
+        };
+        // 초기 값
+        findPanoId(30);
+      }
+      this.$refs.roadviewElement.style.display = "block";
+      this.$refs.mapElement.style.display = "none";
     },
     initializeKakaoMap() {
-      var mapContainer = this.$refs.mapElement; // 지도를 표시할 div
-      var mapOption = {
-        center: new kakao.maps.LatLng(37.5665, 126.978), // 지도의 중심좌표
-        level: 13, // 지도의 확대 레벨
-      };
-      this.map = new kakao.maps.Map(mapContainer, mapOption); // 지도를 생성합니다
+      if (!this.isMapInitialized) {
+        var mapContainer = this.$refs.mapElement;
+        var mapOption = {
+          center: new kakao.maps.LatLng(37.5665, 126.978),
+          level: 13,
+        };
+        this.map = new kakao.maps.Map(mapContainer, mapOption);
 
-      // 클릭 이벤트 리스너
-      kakao.maps.event.addListener(this.map, "click", (mouseEvent) => {
-        const latlng = mouseEvent.latLng;
-        if (this.marker) {
-          this.marker.setPosition(latlng);
-        } else {
-          this.marker = new kakao.maps.Marker({
-            position: latlng,
-            map: this.map,
-          });
-        }
-        this.showSpotButton = true;
-      });
+        kakao.maps.event.addListener(this.map, "click", (mouseEvent) => {
+          const latlng = mouseEvent.latLng;
+          if (this.marker) {
+            this.marker.setPosition(latlng);
+          } else {
+            this.marker = new kakao.maps.Marker({
+              position: latlng,
+              map: this.map,
+            });
+          }
+          this.showSpotButton = true;
+        });
+
+        this.isMapInitialized = true;
+      }
+      this.$refs.mapElement.style.display = "block";
+      this.$refs.roadviewElement.style.display = "none";
     },
     startGame() {
       this.showIntro = false;
@@ -259,53 +262,58 @@ export default {
         this.initializeKakaoRoadview();
       }
     },
-    checkAnswer() {
+    async checkAnswer() {
       if (this.marker) {
         const markerPosition = this.marker.getPosition();
         const correctPosition = new kakao.maps.LatLng(
           this.currentLocation.lat,
           this.currentLocation.lng
         );
-        
-        this.distance = kakao.maps.geometry.getDistance(markerPosition, correctPosition) / 1000;
+
+        // Polyline을 사용하여 두 좌표 간의 거리 계산
+        const linePath = [markerPosition, correctPosition];
+        const polyline = new kakao.maps.Polyline({
+          path: linePath
+        });
+        this.distance = polyline.getLength() / 1000; // 거리 계산 (미터 단위에서 킬로미터 단위로 변환)
         this.score = Math.max(100 - Math.floor(this.distance * 2), 0);
-        
+
         // 결과 지도 초기화
         this.$nextTick(() => {
           const resultMapContainer = this.$refs.resultMapElement;
           const resultMap = new kakao.maps.Map(resultMapContainer, {
             center: markerPosition,
-            level: 7
+            level: 7,
           });
 
           // 사용자 마커
           new kakao.maps.Marker({
             position: markerPosition,
             map: resultMap,
-            title: '선택한 위치'
+            title: "선택한 위치",
           });
 
           // 실제 위치 마커
           new kakao.maps.Marker({
             position: correctPosition,
             map: resultMap,
-            title: '실제 위치',
+            title: "실제 위치",
             image: new kakao.maps.MarkerImage(
-              'path_to_different_marker_image', // 다른 마커 이미지 사용
+              "path_to_different_marker_image", // 다른 마커 이미지 사용
               new kakao.maps.Size(24, 35)
-            )
+            ),
           });
-
+          
           // 선 그리기
           const linePath = [markerPosition, correctPosition];
           const polyline = new kakao.maps.Polyline({
             path: linePath,
             strokeWeight: 3,
-            strokeColor: '#5B9DFF',
+            strokeColor: "#5B9DFF",
             strokeOpacity: 0.7,
-            strokeStyle: 'solid'
+            strokeStyle: "solid",
           });
-          
+
           polyline.setMap(resultMap);
 
           // 지도 범위 재설정
@@ -474,6 +482,7 @@ export default {
   flex-grow: 1;
   position: relative;
   overflow: hidden;
+  height: calc(100vh - 60px); /* Adjust based on header height */
 }
 
 .map-view {
@@ -485,7 +494,6 @@ export default {
   z-index: 10;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
 }
-
 
 .result-details {
   margin: 1.5rem 0;
@@ -650,7 +658,17 @@ export default {
 }
 
 .result-modal {
-  max-width: 400px;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px 20px 0 0;
+  padding: 1.5rem;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+  z-index: 20;
+  max-height: 40vh;
+  overflow-y: auto;
 }
 
 .distance-animation {
@@ -682,6 +700,9 @@ export default {
 #map {
   width: 100%;
   height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 /* 아이콘  */
@@ -772,4 +793,42 @@ export default {
   font-size: 1.1rem;
   margin: 1rem 0;
 }
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .map-container {
+    height: calc(100vh - 50px);
+  }
+
+  .result-modal {
+    padding: 1rem;
+    max-height: 50vh;
+  }
+
+  .controls {
+    bottom: 1rem;
+    right: 1rem;
+  }
+
+  .map-toggle-button {
+    width: 50px;
+    height: 50px;
+    font-size: 1.2rem;
+  }
+
+  .spot-button {
+    padding: 0.5rem 1.5rem;
+    font-size: 1rem;
+  }
+
+  .score-circle {
+    width: 80px;
+    height: 80px;
+  }
+
+  .score-number {
+    font-size: 1.5rem;
+  }
+}
+
 </style>
