@@ -1,16 +1,19 @@
 <template>
-  <router-view></router-view>
+  <router-view>
+  </router-view>
 </template>
 
 <script>
 // import HelloWorld from './components/HelloWorld.vue'
 
 export default {
-  name: 'App',
+  name: "App",
   // components: {
   //   HelloWorld
   // }
-}
+  mounted() {},
+  methods: {},
+};
 </script>
 
 <style>
@@ -22,4 +25,6 @@ export default {
   color: #2c3e50;
   margin-top: 60px;
 }
+
+
 </style>

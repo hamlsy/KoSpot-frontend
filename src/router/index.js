@@ -5,6 +5,7 @@ import RoadViewModeMain from '@/components/roadViewMode/RoadViewModeMain.vue';
 import PhotoModeMain from '@/components/photoMode/PhotoModeMain.vue';
 import HomePage from '@/components/HomePage.vue';
 import MainPage from '@/components/MainPage.vue';
+import RoadViewPractice from '@/components/roadViewMode/RoadViewPractice.vue';
 
 
 Vue.use(VueRouter);
@@ -33,6 +34,11 @@ const routes = [
         path: '/photoModeMain',
         name: "PhotoModeMain",
         component: PhotoModeMain
+    },
+    {
+        path:'/roadViewPractice',
+        name: "RoadViewPractice",
+        component: RoadViewPractice
     },
     {
         path: '/tempPage',
