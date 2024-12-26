@@ -155,6 +155,10 @@
           lat: 33.480401,
           lng: 126.574667,
         },
+        centerLocation: {
+            lat: 33.480401,
+            lng: 126.574667,
+        }
       };
     },
     computed: {
@@ -220,7 +224,7 @@
         if (!this.isMapInitialized) {
           var mapContainer = this.$refs.mapElement;
           var mapOption = {
-            center: new kakao.maps.LatLng(37.5665, 126.978),
+            center: new kakao.maps.LatLng(this.centerLocation.lat, this.centerLocation.lng),
             level: 13,
           };
           this.map = new kakao.maps.Map(mapContainer, mapOption);
@@ -272,7 +276,7 @@
             this.currentLocation.lat,
             this.currentLocation.lng
           );
-  
+          this.showResult = true;
           // Polyline을 사용하여 두 좌표 간의 거리 계산
           const linePath = [markerPosition, correctPosition];
           const polyline = new kakao.maps.Polyline({
@@ -280,33 +284,39 @@
           });
           this.distance = polyline.getLength() / 1000; // 거리 계산 (미터 단위에서 킬로미터 단위로 변환)
           this.score = Math.max(100 - Math.floor(this.distance * 2), 0);
-  
+
+          //여긴 통과
           // 결과 지도 초기화
           this.$nextTick(() => {
             const resultMapContainer = this.$refs.resultMapElement;
+            if(!resultMapContainer){
+                alert("resultMapContainer is null")
+            }
+            console.log(resultMapContainer)
+            alert("통과")
             const resultMap = new kakao.maps.Map(resultMapContainer, {
               center: markerPosition,
               level: 7,
             });
-  
+            alert("통과안됨!");
             // 사용자 마커
             new kakao.maps.Marker({
               position: markerPosition,
               map: resultMap,
               title: "선택한 위치",
             });
-  
+            alert("통과 안됨!")
             // 실제 위치 마커
             new kakao.maps.Marker({
               position: correctPosition,
               map: resultMap,
               title: "실제 위치",
               image: new kakao.maps.MarkerImage(
-                "path_to_different_marker_image", // 다른 마커 이미지 사용
+                "../assets/logo.png",
                 new kakao.maps.Size(24, 35)
               ),
             });
-  
+            // error line 1
             // 선 그리기
             const linePath = [markerPosition, correctPosition];
             const polyline = new kakao.maps.Polyline({
@@ -326,7 +336,7 @@
             resultMap.setBounds(bounds);
           });
   
-          this.showResult = true;
+          
         }
       },
   
