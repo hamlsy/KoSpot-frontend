@@ -11,8 +11,10 @@ export default {
   // components: {
   //   HelloWorld
   // }
-  mounted() {},
-  methods: {},
+  mounted() {
+  },
+  methods: {
+  }
 };
 </script>
 
