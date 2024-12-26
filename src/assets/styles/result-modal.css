@@ -1,0 +1,38 @@
+.result-modal {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px 20px 0 0;
+    padding: 1.5rem;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+    height: 120px; /* 고정 높이로 변경 */
+    z-index: 20;
+    overflow-y: auto;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.result-content {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.result-details {
+    margin: 1.5rem 0;
+}
+
+.result-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+    font-size: 1.1rem;
+}
+
+.result-item i {
+    color: #4cd964;
+}

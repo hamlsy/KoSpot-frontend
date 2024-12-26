@@ -147,6 +147,9 @@ export default {
       marker: null,
       isMapInitialized: false,
       isRoadviewInitialized: false,
+      answerMarker: null,
+      answerAddress: "",
+      geocoder: null,
       // Dummy data for testing
       currentLocation: {
         lat: 33.480401,
@@ -273,7 +276,7 @@ export default {
         // Polyline을 사용하여 두 좌표 간의 거리 계산
         const linePath = [markerPosition, correctPosition];
         const polyline = new kakao.maps.Polyline({
-          path: linePath
+          path: linePath,
         });
         this.distance = polyline.getLength() / 1000; // 거리 계산 (미터 단위에서 킬로미터 단위로 변환)
         this.score = Math.max(100 - Math.floor(this.distance * 2), 0);
@@ -303,7 +306,7 @@ export default {
               new kakao.maps.Size(24, 35)
             ),
           });
-          
+
           // 선 그리기
           const linePath = [markerPosition, correctPosition];
           const polyline = new kakao.maps.Polyline({
@@ -350,27 +353,11 @@ export default {
 </script>
 
 <style scoped>
-/* count down */
-
-.countdown-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.8);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 40;
-}
-
-.countdown {
-  font-size: 8rem;
-  color: white;
-  animation: pulse 1s infinite;
-}
-
+@import "@/assets/styles/count-down.css";
+@import "@/assets/styles/exit-restart-btn.css";
+@import "@/assets/styles/game-intro.css";
+@import "@/assets/styles/map.css";
+@import "@/assets/styles/result-modal.css";
 .practice-game-container {
   height: 100vh;
   display: flex;
@@ -394,66 +381,10 @@ export default {
   margin: 0;
 }
 
-/* intro  */
-
-.intro-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(255, 255, 255, 0.95);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 30;
-}
-
-.intro-content {
-  text-align: center;
-  padding: 2rem;
-  border-radius: 15px;
-  background-color: #ffffff;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  max-width: 500px;
-}
-
-.intro-content h2 {
-  color: #2c3e50;
-  margin-bottom: 1.5rem;
-}
-
-.intro-content p {
-  color: #666;
-  margin-bottom: 1rem;
-  line-height: 1.6;
-}
-
-.intro-exit {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 31;
-}
-
-.exit-modal {
-  text-align: center;
-  padding: 2rem;
-}
-
 .warning-icon {
   font-size: 3rem;
   color: #ff6b6b;
   margin-bottom: 1rem;
-}
-
-.exit-button {
-  background: none;
-  border: none;
-  font-size: 1rem;
-  cursor: pointer;
-  color: #666;
-  transition: color 0.3s ease;
 }
 
 .start-button {
@@ -472,44 +403,6 @@ export default {
   background-color: #3cb853;
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(76, 217, 100, 0.3);
-}
-
-.exit-button:hover {
-  color: #ff4757;
-}
-
-.map-container {
-  flex-grow: 1;
-  position: relative;
-  overflow: hidden;
-  height: calc(100vh - 60px); /* Adjust based on header height */
-}
-
-.map-view {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 50%;
-  z-index: 10;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
-}
-
-.result-details {
-  margin: 1.5rem 0;
-}
-
-.result-item {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  margin: 0.5rem 0;
-  font-size: 1.1rem;
-}
-
-.result-item i {
-  color: #4cd964;
 }
 
 /* Animations */
@@ -566,24 +459,6 @@ export default {
   z-index: 10;
 }
 
-.map-toggle-button {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background-color: #4cd964;
-  color: white;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-}
-
-.map-toggle-button:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-}
-
 .spot-button-container {
   position: absolute;
   bottom: 2rem;
@@ -635,42 +510,6 @@ export default {
   gap: 1rem;
   margin-top: 1rem;
 }
-
-.exit-confirm-button,
-.exit-cancel-button,
-.restart-button {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.exit-confirm-button {
-  background-color: #ff4757;
-  color: white;
-}
-
-.exit-cancel-button,
-.restart-button {
-  background-color: #4cd964;
-  color: white;
-}
-
-.result-modal {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px 20px 0 0;
-  padding: 1.5rem;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
-  z-index: 20;
-  max-height: 40vh;
-  overflow-y: auto;
-}
-
 .distance-animation {
   height: 10px;
   background-color: #f0f0f0;
@@ -745,38 +584,20 @@ export default {
   color: white;
 }
 
-.modal-button.exit {
-  background-color: #e9ecef;
-  color: #495057;
-}
-
-.result-map {
-  width: 100%;
-  height: 300px;
-  border-radius: 12px;
-  margin: 1rem 0;
-}
-
 .score-section {
   display: flex;
-  justify-content: center;
-  margin: 1.5rem 0;
+  align-items: center;
+  gap: 1rem;
 }
 
 .score-circle {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  background-color: #4cd964;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  color: white;
+  width: 60px;
+  height: 60px;
+  padding: 0.5rem;
 }
 
 .score-number {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: bold;
 }
 
@@ -830,5 +651,4 @@ export default {
     font-size: 1.5rem;
   }
 }
-
 </style>

@@ -6,6 +6,7 @@ import PhotoModeMain from '@/components/photoMode/PhotoModeMain.vue';
 import HomePage from '@/components/HomePage.vue';
 import MainPage from '@/components/MainPage.vue';
 import RoadViewPractice from '@/components/roadViewMode/RoadViewPractice.vue';
+import TestMapPage from '@/components/TestMapPage.vue';
 
 
 Vue.use(VueRouter);
@@ -44,7 +45,12 @@ const routes = [
         path: '/tempPage',
         name: "TempPage",
         component: TempPage
-    }
+    },
+    {
+        path: '/testMapPage',
+        name: "TestMapPage",
+        component: TestMapPage
+    },
 
 ]
 
