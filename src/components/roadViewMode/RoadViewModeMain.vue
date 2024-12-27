@@ -1,10 +1,10 @@
 <template>
     <div class="road-view-container">
       <header class="header">
-        <button @click="$router.go(-1)" class="back-button">
+        <button @click="$router.push('/mainPage')" class="back-button">
           <i class="fas fa-arrow-left"></i>
         </button>
-        <h1>로드뷰 모드</h1>
+        <h2>로드뷰 모드</h2>
       </header>
   
       <div class="game-modes">

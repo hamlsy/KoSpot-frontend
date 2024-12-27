@@ -19,8 +19,11 @@ export default {
 </script>
 
 <style>
+body {
+  font-family: "Pretendard Variable", Pretendard;
+}
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+  font-family: "Pretendard Variable", Pretendard;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;

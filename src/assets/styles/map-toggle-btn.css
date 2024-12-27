@@ -1,0 +1,19 @@
+
+.map-toggle-button {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: #4cd964;
+    color: white;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  }
+  
+  .map-toggle-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  }
+  

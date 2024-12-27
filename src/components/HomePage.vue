@@ -42,29 +42,6 @@
       </div>
     </div>
 
-    <!-- Side Menu (slides from right) -->
-    <div class="menu-button" @click="toggleMenu">
-      <i class="fas fa-bars"></i>
-    </div>
-
-    <!-- Side Menu Panel -->
-    <transition name="slide-menu">
-      <div v-if="showMenu" class="menu-overlay" @click="toggleMenu">
-        <div class="side-menu" @click.stop>
-          <div class="menu-header">
-            <img :src="userAvatar" alt="프로필 사진" class="menu-profile-image" />
-            <h3 class="menu-username">{{ username }}</h3>
-          </div>
-          <nav class="menu-nav">
-            <a href="#" class="menu-item">내 정보</a>
-            <a href="#" class="menu-item">설정</a>
-            <a href="#" class="menu-item">공지사항</a>
-            <a href="#" class="menu-item">버그 제보</a>
-            <a href="#" class="menu-item">도움말</a>
-          </nav>
-        </div>
-      </div>
-    </transition>
   </div>
   </template>
   
@@ -75,11 +52,6 @@
   const username = ref('Player123')
   const userLevel = ref(15)
   const userAvatar = ref('/placeholder.svg?height=100&width=100')
-  const showMenu = ref(false)
-  
-  const toggleMenu = () => {
-    showMenu.value = !showMenu.value
-  }
   
   const socialLogin = (platform) => {
     console.log(`${platform} 로그인 시도`)

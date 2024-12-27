@@ -36,19 +36,18 @@
       </div>
     </transition>
 
-    <!-- 결과 모달 수정 -->
+    <!-- 결과 모달 -->
     <transition name="fade">
       <div v-if="showResult" class="modal-overlay" @click.stop>
         <div class="modal-content result-modal" @click.stop>
-          <h2>결과 확인</h2>
+          <div class="score-section">
+            <div class="score-circle">
+              <span class="score-number">{{ score }}</span>
+              <span class="score-label">점</span>
+            </div>
+          </div>
           <div class="result-map" ref="resultMapElement"></div>
           <div class="result-details">
-            <div class="score-section">
-              <div class="score-circle">
-                <span class="score-number">{{ score }}</span>
-                <span class="score-label">점</span>
-              </div>
-            </div>
             <div class="distance-section">
               <i class="fas fa-road"></i>
               <span>실제 위치까지 {{ distance.toFixed(2) }}km</span>
@@ -268,8 +267,6 @@ export default {
         this.distance = polyline.getLength() / 1000; // 거리 계산 (미터 단위에서 킬로미터 단위로 변환)
         this.score = Math.max(100 - Math.floor(this.distance * 2), 0);
 
-        
-
         // 결과 지도 초기화
         this.$nextTick(() => {
           const resultMapContainer = this.$refs.resultMapElement;
@@ -320,19 +317,10 @@ export default {
     },
 
     restartGame() {
-      this.showResult = false;
-      this.showSpotButton = false;
-      this.isMapView = false;
-      if (this.marker) {
-        this.marker.setMap(null);
-        this.marker = null;
-      }
-      this.countdown = 3;
-      this.showIntro = true;
-      this.gameStarted = false;
+      this.$router.go(0);
     },
     exitGame() {
-      this.$router.push("/game-modes"); // Adjust this route as needed
+      this.$router.push("/roadViewModeMain"); // Adjust this route as needed
     },
     closeResult() {
       this.showResult = false;
@@ -347,27 +335,15 @@ export default {
 @import "@/assets/styles/game-intro.css";
 @import "@/assets/styles/map.css";
 @import "@/assets/styles/result-modal.css";
+@import "@/assets/styles/game-header.css";
+@import "@/assets/styles/spot-btn.css";
+@import "@/assets/styles/map-toggle-btn.css";
+
 .practice-game-container {
   height: 100vh;
   display: flex;
   flex-direction: column;
   background-color: #f8f9fa;
-}
-
-.game-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 2rem;
-  background-color: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  z-index: 20;
-}
-
-.game-header h1 {
-  font-size: 1.5rem;
-  color: #2c3e50;
-  margin: 0;
 }
 
 .warning-icon {
@@ -444,33 +420,8 @@ export default {
 .controls {
   position: absolute;
   bottom: 2rem;
-  right: 2rem;
+  right: 4rem;
   z-index: 10;
-}
-
-.spot-button-container {
-  position: absolute;
-  bottom: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-}
-
-.spot-button {
-  padding: 0.75rem 2rem;
-  font-size: 1.2rem;
-  background-color: #4cd964;
-  color: white;
-  border: none;
-  border-radius: 30px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.spot-button:hover {
-  background-color: #3cb853;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(76, 217, 100, 0.3);
 }
 
 .modal-overlay {
@@ -594,13 +545,13 @@ export default {
 
   .controls {
     bottom: 1rem;
-    right: 1rem;
+    right: 3.5rem;
   }
 
   .map-toggle-button {
-    width: 50px;
-    height: 50px;
-    font-size: 1.2rem;
+    width: 75px;
+    height: 75px;
+    font-size: 1.8rem;
   }
 
   .spot-button {
