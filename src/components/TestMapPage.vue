@@ -204,13 +204,14 @@ export default {
         // 지도가 로드된 후에 relayout 호출
         setTimeout(() => {
           this.map.relayout();
-          this.map.setCenter(new kakao.maps.LatLng(
-            this.centerLocation.lat,
-            this.centerLocation.lng
-          ));
+          this.map.setCenter(
+            new kakao.maps.LatLng(
+              this.centerLocation.lat,
+              this.centerLocation.lng
+            )
+          );
         }, 0);
 
-        
         kakao.maps.event.addListener(this.map, "click", (mouseEvent) => {
           const latlng = mouseEvent.latLng;
           if (this.marker) {
@@ -267,7 +268,8 @@ export default {
         this.distance = polyline.getLength() / 1000; // 거리 계산 (미터 단위에서 킬로미터 단위로 변환)
         this.score = Math.max(100 - Math.floor(this.distance * 2), 0);
 
-        //여긴 통과
+        
+
         // 결과 지도 초기화
         this.$nextTick(() => {
           const resultMapContainer = this.$refs.resultMapElement;
@@ -291,8 +293,8 @@ export default {
             map: resultMap,
             title: "실제 위치",
             image: new kakao.maps.MarkerImage(
-              "../assets/logo.png",
-              new kakao.maps.Size(24, 35)
+              require("@/assets/correctLocation.png"),
+              new kakao.maps.Size(33, 35)
             ),
           });
           // error line 1
@@ -571,37 +573,6 @@ export default {
   color: white;
 }
 
-.score-section {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.score-circle {
-  width: 60px;
-  height: 60px;
-  padding: 0.5rem;
-}
-
-.score-number {
-  font-size: 1.5rem;
-  font-weight: bold;
-}
-
-.score-label {
-  font-size: 1rem;
-}
-
-.distance-section {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  color: #495057;
-  font-size: 1.1rem;
-  margin: 1rem 0;
-}
-
 .map-container {
   height: 100vh;
   display: flex;
@@ -617,8 +588,8 @@ export default {
   }
 
   .result-modal {
-    padding: 1rem;
-    max-height: 50vh;
+    padding: 0.5rem;
+    max-height: 80%;
   }
 
   .controls {
