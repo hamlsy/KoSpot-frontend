@@ -33,15 +33,6 @@
           </div>
         </router-link>
 
-        <!-- <router-link to="/mapModeMain" tag="div" class="mode-card">
-          <div class="card-content">
-            <h3><i class="fas fa-map" style="color: #4CAF50;"></i>
-              지도 모드</h3>
-            <p>지도에서 장소 찾기</p>
-            <img src="/placeholder.svg?height=60&width=60" alt="지도" class="mode-icon" />
-          </div>
-        </router-link> -->
-
         <router-link to="/photoModeMain" tag="div" class="mode-card">
           <div class="card-content">
             <h3><i class="fas fa-camera" style="color: #2196F3;"></i>
