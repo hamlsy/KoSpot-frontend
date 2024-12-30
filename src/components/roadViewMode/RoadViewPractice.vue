@@ -152,8 +152,8 @@ export default {
       geocoder: null,
       // Dummy data for testing
       currentLocation: {
-        lat: 33.480401,
-        lng: 126.574667,
+        lat: 37.083901,
+        lng: 127.974667,
       },
       centerLocation: {
         lat: 36.480401,
@@ -175,6 +175,36 @@ export default {
     }
   },
   methods: {
+    // test 용도로 사용
+    getRandomCoordinate() {
+      // 대한민국 영역 제한
+      const KOREA_BOUNDS = {
+        MIN_LAT: 33.0, // 제주도 남단
+        MAX_LAT: 38.0, // 강원도 북단
+        MIN_LNG: 125.0, // 서해 서단
+        MAX_LNG: 132.0, // 독도 동단
+      };
+
+      // 랜덤 좌표 생성
+      const randomLat =
+        Math.random() * (KOREA_BOUNDS.MAX_LAT - KOREA_BOUNDS.MIN_LAT) +
+        KOREA_BOUNDS.MIN_LAT;
+      const randomLng =
+        Math.random() * (KOREA_BOUNDS.MAX_LNG - KOREA_BOUNDS.MIN_LNG) +
+        KOREA_BOUNDS.MIN_LNG;
+
+      return {
+        lat: parseFloat(randomLat.toFixed(6)),
+        lng: parseFloat(randomLng.toFixed(6)),
+      };
+    },
+    // 사용 예시
+    generateNewLocation() {
+      const newCoords = this.getRandomCoordinate();
+      this.currentLocation = newCoords;
+    },
+
+    //
     loadKakaoMapsAPI() {
       console.log("Loading Kakao Maps API...");
       // const clientId = "px4m850civ"; // naver client id
@@ -197,6 +227,7 @@ export default {
     },
     initializeKakaoRoadview() {
       if (!this.isRoadviewInitialized) {
+        this.generateNewLocation();
         console.log("Initializing Kakao Roadview...");
         var roadviewContainer = this.$refs.roadviewElement;
         this.roadview = new kakao.maps.Roadview(roadviewContainer);
@@ -208,17 +239,26 @@ export default {
         );
 
         const findPanoId = (distance) => {
+          if(distance >= 150){
+              this.generateNewLocation();
+              this.initializeKakaoRoadview();
+              return;
+          }
+          console.log(distance);
           roadviewClient.getNearestPanoId(position, distance, (panoId) => {
+            
             if (panoId) {
               this.roadview.setPanoId(panoId, position);
               this.isRoadviewInitialized = true;
+              this.currentLocation.lat = position.getLat();
+              this.currentLocation.lng = position.getLng();
             } else {
-              findPanoId(distance + 10);
+              findPanoId(distance + 50);
             }
           });
         };
         // 초기 값
-        findPanoId(30);
+        findPanoId(0);
       }
       this.$refs.roadviewElement.style.display = "block";
       this.$refs.mapElement.style.display = "none";
@@ -293,6 +333,7 @@ export default {
           this.currentLocation.lat,
           this.currentLocation.lng
         );
+
         this.showResult = true;
         // Polyline을 사용하여 두 좌표 간의 거리 계산
         const linePath = [markerPosition, correctPosition];
@@ -355,7 +396,7 @@ export default {
       this.$router.go(0);
     },
     exitGame() {
-      this.$router.push("/roadViewModeMain"); 
+      this.$router.push("/roadViewModeMain");
     },
     closeResult() {
       this.showResult = false;
@@ -603,5 +644,4 @@ export default {
     font-size: 1.5rem;
   }
 }
-
 </style>
