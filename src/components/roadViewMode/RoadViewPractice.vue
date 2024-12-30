@@ -365,13 +365,13 @@ export default {
 </script>
 
 <style scoped>
-@import "@/assets/styles/count-down.css";
+@import "@/assets/styles/game/count-down.css";
 @import "@/assets/styles/exit-restart-btn.css";
-@import "@/assets/styles/game-intro.css";
+@import "@/assets/styles/game/game-intro.css";
 @import "@/assets/styles/map.css";
-@import "@/assets/styles/result-modal.css";
-@import "@/assets/styles/game-header.css";
-@import "@/assets/styles/spot-btn.css";
+@import "@/assets/styles/game/roadView/result-modal.css";
+@import "@/assets/styles/game/game-header.css";
+@import "@/assets/styles/game/spot-btn.css";
 @import "@/assets/styles/map-toggle-btn.css";
 
 .practice-game-container {
