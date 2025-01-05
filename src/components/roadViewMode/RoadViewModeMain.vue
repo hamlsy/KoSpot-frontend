@@ -33,7 +33,7 @@
 
       <!-- Stats Section (New) -->
       <section class="stats-section">
-        <h2 class="section-title">나의 통계</h2>
+        <h2 class="section-title">나의 랭크 통계</h2>
         <div class="stats-grid">
           <div v-for="stat in stats" :key="stat.label" class="stat-card">
             <div class="stat-header">
@@ -216,9 +216,10 @@ export default {
 
       stats: [
         { icon: "fas fa-medal", label: "최고 점수", value: "4,850점" },
-        { icon: "fas fa-map", label: "플레이한 지역", value: "8개" },
-        { icon: "fas fa-clock", label: "총 플레이 시간", value: "5시간" },
+        // { icon: "fas fa-map", label: "플레이 수", value: "8개" },
+        { icon: "fas fa-clock", label: "총 플레이 수", value: "500 판" },
         { icon: "fas fa-users", label: "전체 랭킹", value: "상위 15%" },
+        { icon: "fas fa-users", label: "내 랭크", value: "Bronze 3" },
       ],
 
       recentRecords: [
