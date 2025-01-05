@@ -70,19 +70,18 @@
       </div>
     </transition>
 
-    <!-- 결과 모달 수정 -->
+    <!-- 결과 모달 -->
     <transition name="fade">
       <div v-if="showResult" class="modal-overlay" @click.stop>
         <div class="modal-content result-modal" @click.stop>
-          <h2>결과 확인</h2>
+          <div class="score-section">
+            <div class="score-circle">
+              <span class="score-number">{{ score }}</span>
+              <span class="score-label">점</span>
+            </div>
+          </div>
           <div class="result-map" ref="resultMapElement"></div>
           <div class="result-details">
-            <div class="score-section">
-              <div class="score-circle">
-                <span class="score-number">{{ score }}</span>
-                <span class="score-label">점</span>
-              </div>
-            </div>
             <div class="distance-section">
               <i class="fas fa-road"></i>
               <span>실제 위치까지 {{ distance.toFixed(2) }}km</span>
@@ -99,6 +98,7 @@
         </div>
       </div>
     </transition>
+
     <!-- 나가기 확인 모달 -->
     <transition name="fade">
       <div
@@ -139,7 +139,7 @@ export default {
       showCountdown: false,
       gameStarted: false,
       countdown: 3,
-      selectedRegion: "서울", // This should be passed as a prop
+      selectedRegion: "서울",
       distance: 0,
       score: 0,
       map: null,
@@ -152,8 +152,12 @@ export default {
       geocoder: null,
       // Dummy data for testing
       currentLocation: {
-        lat: 33.480401,
-        lng: 126.574667,
+        lat: 37.083901,
+        lng: 127.974667,
+      },
+      centerLocation: {
+        lat: 36.480401,
+        lng: 127.574667,
       },
     };
   },
@@ -164,33 +168,67 @@ export default {
     },
   },
   mounted() {
-    this.loadKakaoMapsAPI();
+    if (window.kakao && window.kakao.maps) {
+      this.initializeKakaoRoadview();
+    } else {
+      this.loadKakaoMapsAPI();
+    }
   },
   methods: {
+    // test 용도로 사용
+    getRandomCoordinate() {
+      // 대한민국 영역 제한
+      const KOREA_BOUNDS = {
+        MIN_LAT: 33.0, // 제주도 남단
+        MAX_LAT: 38.0, // 강원도 북단
+        MIN_LNG: 125.0, // 서해 서단
+        MAX_LNG: 132.0, // 독도 동단
+      };
+
+      // 랜덤 좌표 생성
+      const randomLat =
+        Math.random() * (KOREA_BOUNDS.MAX_LAT - KOREA_BOUNDS.MIN_LAT) +
+        KOREA_BOUNDS.MIN_LAT;
+      const randomLng =
+        Math.random() * (KOREA_BOUNDS.MAX_LNG - KOREA_BOUNDS.MIN_LNG) +
+        KOREA_BOUNDS.MIN_LNG;
+
+      return {
+        lat: parseFloat(randomLat.toFixed(6)),
+        lng: parseFloat(randomLng.toFixed(6)),
+      };
+    },
+    // 사용 예시
+    generateNewLocation() {
+      const newCoords = this.getRandomCoordinate();
+      this.currentLocation = newCoords;
+    },
+
+    //
     loadKakaoMapsAPI() {
-      if (window.kakao && window.kakao.maps) {
-        this.initializeKakaoRoadView();
-      } else {
-        // const clientId = "px4m850civ"; // naver client id
-        const appKey = "c66fbf360458039285570a638bad813a";
-        const script = document.createElement("script");
-        // script.src = `https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${clientId}&submodules=panorama`;
-        script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&libraries=services,clusterer,drawing,geometry&autoload=false`;
-        script.onload = () => {
-          kakao.maps.load(() => {
-            console.log("Kakao Maps API loaded.");
-            this.$root.$emit("kakao-loaded");
-          });
-        };
-        script.onerror = () => {
-          console.error("Failed to load Kakao Maps API.");
-        };
-        document.head.appendChild(script);
-      }
-      this.$root.$on("kakao-loaded", this.initializeKakaoRoadview);
+      console.log("Loading Kakao Maps API...");
+      // const clientId = "px4m850civ"; // naver client id
+      const appKey = "c66fbf360458039285570a638bad813a";
+      const script = document.createElement("script");
+      // script.src = `https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${clientId}&submodules=panorama`;
+      script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&libraries=services,clusterer,drawing,geometry&autoload=false`;
+
+      script.onload = () => {
+        window.kakao.maps.load(() => {
+          console.log("Kakao Maps API loaded.");
+          this.initializeKakaoRoadview();
+        });
+      };
+
+      script.onerror = () => {
+        console.error("Failed to load Kakao Maps API.");
+      };
+      document.head.appendChild(script);
     },
     initializeKakaoRoadview() {
       if (!this.isRoadviewInitialized) {
+        this.generateNewLocation();
+        console.log("Initializing Kakao Roadview...");
         var roadviewContainer = this.$refs.roadviewElement;
         this.roadview = new kakao.maps.Roadview(roadviewContainer);
         var roadviewClient = new kakao.maps.RoadviewClient();
@@ -201,17 +239,26 @@ export default {
         );
 
         const findPanoId = (distance) => {
+          if(distance >= 150){
+              this.generateNewLocation();
+              this.initializeKakaoRoadview();
+              return;
+          }
+          console.log(distance);
           roadviewClient.getNearestPanoId(position, distance, (panoId) => {
+            
             if (panoId) {
               this.roadview.setPanoId(panoId, position);
               this.isRoadviewInitialized = true;
+              this.currentLocation.lat = position.getLat();
+              this.currentLocation.lng = position.getLng();
             } else {
-              findPanoId(distance + 10);
+              findPanoId(distance + 50);
             }
           });
         };
         // 초기 값
-        findPanoId(30);
+        findPanoId(0);
       }
       this.$refs.roadviewElement.style.display = "block";
       this.$refs.mapElement.style.display = "none";
@@ -220,10 +267,24 @@ export default {
       if (!this.isMapInitialized) {
         var mapContainer = this.$refs.mapElement;
         var mapOption = {
-          center: new kakao.maps.LatLng(37.5665, 126.978),
+          center: new kakao.maps.LatLng(
+            this.centerLocation.lat,
+            this.centerLocation.lng
+          ),
           level: 13,
+          maxLevel: 12, // 최대 축소 레벨 설정
         };
         this.map = new kakao.maps.Map(mapContainer, mapOption);
+        // 지도가 로드된 후에 relayout 호출
+        setTimeout(() => {
+          this.map.relayout();
+          this.map.setCenter(
+            new kakao.maps.LatLng(
+              this.centerLocation.lat,
+              this.centerLocation.lng
+            )
+          );
+        }, 0);
 
         kakao.maps.event.addListener(this.map, "click", (mouseEvent) => {
           const latlng = mouseEvent.latLng;
@@ -273,6 +334,7 @@ export default {
           this.currentLocation.lng
         );
 
+        this.showResult = true;
         // Polyline을 사용하여 두 좌표 간의 거리 계산
         const linePath = [markerPosition, correctPosition];
         const polyline = new kakao.maps.Polyline({
@@ -284,29 +346,31 @@ export default {
         // 결과 지도 초기화
         this.$nextTick(() => {
           const resultMapContainer = this.$refs.resultMapElement;
+          if (!resultMapContainer) {
+            alert("resultMapContainer is null");
+          }
+          console.log(resultMapContainer);
           const resultMap = new kakao.maps.Map(resultMapContainer, {
             center: markerPosition,
             level: 7,
           });
-
           // 사용자 마커
           new kakao.maps.Marker({
             position: markerPosition,
             map: resultMap,
             title: "선택한 위치",
           });
-
           // 실제 위치 마커
           new kakao.maps.Marker({
             position: correctPosition,
             map: resultMap,
             title: "실제 위치",
             image: new kakao.maps.MarkerImage(
-              "path_to_different_marker_image", // 다른 마커 이미지 사용
-              new kakao.maps.Size(24, 35)
+              require("@/assets/correctLocation.png"),
+              new kakao.maps.Size(33, 35)
             ),
           });
-
+          // error line 1
           // 선 그리기
           const linePath = [markerPosition, correctPosition];
           const polyline = new kakao.maps.Polyline({
@@ -325,25 +389,14 @@ export default {
           bounds.extend(correctPosition);
           resultMap.setBounds(bounds);
         });
-
-        this.showResult = true;
       }
     },
 
     restartGame() {
-      this.showResult = false;
-      this.showSpotButton = false;
-      this.isMapView = false;
-      if (this.marker) {
-        this.marker.setMap(null);
-        this.marker = null;
-      }
-      this.countdown = 3;
-      this.showIntro = true;
-      this.gameStarted = false;
+      this.$router.go(0);
     },
     exitGame() {
-      this.$router.push("/game-modes"); // Adjust this route as needed
+      this.$router.push("/roadViewModeMain");
     },
     closeResult() {
       this.showResult = false;
@@ -353,32 +406,20 @@ export default {
 </script>
 
 <style scoped>
-@import "@/assets/styles/count-down.css";
+@import "@/assets/styles/game/count-down.css";
 @import "@/assets/styles/exit-restart-btn.css";
-@import "@/assets/styles/game-intro.css";
+@import "@/assets/styles/game/game-intro.css";
 @import "@/assets/styles/map.css";
-@import "@/assets/styles/result-modal.css";
+@import "@/assets/styles/game/roadView/result-modal.css";
+@import "@/assets/styles/game/game-header.css";
+@import "@/assets/styles/game/spot-btn.css";
+@import "@/assets/styles/map-toggle-btn.css";
+
 .practice-game-container {
   height: 100vh;
   display: flex;
   flex-direction: column;
   background-color: #f8f9fa;
-}
-
-.game-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 2rem;
-  background-color: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  z-index: 20;
-}
-
-.game-header h1 {
-  font-size: 1.5rem;
-  color: #2c3e50;
-  margin: 0;
 }
 
 .warning-icon {
@@ -455,33 +496,8 @@ export default {
 .controls {
   position: absolute;
   bottom: 2rem;
-  right: 2rem;
+  right: 4rem;
   z-index: 10;
-}
-
-.spot-button-container {
-  position: absolute;
-  bottom: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-}
-
-.spot-button {
-  padding: 0.75rem 2rem;
-  font-size: 1.2rem;
-  background-color: #4cd964;
-  color: white;
-  border: none;
-  border-radius: 30px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.spot-button:hover {
-  background-color: #3cb853;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(76, 217, 100, 0.3);
 }
 
 .modal-overlay {
@@ -584,35 +600,12 @@ export default {
   color: white;
 }
 
-.score-section {
+.map-container {
+  height: 100vh;
   display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.score-circle {
-  width: 60px;
-  height: 60px;
-  padding: 0.5rem;
-}
-
-.score-number {
-  font-size: 1.5rem;
-  font-weight: bold;
-}
-
-.score-label {
-  font-size: 1rem;
-}
-
-.distance-section {
-  display: flex;
-  align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  color: #495057;
-  font-size: 1.1rem;
-  margin: 1rem 0;
+  align-items: center;
+  position: relative;
 }
 
 /* 반응형 */
@@ -622,19 +615,19 @@ export default {
   }
 
   .result-modal {
-    padding: 1rem;
-    max-height: 50vh;
+    padding: 0.5rem;
+    max-height: 80%;
   }
 
   .controls {
     bottom: 1rem;
-    right: 1rem;
+    right: 3.5rem;
   }
 
   .map-toggle-button {
-    width: 50px;
-    height: 50px;
-    font-size: 1.2rem;
+    width: 75px;
+    height: 75px;
+    font-size: 1.8rem;
   }
 
   .spot-button {

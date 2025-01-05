@@ -166,8 +166,8 @@
       id: 'practice',
       title: '연습 모드',
       icon: 'fas fa-graduation-cap',
-      shortDescription: '원하는 지역을 선택하여 연습하세요',
-      fullDescription: '관심 있는 지역의 사진을 직접 선택하여 학습할 수 있는 모드입니다.'
+      shortDescription: '시간 제한 없이 연습하세요.',
+      fullDescription: '시간 제한 없이 원하는 지역의 사진을 맞추는 모드입니다.'
     },
     {
       id: 'normal',

@@ -1,0 +1,25 @@
+.spot-button-container {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+  }
+  
+  .spot-button {
+    padding: 0.75rem 2rem;
+    font-size: 1.2rem;
+    background-color: #4cd964;
+    color: white;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .spot-button:hover {
+    background-color: #3cb853;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(76, 217, 100, 0.3);
+  }
+  

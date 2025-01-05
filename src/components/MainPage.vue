@@ -2,22 +2,25 @@
   <div class="game-mode-container">
     <header class="header">
       <div class="dropdown-header">
-        <h1>KoSpot</h1>
+        <h3>KoSpot</h3>
       </div>
     </header>
 
     <div class="main-content">
       <div class="banner-container">
-        <div class="banner-wrapper" :style="{ transform: `translateX(-${currentBanner * 100}%)` }">
+        <div
+          class="banner-wrapper"
+          :style="{ transform: `translateX(-${currentBanner * 100}%)` }"
+        >
           <div v-for="(banner, index) in banners" :key="index" class="banner">
             <h2>{{ banner.title }}</h2>
             <p>{{ banner.description }}</p>
           </div>
         </div>
         <div class="banner-dots">
-          <span 
-            v-for="(banner, index) in banners" 
-            :key="index" 
+          <span
+            v-for="(banner, index) in banners"
+            :key="index"
             :class="{ active: index === currentBanner }"
             @click="setCurrentBanner(index)"
           ></span>
@@ -27,27 +30,30 @@
       <div class="modes-grid">
         <router-link to="/roadViewModeMain" tag="div" class="mode-card">
           <div class="card-content">
-            <h3><i class="fas fa-street-view" style="color: #FF5722;"></i>로드뷰 모드</h3>
+            <h3>
+              <i class="fas fa-street-view" style="color: #ff5722"></i>로드뷰
+              모드
+            </h3>
             <p>실제 거리를 둘러보며 위치를 맞춰보세요</p>
-            <img src="/placeholder.svg?height=80&width=80" alt="로드뷰" class="mode-icon" />
+            <img
+              src="/placeholder.svg?height=80&width=80"
+              alt="로드뷰"
+              class="mode-icon"
+            />
           </div>
         </router-link>
 
-        <!-- <router-link to="/mapModeMain" tag="div" class="mode-card">
-          <div class="card-content">
-            <h3><i class="fas fa-map" style="color: #4CAF50;"></i>
-              지도 모드</h3>
-            <p>지도에서 장소 찾기</p>
-            <img src="/placeholder.svg?height=60&width=60" alt="지도" class="mode-icon" />
-          </div>
-        </router-link> -->
-
         <router-link to="/photoModeMain" tag="div" class="mode-card">
           <div class="card-content">
-            <h3><i class="fas fa-camera" style="color: #2196F3;"></i>
-              포토 모드</h3>
+            <h3>
+              <i class="fas fa-camera" style="color: #2196f3"></i> 포토 모드
+            </h3>
             <p>사진을 보고 지역을 맞춰보세요</p>
-            <img src="/placeholder.svg?height=60&width=60" alt="사진" class="mode-icon" />
+            <img
+              src="/placeholder.svg?height=60&width=60"
+              alt="사진"
+              class="mode-icon"
+            />
           </div>
         </router-link>
 
@@ -60,7 +66,7 @@
 
         <div class="mode-card">
           <div class="card-content">
-            <h3><i class="fas fa-trophy" style="color: yellow;"></i> 랭킹</h3>
+            <h3><i class="fas fa-trophy" style="color: yellow"></i> 랭킹</h3>
             <p>상위 플레이어들의 점수를 확인해보세요</p>
           </div>
         </div>
@@ -96,59 +102,64 @@
         </nav>
       </div>
     </transition>
-    <div v-if="showProfileMenu" class="overlay" @click="toggleProfileMenu"></div>
+    <div
+      v-if="showProfileMenu"
+      class="overlay"
+      @click="toggleProfileMenu"
+    ></div>
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-
-const banners = [
-  { title: "신규 이벤트", description: "친구 초대하고 포인트 받으세요!" },
-  { title: "업데이트 안내", description: "새로운 지역이 추가되었습니다." },
-  { title: "주간 랭킹", description: "이번 주 최고 점수를 확인하세요." }
-]
-
-const currentBanner = ref(0)
-let intervalId
-
-const setCurrentBanner = (index) => {
-  currentBanner.value = index
-}
-
-const nextBanner = () => {
-  currentBanner.value = (currentBanner.value + 1) % banners.length
-}
-
-onMounted(() => {
-  intervalId = setInterval(nextBanner, 8000)
-})
-
-onUnmounted(() => {
-  clearInterval(intervalId)
-})
-
-const showProfileMenu = ref(false)
-
-const toggleProfileMenu = () => {
-  showProfileMenu.value = !showProfileMenu.value
-}
+<script>
+export default {
+  data() {
+    return {
+      banners: [
+        { title: "신규 이벤트", description: "친구 초대하고 포인트 받으세요!" },
+        {
+          title: "업데이트 안내",
+          description: "새로운 지역이 추가되었습니다.",
+        },
+        { title: "주간 랭킹", description: "이번 주 최고 점수를 확인하세요." },
+      ],
+      currentBanner: 0,
+      showProfileMenu: false,
+      intervalId: null,
+    };
+  },
+  methods: {
+    setCurrentBanner(index) {
+      this.currentBanner = index;
+    },
+    toggleProfileMenu() {
+      this.showProfileMenu = !this.showProfileMenu;
+    },
+  },
+  mounted() {
+    // onMounted 대체
+    this.intervalId = setInterval(() => {
+      this.currentBanner = (this.currentBanner + 1) % this.banners.length;
+    }, 5000);
+  },
+  beforeDestroy() {
+    // onUnmounted 대체
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
+  },
+};
 </script>
 
 <style scoped>
+@import url("@/assets/styles/common/header.css");
+@import url("@/assets/styles/common/footer.css");
+@import url("@/assets/styles/common/slide-menu/slide-menu.css");
+
 .game-mode-container {
   min-height: 100vh;
   background: #f0f2f5;
   padding-bottom: 70px;
 }
-
-.header {
-  padding: 0.5rem 1rem;
-  background: #ffffff;
-  border-bottom: 1px solid #e0e0e0;
-  width: 100%;
-}
-
 .dropdown-header {
   display: flex;
   align-items: center;
@@ -171,6 +182,7 @@ const toggleProfileMenu = () => {
   position: relative;
   overflow: hidden;
   margin-bottom: 1rem;
+  border-radius: 15px;
 }
 
 .banner-wrapper {
@@ -215,7 +227,7 @@ const toggleProfileMenu = () => {
 }
 
 .banner-dots span.active {
-  background: #4CD964;
+  background: #4cd964;
 }
 
 .modes-grid {
@@ -272,86 +284,6 @@ const toggleProfileMenu = () => {
   margin-top: auto;
   align-self: flex-start;
 }
-
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: #ffffff;
-  display: flex;
-  justify-content: space-around;
-  padding: 0.8rem;
-  border-top: 1px solid #e0e0e0;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-}
-
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.3rem;
-  background: none;
-  border: none;
-  color: #999;
-  cursor: pointer;
-  font-size: 1rem; /* Updated font size */
-}
-
-.nav-item i {
-  font-size: 1.5rem;
-}
-
-.nav-item.active {
-  color: #4CD964;
-}
-
-.profile-menu {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 80%;
-  max-width: 300px;
-  background: #ffffff;
-  z-index: 1000;
-  padding: 2rem 1rem;
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease-in-out;
-}
-
-.profile-menu-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-}
-
-.profile-menu-header h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-.close-menu {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-}
-
-.profile-menu-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.menu-item {
-  font-size: 1rem;
-  color: #333;
-  text-decoration: none;
-  padding: 0.5rem 0;
-}
-
 .overlay {
   position: fixed;
   top: 0;
@@ -360,16 +292,6 @@ const toggleProfileMenu = () => {
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   z-index: 999;
-}
-
-.slide-menu-enter-active,
-.slide-menu-leave-active {
-  transition: transform 0.3s ease;
-}
-
-.slide-menu-enter-from,
-.slide-menu-leave-to {
-  transform: translateX(100%);
 }
 
 @media (max-width: 640px) {
@@ -391,4 +313,3 @@ const toggleProfileMenu = () => {
   }
 }
 </style>
-

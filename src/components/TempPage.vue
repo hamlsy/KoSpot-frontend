@@ -1,364 +1,385 @@
 <template>
-  <div class="road-view-container">
+  <div class="game-mode-container">
     <header class="header">
-      <button @click="$router.go(-1)" class="back-button">
-        <i class="fas fa-arrow-left"></i>
-      </button>
-      <h1>로드뷰 모드</h1>
+      <div class="dropdown-header">
+        <h1>KoSpot</h1>
+      </div>
     </header>
 
-    <div class="game-modes">
-      <div 
-        v-for="(mode, index) in gameModes" 
-        :key="index" 
-        class="game-mode-card"
-        @click="openGameModePopup(mode)"
-      >
-        <div class="game-mode-icon">
-          <i :class="mode.icon"></i>
+    <div class="main-content">
+      <div class="banner-container">
+        <div class="banner-wrapper" :style="{ transform: `translateX(-${currentBanner * 100}%)` }">
+          <div v-for="(banner, index) in banners" :key="index" class="banner">
+            <h2>{{ banner.title }}</h2>
+            <p>{{ banner.description }}</p>
+          </div>
         </div>
-        <div class="game-mode-details">
-          <h3>{{ mode.title }}</h3>
-          <p>{{ mode.shortDescription }}</p>
+        <div class="banner-dots">
+          <span 
+            v-for="(banner, index) in banners" 
+            :key="index" 
+            :class="{ active: index === currentBanner }"
+            @click="setCurrentBanner(index)"
+          ></span>
         </div>
-        <div class="game-mode-arrow">
-          <i class="fas fa-chevron-right"></i>
+      </div>
+
+      <div class="modes-grid">
+        <router-link to="/roadViewModeMain" tag="div" class="mode-card">
+          <div class="card-content">
+            <h3><i class="fas fa-street-view" style="color: #FF5722;"></i>로드뷰 모드</h3>
+            <p>실제 거리를 둘러보며 위치를 맞춰보세요</p>
+            <img src="/placeholder.svg?height=80&width=80" alt="로드뷰" class="mode-icon" />
+          </div>
+        </router-link>
+
+        <router-link to="/photoModeMain" tag="div" class="mode-card">
+          <div class="card-content">
+            <h3><i class="fas fa-camera" style="color: #2196F3;"></i>
+              포토 모드</h3>
+            <p>사진을 보고 지역을 맞춰보세요</p>
+            <img src="/placeholder.svg?height=60&width=60" alt="사진" class="mode-icon" />
+          </div>
+        </router-link>
+
+        <div class="mode-card">
+          <div class="card-content">
+            <h3><i class="fas fa-bullhorn"></i> 공지사항</h3>
+            <p>최신 업데이트 및 이벤트 정보를 확인하세요</p>
+          </div>
+        </div>
+
+        <div class="mode-card">
+          <div class="card-content">
+            <h3><i class="fas fa-trophy" style="color: yellow;"></i> 랭킹</h3>
+            <p>상위 플레이어들의 점수를 확인해보세요</p>
+          </div>
         </div>
       </div>
     </div>
 
-    <transition name="popup-slide">
-      <div 
-        v-if="selectedGameMode" 
-        class="game-mode-popup"
-        @click.self="closeGameModePopup"
-      >
-        <div class="popup-content">
-          <div class="popup-header">
-            <h2>{{ selectedGameMode.title }}</h2>
-            <button @click="closeGameModePopup" class="close-button">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          
-          <div class="popup-description">
-            <p>{{ selectedGameMode.fullDescription }}</p>
-          </div>
+    <nav class="bottom-nav">
+      <button class="nav-item active">
+        <i class="fas fa-home"></i>
+      </button>
+      <button class="nav-item">
+        <i class="fas fa-history"></i>
+        <span></span>
+      </button>
+      <button class="nav-item" @click="toggleProfileMenu">
+        <i class="fas fa-user"></i>
+      </button>
+    </nav>
 
-          <!-- Practice Mode Specific Content -->
-          <div v-if="selectedGameMode.id === 'practice'" class="practice-mode-options">
-            <h3>지역 선택</h3>
-            <div class="region-selector">
-              <button 
-                v-for="region in regions" 
-                :key="region"
-                :class="{ 'selected': selectedRegion === region }"
-                @click="selectRegion(region)"
-              >
-                {{ region }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Normal Mode Specific Content -->
-          <div v-if="selectedGameMode.id === 'normal'" class="normal-mode-options">
-            <h3>난이도 선택</h3>
-            <div class="level-selector">
-              <div 
-                v-for="level in levels" 
-                :key="level.value"
-                :class="['level-card', { 'selected': selectedLevel === level.value }]"
-                @click="selectLevel(level.value)"
-              >
-                <h4>{{ level.title }}</h4>
-                <p>{{ level.description }}</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Rank Mode Specific Content -->
-          <div v-if="selectedGameMode.id === 'rank'" class="rank-mode-options">
-            <h3>랭크 모드 세부사항</h3>
-            <div class="rank-details">
-              <div class="current-rank">
-                <p>현재 랭크: {{ userRank }}</p>
-                <button @click="showRankingDetails">랭킹 보기</button>
-              </div>
-            </div>
-          </div>
-
-          <button 
-            class="start-game-button"
-            @click="startGame"
-            :disabled="!isGameStartReady"
-          >
-            게임 시작
+    <transition name="slide-menu">
+      <div v-if="showProfileMenu" class="profile-menu">
+        <div class="profile-menu-header">
+          <h2>내 정보</h2>
+          <button @click="toggleProfileMenu" class="close-menu">
+            <i class="fas fa-times"></i>
           </button>
         </div>
+        <nav class="profile-menu-nav">
+          <a href="#" class="menu-item">설정</a>
+          <a href="#" class="menu-item">공지사항</a>
+          <a href="#" class="menu-item">도움말</a>
+          <a href="#" class="menu-item">로그아웃</a>
+        </nav>
       </div>
     </transition>
+    <div v-if="showProfileMenu" class="overlay" @click="toggleProfileMenu"></div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 
-const gameModes = [
-  {
-    id: 'practice',
-    title: '연습 게임',
-    icon: 'fas fa-graduation-cap',
-    shortDescription: '지역을 선택하고 쉽게 연습해보세요',
-    fullDescription: '특정 지역을 선택하여 로드뷰 능력을 천천히 향상시킬 수 있는 모드입니다. 편안한 속도로 학습하세요.'
-  },
-  {
-    id: 'normal',
-    title: '일반 게임',
-    icon: 'fas fa-play-circle',
-    shortDescription: '다양한 난이도로 실력을 키워보세요',
-    fullDescription: '점진적으로 난이도를 높여가며 한국 전역의 로드뷰 실력을 테스트할 수 있는 모드입니다.'
-  },
-  {
-    id: 'rank',
-    title: '랭크 게임',
-    icon: 'fas fa-trophy',
-    shortDescription: '전국 최고의 로드뷰 플레이어와 경쟁하세요',
-    fullDescription: '실력을 겨루고 전국 랭킹에 도전하는 경쟁 모드입니다. 최고의 성적을 목표로 하세요.'
-  }
+const banners = [
+  { title: "신규 이벤트", description: "친구 초대하고 포인트 받으세요!" },
+  { title: "업데이트 안내", description: "새로운 지역이 추가되었습니다." },
+  { title: "주간 랭킹", description: "이번 주 최고 점수를 확인하세요." }
 ]
 
-const regions = ['서울', '경기', '인천', '부산', '대구', '대전', '광주', '울산', '강원', '충청', '전라', '경상', '제주']
-const levels = [
-  { value: 1, title: 'Level 1', description: '쉬운 난이도, 기본 로드뷰' },
-  { value: 2, title: 'Level 2', description: '중간 난이도, 도전적인 로드뷰' },
-  { value: 3, title: 'Level 3', description: '어려운 난이도, 전문가 수준' }
-]
+const currentBanner = ref(0)
+let intervalId
 
-const selectedGameMode = ref(null)
-const selectedRegion = ref(null)
-const selectedLevel = ref(null)
-const userRank = ref('Gold III')
-
-const openGameModePopup = (mode) => {
-  selectedGameMode.value = mode
-  selectedRegion.value = null
-  selectedLevel.value = null
+const setCurrentBanner = (index) => {
+  currentBanner.value = index
 }
 
-const closeGameModePopup = () => {
-  selectedGameMode.value = null
+const nextBanner = () => {
+  currentBanner.value = (currentBanner.value + 1) % banners.length
 }
 
-const selectRegion = (region) => {
-  selectedRegion.value = region
-}
-
-const selectLevel = (level) => {
-  selectedLevel.value = level
-}
-
-const isGameStartReady = computed(() => {
-  if (selectedGameMode.value?.id === 'practice') return selectedRegion.value !== null
-  if (selectedGameMode.value?.id === 'normal') return selectedLevel.value !== null
-  if (selectedGameMode.value?.id === 'rank') return true
-  return false
+onMounted(() => {
+  intervalId = setInterval(nextBanner, 8000)
 })
 
-const startGame = () => {
-  // Implement game start logic
-  console.log('Game Starting', {
-    mode: selectedGameMode.value.id,
-    region: selectedRegion.value,
-    level: selectedLevel.value
-  })
-}
+onUnmounted(() => {
+  clearInterval(intervalId)
+})
 
-const showRankingDetails = () => {
-  // Implement ranking details view
-  console.log('Showing Ranking Details')
+const showProfileMenu = ref(false)
+
+const toggleProfileMenu = () => {
+  showProfileMenu.value = !showProfileMenu.value
 }
 </script>
 
 <style scoped>
-.road-view-container {
+.game-mode-container {
   min-height: 100vh;
   background: #f0f2f5;
-  padding-bottom: 20px;
+  padding-bottom: 70px;
 }
 
 .header {
+  padding: 0.5rem 1rem;
+  background: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  width: 100%;
+}
+
+.dropdown-header {
   display: flex;
   align-items: center;
-  padding: 1rem;
-  background: white;
+  gap: 0.5rem;
+}
+
+.dropdown-header h1 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.main-content {
+  padding: 0 1rem 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.banner-container {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.banner-wrapper {
+  display: flex;
+  transition: transform 0.5s ease;
+}
+
+.banner {
+  flex: 0 0 100%;
+  background: #ffffff;
+  padding: 1.75rem 1rem;
   border-bottom: 1px solid #e0e0e0;
 }
 
-.back-button {
-  background: none;
-  border: none;
-  margin-right: 1rem;
+.banner h2 {
   font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.banner p {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.banner-dots {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.5rem;
+}
+
+.banner-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ccc;
   cursor: pointer;
 }
 
-.game-modes {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1rem;
+.banner-dots span.active {
+  background: #4CD964;
 }
 
-.game-mode-card {
-  display: flex;
-  align-items: center;
-  background: white;
-  border-radius: 12px;
-  padding: 1rem;
+.modes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.mode-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 1.5rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   cursor: pointer;
-  transition: transform 0.3s ease;
+  transition: all 0.3s ease;
+  border: 1px solid #e0e0e0;
+  height: 130px;
 }
 
-.game-mode-card:hover {
+.mode-card:hover {
   transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
-.game-mode-icon {
-  background: #f0f2f5;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
+.mode-card.large {
+  grid-column: span 2;
+  height: 180px;
+}
+
+.card-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.card-content h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin-right: 1rem;
+  gap: 0.5rem;
+}
+
+.card-content p {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0;
+}
+
+.mode-icon {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  display: flex;
+  justify-content: space-around;
+  padding: 0.8rem;
+  border-top: 1px solid #e0e0e0;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  font-size: 1rem; /* Updated font size */
+}
+
+.nav-item i {
   font-size: 1.5rem;
+}
+
+.nav-item.active {
   color: #4CD964;
 }
 
-.game-mode-details {
-  flex-grow: 1;
+.profile-menu {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 80%;
+  max-width: 300px;
+  background: #ffffff;
+  z-index: 1000;
+  padding: 2rem 1rem;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease-in-out;
 }
 
-.game-mode-details h3 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.1rem;
+.profile-menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
 }
 
-.game-mode-details p {
-  margin: 0;
-  color: #666;
-  font-size: 0.9rem;
+.profile-menu-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
 }
 
-.game-mode-arrow {
-  color: #999;
-  font-size: 1.2rem;
+.close-menu {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
 }
 
-.game-mode-popup {
+.profile-menu-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.menu-item {
+  font-size: 1rem;
+  color: #333;
+  text-decoration: none;
+  padding: 0.5rem 0;
+}
+
+.overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
+  z-index: 999;
 }
 
-.popup-content {
-  background: white;
-  border-radius: 20px;
-  width: 90%;
-  max-width: 500px;
-  max-height: 80vh;
-  overflow-y: auto;
-  padding: 1.5rem;
+.slide-menu-enter-active,
+.slide-menu-leave-active {
+  transition: transform 0.3s ease;
 }
 
-.popup-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.close-button {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: #666;
-  cursor: pointer;
-}
-
-.start-game-button {
-  width: 100%;
-  padding: 1rem;
-  background: #4CD964;
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 1.1rem;
-  margin-top: 1rem;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-.start-game-button:disabled {
-  background: #cccccc;
-  cursor: not-allowed;
-}
-
-.region-selector, .level-selector {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.region-selector button, .level-selector .level-card {
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  background: #f0f2f5;
-  border: none;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.region-selector button.selected, 
-.level-selector .level-card.selected {
-  background: #4CD964;
-  color: white;
-}
-
-.level-card {
-  flex-grow: 1;
-  text-align: center;
-  padding: 1rem;
-}
-
-.popup-slide-enter-active, .popup-slide-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.popup-slide-enter-from, .popup-slide-leave-to {
-  opacity: 0;
+.slide-menu-enter-from,
+.slide-menu-leave-to {
+  transform: translateX(100%);
 }
 
 @media (max-width: 640px) {
-  .popup-content {
-    width: 95%;
+  .main-content {
+    padding: 0 0.5rem 0.75rem;
   }
 
-  .region-selector, .level-selector {
-    flex-direction: column;
+  .mode-card {
+    padding: 1.25rem;
+    height: 160px;
   }
 
-  .region-selector button, .level-selector .level-card {
-    width: 100%;
+  .mode-card.large {
+    height: 200px;
+  }
+
+  .banner {
+    padding: 1.5rem 0.75rem;
   }
 }
 </style>
+
