@@ -21,36 +21,11 @@
         </div>
       </div>
     </header>
-
+    
     <!-- Main Content -->
     <main class="main-content">
-      <!-- Stats Overview -->
-      <div class="stats-container">
-        <div class="stat-card">
-          <div class="stat-icon">🏆</div>
-          <div class="stat-info">
-            <span class="stat-value">2,891</span>
-            <span class="stat-label">전체 순위</span>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon">⭐️</div>
-          <div class="stat-info">
-            <span class="stat-value">1,234</span>
-            <span class="stat-label">포인트</span>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon">🎯</div>
-          <div class="stat-info">
-            <span class="stat-value">89%</span>
-            <span class="stat-label">정확도</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Featured Challenge -->
-      <div class="featured-challenge" :style="{ backgroundImage: 'url(/challenge-bg.jpg)' }">
+       <!-- Featured Challenge -->
+       <div class="featured-challenge" :style="{ backgroundImage: 'url(/challenge-bg.jpg)' }">
         <div class="challenge-content">
           <div class="challenge-badge">오늘의 도전</div>
           <h2>제주도 스팟 5개 연속 성공</h2>
@@ -61,6 +36,39 @@
           </button>
         </div>
       </div>
+      <!-- Stats Overview -->
+      <div class="stats-container">
+        <div class="stat-card">
+          <div class="stat-icon">🏆</div>
+          <div class="stat-info">
+            <span class="stat-value">2,891</span>
+            <span class="stat-label">전체 순위</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🛒</div>
+          <div class="stat-info">
+            <span class="stat-value">상점</span>
+            <span class="stat-label">아이템 구매</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⭐️</div>
+          <div class="stat-info">
+            <span class="stat-value">1,234</span>
+            <span class="stat-label">포인트</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">👥</div>
+          <div class="stat-info">
+            <span class="stat-value">15</span>
+            <span class="stat-label">친구</span>
+          </div>
+        </div>
+      </div>
+
+     
 
       <!-- Game Modes -->
       <section class="game-modes">
@@ -260,7 +268,7 @@ export default {
   top: 0;
   left: 0;
   right: 0;
-  height: 60px;
+  height: 50px;
   background: #ffffff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   z-index: 1000;
@@ -363,7 +371,7 @@ export default {
 
 .stats-container {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
   margin-bottom: 24px;
 }
@@ -403,6 +411,7 @@ export default {
   background-position: center;
   border-radius: 20px;
   height: 200px;
+  margin-top: 24px;
   margin-bottom: 24px;
   position: relative;
   overflow: hidden;
