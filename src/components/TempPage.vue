@@ -14,18 +14,24 @@
           </button>
           <div class="user-profile" @click="toggleProfileMenu">
             <div class="user-avatar">
-              <img :src="userProfile.avatar || '/default-avatar.png'" alt="프로필" />
+              <img
+                :src="userProfile.avatar || '/default-avatar.png'"
+                alt="프로필"
+              />
             </div>
             <span class="user-level">Lv.23</span>
           </div>
         </div>
       </div>
     </header>
-    
+
     <!-- Main Content -->
     <main class="main-content">
-       <!-- Featured Challenge -->
-       <div class="featured-challenge" :style="{ backgroundImage: 'url(/challenge-bg.jpg)' }">
+      <!-- Featured Challenge -->
+      <div
+        class="featured-challenge"
+        :style="{ backgroundImage: 'url(/challenge-bg.jpg)' }"
+      >
         <div class="challenge-content">
           <div class="challenge-badge">오늘의 도전</div>
           <h2>제주도 스팟 5개 연속 성공</h2>
@@ -38,43 +44,52 @@
       </div>
       <!-- Stats Overview -->
       <div class="stats-container">
-        <div class="stat-card">
-          <div class="stat-icon">🏆</div>
-          <div class="stat-info">
-            <span class="stat-value">2,891</span>
-            <span class="stat-label">전체 순위</span>
+        <router-link to="/noticeList">
+          <div class="stat-card">
+            <div class="stat-icon">📢</div>
+            <div class="stat-info">
+              <span class="stat-value notice">공지사항</span>
+              <span class="stat-label">새소식 / 패치노트</span>
+            </div>
           </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon">🛒</div>
-          <div class="stat-info">
-            <span class="stat-value">상점</span>
-            <span class="stat-label">아이템 구매</span>
+        </router-link>
+        <router-link to="/shopMain">
+          <div class="stat-card">
+            <div class="stat-icon">🛒</div>
+            <div class="stat-info">
+              <span class="stat-value">상점</span>
+              <span class="stat-label">아이템 구매</span>
+            </div>
           </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon">⭐️</div>
-          <div class="stat-info">
-            <span class="stat-value">1,234</span>
-            <span class="stat-label">포인트</span>
+        </router-link>
+        <router-link to="/myPoints">
+          <div class="stat-card">
+            <div class="stat-icon">⭐️</div>
+            <div class="stat-info">
+              <span class="stat-value">1,234</span>
+              <span class="stat-label">포인트</span>
+            </div>
           </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon">👥</div>
-          <div class="stat-info">
-            <span class="stat-value">15</span>
-            <span class="stat-label">친구</span>
+        </router-link>
+        <router-link to="/friendList">
+          <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-info">
+              <span class="stat-value">15</span>
+              <span class="stat-label">친구</span>
+            </div>
           </div>
-        </div>
+        </router-link>
       </div>
-
-     
 
       <!-- Game Modes -->
       <section class="game-modes">
         <h2 class="section-title">게임 모드</h2>
         <div class="modes-grid">
-          <div class="mode-card roadview" @click="navigateTo('roadview')">
+          <div
+            class="mode-card roadview"
+            @click="navigateTo('roadViewModeMain')"
+          >
             <div class="mode-icon">
               <i class="fas fa-street-view"></i>
             </div>
@@ -86,7 +101,7 @@
                   <i class="fas fa-user"></i> 328명 플레이 중
                 </span>
                 <span class="difficulty">
-                  <i class="fas fa-star"></i> 
+                  <i class="fas fa-star"></i>
                   <i class="fas fa-star"></i>
                   <i class="fas fa-star-half"></i>
                 </span>
@@ -119,7 +134,11 @@
       <section class="recent-activity">
         <h2 class="section-title">최근 활동</h2>
         <div class="activity-list">
-          <div class="activity-item" v-for="activity in recentActivities" :key="activity.id">
+          <div
+            class="activity-item"
+            v-for="activity in recentActivities"
+            :key="activity.id"
+          >
             <div class="activity-icon" :class="activity.type">
               <i :class="activity.icon"></i>
             </div>
@@ -152,12 +171,20 @@
       </button>
     </nav>
 
+    <!-- 수정: 프로필 메뉴 오버레이 추가 -->
+    <transition name="fade">
+      <div v-if="showProfileMenu" class="overlay" @click="closeProfileMenu"></div>
+    </transition>
+
     <!-- Profile Menu -->
     <transition name="slide-menu">
       <div v-if="showProfileMenu" class="profile-menu">
         <div class="profile-header">
           <div class="profile-info">
-            <img :src="userProfile.avatar || '/default-avatar.png'" alt="프로필" />
+            <img
+              :src="userProfile.avatar || '/default-avatar.png'"
+              alt="프로필"
+            />
             <div class="profile-text">
               <h3>{{ userProfile.name }}</h3>
               <p>{{ userProfile.email }}</p>
@@ -206,53 +233,63 @@
 
 <script>
 export default {
-  name: 'KoSpotMain',
+  name: "KoSpotMain",
   data() {
     return {
       showProfileMenu: false,
       unreadNotifications: 3,
       userProfile: {
-        name: '김코스팟',
-        email: 'user@kospot.com',
+        name: "김코스팟",
+        email: "user@kospot.com",
         avatar: null,
-        level: 23
+        level: 23,
       },
       recentActivities: [
         {
           id: 1,
-          type: 'success',
-          icon: 'fas fa-check-circle',
-          text: '명동 로드뷰 챌린지 성공',
-          time: '방금 전'
+          type: "success",
+          icon: "fas fa-check-circle",
+          text: "명동 로드뷰 챌린지 성공",
+          time: "방금 전",
         },
         {
           id: 2,
-          type: 'achievement',
-          icon: 'fas fa-medal',
-          text: '정확도 마스터 뱃지 획득',
-          time: '2시간 전'
+          type: "achievement",
+          icon: "fas fa-medal",
+          text: "정확도 마스터 뱃지 획득",
+          time: "2시간 전",
         },
         {
           id: 3,
-          type: 'friend',
-          icon: 'fas fa-user-plus',
-          text: '민준님이 친구추가 했습니다',
-          time: '3시간 전'
-        }
-      ]
+          type: "friend",
+          icon: "fas fa-user-plus",
+          text: "민준님이 친구추가 했습니다",
+          time: "3시간 전",
+        },
+      ],
     };
   },
   methods: {
     toggleProfileMenu() {
       this.showProfileMenu = !this.showProfileMenu;
+      if (this.showProfileMenu) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    },
+    // 수정: 프로필 메뉴 닫기 메서드 추가
+    closeProfileMenu() {
+      this.showProfileMenu = false;
+      document.body.style.overflow = '';
     },
     openNotifications() {
       // 알림 메뉴 열기 로직
     },
     navigateTo(route) {
       this.$router.push(`/${route}`);
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -313,7 +350,6 @@ export default {
   font-size: 12px;
   font-weight: 600;
 }
-
 
 .icon-button {
   position: relative;
@@ -384,6 +420,12 @@ export default {
   align-items: center;
   gap: 12px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
 .stat-icon {
@@ -477,7 +519,6 @@ export default {
   transform: translateY(-4px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
-
 
 .mode-icon {
   width: 48px;
@@ -625,6 +666,18 @@ export default {
   color: #2563eb;
 }
 
+/* 수정: 오버레이 스타일 추가 */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1001;
+}
+
+/* 수정: 프로필 메뉴 스타일 추가 */
 .profile-menu {
   position: fixed;
   top: 0;
@@ -632,10 +685,12 @@ export default {
   bottom: 0;
   width: 300px;
   background: white;
-  z-index: 1001;
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
-  padding: 20px;
+  z-index: 1002;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  overflow-y: auto;
 }
+
 
 .profile-header {
   display: flex;
@@ -724,15 +779,15 @@ export default {
   .stats-container {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .modes-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .featured-challenge {
     height: 150px;
   }
-  
+
   .profile-menu {
     width: 100%;
   }
@@ -742,25 +797,25 @@ export default {
   .stats-container {
     grid-template-columns: 1fr;
   }
-  
+
   .header-content {
     padding: 0 12px;
   }
-  
+
   .main-content {
     padding: 70px 12px 20px;
   }
-  
+
   .mode-card {
     padding: 16px;
   }
-  
+
   .mode-icon {
     width: 40px;
     height: 40px;
     font-size: 20px;
   }
-  
+
   .nav-item span {
     display: none;
   }

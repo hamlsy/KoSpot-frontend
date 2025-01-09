@@ -31,5 +31,9 @@ body {
   margin-top: 60px;
 }
 
+a {
+  text-decoration: none;
+}
+
 
 </style>
