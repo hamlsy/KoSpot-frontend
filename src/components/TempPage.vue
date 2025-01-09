@@ -131,7 +131,7 @@
       </section>
 
       <!-- Recent Activity -->
-      <section class="recent-activity">
+      <!-- <section class="recent-activity">
         <h2 class="section-title">최근 활동</h2>
         <div class="activity-list">
           <div
@@ -148,7 +148,7 @@
             </div>
           </div>
         </div>
-      </section>
+      </section> -->
     </main>
 
     <!-- Navigation -->
@@ -157,14 +157,14 @@
         <i class="fas fa-home"></i>
         <span>홈</span>
       </button>
-      <button class="nav-item">
+      <!-- <button class="nav-item">
         <i class="fas fa-map-marker-alt"></i>
         <span>탐색</span>
       </button>
       <button class="nav-item">
         <i class="fas fa-trophy"></i>
         <span>랭킹</span>
-      </button>
+      </button> -->
       <button class="nav-item">
         <i class="fas fa-user"></i>
         <span>프로필</span>
@@ -195,7 +195,7 @@
           </button>
         </div>
         <div class="profile-stats">
-          <div class="stat-item">
+          <!-- <div class="stat-item">
             <span class="stat-number">89%</span>
             <span class="stat-label">정확도</span>
           </div>
@@ -206,10 +206,10 @@
           <div class="stat-item">
             <span class="stat-number">15</span>
             <span class="stat-label">뱃지</span>
-          </div>
+          </div> -->
         </div>
         <nav class="profile-nav">
-          <a href="#" class="menu-item">
+          <!-- <a href="#" class="menu-item">
             <i class="fas fa-cog"></i>
             설정
           </a>
@@ -220,7 +220,7 @@
           <a href="#" class="menu-item">
             <i class="fas fa-medal"></i>
             업적
-          </a>
+          </a> -->
           <a href="#" class="menu-item">
             <i class="fas fa-sign-out-alt"></i>
             로그아웃
@@ -278,11 +278,7 @@ export default {
         document.body.style.overflow = '';
       }
     },
-    // 수정: 프로필 메뉴 닫기 메서드 추가
-    closeProfileMenu() {
-      this.showProfileMenu = false;
-      document.body.style.overflow = '';
-    },
+    
     openNotifications() {
       // 알림 메뉴 열기 로직
     },
@@ -836,7 +832,7 @@ export default {
 .stat-card,
 .mode-card,
 .activity-item {
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn 0.65s ease-out;
 }
 
 /* Custom Scrollbar */
