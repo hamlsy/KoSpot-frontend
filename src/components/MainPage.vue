@@ -190,7 +190,7 @@
               <p>{{ userProfile.email }}</p>
             </div>
           </div>
-          <button @click="toggleProfileMenu" class="close-menu">
+          <button @click="closeProfileMenu" class="close-menu">
             <i class="fas fa-times"></i>
           </button>
         </div>
@@ -278,7 +278,10 @@ export default {
         document.body.style.overflow = '';
       }
     },
-    
+    closeProfileMenu() {
+      this.showProfileMenu = false;
+      document.body.style.overflow = '';
+    },
     openNotifications() {
       // 알림 메뉴 열기 로직
     },
