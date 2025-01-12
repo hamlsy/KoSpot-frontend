@@ -7,6 +7,7 @@ import HomePage from '@/components/HomePage.vue';
 import MainPage from '@/components/MainPage.vue';
 import RoadViewPractice from '@/components/roadViewMode/RoadViewPractice.vue';
 import TestMapPage from '@/components/TestMapPage.vue';
+import MyInfoPage from '@/components/MyInfoPage.vue';
 
 
 Vue.use(VueRouter);
@@ -40,6 +41,11 @@ const routes = [
         path:'/roadViewPractice',
         name: "RoadViewPractice",
         component: RoadViewPractice
+    },
+    {
+        path: '/myInfoPage',
+        name: "MyInfoPage",
+        component: MyInfoPage
     },
     {
         path: '/tempPage',
