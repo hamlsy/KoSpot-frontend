@@ -8,6 +8,7 @@ import MainPage from '@/components/MainPage.vue';
 import RoadViewPractice from '@/components/roadViewMode/RoadViewPractice.vue';
 import TestMapPage from '@/components/TestMapPage.vue';
 import MyInfoPage from '@/components/MyInfoPage.vue';
+import CoordData from '@/components/dummy/coordData.vue';
 
 
 Vue.use(VueRouter);
@@ -57,7 +58,11 @@ const routes = [
         name: "TestMapPage",
         component: TestMapPage
     },
-
+    {
+        path: '/coordData',
+        name: "CoordData",
+        component: CoordData
+    }
 ]
 
 const router = new VueRouter({
