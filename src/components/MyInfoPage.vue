@@ -821,18 +821,19 @@ export default {
   }
 
   .play-record {
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     text-align: center;
+
   }
 
   .play-icon {
     margin-right: 0;
-    margin-bottom: 16px;
+    margin-bottom: 0px;
   }
 
   .play-stats {
-    margin-top: 16px;
+    margin-top: 0px;
     text-align: center;
   }
 }
