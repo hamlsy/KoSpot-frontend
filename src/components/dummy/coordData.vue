@@ -43,19 +43,21 @@ export default {
         }
       }, 100);
     },
-    async getValidPanoId(lat, lng) {
+    getValidPanoId(lat, lng) {
       // var roadview = new kakao.maps.Roadview();
+      var container = document.getElementById('roadview');
+      let roadviewClient = new kakao.maps.RoadviewClient(),
+      position = new kakao.maps.LatLng(lat, lng),
+      roadview = new kakao.maps.Roadview(container);
 
-      var roadviewClient = new kakao.maps.RoadviewClient();
-      var position = new kakao.maps.LatLng(lat, lng);
       console.log("position: ", position.getLat(), position.getLng());
-      roadviewClient.getNearestPanoId(position, 300, (panoId) => {
-        console.log("changed position: ", position.getLat(), position.getLng());
-        console.log(panoId);
-        return panoId;
+      roadviewClient.getNearestPanoId(position, 100, (panoId) => {
+        roadview.setPanoId(panoId, position);
+        console.log("panoId: ", panoId);
       });
+      console.log("roadview position is : ", roadview.getPosition().toString());
     },
-    async processExcel() {
+    processExcel() {
       if (!this.file) {
         alert("엑셀 파일을 업로드하세요.");
         return;
@@ -65,7 +67,7 @@ export default {
       this.stopRequested = false; // 중단 요청 초기화
 
       const reader = new FileReader();
-      reader.onload = async (e) => {
+      reader.onload = (e) => {
         const workbook = XLSX.read(e.target.result, { type: "binary" });
 
         for (const sheetName of workbook.SheetNames) {
@@ -82,13 +84,13 @@ export default {
             let lat = jsonData[i][5]; // F 라인
             let lng = jsonData[i][6]; // G 라인
             if (!lat || !lng) continue;
-
-            const panoId = await this.getValidPanoId(lat, lng);
+            
+            const panoId = this.getValidPanoId(lat, lng);
             console.log(panoId);
             if (panoId) {
               jsonData[i][7] = "변경 없음"; // H 라인
             } else {
-              const newPanoId = await this.getValidPanoId(lat, lng);
+              const newPanoId = this.getValidPanoId(lat, lng);
               console.log("new panoId: ", newPanoId);
               if (newPanoId) {
                 jsonData[i][8] = lat; // I 라인 (변경 전 위도)
@@ -133,3 +135,11 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.roadview {
+  width: 100%;
+  height: 300px;
+}
+
+</style>

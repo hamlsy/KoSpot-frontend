@@ -9,6 +9,7 @@ import RoadViewPractice from '@/components/roadViewMode/RoadViewPractice.vue';
 import TestMapPage from '@/components/TestMapPage.vue';
 import MyInfoPage from '@/components/MyInfoPage.vue';
 import CoordData from '@/components/dummy/coordData.vue';
+import KakaoMapTest from '@/components/dummy/KakaoMapTest.vue';
 
 
 Vue.use(VueRouter);
@@ -62,6 +63,11 @@ const routes = [
         path: '/coordData',
         name: "CoordData",
         component: CoordData
+    },
+    {
+        path: '/kakaoMapTest',
+        name: "KakaoMapTest",
+        component: KakaoMapTest
     }
 ]
 
