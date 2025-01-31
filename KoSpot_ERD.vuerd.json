@@ -4,8 +4,8 @@
   "settings": {
     "width": 2000,
     "height": 2000,
-    "scrollTop": -465.5999,
-    "scrollLeft": -246.6267,
+    "scrollTop": -335.5999,
+    "scrollLeft": -626,
     "zoomLevel": 0.73,
     "show": 431,
     "database": 4,
@@ -188,35 +188,6 @@
         "meta": {
           "updateAt": 1735724856373,
           "createAt": 1735721941336
-        }
-      },
-      "kpDk2ISe52C3rEBgh4z4q": {
-        "id": "kpDk2ISe52C3rEBgh4z4q",
-        "name": "GameRecord",
-        "comment": "각 게임의 기록",
-        "columnIds": [
-          "9ERApU-md9qaoQr7k-m8y",
-          "wrcswYk32OwwnDb69XLKI",
-          "lJzoYPNS2GKNG4Qa-M1MI",
-          "-E7ITZtDfY2HlloC_h6zs"
-        ],
-        "seqColumnIds": [
-          "9ERApU-md9qaoQr7k-m8y",
-          "wrcswYk32OwwnDb69XLKI",
-          "lJzoYPNS2GKNG4Qa-M1MI",
-          "-E7ITZtDfY2HlloC_h6zs"
-        ],
-        "ui": {
-          "x": 997.1849,
-          "y": 85.9726,
-          "zIndex": 117,
-          "widthName": 70,
-          "widthComment": 81,
-          "color": "#3F00FF"
-        },
-        "meta": {
-          "updateAt": 1736811857000,
-          "createAt": 1735722276640
         }
       },
       "j1fAL0oNrhNtNIKSAAFuu": {
@@ -753,86 +724,6 @@
         "meta": {
           "updateAt": 1735723973843,
           "createAt": 1735721976983
-        }
-      },
-      "9ERApU-md9qaoQr7k-m8y": {
-        "id": "9ERApU-md9qaoQr7k-m8y",
-        "tableId": "kpDk2ISe52C3rEBgh4z4q",
-        "name": "",
-        "comment": "",
-        "dataType": "",
-        "default": "",
-        "options": 0,
-        "ui": {
-          "keys": 0,
-          "widthName": 60,
-          "widthComment": 60,
-          "widthDataType": 60,
-          "widthDefault": 60
-        },
-        "meta": {
-          "updateAt": 1735722287327,
-          "createAt": 1735722287327
-        }
-      },
-      "wrcswYk32OwwnDb69XLKI": {
-        "id": "wrcswYk32OwwnDb69XLKI",
-        "tableId": "kpDk2ISe52C3rEBgh4z4q",
-        "name": "",
-        "comment": "",
-        "dataType": "",
-        "default": "",
-        "options": 0,
-        "ui": {
-          "keys": 0,
-          "widthName": 60,
-          "widthComment": 60,
-          "widthDataType": 60,
-          "widthDefault": 60
-        },
-        "meta": {
-          "updateAt": 1735722287458,
-          "createAt": 1735722287458
-        }
-      },
-      "lJzoYPNS2GKNG4Qa-M1MI": {
-        "id": "lJzoYPNS2GKNG4Qa-M1MI",
-        "tableId": "kpDk2ISe52C3rEBgh4z4q",
-        "name": "",
-        "comment": "",
-        "dataType": "",
-        "default": "",
-        "options": 0,
-        "ui": {
-          "keys": 0,
-          "widthName": 60,
-          "widthComment": 60,
-          "widthDataType": 60,
-          "widthDefault": 60
-        },
-        "meta": {
-          "updateAt": 1735722287712,
-          "createAt": 1735722287712
-        }
-      },
-      "-E7ITZtDfY2HlloC_h6zs": {
-        "id": "-E7ITZtDfY2HlloC_h6zs",
-        "tableId": "kpDk2ISe52C3rEBgh4z4q",
-        "name": "",
-        "comment": "",
-        "dataType": "",
-        "default": "",
-        "options": 0,
-        "ui": {
-          "keys": 0,
-          "widthName": 60,
-          "widthComment": 60,
-          "widthDataType": 60,
-          "widthDefault": 60
-        },
-        "meta": {
-          "updateAt": 1735722287865,
-          "createAt": 1735722287865
         }
       },
       "kdhhLSmRZxMCCBxLRZ4G_": {
@@ -1732,40 +1623,6 @@
       {
         "name": 1735723973843
       }
-    ],
-    "kpDk2ISe52C3rEBgh4z4q": [
-      "tableEntities",
-      1735722276640,
-      1736821227127,
-      {
-        "name": 1735722282076,
-        "comment": 1735722285277,
-        "ui.color": 1735722309788
-      }
-    ],
-    "9ERApU-md9qaoQr7k-m8y": [
-      "tableColumnEntities",
-      1735722287326,
-      -1,
-      {}
-    ],
-    "wrcswYk32OwwnDb69XLKI": [
-      "tableColumnEntities",
-      1735722287458,
-      -1,
-      {}
-    ],
-    "lJzoYPNS2GKNG4Qa-M1MI": [
-      "tableColumnEntities",
-      1735722287712,
-      -1,
-      {}
-    ],
-    "-E7ITZtDfY2HlloC_h6zs": [
-      "tableColumnEntities",
-      1735722287864,
-      -1,
-      {}
     ],
     "j1fAL0oNrhNtNIKSAAFuu": [
       "tableEntities",

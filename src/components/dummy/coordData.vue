@@ -127,7 +127,7 @@ export default {
   mounted() {
     const script = document.createElement("script");
     script.src =
-      "https://dapi.kakao.com/v2/maps/sdk.js?appkey=YOUR_KAKAO_API_KEY&libraries=services";
+      "https://dapi.kakao.com/v2/maps/sdk.js?appkey=c66fbf360458039285570a638bad813a&libraries=services&autoload=false";
     script.onload = () => console.log("Kakao Map API loaded");
     document.head.appendChild(script);
   },
