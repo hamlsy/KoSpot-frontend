@@ -49,7 +49,7 @@ export default {
       var roadviewClient = new kakao.maps.RoadviewClient();
       var position = new kakao.maps.LatLng(lat, lng);
       console.log("position: ", position.getLat(), position.getLng());
-      roadviewClient.getNearestPanoId(position, 50, (panoId) => {
+      roadviewClient.getNearestPanoId(position, 300, (panoId) => {
         console.log("changed position: ", position.getLat(), position.getLng());
         console.log(panoId);
         return panoId;
