@@ -51,8 +51,8 @@ export default {
       let roadviewClient = new kakao.maps.RoadviewClient(),
         position = new kakao.maps.LatLng(lat, lng),
         roadview = new kakao.maps.Roadview(container);
-
-      console.log("position: ", position.getLat(), position.getLng());
+      console.log("---------START----------");
+      console.log("first position: ", position.getLat(), position.getLng());
       roadviewClient.getNearestPanoId(position, 400, function (panoId) {
         roadview.setPanoId(panoId, position);
       });
@@ -69,7 +69,7 @@ export default {
           .replace(/[()]/g, "")
           .split(",")[1];
         console.log(
-          "currentLat: ",
+          "Listener event! currentLat: ",
           this.currentLat,
           "currentLng: ",
           this.currentLng
@@ -77,17 +77,27 @@ export default {
       });
       return new kakao.maps.LatLng(this.currentLat, this.currentLng);
     },
-    processExcel() {
+    async processExcel() {
       if (!this.file) {
         alert("엑셀 파일을 업로드하세요.");
         return;
       }
       this.isProcessing = true;
       this.progressMessage = "파일 처리 중...";
+      await new Promise((resolve) => setTimeout(resolve, 500));
       this.stopRequested = false; // 중단 요청 초기화
 
+      // 첫 요청 초기화
+      var container = document.getElementById("roadview");
+      let roadviewClient = new kakao.maps.RoadviewClient(),
+        position = new kakao.maps.LatLng(37.5666103, 126.9783882), //서울
+        roadview = new kakao.maps.Roadview(container);
+      roadviewClient.getNearestPanoId(position, 400, function (panoId) {
+        roadview.setPanoId(panoId, position);
+      });
+
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         const workbook = XLSX.read(e.target.result, { type: "binary" });
 
         for (const sheetName of workbook.SheetNames) {
@@ -105,24 +115,32 @@ export default {
             let lng = jsonData[i][6]; // G 라인
             if (!lat || !lng) continue;
 
-            const panoId = this.getValidPosition(lat, lng);
-            
-            if (panoId) {
+            const newPosition = this.getValidPosition(lat, lng);
+            await new Promise((resolve) => setTimeout(resolve, 650));
+
+            if (newPosition.getLat() === lat && newPosition.getLng() === lng) {
               jsonData[i][7] = "변경 없음"; // H 라인
             } else {
-              const newPosition = this.getValidPosition(lat, lng);
-              
-              if (newPosition.getLat()!==lat || newPosition.getLng()!==lng) {
+              if (
+                newPosition.getLat() !== lat ||
+                newPosition.getLng() !== lng
+              ) {
                 jsonData[i][8] = lat; // I 라인 (변경 전 위도)
                 jsonData[i][9] = lng; // J 라인 (변경 전 경도)
                 jsonData[i][5] = newPosition.getLat(); // 새로운 위도
                 jsonData[i][6] = newPosition.getLng(); // 새로운 경도
                 jsonData[i][7] = "변경됨";
+                console.log(
+                  "new Position!: ",
+                  newPosition.getLat(),
+                  newPosition.getLng()
+                );
               } else {
                 jsonData[i][7] = "변경 불가";
               }
             }
             console.log(`${sheetName} - ${i}: ${jsonData[i][7]}`);
+            console.log("----------END---------");
           }
 
           workbook.Sheets[sheetName] = XLSX.utils.aoa_to_sheet(jsonData);
@@ -157,7 +175,7 @@ export default {
 </script>
 
 <style scoped>
-.roadview {
+#roadview {
   width: 100%;
   height: 300px;
 }
