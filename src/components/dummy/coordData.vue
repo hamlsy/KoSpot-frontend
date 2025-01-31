@@ -21,6 +21,8 @@ export default {
       downloadUrl: null,
       progressMessage: "",
       stopRequested: false,
+      currentLat: "",
+      currentLng: "",
     };
   },
   methods: {
@@ -43,19 +45,37 @@ export default {
         }
       }, 100);
     },
-    getValidPanoId(lat, lng) {
+    getValidPosition(lat, lng) {
       // var roadview = new kakao.maps.Roadview();
-      var container = document.getElementById('roadview');
+      var container = document.getElementById("roadview");
       let roadviewClient = new kakao.maps.RoadviewClient(),
-      position = new kakao.maps.LatLng(lat, lng),
-      roadview = new kakao.maps.Roadview(container);
+        position = new kakao.maps.LatLng(lat, lng),
+        roadview = new kakao.maps.Roadview(container);
 
       console.log("position: ", position.getLat(), position.getLng());
-      roadviewClient.getNearestPanoId(position, 100, (panoId) => {
+      roadviewClient.getNearestPanoId(position, 400, function (panoId) {
         roadview.setPanoId(panoId, position);
-        console.log("panoId: ", panoId);
       });
-      console.log("roadview position is : ", roadview.getPosition().toString());
+
+      kakao.maps.event.addListener(roadview, "panoid_changed", () => {
+        this.currentLat = roadview
+          .getPosition()
+          .toString()
+          .replace(/[()]/g, "")
+          .split(",")[0];
+        this.currentLng = roadview
+          .getPosition()
+          .toString()
+          .replace(/[()]/g, "")
+          .split(",")[1];
+        console.log(
+          "currentLat: ",
+          this.currentLat,
+          "currentLng: ",
+          this.currentLng
+        );
+      });
+      return new kakao.maps.LatLng(this.currentLat, this.currentLng);
     },
     processExcel() {
       if (!this.file) {
@@ -84,19 +104,19 @@ export default {
             let lat = jsonData[i][5]; // F 라인
             let lng = jsonData[i][6]; // G 라인
             if (!lat || !lng) continue;
+
+            const panoId = this.getValidPosition(lat, lng);
             
-            const panoId = this.getValidPanoId(lat, lng);
-            console.log(panoId);
             if (panoId) {
               jsonData[i][7] = "변경 없음"; // H 라인
             } else {
-              const newPanoId = this.getValidPanoId(lat, lng);
-              console.log("new panoId: ", newPanoId);
-              if (newPanoId) {
+              const newPosition = this.getValidPosition(lat, lng);
+              
+              if (newPosition.getLat()!==lat || newPosition.getLng()!==lng) {
                 jsonData[i][8] = lat; // I 라인 (변경 전 위도)
                 jsonData[i][9] = lng; // J 라인 (변경 전 경도)
-                jsonData[i][5] = newPanoId.lat; // 새로운 위도
-                jsonData[i][6] = newPanoId.lng; // 새로운 경도
+                jsonData[i][5] = newPosition.getLat(); // 새로운 위도
+                jsonData[i][6] = newPosition.getLng(); // 새로운 경도
                 jsonData[i][7] = "변경됨";
               } else {
                 jsonData[i][7] = "변경 불가";
@@ -141,5 +161,4 @@ export default {
   width: 100%;
   height: 300px;
 }
-
 </style>
