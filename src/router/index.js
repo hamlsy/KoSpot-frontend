@@ -10,6 +10,7 @@ import TestMapPage from '@/components/TestMapPage.vue';
 import MyInfoPage from '@/components/MyInfoPage.vue';
 import CoordData from '@/components/dummy/coordData.vue';
 import KakaoMapTest from '@/components/dummy/KakaoMapTest.vue';
+import EncryptTest from '@/components/dummy/EncryptTest.vue';
 
 
 Vue.use(VueRouter);
@@ -68,6 +69,11 @@ const routes = [
         path: '/kakaoMapTest',
         name: "KakaoMapTest",
         component: KakaoMapTest
+    },
+    {
+        path: '/encryptTest',
+        name: "EncryptTest",
+        component: EncryptTest
     }
 ]
 
