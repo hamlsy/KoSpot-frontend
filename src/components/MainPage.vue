@@ -45,11 +45,11 @@
           <div
             v-for="(banner, index) in banners"
             :key="index"
-            class="featured-challenge"
+            class="main-banner"
             :style="{ backgroundImage: `url(${banner.image})` }"
           >
-            <div class="challenge-content">
-              <div class="challenge-badge">{{ banner.badge }}</div>
+            <div class="main-banner-content">
+              <div class="main-banner-badge">{{ banner.badge }}</div>
               <h2>{{ banner.title }}</h2>
               <p>{{ banner.description }}</p>
             </div>
@@ -71,7 +71,6 @@
 
       <!-- Game Modes -->
       <section class="game-modes">
-        <!-- <h2 class="section-title">게임 모드</h2> -->
         <div class="modes-grid">
           <div
             class="mode-card roadview"
@@ -128,7 +127,7 @@
           <div class="stat-card">
             <div class="stat-icon">📊</div>
             <div class="stat-info">
-              <span class="stat-value">전체통계</span>
+              <span class="stat-value">통계</span>
               <span class="stat-label">플레이 정보</span>
             </div>
           </div>
@@ -183,12 +182,33 @@
                 >{{ notice.category }}</span
               >
               <h3 class="notice-title">{{ notice.title }}</h3>
-              <span class="notice-date">{{ notice.date }}</span>
             </div>
-            <i class="fas fa-chevron-right notice-arrow"></i>
+            <span class="notice-date">{{ notice.date }}</span>
           </div>
         </div>
       </section>
+      
+<section class="notices-section">
+  <div class="section-header">
+    <h2 class="section-title">이벤트</h2>
+    <a href="/eventList" class="view-all">
+      전체보기 <i class="fas fa-angle-right"></i>
+    </a>
+  </div>
+  <div class="notices-list">
+    <div
+      class="notice-item"
+      v-for="event in events"
+      :key="event.id"
+    >
+      <div class="notice-info">
+        <span class="notice-category event">이벤트</span>
+        <h3 class="notice-title">{{ event.title }}</h3>
+      </div>
+      <span class="notice-date">{{ event.date }}</span>
+    </div>
+  </div>
+</section>
     </main>
     <!-- 수정: 프로필 메뉴 오버레이 추가 -->
     <transition name="fade">
@@ -275,22 +295,22 @@ export default {
       },
       banners: [
         {
-          image: "/images/jeju-banner.jpg",
-          badge: "오늘의 도전",
-          title: "제주도 스팟 5개 연속 성공",
-          description: "성공 시 500포인트 지급",
+          image: "@/assets/banner/Seoul-Dongdaemun-Gate.jpg",
+          badge: "뱃지1",
+          title: "타이틀 1",
+          description: "설명 1",
         },
         {
           image: "/images/seoul-banner.jpg",
-          badge: "주간 챌린지",
-          title: "서울 도심 핫스팟 10개 완료",
-          description: "성공 시 특별 뱃지와 800포인트 지급",
+          badge: "뱃지2",
+          title: "타이틀 2",
+          description: "설명 2",
         },
         {
           image: "/images/busan-banner.jpg",
-          badge: "지역 특집",
-          title: "부산 해안 로드뷰 마스터",
-          description: "성공 시 한정판 아이템 획득",
+          badge: "뱃지3",
+          title: "타이틀 3",
+          description: "설명 3",
         },
       ],
       recentNotices: [
@@ -314,12 +334,6 @@ export default {
         },
         {
           id: 4,
-          category: "업데이트",
-          title: "새로운 지역 추가: 강원도 동해안",
-          date: "2025.03.05",
-        },
-        {
-          id: 5,
           category: "이벤트",
           title: "친구 초대 시 포인트 2배 이벤트",
           date: "2025.03.04",
@@ -403,6 +417,7 @@ export default {
 </script>
 
 <style scoped>
+@import url("../assets/styles/main_page/notice-section/notice.css");
 .app-container {
   min-height: 100vh;
   /* background: #f8f9fa; */
@@ -558,7 +573,7 @@ export default {
   width: 100%;
 }
 
-.featured-challenge {
+.main-banner {
   flex: 0 0 100%;
   height: 300px;
   background-size: cover;
@@ -566,7 +581,7 @@ export default {
   position: relative;
 }
 
-.challenge-content {
+.main-banner-content {
   position: absolute;
   bottom: 0;
   left: 0;
@@ -576,7 +591,7 @@ export default {
   color: white;
 }
 
-.challenge-badge {
+.main-banner-badge {
   display: inline-block;
   padding: 6px 12px;
   background: rgba(255, 255, 255, 0.2);
@@ -586,7 +601,7 @@ export default {
   backdrop-filter: blur(5px);
 }
 
-.challenge-content h2 {
+.main-banner-content h2 {
   font-size: 28px;
   margin-bottom: 10px;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
@@ -835,143 +850,6 @@ export default {
   margin-left: 2px;
 }
 
-
-/* 공지사항 섹션 */
-.notices-section {
-  background: white;
-  border-radius: 20px;
-  padding: 24px;
-  margin-bottom: 32px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-.notices-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.notice-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px;
-  border-radius: 12px;
-  background: #f9fafb;
-  transition: background 0.2s;
-  cursor: pointer;
-}
-
-.notice-item:hover {
-  background: #f3f4f6;
-}
-
-.notice-info {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.notice-category {
-  display: inline-block;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 12px;
-  color: white;
-}
-
-.notice-category.업데이트 {
-  background: #3b82f6;
-}
-
-.activity-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.activity-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.activity-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-}
-
-.activity-icon.success {
-  background: #dcfce7;
-  color: #16a34a;
-}
-
-.activity-icon.achievement {
-  background: #fef3c7;
-  color: #d97706;
-}
-
-.activity-icon.friend {
-  background: #dbeafe;
-  color: #2563eb;
-}
-
-.activity-details {
-  flex: 1;
-}
-
-.activity-text {
-  font-size: 14px;
-  color: #1f2937;
-  margin-bottom: 4px;
-}
-
-.activity-time {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background: white;
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
-  z-index: 1000;
-}
-
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 8px;
-  color: #6b7280;
-  font-size: 12px;
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
-.nav-item i {
-  font-size: 20px;
-}
-
-.nav-item.active {
-  color: #2563eb;
-}
-
 /* 수정: 오버레이 스타일 추가 */
 .overlay {
   position: fixed;
@@ -1089,7 +967,7 @@ export default {
     grid-template-columns: 1fr;
   }
 
-  .featured-challenge {
+  .main-banner {
     height: 150px;
   }
 
