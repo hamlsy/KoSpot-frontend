@@ -18,11 +18,12 @@ export default {
 
 <style>
 @import url("@/assets/styles/common/reset.css");
-@import url("@/assets/styles/common/header.css");
+/* @import url("@/assets/styles/common/header.css"); */
 
 body {
   font-family: "Pretendard Variable", Pretendard;
   margin: 0px;
+  background: #ffffff;
 }
 #app {
   font-family: "Pretendard Variable", Pretendard;

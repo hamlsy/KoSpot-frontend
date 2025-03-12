@@ -403,55 +403,6 @@ export default {
   background-color: #f6f6f6;
 }
 
-.header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background: #ffffff;
-  z-index: 1000;
-}
-
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 100%;
-  padding: 0 20px;
-  width: 100%;
-  margin: 0;
-}
-
-.header-left {
-  margin-left: 5%;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.header-right {
-  margin-right: 5%;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.logo {
-  font-size: 24px;
-  font-weight: 700;
-  color: #2563eb;
-}
-
-.badge {
-  padding: 2px 6px;
-  background: #dbeafe;
-  color: #2563eb;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
 /* 메인 네비게이션 - 웹 전용 */
 .main-nav {
   display: flex;
