@@ -187,28 +187,6 @@
           </div>
         </div>
       </section>
-      
-<section class="notices-section">
-  <div class="section-header">
-    <h2 class="section-title">이벤트</h2>
-    <a href="/eventList" class="view-all">
-      전체보기 <i class="fas fa-angle-right"></i>
-    </a>
-  </div>
-  <div class="notices-list">
-    <div
-      class="notice-item"
-      v-for="event in events"
-      :key="event.id"
-    >
-      <div class="notice-info">
-        <span class="notice-category event">이벤트</span>
-        <h3 class="notice-title">{{ event.title }}</h3>
-      </div>
-      <span class="notice-date">{{ event.date }}</span>
-    </div>
-  </div>
-</section>
     </main>
     <!-- 수정: 프로필 메뉴 오버레이 추가 -->
     <transition name="fade">
@@ -295,13 +273,13 @@ export default {
       },
       banners: [
         {
-          image: "@/assets/banner/Seoul-Dongdaemun-Gate.jpg",
+          image: require("@/assets/banner/Seoul-Dongdaemun-Gate.jpg"),
           badge: "뱃지1",
           title: "타이틀 1",
           description: "설명 1",
         },
         {
-          image: "/images/seoul-banner.jpg",
+          image: require("@/assets/banner/Seoul-temp1.jpg"),
           badge: "뱃지2",
           title: "타이틀 2",
           description: "설명 2",
@@ -417,12 +395,12 @@ export default {
 </script>
 
 <style scoped>
-@import url("../assets/styles/main_page/notice-section/notice.css");
+@import url("@/assets/styles/main_page/notice-section/notice.css");
+@import url("@/assets/styles/main_page/banner/main-banner.css");
+
 .app-container {
   min-height: 100vh;
-  /* background: #f8f9fa; */
-  background: #f0f4f9;
-  padding-bottom: 60px;
+  background-color: #F6F6F6;
 }
 
 .header {
@@ -432,7 +410,6 @@ export default {
   right: 0;
   height: 60px;
   background: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   z-index: 1000;
 }
 
@@ -442,7 +419,6 @@ export default {
   align-items: center;
   height: 100%;
   padding: 0 20px;
-  /* max-width: 1200px; */
   width: 100%;
   margin: 0;
 }
@@ -557,124 +533,29 @@ export default {
   margin: 0 auto;
 }
 
-/* 배너 캐러셀 */
-.banner-carousel {
-  position: relative;
-  overflow: hidden;
-  border-radius: 24px;
-  margin-top: 24px;
-  margin-bottom: 32px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.banner-container {
-  display: flex;
-  transition: transform 0.5s ease-in-out;
-  width: 100%;
-}
-
-.main-banner {
-  flex: 0 0 100%;
-  height: 300px;
-  background-size: cover;
-  background-position: center;
-  position: relative;
-}
-
-.main-banner-content {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 30px;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
-  color: white;
-}
-
-.main-banner-badge {
-  display: inline-block;
-  padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  font-size: 13px;
-  margin-bottom: 10px;
-  backdrop-filter: blur(5px);
-}
-
-.main-banner-content h2 {
-  font-size: 28px;
-  margin-bottom: 10px;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-.challenge-button {
-  background: #2563eb;
-  color: white;
-  border: none;
-  padding: 10px 18px;
-  border-radius: 12px;
-  font-weight: 600;
-  margin-top: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
-}
-
-.challenge-button:hover {
-  background: #1d4ed8;
-  transform: translateY(-2px);
-}
-
-.banner-dots {
-  position: absolute;
-  bottom: 15px;
-  right: 20px;
-  display: flex;
-  gap: 8px;
-}
-
-.banner-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.5);
-  border: none;
-  cursor: pointer;
-  transition: background 0.3s, transform 0.3s;
-}
-
-.banner-dot.active {
-  background: white;
-  transform: scale(1.2);
-}
-
-.banner-dot:hover {
-  background: white;
-}
 
 .stats-container {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 15px;
   margin-bottom: 24px;
+
 }
 
 .stat-card {
-  background: white;
+  background-color: #FFFFFF;
   border-radius: 16px;
   padding: 16px;
   display: flex;
   align-items: center;
   gap: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.3s ease;
+  border: 1px solid #E7E7E7;
 }
 
 .stat-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+  /* box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08); */
 }
 
 .stat-icon {
@@ -737,17 +618,19 @@ export default {
   border-radius: 20px;
   padding: 20px;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  /* transition: transform 0.2s, box-shadow 0.2s; */
+  transition: transform 0.2s;
+  border: 1px solid #eeeeee
+  /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04); */
 }
 
 .mode-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  /* box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); */
 }
 
 .mode-background {
-  position: absolute;
+  position: relative;
   top: 0;
   left: 0;
   right: 0;
@@ -791,6 +674,7 @@ export default {
   z-index: 10;
   color: white;
   font-weight: 700;
+  border-radius: 20px;
 }
 
 .mode-overlay i {
@@ -870,7 +754,7 @@ export default {
   width: 300px;
   background: white;
   z-index: 1002;
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  /* box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1); */
   padding: 24px;
   overflow-y: auto;
 }

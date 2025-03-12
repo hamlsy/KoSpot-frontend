@@ -4,7 +4,6 @@
 </template>
 
 <script>
-// import HelloWorld from './components/HelloWorld.vue'
 
 export default {
   name: "App",
@@ -19,8 +18,11 @@ export default {
 </script>
 
 <style>
+@import url("@/assets/styles/common/reset.css");
+
 body {
   font-family: "Pretendard Variable", Pretendard;
+  margin: 0px;
 }
 #app {
   font-family: "Pretendard Variable", Pretendard;
