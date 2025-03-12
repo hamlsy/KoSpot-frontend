@@ -400,7 +400,7 @@ export default {
 
 .app-container {
   min-height: 100vh;
-  background-color: #F6F6F6;
+  background-color: #f6f6f6;
 }
 
 .header {
@@ -533,24 +533,22 @@ export default {
   margin: 0 auto;
 }
 
-
 .stats-container {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 15px;
   margin-bottom: 24px;
-
 }
 
 .stat-card {
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   border-radius: 16px;
   padding: 16px;
   display: flex;
   align-items: center;
   gap: 12px;
   transition: transform 0.3s ease;
-  border: 1px solid #E7E7E7;
+  border: 1px solid #e7e7e7;
 }
 
 .stat-card:hover {
@@ -620,7 +618,7 @@ export default {
   cursor: pointer;
   /* transition: transform 0.2s, box-shadow 0.2s; */
   transition: transform 0.2s;
-  border: 1px solid #eeeeee
+  border: 1px solid #eeeeee;
   /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04); */
 }
 

@@ -1,10 +1,15 @@
 <template>
   <div class="road-view-container">
+    <!-- Header -->
     <header class="header">
       <button class="back-button" @click="$router.push('/mainPage')">
         <i class="fas fa-arrow-left"></i>
       </button>
-      <h3>로드뷰 모드</h3>
+      <div class="header-content">
+        <div class="header-left">
+          <h3>로드뷰 모드</h3>
+        </div>
+      </div>
     </header>
 
     <main class="main-content">
@@ -130,39 +135,6 @@
       </div>
       
     </transition>
-    <nav class="bottom-nav">
-      <button class="nav-item active">
-        <i class="fas fa-home"></i>
-      </button>
-      <button class="nav-item">
-        <i class="fas fa-history"></i>
-        <span></span>
-      </button>
-      <button class="nav-item" @click="toggleProfileMenu">
-        <i class="fas fa-user"></i>
-      </button>
-    </nav>
-    <transition name="slide-menu">
-      <div v-if="showProfileMenu" class="profile-menu">
-        <div class="profile-menu-header">
-          <h2>내 정보</h2>
-          <button @click="toggleProfileMenu" class="close-menu">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <nav class="profile-menu-nav">
-          <a href="#" class="menu-item">설정</a>
-          <a href="#" class="menu-item">공지사항</a>
-          <a href="#" class="menu-item">도움말</a>
-          <a href="#" class="menu-item">로그아웃</a>
-        </nav>
-      </div>
-    </transition>
-    <div
-      v-if="showProfileMenu"
-      class="overlay"
-      @click="toggleProfileMenu"
-    ></div>
   </div>
 </template>
 

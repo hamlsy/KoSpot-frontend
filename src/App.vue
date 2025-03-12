@@ -1,6 +1,5 @@
 <template>
-  <router-view>
-  </router-view>
+  <router-view></router-view>
 </template>
 
 <script>
@@ -19,6 +18,7 @@ export default {
 
 <style>
 @import url("@/assets/styles/common/reset.css");
+@import url("@/assets/styles/common/header.css");
 
 body {
   font-family: "Pretendard Variable", Pretendard;
