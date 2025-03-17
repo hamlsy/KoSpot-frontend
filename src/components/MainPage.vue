@@ -410,6 +410,15 @@ export default {
   margin-left: 40px;
 }
 
+@media (max-width: 768px) {
+  .main-nav {
+    display: none; /* 모바일에서 네비게이션 숨김 */
+  }
+  
+  .header-right {
+    margin-left: auto; /* 우측 정렬 유지 */
+  }
+}
 .nav-link {
   color: #4b5563;
   text-decoration: none;

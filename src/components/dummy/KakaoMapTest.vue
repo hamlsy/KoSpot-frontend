@@ -6,6 +6,8 @@
         <input type="text" v-model="lat" placeholder="위도" />
         <!-- 경도 -->
         <input type="text" v-model="lng" placeholder="경도" />
+        <!-- getNearestPanoId 범위 -->
+        <input type="text" v-model="panoIdRange" placeholder="PanoId 범위" />
         <div id="roadview"></div>
         <div id="initialMap"></div>
         <div id="updatedMap"></div>
@@ -23,6 +25,7 @@ export default {
             currentPosition: "",
             currentLat: "",
             currentLng: "",
+            panoIdRange: 50,
         };
     },
     methods: {
@@ -51,7 +54,7 @@ export default {
                 let roadviewClient = new kakao.maps.RoadviewClient();
                 let position = new kakao.maps.LatLng(this.lat, this.lng);
                 console.log("position: ", position.getLat(), position.getLng());
-                roadviewClient.getNearestPanoId(position, 400, function (panoId) {
+                roadviewClient.getNearestPanoId(position, this.panoIdRange, function (panoId) {
                     roadview.setPanoId(panoId, position);
                 });
                 kakao.maps.event.addListener(roadview, "panoid_changed", () => {
