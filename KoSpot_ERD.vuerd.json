@@ -4,9 +4,9 @@
   "settings": {
     "width": 2000,
     "height": 2000,
-    "scrollTop": -192,
-    "scrollLeft": -87,
-    "zoomLevel": 0.94,
+    "scrollTop": -335.5999,
+    "scrollLeft": -626,
+    "zoomLevel": 0.73,
     "show": 431,
     "database": 4,
     "databaseName": "KoSpot",
@@ -36,7 +36,6 @@
       "Fp8Tvot106OeFcHavsMXw",
       "s37TFPQwPKPGx67KPh2TQ",
       "JROzOaECox_0VdUvsnv2Q",
-      "kpDk2ISe52C3rEBgh4z4q",
       "j1fAL0oNrhNtNIKSAAFuu",
       "a57c92lMoVTttJ5G7xmbd",
       "2E3TlnP6gJsFEid-YYVqC",
@@ -65,15 +64,15 @@
           "0ulLheVvLeKJK4oGQdhkD"
         ],
         "ui": {
-          "x": 86.6277,
-          "y": 108.8192,
+          "x": 87.983,
+          "y": 74.7766,
           "zIndex": 2,
           "widthName": 60,
           "widthComment": 60,
           "color": "#FF0000"
         },
         "meta": {
-          "updateAt": 1736083393752,
+          "updateAt": 1736811847905,
           "createAt": 1735721685898
         }
       },
@@ -125,15 +124,15 @@
           "RaDPY_T-WbAkOuN2IRVoF"
         ],
         "ui": {
-          "x": 1224.1808,
-          "y": 302.4281,
+          "x": 1225.5507,
+          "y": 285.9898,
           "zIndex": 48,
           "widthName": 60,
           "widthComment": 60,
           "color": "#0003FF"
         },
         "meta": {
-          "updateAt": 1735724861107,
+          "updateAt": 1736811863152,
           "createAt": 1735721841271
         }
       },
@@ -191,35 +190,6 @@
           "createAt": 1735721941336
         }
       },
-      "kpDk2ISe52C3rEBgh4z4q": {
-        "id": "kpDk2ISe52C3rEBgh4z4q",
-        "name": "GameRecord",
-        "comment": "각 게임의 기록",
-        "columnIds": [
-          "9ERApU-md9qaoQr7k-m8y",
-          "wrcswYk32OwwnDb69XLKI",
-          "lJzoYPNS2GKNG4Qa-M1MI",
-          "-E7ITZtDfY2HlloC_h6zs"
-        ],
-        "seqColumnIds": [
-          "9ERApU-md9qaoQr7k-m8y",
-          "wrcswYk32OwwnDb69XLKI",
-          "lJzoYPNS2GKNG4Qa-M1MI",
-          "-E7ITZtDfY2HlloC_h6zs"
-        ],
-        "ui": {
-          "x": 532.6702,
-          "y": 84.3404,
-          "zIndex": 117,
-          "widthName": 70,
-          "widthComment": 81,
-          "color": "#3F00FF"
-        },
-        "meta": {
-          "updateAt": 1736083399208,
-          "createAt": 1735722276640
-        }
-      },
       "j1fAL0oNrhNtNIKSAAFuu": {
         "id": "j1fAL0oNrhNtNIKSAAFuu",
         "name": "GameMode",
@@ -235,15 +205,15 @@
           "IalegNqL3JkhwNoqJfgC0"
         ],
         "ui": {
-          "x": 1568,
-          "y": 214,
+          "x": 1596.7671,
+          "y": 145.5068,
           "zIndex": 142,
           "widthName": 64,
           "widthComment": 60,
           "color": "#5B69EA"
         },
         "meta": {
-          "updateAt": 1735724347200,
+          "updateAt": 1736811864668,
           "createAt": 1735722374474
         }
       },
@@ -301,15 +271,15 @@
           "W02ECcWMEdFHVe7newPtI"
         ],
         "ui": {
-          "x": 21.032,
-          "y": 503.3723,
+          "x": 81.3058,
+          "y": 449.9476,
           "zIndex": 200,
           "widthName": 72,
           "widthComment": 108,
           "color": "#FF00DA"
         },
         "meta": {
-          "updateAt": 1735724382697,
+          "updateAt": 1736811854169,
           "createAt": 1735723545719
         }
       },
@@ -371,15 +341,15 @@
           "IbDXGdb_qIxrMa6w8N1ef"
         ],
         "ui": {
-          "x": 510.1947,
-          "y": 296.6282,
+          "x": 499.2358,
+          "y": 99.3679,
           "zIndex": 300,
           "widthName": 130,
           "widthComment": 140,
           "color": "#F0FFDC"
         },
         "meta": {
-          "updateAt": 1735724812443,
+          "updateAt": 1736811852772,
           "createAt": 1735724295305
         }
       },
@@ -402,15 +372,15 @@
           "Zl7s9gCWG3ig5VxG50aAc"
         ],
         "ui": {
-          "x": 857.2621,
-          "y": 297.8722,
+          "x": 581.9196,
+          "y": 321.1598,
           "zIndex": 375,
           "widthName": 111,
           "widthComment": 60,
           "color": "#FF7A7A"
         },
         "meta": {
-          "updateAt": 1735724813393,
+          "updateAt": 1736821220793,
           "createAt": 1735724785051
         }
       }
@@ -754,86 +724,6 @@
         "meta": {
           "updateAt": 1735723973843,
           "createAt": 1735721976983
-        }
-      },
-      "9ERApU-md9qaoQr7k-m8y": {
-        "id": "9ERApU-md9qaoQr7k-m8y",
-        "tableId": "kpDk2ISe52C3rEBgh4z4q",
-        "name": "",
-        "comment": "",
-        "dataType": "",
-        "default": "",
-        "options": 0,
-        "ui": {
-          "keys": 0,
-          "widthName": 60,
-          "widthComment": 60,
-          "widthDataType": 60,
-          "widthDefault": 60
-        },
-        "meta": {
-          "updateAt": 1735722287327,
-          "createAt": 1735722287327
-        }
-      },
-      "wrcswYk32OwwnDb69XLKI": {
-        "id": "wrcswYk32OwwnDb69XLKI",
-        "tableId": "kpDk2ISe52C3rEBgh4z4q",
-        "name": "",
-        "comment": "",
-        "dataType": "",
-        "default": "",
-        "options": 0,
-        "ui": {
-          "keys": 0,
-          "widthName": 60,
-          "widthComment": 60,
-          "widthDataType": 60,
-          "widthDefault": 60
-        },
-        "meta": {
-          "updateAt": 1735722287458,
-          "createAt": 1735722287458
-        }
-      },
-      "lJzoYPNS2GKNG4Qa-M1MI": {
-        "id": "lJzoYPNS2GKNG4Qa-M1MI",
-        "tableId": "kpDk2ISe52C3rEBgh4z4q",
-        "name": "",
-        "comment": "",
-        "dataType": "",
-        "default": "",
-        "options": 0,
-        "ui": {
-          "keys": 0,
-          "widthName": 60,
-          "widthComment": 60,
-          "widthDataType": 60,
-          "widthDefault": 60
-        },
-        "meta": {
-          "updateAt": 1735722287712,
-          "createAt": 1735722287712
-        }
-      },
-      "-E7ITZtDfY2HlloC_h6zs": {
-        "id": "-E7ITZtDfY2HlloC_h6zs",
-        "tableId": "kpDk2ISe52C3rEBgh4z4q",
-        "name": "",
-        "comment": "",
-        "dataType": "",
-        "default": "",
-        "options": 0,
-        "ui": {
-          "keys": 0,
-          "widthName": 60,
-          "widthComment": 60,
-          "widthDataType": 60,
-          "widthDefault": 60
-        },
-        "meta": {
-          "updateAt": 1735722287865,
-          "createAt": 1735722287865
         }
       },
       "kdhhLSmRZxMCCBxLRZ4G_": {
@@ -1733,40 +1623,6 @@
       {
         "name": 1735723973843
       }
-    ],
-    "kpDk2ISe52C3rEBgh4z4q": [
-      "tableEntities",
-      1735722276640,
-      -1,
-      {
-        "name": 1735722282076,
-        "comment": 1735722285277,
-        "ui.color": 1735722309788
-      }
-    ],
-    "9ERApU-md9qaoQr7k-m8y": [
-      "tableColumnEntities",
-      1735722287326,
-      -1,
-      {}
-    ],
-    "wrcswYk32OwwnDb69XLKI": [
-      "tableColumnEntities",
-      1735722287458,
-      -1,
-      {}
-    ],
-    "lJzoYPNS2GKNG4Qa-M1MI": [
-      "tableColumnEntities",
-      1735722287712,
-      -1,
-      {}
-    ],
-    "-E7ITZtDfY2HlloC_h6zs": [
-      "tableColumnEntities",
-      1735722287864,
-      -1,
-      {}
     ],
     "j1fAL0oNrhNtNIKSAAFuu": [
       "tableEntities",

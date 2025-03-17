@@ -1,10 +1,19 @@
 <template>
   <div class="road-view-container">
+    <!-- Header -->
     <header class="header">
-      <button class="back-button" @click="$router.push('/mainPage')">
-        <i class="fas fa-arrow-left"></i>
-      </button>
-      <h3>로드뷰 모드</h3>
+      <div class="header-content">
+        <button class="back-button" @click="$router.push('/mainPage')">
+          <i class="fas fa-arrow-left"></i>
+        </button>
+        <div class="header-left">
+          <h1 class="logo">KoSpot</h1>
+          <span class="badge">Beta</span>
+        </div>
+        <div class="header-right">
+          <h3>로드뷰 모드</h3>
+        </div>
+      </div>
     </header>
 
     <main class="main-content">
@@ -100,12 +109,12 @@
             <h3>지역 선택</h3>
             <div class="region-selector">
               <button
-              v-for="(value, key) in regions"
-              :key="key"
-              :class="{ selected: selectedRegion === value }"
-              @click="selectRegion(value)"
+                v-for="(value, key) in regions"
+                :key="key"
+                :class="{ selected: selectedRegion === value }"
+                @click="selectRegion(value)"
               >
-              {{ key }}
+                {{ key }}
               </button>
             </div>
           </div>
@@ -128,46 +137,11 @@
           </button>
         </div>
       </div>
-      
     </transition>
-    <nav class="bottom-nav">
-      <button class="nav-item active">
-        <i class="fas fa-home"></i>
-      </button>
-      <button class="nav-item">
-        <i class="fas fa-history"></i>
-        <span></span>
-      </button>
-      <button class="nav-item" @click="toggleProfileMenu">
-        <i class="fas fa-user"></i>
-      </button>
-    </nav>
-    <transition name="slide-menu">
-      <div v-if="showProfileMenu" class="profile-menu">
-        <div class="profile-menu-header">
-          <h2>내 정보</h2>
-          <button @click="toggleProfileMenu" class="close-menu">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <nav class="profile-menu-nav">
-          <a href="#" class="menu-item">설정</a>
-          <a href="#" class="menu-item">공지사항</a>
-          <a href="#" class="menu-item">도움말</a>
-          <a href="#" class="menu-item">로그아웃</a>
-        </nav>
-      </div>
-    </transition>
-    <div
-      v-if="showProfileMenu"
-      class="overlay"
-      @click="toggleProfileMenu"
-    ></div>
   </div>
 </template>
 
 <script>
-
 export default {
   name: "RoadViewGame",
 
@@ -199,19 +173,19 @@ export default {
         },
       ],
       regions: {
-        "서울": "seoul",
-        "경기": "gyeonggi", 
-        "인천": "incheon",
-        "부산": "busan",
-        "대구": "daegu",
-        "대전": "daejeon",
-        "광주": "gwangju",
-        "울산": "ulsan",
-        "강원": "gangwon",
-        "충청": "chungcheong",
-        "전라": "jeolla",
-        "경상": "gyeongsang",
-        "제주": "jeju"
+        서울: "seoul",
+        경기: "gyeonggi",
+        인천: "incheon",
+        부산: "busan",
+        대구: "daegu",
+        대전: "daejeon",
+        광주: "gwangju",
+        울산: "ulsan",
+        강원: "gangwon",
+        충청: "chungcheong",
+        전라: "jeolla",
+        경상: "gyeongsang",
+        제주: "jeju",
       },
 
       stats: [
@@ -228,7 +202,7 @@ export default {
           mode: "랭크",
           score: 4850,
           date: "2024.12.29",
-          region: "서울",
+          region: "",
         },
         {
           id: 2,
@@ -242,7 +216,21 @@ export default {
           mode: "랭크",
           score: 4600,
           date: "2024.12.28",
-          region: "경기",
+          region: "",
+        },
+        {
+          id: 3,
+          mode: "랭크",
+          score: 4600,
+          date: "2024.12.28",
+          region: "",
+        },
+        {
+          id: 3,
+          mode: "랭크",
+          score: 4600,
+          date: "2024.12.28",
+          region: "",
         },
       ],
     };
@@ -308,27 +296,29 @@ export default {
 .back-button {
   background: none;
   border: none;
-  margin-right: 1rem;
+  margin-right: 0rem;
   font-size: 1.2rem;
   cursor: pointer;
 }
 
 .main-content {
-  padding: 1rem;
+  padding: 80px 20px 20px;
   max-width: 1200px;
+  /* padding: 1rem;
+  max-width: 1200px; */
   margin: 0 auto;
 }
 
 .game-modes {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 1rem;
   padding: 1rem;
 }
 
 .game-mode-list {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 1rem;
   width: 100%;
   justify-content: center;
@@ -340,7 +330,6 @@ export default {
   background: white;
   border-radius: 12px;
   padding: 1rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: transform 0.3s ease;
   height: 8rem;
@@ -359,7 +348,7 @@ export default {
   justify-content: center;
   margin-right: 1rem;
   background: linear-gradient(135deg, #4cd964 0%, #34c759 100%);
-  box-shadow: 0 4px 12px rgba(76, 217, 100, 0.2);
+
   color: white;
   font-size: 1.8rem;
 }
@@ -395,7 +384,6 @@ export default {
   background: white;
   padding: 1rem;
   border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .stat-header {
@@ -415,7 +403,6 @@ export default {
   background: white;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .record-item {

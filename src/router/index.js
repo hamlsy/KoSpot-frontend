@@ -7,6 +7,10 @@ import HomePage from '@/components/HomePage.vue';
 import MainPage from '@/components/MainPage.vue';
 import RoadViewPractice from '@/components/roadViewMode/RoadViewPractice.vue';
 import TestMapPage from '@/components/TestMapPage.vue';
+import MyInfoPage from '@/components/MyInfoPage.vue';
+import CoordData from '@/components/dummy/coordData.vue';
+import KakaoMapTest from '@/components/dummy/KakaoMapTest.vue';
+import EncryptTest from '@/components/dummy/EncryptTest.vue';
 
 
 Vue.use(VueRouter);
@@ -42,6 +46,11 @@ const routes = [
         component: RoadViewPractice
     },
     {
+        path: '/myInfoPage',
+        name: "MyInfoPage",
+        component: MyInfoPage
+    },
+    {
         path: '/tempPage',
         name: "TempPage",
         component: TempPage
@@ -51,7 +60,21 @@ const routes = [
         name: "TestMapPage",
         component: TestMapPage
     },
-
+    {
+        path: '/coordData',
+        name: "CoordData",
+        component: CoordData
+    },
+    {
+        path: '/kakaoMapTest',
+        name: "KakaoMapTest",
+        component: KakaoMapTest
+    },
+    {
+        path: '/encryptTest',
+        name: "EncryptTest",
+        component: EncryptTest
+    }
 ]
 
 const router = new VueRouter({

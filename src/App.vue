@@ -1,10 +1,8 @@
 <template>
-  <router-view>
-  </router-view>
+  <router-view></router-view>
 </template>
 
 <script>
-// import HelloWorld from './components/HelloWorld.vue'
 
 export default {
   name: "App",
@@ -19,8 +17,13 @@ export default {
 </script>
 
 <style>
+@import url("@/assets/styles/common/reset.css");
+/* @import url("@/assets/styles/common/header.css"); */
+
 body {
   font-family: "Pretendard Variable", Pretendard;
+  margin: 0px;
+  background: #ffffff;
 }
 #app {
   font-family: "Pretendard Variable", Pretendard;
@@ -29,6 +32,10 @@ body {
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+}
+
+a {
+  text-decoration: none;
 }
 
 
