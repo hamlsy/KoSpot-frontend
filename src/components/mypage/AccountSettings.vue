@@ -1,248 +1,251 @@
 <template>
-  <div class="settings-container">
-    <div class="settings-header">
-      <h2>계정 설정</h2>
-      <p>계정 정보를 관리하고 보안 설정을 변경할 수 있습니다.</p>
-    </div>
-    
-    <div class="settings-content">
-      <!-- 프로필 정보 -->
-      <div class="settings-section">
-        <h3>프로필 정보</h3>
+  <div class="account-settings-page">
+    <NavigationBar />
+    <div class="settings-container">
+      <div class="settings-header">
+        <h2>계정 설정</h2>
+        <p>계정 정보를 관리하고 보안 설정을 변경할 수 있습니다.</p>
+      </div>
+      
+      <div class="settings-content">
+        <!-- 프로필 정보 -->
+        <div class="settings-section">
+          <h3>프로필 정보</h3>
+          
+          <div class="form-group">
+            <label for="nickname">닉네임</label>
+            <div class="input-with-button">
+              <input
+                type="text"
+                id="nickname"
+                v-model="userSettings.nickname"
+                :disabled="!editingNickname"
+              >
+              <button 
+                v-if="!editingNickname" 
+                class="edit-btn"
+                @click="startEditNickname"
+              >
+                수정
+              </button>
+              <button 
+                v-else 
+                class="save-btn"
+                @click="saveNickname"
+              >
+                저장
+              </button>
+            </div>
+            <p class="input-hint">다른 사용자에게 표시되는 이름입니다.</p>
+          </div>
+          
+          <div class="form-group">
+            <label for="email">이메일 주소</label>
+            <div class="input-with-button">
+              <input
+                type="email"
+                id="email"
+                v-model="userSettings.email"
+                :disabled="!editingEmail"
+              >
+              <button 
+                v-if="!editingEmail" 
+                class="edit-btn"
+                @click="startEditEmail"
+              >
+                수정
+              </button>
+              <button 
+                v-else 
+                class="save-btn"
+                @click="saveEmail"
+              >
+                저장
+              </button>
+            </div>
+            <p class="input-hint">알림을 받고 계정을 복구하는 데 사용됩니다.</p>
+          </div>
+          
+          <div class="form-group">
+            <label for="language">언어 설정</label>
+            <select id="language" v-model="userSettings.language">
+              <option value="ko">한국어</option>
+              <option value="en">English</option>
+              <option value="ja">日本語</option>
+              <option value="zh">中文</option>
+            </select>
+          </div>
+        </div>
         
-        <div class="form-group">
-          <label for="nickname">닉네임</label>
-          <div class="input-with-button">
+        <!-- 비밀번호 변경 -->
+        <div class="settings-section">
+          <h3>비밀번호 변경</h3>
+          
+          <div class="form-group">
+            <label for="current-password">현재 비밀번호</label>
             <input
-              type="text"
-              id="nickname"
-              v-model="userSettings.nickname"
-              :disabled="!editingNickname"
+              type="password"
+              id="current-password"
+              v-model="passwordForm.currentPassword"
             >
-            <button 
-              v-if="!editingNickname" 
-              class="edit-btn"
-              @click="startEditNickname"
-            >
-              수정
-            </button>
-            <button 
-              v-else 
-              class="save-btn"
-              @click="saveNickname"
-            >
-              저장
-            </button>
           </div>
-          <p class="input-hint">다른 사용자에게 표시되는 이름입니다.</p>
-        </div>
-        
-        <div class="form-group">
-          <label for="email">이메일 주소</label>
-          <div class="input-with-button">
+          
+          <div class="form-group">
+            <label for="new-password">새 비밀번호</label>
             <input
-              type="email"
-              id="email"
-              v-model="userSettings.email"
-              :disabled="!editingEmail"
+              type="password"
+              id="new-password"
+              v-model="passwordForm.newPassword"
             >
+            <p class="input-hint">비밀번호는 8자 이상이어야 하며 숫자와 특수문자를 포함해야 합니다.</p>
+          </div>
+          
+          <div class="form-group">
+            <label for="confirm-password">비밀번호 확인</label>
+            <input
+              type="password"
+              id="confirm-password"
+              v-model="passwordForm.confirmPassword"
+            >
+          </div>
+          
+          <div class="password-strength" v-if="passwordForm.newPassword">
+            <div class="strength-label">비밀번호 강도:</div>
+            <div class="strength-meter">
+              <div 
+                class="strength-bar" 
+                :style="{ width: passwordStrength.percentage + '%' }"
+                :class="passwordStrength.class"
+              ></div>
+            </div>
+            <div class="strength-text" :class="passwordStrength.class">
+              {{ passwordStrength.text }}
+            </div>
+          </div>
+          
+          <div class="form-actions">
             <button 
-              v-if="!editingEmail" 
-              class="edit-btn"
-              @click="startEditEmail"
+              class="primary-btn" 
+              @click="changePassword"
+              :disabled="!canChangePassword"
             >
-              수정
+              비밀번호 변경
+            </button>
+          </div>
+        </div>
+        
+        <!-- 알림 설정 -->
+        <div class="settings-section">
+          <h3>알림 설정</h3>
+          
+          <div class="toggle-group">
+            <div class="toggle-label">
+              <span>게임 초대 알림</span>
+              <p>친구가 게임에 초대했을 때 알림을 받습니다.</p>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" v-model="userSettings.notifications.gameInvites">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          
+          <div class="toggle-group">
+            <div class="toggle-label">
+              <span>레벨 업 알림</span>
+              <p>레벨이 올랐을 때 알림을 받습니다.</p>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" v-model="userSettings.notifications.levelUp">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          
+          <div class="toggle-group">
+            <div class="toggle-label">
+              <span>새 친구 알림</span>
+              <p>새로운 친구 요청이 있을 때 알림을 받습니다.</p>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" v-model="userSettings.notifications.friendRequests">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          
+          <div class="toggle-group">
+            <div class="toggle-label">
+              <span>이메일 마케팅</span>
+              <p>새로운 이벤트, 기능 또는 혜택에 대한 이메일을 받습니다.</p>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" v-model="userSettings.notifications.marketing">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- 계정 관리 -->
+        <div class="settings-section">
+          <h3>계정 관리</h3>
+          
+          <div class="settings-actions">
+            <button class="secondary-btn" @click="downloadData">
+              <i class="fas fa-download"></i>
+              내 데이터 다운로드
+            </button>
+            
+            <button class="danger-btn" @click="showDeleteAccountModal = true">
+              <i class="fas fa-user-times"></i>
+              계정 삭제
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 계정 삭제 확인 모달 -->
+      <div v-if="showDeleteAccountModal" class="modal-overlay">
+        <div class="modal-container">
+          <div class="modal-header">
+            <h3>계정 삭제</h3>
+            <button class="close-btn" @click="showDeleteAccountModal = false">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          
+          <div class="modal-content">
+            <div class="warning-icon">
+              <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            
+            <p class="modal-text">
+              계정을 삭제하면 모든 데이터가 영구적으로 삭제됩니다. 이 작업은 취소할 수 없습니다.
+            </p>
+            
+            <div class="confirm-input">
+              <label for="delete-confirm">확인을 위해 "삭제"를 입력하세요</label>
+              <input 
+                type="text" 
+                id="delete-confirm" 
+                v-model="deleteConfirmText"
+                placeholder="삭제"
+              >
+            </div>
+          </div>
+          
+          <div class="modal-footer">
+            <button 
+              class="cancel-btn" 
+              @click="showDeleteAccountModal = false"
+            >
+              취소
             </button>
             <button 
-              v-else 
-              class="save-btn"
-              @click="saveEmail"
+              class="delete-btn" 
+              :disabled="deleteConfirmText !== '삭제'"
+              @click="deleteAccount"
             >
-              저장
+              계정 삭제
             </button>
           </div>
-          <p class="input-hint">알림을 받고 계정을 복구하는 데 사용됩니다.</p>
-        </div>
-        
-        <div class="form-group">
-          <label for="language">언어 설정</label>
-          <select id="language" v-model="userSettings.language">
-            <option value="ko">한국어</option>
-            <option value="en">English</option>
-            <option value="ja">日本語</option>
-            <option value="zh">中文</option>
-          </select>
-        </div>
-      </div>
-      
-      <!-- 비밀번호 변경 -->
-      <div class="settings-section">
-        <h3>비밀번호 변경</h3>
-        
-        <div class="form-group">
-          <label for="current-password">현재 비밀번호</label>
-          <input
-            type="password"
-            id="current-password"
-            v-model="passwordForm.currentPassword"
-          >
-        </div>
-        
-        <div class="form-group">
-          <label for="new-password">새 비밀번호</label>
-          <input
-            type="password"
-            id="new-password"
-            v-model="passwordForm.newPassword"
-          >
-          <p class="input-hint">비밀번호는 8자 이상이어야 하며 숫자와 특수문자를 포함해야 합니다.</p>
-        </div>
-        
-        <div class="form-group">
-          <label for="confirm-password">비밀번호 확인</label>
-          <input
-            type="password"
-            id="confirm-password"
-            v-model="passwordForm.confirmPassword"
-          >
-        </div>
-        
-        <div class="password-strength" v-if="passwordForm.newPassword">
-          <div class="strength-label">비밀번호 강도:</div>
-          <div class="strength-meter">
-            <div 
-              class="strength-bar" 
-              :style="{ width: passwordStrength.percentage + '%' }"
-              :class="passwordStrength.class"
-            ></div>
-          </div>
-          <div class="strength-text" :class="passwordStrength.class">
-            {{ passwordStrength.text }}
-          </div>
-        </div>
-        
-        <div class="form-actions">
-          <button 
-            class="primary-btn" 
-            @click="changePassword"
-            :disabled="!canChangePassword"
-          >
-            비밀번호 변경
-          </button>
-        </div>
-      </div>
-      
-      <!-- 알림 설정 -->
-      <div class="settings-section">
-        <h3>알림 설정</h3>
-        
-        <div class="toggle-group">
-          <div class="toggle-label">
-            <span>게임 초대 알림</span>
-            <p>친구가 게임에 초대했을 때 알림을 받습니다.</p>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" v-model="userSettings.notifications.gameInvites">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        
-        <div class="toggle-group">
-          <div class="toggle-label">
-            <span>레벨 업 알림</span>
-            <p>레벨이 올랐을 때 알림을 받습니다.</p>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" v-model="userSettings.notifications.levelUp">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        
-        <div class="toggle-group">
-          <div class="toggle-label">
-            <span>새 친구 알림</span>
-            <p>새로운 친구 요청이 있을 때 알림을 받습니다.</p>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" v-model="userSettings.notifications.friendRequests">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        
-        <div class="toggle-group">
-          <div class="toggle-label">
-            <span>이메일 마케팅</span>
-            <p>새로운 이벤트, 기능 또는 혜택에 대한 이메일을 받습니다.</p>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" v-model="userSettings.notifications.marketing">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-      </div>
-      
-      <!-- 계정 관리 -->
-      <div class="settings-section">
-        <h3>계정 관리</h3>
-        
-        <div class="settings-actions">
-          <button class="secondary-btn" @click="downloadData">
-            <i class="fas fa-download"></i>
-            내 데이터 다운로드
-          </button>
-          
-          <button class="danger-btn" @click="showDeleteAccountModal = true">
-            <i class="fas fa-user-times"></i>
-            계정 삭제
-          </button>
-        </div>
-      </div>
-    </div>
-    
-    <!-- 계정 삭제 확인 모달 -->
-    <div v-if="showDeleteAccountModal" class="modal-overlay">
-      <div class="modal-container">
-        <div class="modal-header">
-          <h3>계정 삭제</h3>
-          <button class="close-btn" @click="showDeleteAccountModal = false">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        
-        <div class="modal-content">
-          <div class="warning-icon">
-            <i class="fas fa-exclamation-triangle"></i>
-          </div>
-          
-          <p class="modal-text">
-            계정을 삭제하면 모든 데이터가 영구적으로 삭제됩니다. 이 작업은 취소할 수 없습니다.
-          </p>
-          
-          <div class="confirm-input">
-            <label for="delete-confirm">확인을 위해 "삭제"를 입력하세요</label>
-            <input 
-              type="text" 
-              id="delete-confirm" 
-              v-model="deleteConfirmText"
-              placeholder="삭제"
-            >
-          </div>
-        </div>
-        
-        <div class="modal-footer">
-          <button 
-            class="cancel-btn" 
-            @click="showDeleteAccountModal = false"
-          >
-            취소
-          </button>
-          <button 
-            class="delete-btn" 
-            :disabled="deleteConfirmText !== '삭제'"
-            @click="deleteAccount"
-          >
-            계정 삭제
-          </button>
         </div>
       </div>
     </div>
@@ -250,8 +253,13 @@
 </template>
 
 <script>
+import NavigationBar from '../shared/NavigationBar.vue';
+
 export default {
   name: 'AccountSettings',
+  components: {
+    NavigationBar,
+  },
   
   data() {
     return {
@@ -389,6 +397,12 @@ export default {
 </script>
 
 <style scoped>
+.account-settings-page {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
 .settings-container {
   background: white;
   border-radius: 12px;

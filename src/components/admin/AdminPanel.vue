@@ -79,8 +79,9 @@ export default {
 <style scoped>
 .admin-panel {
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
   background-color: #f9fafb;
+  padding-top: 60px; /* 네비게이션바 높이만큼 패딩 추가 */
 }
 
 .sidebar {
@@ -90,6 +91,10 @@ export default {
   display: flex;
   flex-direction: column;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  top: 60px; /* 네비게이션바 높이만큼 조정 */
+  bottom: 0;
+  overflow-y: auto;
 }
 
 .sidebar-header {
@@ -225,6 +230,7 @@ export default {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
+  margin-left: 250px; /* 사이드바 너비만큼 여백 */
 }
 
 @media (max-width: 768px) {
@@ -235,10 +241,13 @@ export default {
   .sidebar {
     width: 100%;
     height: auto;
+    position: relative;
+    top: 0;
   }
   
   .content-area {
     padding: 15px;
+    margin-left: 0;
   }
 }
 </style> 

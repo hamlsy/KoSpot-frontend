@@ -1,92 +1,97 @@
 <template>
-  <div class="profile-container">
-    <div class="profile-header">
-      <div class="profile-cover" :style="{ backgroundImage: `url(${coverImage})` }">
-        <button class="edit-cover-btn">
-          <i class="fas fa-camera"></i>
-        </button>
-      </div>
-      
-      <div class="profile-info">
-        <div class="profile-avatar">
-          <img :src="user.profileImage" alt="프로필 이미지">
-          <button class="edit-avatar-btn">
-            <i class="fas fa-camera"></i>
-          </button>
-        </div>
-        
-        <div class="profile-details">
-          <h1 class="profile-name">{{ user.nickname }}</h1>
-          <div class="profile-level">
-            <span class="level-label">Lv. {{ user.level }}</span>
-            <div class="level-progress">
-              <div class="progress-bar" :style="{ width: `${user.levelProgress}%` }"></div>
-            </div>
-            <span class="level-percentage">{{ user.levelProgress }}%</span>
+  <div class="my-profile-page">
+    <NavigationBar />
+    <div class="profile-content">
+      <div class="profile-container">
+        <div class="profile-header">
+          <div class="profile-cover" :style="{ backgroundImage: `url(${coverImage})` }">
+            <button class="edit-cover-btn">
+              <i class="fas fa-camera"></i>
+            </button>
           </div>
           
-          <div class="profile-badges">
-            <div class="badge" v-for="badge in displayedBadges" :key="badge.id">
-              <img :src="badge.image" :alt="badge.name" :title="badge.name">
+          <div class="profile-info">
+            <div class="profile-avatar">
+              <img :src="user.profileImage" alt="프로필 이미지">
+              <button class="edit-avatar-btn">
+                <i class="fas fa-camera"></i>
+              </button>
             </div>
-            <div class="more-badges" v-if="user.badges.length > 3">
-              +{{ user.badges.length - 3 }}
+            
+            <div class="profile-details">
+              <h1 class="profile-name">{{ user.nickname }}</h1>
+              <div class="profile-level">
+                <span class="level-label">Lv. {{ user.level }}</span>
+                <div class="level-progress">
+                  <div class="progress-bar" :style="{ width: `${user.levelProgress}%` }"></div>
+                </div>
+                <span class="level-percentage">{{ user.levelProgress }}%</span>
+              </div>
+              
+              <div class="profile-badges">
+                <div class="badge" v-for="badge in displayedBadges" :key="badge.id">
+                  <img :src="badge.image" :alt="badge.name" :title="badge.name">
+                </div>
+                <div class="more-badges" v-if="user.badges.length > 3">
+                  +{{ user.badges.length - 3 }}
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-    
-    <div class="profile-body">
-      <div class="stats-section">
-        <h2>통계</h2>
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-value">{{ formatNumber(user.totalGames) }}</div>
-            <div class="stat-label">게임 횟수</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">{{ formatNumber(user.totalScore) }}</div>
-            <div class="stat-label">총 점수</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">{{ user.winRate }}%</div>
-            <div class="stat-label">승률</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">{{ formatNumber(user.bestScore) }}</div>
-            <div class="stat-label">최고 점수</div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="bio-section">
-        <h2>자기소개</h2>
-        <div class="bio-content" v-if="!editingBio">
-          <p>{{ user.bio || '자기소개가 없습니다.' }}</p>
-          <button class="edit-bio-btn" @click="startEditBio">
-            <i class="fas fa-edit"></i> 수정
-          </button>
-        </div>
-        <div class="bio-edit" v-else>
-          <textarea v-model="editedBio" placeholder="자기소개를 입력하세요."></textarea>
-          <div class="bio-actions">
-            <button class="cancel-btn" @click="cancelEditBio">취소</button>
-            <button class="save-btn" @click="saveBio">저장</button>
-          </div>
-        </div>
-      </div>
-      
-      <div class="recent-activity">
-        <h2>최근 활동</h2>
-        <div class="activity-list">
-          <div class="activity-item" v-for="(activity, index) in user.recentActivities" :key="index">
-            <div class="activity-icon" :class="activity.type">
-              <i :class="getActivityIcon(activity.type)"></i>
+        
+        <div class="profile-body">
+          <div class="stats-section">
+            <h2>통계</h2>
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-value">{{ formatNumber(user.totalGames) }}</div>
+                <div class="stat-label">게임 횟수</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">{{ formatNumber(user.totalScore) }}</div>
+                <div class="stat-label">총 점수</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">{{ user.winRate }}%</div>
+                <div class="stat-label">승률</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">{{ formatNumber(user.bestScore) }}</div>
+                <div class="stat-label">최고 점수</div>
+              </div>
             </div>
-            <div class="activity-content">
-              <div class="activity-text">{{ activity.text }}</div>
-              <div class="activity-time">{{ formatTime(activity.timestamp) }}</div>
+          </div>
+          
+          <div class="bio-section">
+            <h2>자기소개</h2>
+            <div class="bio-content" v-if="!editingBio">
+              <p>{{ user.bio || '자기소개가 없습니다.' }}</p>
+              <button class="edit-bio-btn" @click="startEditBio">
+                <i class="fas fa-edit"></i> 수정
+              </button>
+            </div>
+            <div class="bio-edit" v-else>
+              <textarea v-model="editedBio" placeholder="자기소개를 입력하세요."></textarea>
+              <div class="bio-actions">
+                <button class="cancel-btn" @click="cancelEditBio">취소</button>
+                <button class="save-btn" @click="saveBio">저장</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="recent-activity">
+            <h2>최근 활동</h2>
+            <div class="activity-list">
+              <div class="activity-item" v-for="(activity, index) in user.recentActivities" :key="index">
+                <div class="activity-icon" :class="activity.type">
+                  <i :class="getActivityIcon(activity.type)"></i>
+                </div>
+                <div class="activity-content">
+                  <div class="activity-text">{{ activity.text }}</div>
+                  <div class="activity-time">{{ formatTime(activity.timestamp) }}</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -96,8 +101,13 @@
 </template>
 
 <script>
+import NavigationBar from '../shared/NavigationBar.vue';
+
 export default {
   name: 'MyProfile',
+  components: {
+    NavigationBar,
+  },
   
   data() {
     return {
@@ -223,6 +233,20 @@ export default {
 </script>
 
 <style scoped>
+.my-profile-page {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
+.profile-content {
+  padding-top: 80px; /* 네비게이션바 높이만큼 여백 */
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
 .profile-container {
   background: #f5f7fa;
   border-radius: 12px;

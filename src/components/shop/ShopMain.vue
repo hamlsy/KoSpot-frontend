@@ -1,276 +1,233 @@
 <template>
-  <div class="shop-main">
-    <div class="shop-header">
-      <h1 class="shop-title">KoSpot 상점</h1>
-      <div class="user-currency">
-        <div class="currency-item">
-          <i class="fas fa-coins"></i>
-          <span>{{ formatNumber(userCoins) }} 코인</span>
-        </div>
-        <div class="currency-item">
-          <i class="fas fa-gem"></i>
-          <span>{{ formatNumber(userGems) }} 젬</span>
-        </div>
-      </div>
-    </div>
-    
-    <div class="shop-nav">
-      <div 
-        v-for="category in categories" 
-        :key="category.id"
-        class="nav-item"
-        :class="{ active: currentCategory === category.id }"
-        @click="setCategory(category.id)"
-      >
-        <i :class="category.icon"></i>
-        <span>{{ category.name }}</span>
-      </div>
-    </div>
-    
+  <div class="shop-page">
+    <NavigationBar />
     <div class="shop-content">
-      <div class="category-header">
-        <h2>{{ currentCategoryName }}</h2>
-        <div class="filter-controls">
-          <button 
-            v-for="filter in filters" 
-            :key="filter.id"
-            :class="{ active: currentFilter === filter.id }"
-            @click="setFilter(filter.id)"
-          >
-            {{ filter.name }}
-          </button>
+      <div class="shop-header">
+        <h1 class="shop-title">KoSpot 상점</h1>
+        <div class="user-currency">
+          <div class="currency-item">
+            <i class="fas fa-coins"></i>
+            <span>{{ formatNumber(userCoins) }} 코인</span>
+          </div>
         </div>
       </div>
       
-      <div class="items-grid">
+      <div class="shop-nav">
         <div 
-          v-for="item in filteredItems" 
-          :key="item.id"
-          class="shop-item"
-          :class="{ 'owned': item.owned, 'sale': item.discountPercent > 0 }"
+          v-for="category in categories" 
+          :key="category.id"
+          class="nav-item"
+          :class="{ active: currentCategory === category.id }"
+          @click="setCategory(category.id)"
         >
-          <div class="item-image-container">
-            <img :src="item.image" :alt="item.name" class="item-image" />
-            <div class="item-rarity" :class="item.rarity.toLowerCase()">{{ item.rarity }}</div>
-            <div class="discount-badge" v-if="item.discountPercent > 0">-{{ item.discountPercent }}%</div>
-          </div>
-          
-          <div class="item-details">
-            <div class="item-name">{{ item.name }}</div>
-            <div class="item-description">{{ item.description }}</div>
-          </div>
-          
-          <div class="item-footer">
-            <div class="item-price" v-if="!item.owned">
-              <template v-if="item.discountPercent > 0">
-                <span class="original-price">{{ formatNumber(item.originalPrice) }}</span>
-                <span class="price">{{ formatNumber(item.price) }}</span>
-              </template>
-              <template v-else>
-                <span class="price">{{ formatNumber(item.price) }}</span>
-              </template>
-              <i :class="item.currencyType === 'coin' ? 'fas fa-coins' : 'fas fa-gem'"></i>
-            </div>
-            <div class="item-status" v-else>
-              <span class="owned-label">보유 중</span>
-            </div>
-            
+          <i :class="category.icon"></i>
+          <span>{{ category.name }}</span>
+        </div>
+      </div>
+      
+      <div class="shop-content-area">
+        <div class="category-header">
+          <h2>{{ currentCategoryName }}</h2>
+          <div class="filter-controls">
             <button 
-              class="buy-button" 
-              :disabled="item.owned || !canAfford(item)"
-              @click="buyItem(item)"
+              v-for="filter in filters" 
+              :key="filter.id"
+              :class="{ active: currentFilter === filter.id }"
+              @click="setFilter(filter.id)"
             >
-              {{ item.owned ? '보유 중' : '구매하기' }}
+              {{ filter.name }}
             </button>
           </div>
         </div>
+        
+        <div class="items-grid">
+          <div 
+            v-for="item in filteredItems" 
+            :key="item.id"
+            class="shop-item"
+            :class="{ 'owned': item.owned }"
+          >
+            <div class="item-image-container">
+              <img :src="item.image" :alt="item.name" class="item-image" />
+              <div class="item-rarity" :class="item.rarity.toLowerCase()">{{ item.rarity }}</div>
+            </div>
+            
+            <div class="item-details">
+              <div class="item-name">{{ item.name }}</div>
+              <div class="item-description">{{ item.description }}</div>
+            </div>
+            
+            <div class="item-footer">
+              <div class="item-price" v-if="!item.owned">
+                <span class="price">{{ formatNumber(item.price) }}</span>
+                <i class="fas fa-coins"></i>
+              </div>
+              <div class="item-status" v-else>
+                <span class="owned-label">보유 중</span>
+              </div>
+              
+              <button 
+                class="buy-button" 
+                :disabled="item.owned || !canAfford(item)"
+                @click="buyItem(item)"
+              >
+                {{ item.owned ? '보유 중' : '구매하기' }}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
+      
+      <purchase-modal 
+        v-if="showPurchaseModal"
+        :item="selectedItem"
+        @confirm="confirmPurchase"
+        @cancel="cancelPurchase"
+      />
     </div>
-    
-    <purchase-modal 
-      v-if="showPurchaseModal"
-      :item="selectedItem"
-      @confirm="confirmPurchase"
-      @cancel="cancelPurchase"
-    />
   </div>
 </template>
 
 <script>
 import PurchaseModal from './PurchaseModal.vue';
+import NavigationBar from '../shared/NavigationBar.vue';
 
 export default {
   name: 'ShopMain',
   
   components: {
-    PurchaseModal
+    PurchaseModal,
+    NavigationBar
   },
   
   data() {
     return {
       userCoins: 5000,
-      userGems: 50,
-      currentCategory: 'avatars',
+      currentCategory: 'markers',
       currentFilter: 'all',
       showPurchaseModal: false,
       selectedItem: null,
       categories: [
-        { id: 'avatars', name: '아바타', icon: 'fas fa-user' },
-        { id: 'badges', name: '배지', icon: 'fas fa-certificate' },
-        { id: 'items', name: '아이템', icon: 'fas fa-gift' },
-        { id: 'boosters', name: '부스터', icon: 'fas fa-rocket' }
+        { id: 'markers', name: '마커', icon: 'fas fa-map-marker-alt' },
+        { id: 'nicknames', name: '닉네임 꾸미기', icon: 'fas fa-font' },
+        { id: 'items', name: '아이템', icon: 'fas fa-gift' }
       ],
       filters: [
         { id: 'all', name: '전체' },
         { id: 'new', name: '신규' },
-        { id: 'sale', name: '할인' },
         { id: 'notOwned', name: '미보유' }
       ],
       shopItems: {
-        avatars: [
+        markers: [
           {
-            id: 'av1',
-            name: '탐험가 아바타',
-            description: '한국의 명소를 탐험하는 모험가 아바타',
-            price: 2000,
-            originalPrice: 2000,
-            discountPercent: 0,
+            id: 'mk1',
+            name: '기본 마커',
+            description: '기본 제공되는 표준 마커입니다.',
+            price: 0,
             currencyType: 'coin',
             rarity: '일반',
-            image: '/assets/avatars/explorer.png',
-            category: 'avatars',
-            isNew: true,
-            owned: false
-          },
-          {
-            id: 'av2',
-            name: '한복 아바타',
-            description: '전통 한복을 입은 우아한 아바타',
-            price: 1500,
-            originalPrice: 3000,
-            discountPercent: 50,
-            currencyType: 'coin',
-            rarity: '레어',
-            image: '/assets/avatars/hanbok.png',
-            category: 'avatars',
+            image: '/assets/markers/basic.png',
+            category: 'markers',
             isNew: false,
             owned: true
           },
           {
-            id: 'av3',
-            name: '관광객 아바타',
-            description: '카메라를 든 열정적인 관광객 아바타',
-            price: 20,
-            originalPrice: 20,
-            discountPercent: 0,
-            currencyType: 'gem',
-            rarity: '에픽',
-            image: '/assets/avatars/tourist.png',
-            category: 'avatars',
+            id: 'mk2',
+            name: '별 마커',
+            description: '별 모양의 마커로 위치를 표시합니다.',
+            price: 2000,
+            currencyType: 'coin',
+            rarity: '일반',
+            image: '/assets/markers/star.png',
+            category: 'markers',
+            isNew: false,
+            owned: false
+          },
+          {
+            id: 'mk3',
+            name: '하트 마커',
+            description: '하트 모양의 마커로 위치를 표시합니다.',
+            price: 2500,
+            currencyType: 'coin',
+            rarity: '레어',
+            image: '/assets/markers/heart.png',
+            category: 'markers',
             isNew: true,
             owned: false
           },
           {
-            id: 'av4',
-            name: '요리사 아바타',
-            description: '한식 요리사 아바타',
-            price: 2500,
-            originalPrice: 2500,
-            discountPercent: 0,
+            id: 'mk4',
+            name: '왕관 마커',
+            description: '왕관 모양의 마커로 위치를 표시합니다.',
+            price: 3000,
             currencyType: 'coin',
             rarity: '레어',
-            image: '/assets/avatars/chef.png',
-            category: 'avatars',
-            isNew: false,
+            image: '/assets/markers/crown.png',
+            category: 'markers',
+            isNew: true,
             owned: false
           }
         ],
-        badges: [
+        nicknames: [
           {
-            id: 'b1',
-            name: '서울 마스터',
-            description: '서울 지역 마스터',
+            id: 'nc1',
+            name: '레인보우 닉네임',
+            description: '닉네임에 무지개 색상을 적용합니다.',
             price: 3000,
-            originalPrice: 3000,
-            discountPercent: 0,
             currencyType: 'coin',
             rarity: '레어',
-            image: '/assets/badges/seoul.png',
-            category: 'badges',
+            image: '/assets/nicknames/rainbow.png',
+            category: 'nicknames',
             isNew: false,
             owned: false
           },
           {
-            id: 'b2',
-            name: '제주 탐험가',
-            description: '제주도 탐험의 달인',
-            price: 15,
-            originalPrice: 30,
-            discountPercent: 50,
-            currencyType: 'gem',
+            id: 'nc2',
+            name: '골드 닉네임',
+            description: '닉네임에 금색 효과를 적용합니다.',
+            price: 3500,
+            currencyType: 'coin',
+            rarity: '레어',
+            image: '/assets/nicknames/gold.png',
+            category: 'nicknames',
+            isNew: true,
+            owned: false
+          },
+          {
+            id: 'nc3',
+            name: '네온 닉네임',
+            description: '닉네임에 네온 효과를 적용합니다.',
+            price: 4000,
+            currencyType: 'coin',
             rarity: '에픽',
-            image: '/assets/badges/jeju.png',
-            category: 'badges',
+            image: '/assets/nicknames/neon.png',
+            category: 'nicknames',
             isNew: true,
             owned: false
           }
         ],
         items: [
           {
-            id: 'i1',
-            name: '힌트 카드',
-            description: '게임 중 힌트를 얻을 수 있는 아이템',
-            price: 500,
-            originalPrice: 500,
-            discountPercent: 0,
+            id: 'it1',
+            name: '닉네임 변경권',
+            description: '닉네임을 한 번 변경할 수 있습니다.',
+            price: 1500,
             currencyType: 'coin',
             rarity: '일반',
-            image: '/assets/items/hint.png',
+            image: '/assets/items/nickname_change.png',
             category: 'items',
             isNew: false,
             owned: false
           },
           {
-            id: 'i2',
-            name: '시간 추가 카드',
-            description: '게임 시간을 30초 연장하는 아이템',
-            price: 5,
-            originalPrice: 5,
-            discountPercent: 0,
-            currencyType: 'gem',
-            rarity: '레어',
-            image: '/assets/items/time.png',
+            id: 'it2',
+            name: '프로필 배경 변경권',
+            description: '프로필 배경을 변경할 수 있습니다.',
+            price: 2000,
+            currencyType: 'coin',
+            rarity: '일반',
+            image: '/assets/items/profile_bg.png',
             category: 'items',
-            isNew: false,
-            owned: false
-          }
-        ],
-        boosters: [
-          {
-            id: 'bo1',
-            name: '점수 부스터',
-            description: '1시간 동안 획득하는 점수가 2배로 증가',
-            price: 10,
-            originalPrice: 10,
-            discountPercent: 0,
-            currencyType: 'gem',
-            rarity: '레어',
-            image: '/assets/boosters/score.png',
-            category: 'boosters',
-            isNew: true,
-            owned: false
-          },
-          {
-            id: 'bo2',
-            name: '경험치 부스터',
-            description: '3시간 동안 획득하는 경험치가 2배로 증가',
-            price: 25,
-            originalPrice: 25,
-            discountPercent: 0,
-            currencyType: 'gem',
-            rarity: '에픽',
-            image: '/assets/boosters/xp.png',
-            category: 'boosters',
             isNew: false,
             owned: false
           }
@@ -298,10 +255,6 @@ export default {
         return this.currentCategoryItems.filter(item => item.isNew);
       }
       
-      if (this.currentFilter === 'sale') {
-        return this.currentCategoryItems.filter(item => item.discountPercent > 0);
-      }
-      
       if (this.currentFilter === 'notOwned') {
         return this.currentCategoryItems.filter(item => !item.owned);
       }
@@ -324,11 +277,7 @@ export default {
     },
     
     canAfford(item) {
-      if (item.currencyType === 'coin') {
-        return this.userCoins >= item.price;
-      } else {
-        return this.userGems >= item.price;
-      }
+      return this.userCoins >= item.price;
     },
     
     buyItem(item) {
@@ -342,11 +291,7 @@ export default {
       if (!this.selectedItem) return;
       
       // 실제 구매 처리
-      if (this.selectedItem.currencyType === 'coin') {
-        this.userCoins -= this.selectedItem.price;
-      } else {
-        this.userGems -= this.selectedItem.price;
-      }
+      this.userCoins -= this.selectedItem.price;
       
       // 아이템 보유 상태 업데이트
       const category = this.shopItems[this.selectedItem.category];
@@ -370,12 +315,19 @@ export default {
 </script>
 
 <style scoped>
-.shop-main {
+.shop-page {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
+.shop-content {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
   background: #f5f7fa;
   min-height: 100vh;
+  padding-top: 80px; /* 네비게이션바 높이만큼 여백 추가 */
 }
 
 .shop-header {
@@ -410,10 +362,6 @@ export default {
 
 .currency-item i {
   color: #ffc107;
-}
-
-.currency-item:last-child i {
-  color: #9c27b0;
 }
 
 .shop-nav {
@@ -451,7 +399,7 @@ export default {
   font-size: 1.2rem;
 }
 
-.shop-content {
+.shop-content-area {
   background: white;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -562,18 +510,6 @@ export default {
   color: white;
 }
 
-.discount-badge {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: #f44336;
-  color: white;
-  font-weight: 600;
-  font-size: 0.8rem;
-  padding: 0.3rem 0.6rem;
-  border-radius: 4px;
-}
-
 .item-details {
   padding: 1rem;
   flex: 1;
@@ -608,23 +544,12 @@ export default {
   font-weight: 600;
 }
 
-.original-price {
-  text-decoration: line-through;
-  color: #999;
-  font-size: 0.9rem;
-  margin-right: 0.3rem;
-}
-
 .price {
   color: #333;
 }
 
 .item-price i {
   color: #ffc107;
-}
-
-.item-price i.fa-gem {
-  color: #9c27b0;
 }
 
 .item-status {
@@ -654,8 +579,9 @@ export default {
 }
 
 @media (max-width: 768px) {
-  .shop-main {
+  .shop-content {
     padding: 1rem;
+    padding-top: 80px; /* 네비게이션바 높이만큼 여백 유지 */
   }
   
   .shop-header {

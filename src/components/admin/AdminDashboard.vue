@@ -1,171 +1,178 @@
 <template>
-  <AdminPanel>
-    <div class="admin-dashboard">
-      <h1 class="dashboard-title">관리자 대시보드</h1>
-      
-      <div class="stats-container">
-        <div class="stat-card">
-          <div class="stat-icon">
-            <i class="fas fa-users"></i>
-          </div>
-          <div class="stat-content">
-            <h3>총 사용자</h3>
-            <p class="stat-value">{{ formatNumber(stats.totalUsers) }}</p>
-            <p class="stat-change" :class="stats.userChange >= 0 ? 'positive' : 'negative'">
-              <i class="fas" :class="stats.userChange >= 0 ? 'fa-arrow-up' : 'fa-arrow-down'"></i> 
-              {{ Math.abs(stats.userChange) }}%
-            </p>
-          </div>
-        </div>
-        
-        <div class="stat-card">
-          <div class="stat-icon">
-            <i class="fas fa-gamepad"></i>
-          </div>
-          <div class="stat-content">
-            <h3>활성 게임</h3>
-            <p class="stat-value">{{ formatNumber(stats.activeGames) }}</p>
-            <p class="stat-change" :class="stats.gameChange >= 0 ? 'positive' : 'negative'">
-              <i class="fas" :class="stats.gameChange >= 0 ? 'fa-arrow-up' : 'fa-arrow-down'"></i> 
-              {{ Math.abs(stats.gameChange) }}%
-            </p>
-          </div>
-        </div>
-        
-        <div class="stat-card">
-          <div class="stat-icon">
-            <i class="fas fa-user-plus"></i>
-          </div>
-          <div class="stat-content">
-            <h3>신규 가입</h3>
-            <p class="stat-value">{{ formatNumber(stats.newUsers) }}</p>
-            <p class="stat-change" :class="stats.newUserChange >= 0 ? 'positive' : 'negative'">
-              <i class="fas" :class="stats.newUserChange >= 0 ? 'fa-arrow-up' : 'fa-arrow-down'"></i> 
-              {{ Math.abs(stats.newUserChange) }}%
-            </p>
-          </div>
-        </div>
-        
-        <div class="stat-card">
-          <div class="stat-icon">
-            <i class="fas fa-coins"></i>
-          </div>
-          <div class="stat-content">
-            <h3>총 수익</h3>
-            <p class="stat-value">{{ formatNumber(stats.revenue) }}원</p>
-            <p class="stat-change" :class="stats.revenueChange >= 0 ? 'positive' : 'negative'">
-              <i class="fas" :class="stats.revenueChange >= 0 ? 'fa-arrow-up' : 'fa-arrow-down'"></i> 
-              {{ Math.abs(stats.revenueChange) }}%
-            </p>
-          </div>
-        </div>
-      </div>
-      
-      <div class="admin-sections">
-        <div class="recent-activities">
-          <div class="section-header">
-            <h2>최근 활동</h2>
-            <button class="view-all-btn">모두 보기</button>
-          </div>
-          <div class="activity-list">
-            <div v-for="(activity, index) in recentActivities" :key="index" class="activity-item">
-              <div class="activity-icon" :class="activity.type">
-                <i class="fas" :class="getActivityIcon(activity.type)"></i>
+  <div class="admin-page">
+    <NavigationBar />
+    <div class="admin-content">
+      <AdminPanel>
+        <div class="admin-dashboard">
+          <h1 class="dashboard-title">관리자 대시보드</h1>
+          
+          <div class="stats-container">
+            <div class="stat-card">
+              <div class="stat-icon">
+                <i class="fas fa-users"></i>
               </div>
-              <div class="activity-content">
-                <p class="activity-text">{{ activity.text }}</p>
-                <p class="activity-time">{{ formatTime(activity.time) }}</p>
+              <div class="stat-content">
+                <h3>총 사용자</h3>
+                <p class="stat-value">{{ formatNumber(stats.totalUsers) }}</p>
+                <p class="stat-change" :class="stats.userChange >= 0 ? 'positive' : 'negative'">
+                  <i class="fas" :class="stats.userChange >= 0 ? 'fa-arrow-up' : 'fa-arrow-down'"></i> 
+                  {{ Math.abs(stats.userChange) }}%
+                </p>
+              </div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon">
+                <i class="fas fa-gamepad"></i>
+              </div>
+              <div class="stat-content">
+                <h3>활성 게임</h3>
+                <p class="stat-value">{{ formatNumber(stats.activeGames) }}</p>
+                <p class="stat-change" :class="stats.gameChange >= 0 ? 'positive' : 'negative'">
+                  <i class="fas" :class="stats.gameChange >= 0 ? 'fa-arrow-up' : 'fa-arrow-down'"></i> 
+                  {{ Math.abs(stats.gameChange) }}%
+                </p>
+              </div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon">
+                <i class="fas fa-user-plus"></i>
+              </div>
+              <div class="stat-content">
+                <h3>신규 가입</h3>
+                <p class="stat-value">{{ formatNumber(stats.newUsers) }}</p>
+                <p class="stat-change" :class="stats.newUserChange >= 0 ? 'positive' : 'negative'">
+                  <i class="fas" :class="stats.newUserChange >= 0 ? 'fa-arrow-up' : 'fa-arrow-down'"></i> 
+                  {{ Math.abs(stats.newUserChange) }}%
+                </p>
+              </div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon">
+                <i class="fas fa-coins"></i>
+              </div>
+              <div class="stat-content">
+                <h3>총 수익</h3>
+                <p class="stat-value">{{ formatNumber(stats.revenue) }}원</p>
+                <p class="stat-change" :class="stats.revenueChange >= 0 ? 'positive' : 'negative'">
+                  <i class="fas" :class="stats.revenueChange >= 0 ? 'fa-arrow-up' : 'fa-arrow-down'"></i> 
+                  {{ Math.abs(stats.revenueChange) }}%
+                </p>
               </div>
             </div>
           </div>
-        </div>
-        
-        <div class="quick-actions">
-          <h2>빠른 작업</h2>
-          <div class="action-buttons">
-            <router-link to="/admin/users" class="action-button">
-              <i class="fas fa-user-cog"></i>
-              <span>사용자 관리</span>
-            </router-link>
-            <button class="action-button">
-              <i class="fas fa-gamepad"></i>
-              <span>게임 관리</span>
-            </button>
-            <button class="action-button">
-              <i class="fas fa-shopping-cart"></i>
-              <span>상점 관리</span>
-            </button>
-            <button class="action-button">
-              <i class="fas fa-chart-line"></i>
-              <span>통계 보기</span>
-            </button>
-            <button class="action-button">
-              <i class="fas fa-cog"></i>
-              <span>설정</span>
-            </button>
-            <button class="action-button">
-              <i class="fas fa-database"></i>
-              <span>데이터 백업</span>
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      <div class="system-status">
-        <h2>시스템 상태</h2>
-        <div class="status-grid">
-          <div class="status-item">
-            <div class="status-icon">
-              <i class="fas fa-server"></i>
+          
+          <div class="admin-sections">
+            <div class="recent-activities">
+              <div class="section-header">
+                <h2>최근 활동</h2>
+                <button class="view-all-btn">모두 보기</button>
+              </div>
+              <div class="activity-list">
+                <div v-for="(activity, index) in recentActivities" :key="index" class="activity-item">
+                  <div class="activity-icon" :class="activity.type">
+                    <i class="fas" :class="getActivityIcon(activity.type)"></i>
+                  </div>
+                  <div class="activity-content">
+                    <p class="activity-text">{{ activity.text }}</p>
+                    <p class="activity-time">{{ formatTime(activity.time) }}</p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="status-content">
-              <h3>서버 상태</h3>
-              <p class="status-value online">정상</p>
+            
+            <div class="quick-actions">
+              <h2>빠른 작업</h2>
+              <div class="action-buttons">
+                <router-link to="/admin/users" class="action-button">
+                  <i class="fas fa-user-cog"></i>
+                  <span>사용자 관리</span>
+                </router-link>
+                <button class="action-button">
+                  <i class="fas fa-gamepad"></i>
+                  <span>게임 관리</span>
+                </button>
+                <button class="action-button">
+                  <i class="fas fa-shopping-cart"></i>
+                  <span>상점 관리</span>
+                </button>
+                <button class="action-button">
+                  <i class="fas fa-chart-line"></i>
+                  <span>통계 보기</span>
+                </button>
+                <button class="action-button">
+                  <i class="fas fa-cog"></i>
+                  <span>설정</span>
+                </button>
+                <button class="action-button">
+                  <i class="fas fa-database"></i>
+                  <span>데이터 백업</span>
+                </button>
+              </div>
             </div>
           </div>
           
-          <div class="status-item">
-            <div class="status-icon">
-              <i class="fas fa-database"></i>
-            </div>
-            <div class="status-content">
-              <h3>데이터베이스</h3>
-              <p class="status-value online">정상</p>
-            </div>
-          </div>
-          
-          <div class="status-item">
-            <div class="status-icon">
-              <i class="fas fa-memory"></i>
-            </div>
-            <div class="status-content">
-              <h3>메모리 사용량</h3>
-              <p class="status-value">64%</p>
-            </div>
-          </div>
-          
-          <div class="status-item">
-            <div class="status-icon">
-              <i class="fas fa-microchip"></i>
-            </div>
-            <div class="status-content">
-              <h3>CPU 사용량</h3>
-              <p class="status-value">23%</p>
+          <div class="system-status">
+            <h2>시스템 상태</h2>
+            <div class="status-grid">
+              <div class="status-item">
+                <div class="status-icon">
+                  <i class="fas fa-server"></i>
+                </div>
+                <div class="status-content">
+                  <h3>서버 상태</h3>
+                  <p class="status-value online">정상</p>
+                </div>
+              </div>
+              
+              <div class="status-item">
+                <div class="status-icon">
+                  <i class="fas fa-database"></i>
+                </div>
+                <div class="status-content">
+                  <h3>데이터베이스</h3>
+                  <p class="status-value online">정상</p>
+                </div>
+              </div>
+              
+              <div class="status-item">
+                <div class="status-icon">
+                  <i class="fas fa-memory"></i>
+                </div>
+                <div class="status-content">
+                  <h3>메모리 사용량</h3>
+                  <p class="status-value">64%</p>
+                </div>
+              </div>
+              
+              <div class="status-item">
+                <div class="status-icon">
+                  <i class="fas fa-microchip"></i>
+                </div>
+                <div class="status-content">
+                  <h3>CPU 사용량</h3>
+                  <p class="status-value">23%</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </AdminPanel>
     </div>
-  </AdminPanel>
+  </div>
 </template>
 
 <script>
 import AdminPanel from './AdminPanel.vue';
+import NavigationBar from '../shared/NavigationBar.vue';
 
 export default {
   name: 'AdminDashboard',
   components: {
-    AdminPanel
+    AdminPanel,
+    NavigationBar
   },
   data() {
     return {
@@ -240,6 +247,20 @@ export default {
 </script>
 
 <style scoped>
+.admin-page {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
+.admin-content {
+  padding-top: 80px; /* 네비게이션바 높이만큼 여백 */
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
 .admin-dashboard {
   padding: 0;
   margin: 0;

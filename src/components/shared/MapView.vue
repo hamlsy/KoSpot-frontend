@@ -63,7 +63,7 @@ export default {
     center: {
       type: Object,
       default: () => ({ lat: 37.5665, lng: 126.9780 }), // 서울 시청 기본값
-      validator: prop => prop.hasOwnProperty('lat') && prop.hasOwnProperty('lng')
+      // validator: prop => prop.hasOwnProperty('lat') && prop.hasOwnProperty('lng')
     },
     zoom: {
       type: Number,
@@ -122,14 +122,14 @@ export default {
   },
   
   watch: {
-    center(newCenter) {
+    center() {
       if (this.map) {
         // 지도 중심 변경
         // this.map.setCenter(new kakao.maps.LatLng(newCenter.lat, newCenter.lng));
       }
     },
     
-    zoom(newZoom) {
+    zoom() {
       if (this.map) {
         // 지도 줌 레벨 변경
         // this.map.setLevel(newZoom);
@@ -174,7 +174,7 @@ export default {
   beforeDestroy() {
     // 마커 및 이벤트 리스너 제거
     this.userMarkers.forEach(marker => {
-      // marker.setMap(null);
+      marker.setMap(null);
     });
     
     if (this.currentMarker) {
@@ -274,7 +274,7 @@ export default {
     updateMarkers(markers) {
       // 기존 마커 제거
       this.userMarkers.forEach(marker => {
-        // marker.setMap(null);
+        marker.setMap(null);
       });
       
       this.userMarkers = [];
@@ -285,7 +285,7 @@ export default {
       });
     },
     
-    addMarker(markerInfo) {
+    addMarker() {
       /*
       const position = new kakao.maps.LatLng(markerInfo.position.lat, markerInfo.position.lng);
       

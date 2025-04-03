@@ -1,148 +1,151 @@
 <template>
-  <div class="inventory-main">
-    <div class="inventory-header">
-      <h1 class="inventory-title">내 인벤토리</h1>
-      <div class="inventory-stats">
-        <div class="stat-item">
-          <i class="fas fa-box-open"></i>
-          <span>총 {{ totalItems }}개 아이템</span>
-        </div>
-        <div class="stat-item">
-          <i class="fas fa-star"></i>
-          <span>{{ totalRareItems }}개 레어 아이템</span>
+  <div class="inventory-page">
+    <NavigationBar />
+    <div class="inventory-main">
+      <div class="inventory-header">
+        <h1 class="inventory-title">내 인벤토리</h1>
+        <div class="inventory-stats">
+          <div class="stat-item">
+            <i class="fas fa-box-open"></i>
+            <span>총 {{ totalItems }}개 아이템</span>
+          </div>
+          <div class="stat-item">
+            <i class="fas fa-star"></i>
+            <span>{{ totalRareItems }}개 레어 아이템</span>
+          </div>
         </div>
       </div>
-    </div>
-    
-    <div class="inventory-nav">
-      <div 
-        v-for="category in categories" 
-        :key="category.id"
-        class="nav-item"
-        :class="{ active: currentCategory === category.id }"
-        @click="setCategory(category.id)"
-      >
-        <i :class="category.icon"></i>
-        <span>{{ category.name }}</span>
-        <div class="item-count">{{ getCategoryItemCount(category.id) }}</div>
+      
+      <div class="inventory-nav">
+        <div 
+          v-for="category in categories" 
+          :key="category.id"
+          class="nav-item"
+          :class="{ active: currentCategory === category.id }"
+          @click="setCategory(category.id)"
+        >
+          <i :class="category.icon"></i>
+          <span>{{ category.name }}</span>
+          <div class="item-count">{{ getCategoryItemCount(category.id) }}</div>
+        </div>
       </div>
-    </div>
-    
-    <div class="inventory-content">
-      <div class="category-header">
-        <h2>{{ currentCategoryName }}</h2>
-        <div class="search-controls">
-          <div class="search-bar">
-            <i class="fas fa-search"></i>
-            <input 
-              type="text" 
-              v-model="searchQuery" 
-              placeholder="아이템 검색..." 
-              @input="filterItems"
-            >
-            <button 
-              v-if="searchQuery" 
-              class="clear-search" 
-              @click="clearSearch"
-            >
+      
+      <div class="inventory-content">
+        <div class="category-header">
+          <h2>{{ currentCategoryName }}</h2>
+          <div class="search-controls">
+            <div class="search-bar">
+              <i class="fas fa-search"></i>
+              <input 
+                type="text" 
+                v-model="searchQuery" 
+                placeholder="아이템 검색..." 
+                @input="filterItems"
+              >
+              <button 
+                v-if="searchQuery" 
+                class="clear-search" 
+                @click="clearSearch"
+              >
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            
+            <div class="sort-dropdown">
+              <select v-model="sortOption" @change="sortItems">
+                <option value="name">이름순</option>
+                <option value="rarity">희귀도순</option>
+                <option value="recent">최근 획득순</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <div v-if="filteredItems.length === 0" class="empty-state">
+          <div class="empty-icon">
+            <i class="fas fa-box-open"></i>
+          </div>
+          <h3>아이템이 없습니다</h3>
+          <p>{{ searchQuery ? '검색 결과가 없습니다.' : '이 카테고리에 아이템이 없습니다.' }}</p>
+          <button class="shop-button" @click="goToShop">상점으로 이동</button>
+        </div>
+        
+        <div v-else class="items-grid">
+          <div 
+            v-for="item in filteredItems" 
+            :key="item.id"
+            class="inventory-item"
+            :class="{ 'active': item.id === selectedItem?.id }"
+            @click="selectItem(item)"
+          >
+            <div class="item-image-container">
+              <img :src="item.image" :alt="item.name" class="item-image" />
+              <div class="item-rarity" :class="item.rarity.toLowerCase()">{{ item.rarity }}</div>
+              <div class="equipped-badge" v-if="item.equipped">장착중</div>
+            </div>
+            
+            <div class="item-details">
+              <div class="item-name">{{ item.name }}</div>
+              <div class="item-category">{{ item.categoryName }}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="item-details-panel" v-if="selectedItem">
+          <div class="details-header">
+            <h3>아이템 정보</h3>
+            <button class="close-details" @click="closeDetails">
               <i class="fas fa-times"></i>
             </button>
           </div>
           
-          <div class="sort-dropdown">
-            <select v-model="sortOption" @change="sortItems">
-              <option value="name">이름순</option>
-              <option value="rarity">희귀도순</option>
-              <option value="recent">최근 획득순</option>
-            </select>
-          </div>
-        </div>
-      </div>
-      
-      <div v-if="filteredItems.length === 0" class="empty-state">
-        <div class="empty-icon">
-          <i class="fas fa-box-open"></i>
-        </div>
-        <h3>아이템이 없습니다</h3>
-        <p>{{ searchQuery ? '검색 결과가 없습니다.' : '이 카테고리에 아이템이 없습니다.' }}</p>
-        <button class="shop-button" @click="goToShop">상점으로 이동</button>
-      </div>
-      
-      <div v-else class="items-grid">
-        <div 
-          v-for="item in filteredItems" 
-          :key="item.id"
-          class="inventory-item"
-          :class="{ 'active': item.id === selectedItem?.id }"
-          @click="selectItem(item)"
-        >
-          <div class="item-image-container">
-            <img :src="item.image" :alt="item.name" class="item-image" />
-            <div class="item-rarity" :class="item.rarity.toLowerCase()">{{ item.rarity }}</div>
-            <div class="equipped-badge" v-if="item.equipped">장착중</div>
-          </div>
-          
-          <div class="item-details">
-            <div class="item-name">{{ item.name }}</div>
-            <div class="item-category">{{ item.categoryName }}</div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="item-details-panel" v-if="selectedItem">
-        <div class="details-header">
-          <h3>아이템 정보</h3>
-          <button class="close-details" @click="closeDetails">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        
-        <div class="details-content">
-          <div class="selected-item-image">
-            <img :src="selectedItem.image" :alt="selectedItem.name" />
-            <div class="item-rarity" :class="selectedItem.rarity.toLowerCase()">
-              {{ selectedItem.rarity }}
+          <div class="details-content">
+            <div class="selected-item-image">
+              <img :src="selectedItem.image" :alt="selectedItem.name" />
+              <div class="item-rarity" :class="selectedItem.rarity.toLowerCase()">
+                {{ selectedItem.rarity }}
+              </div>
             </div>
-          </div>
-          
-          <div class="selected-item-info">
-            <h4>{{ selectedItem.name }}</h4>
-            <p class="item-description">{{ selectedItem.description }}</p>
             
-            <div class="item-stats">
-              <div class="stat-row">
-                <span class="stat-label">카테고리:</span>
-                <span class="stat-value">{{ selectedItem.categoryName }}</span>
-              </div>
-              <div class="stat-row">
-                <span class="stat-label">획득일:</span>
-                <span class="stat-value">{{ formatDate(selectedItem.acquiredDate) }}</span>
-              </div>
-              <div class="stat-row" v-if="selectedItem.expiryDate">
-                <span class="stat-label">만료일:</span>
-                <span class="stat-value">{{ formatDate(selectedItem.expiryDate) }}</span>
+            <div class="selected-item-info">
+              <h4>{{ selectedItem.name }}</h4>
+              <p class="item-description">{{ selectedItem.description }}</p>
+              
+              <div class="item-stats">
+                <div class="stat-row">
+                  <span class="stat-label">카테고리:</span>
+                  <span class="stat-value">{{ selectedItem.categoryName }}</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">획득일:</span>
+                  <span class="stat-value">{{ formatDate(selectedItem.acquiredDate) }}</span>
+                </div>
+                <div class="stat-row" v-if="selectedItem.expiryDate">
+                  <span class="stat-label">만료일:</span>
+                  <span class="stat-value">{{ formatDate(selectedItem.expiryDate) }}</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        
-        <div class="details-actions">
-          <button 
-            class="action-button equip-button" 
-            v-if="!selectedItem.equipped"
-            @click="equipItem(selectedItem)"
-          >
-            <i class="fas fa-check"></i>
-            장착하기
-          </button>
-          <button 
-            class="action-button unequip-button" 
-            v-else
-            @click="unequipItem(selectedItem)"
-          >
-            <i class="fas fa-times"></i>
-            장착 해제
-          </button>
+          
+          <div class="details-actions">
+            <button 
+              class="action-button equip-button" 
+              v-if="!selectedItem.equipped"
+              @click="equipItem(selectedItem)"
+            >
+              <i class="fas fa-check"></i>
+              장착하기
+            </button>
+            <button 
+              class="action-button unequip-button" 
+              v-else
+              @click="unequipItem(selectedItem)"
+            >
+              <i class="fas fa-times"></i>
+              장착 해제
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -150,9 +153,13 @@
 </template>
 
 <script>
+import NavigationBar from '../shared/NavigationBar.vue';
+
 export default {
   name: 'InventoryMain',
-  
+  components: {
+    NavigationBar,
+  },
   data() {
     return {
       currentCategory: 'all',
@@ -293,12 +300,14 @@ export default {
     },
     
     sortItemsList(items) {
+      let rarityOrder;
+      
       switch (this.sortOption) {
         case 'name':
           items.sort((a, b) => a.name.localeCompare(b.name));
           break;
         case 'rarity':
-          const rarityOrder = { '에픽': 0, '레어': 1, '일반': 2 };
+          rarityOrder = { '에픽': 0, '레어': 1, '일반': 2 };
           items.sort((a, b) => rarityOrder[a.rarity] - rarityOrder[b.rarity]);
           break;
         case 'recent':
@@ -373,6 +382,12 @@ export default {
 </script>
 
 <style scoped>
+.inventory-page {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
 .inventory-main {
   max-width: 1200px;
   margin: 0 auto;

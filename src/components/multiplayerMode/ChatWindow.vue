@@ -61,10 +61,10 @@ export default {
   },
   
   computed: {
-    onlineUsers() {
-      // 실제 구현에서는 웹소켓으로 현재 접속자 수를 가져옴
-      return Math.floor(Math.random() * 50) + 150; // 150~200명 테스트용
-    }
+    // onlineUsers() {
+    //   // 실제 구현에서는 웹소켓으로 현재 접속자 수를 가져옴
+    //   return Math.floor(Math.random() * 50) + 150; // 150~200명 테스트용
+    // }
   },
   
   watch: {

@@ -1,213 +1,218 @@
 <template>
-  <div class="friends-container">
-    <div class="friends-header">
-      <h2>내 친구</h2>
-      <div class="header-controls">
-        <div class="search-bar">
-          <i class="fas fa-search"></i>
-          <input 
-            type="text" 
-            v-model="searchQuery" 
-            placeholder="친구 검색..." 
-            @input="filterFriends"
-          >
-        </div>
-        <button class="add-friend-btn" @click="showAddFriendModal = true">
-          <i class="fas fa-user-plus"></i>
-          친구 추가
-        </button>
-      </div>
-    </div>
-    
-    <div class="tabs">
-      <div 
-        class="tab" 
-        :class="{ active: activeTab === 'friends' }"
-        @click="setActiveTab('friends')"
-      >
-        친구 목록 ({{ friends.length }})
-      </div>
-      <div 
-        class="tab" 
-        :class="{ active: activeTab === 'requests' }"
-        @click="setActiveTab('requests')"
-      >
-        친구 요청 
-        <span v-if="pendingRequests.length" class="request-badge">
-          {{ pendingRequests.length }}
-        </span>
-      </div>
-    </div>
-    
-    <!-- 친구 목록 탭 -->
-    <div v-if="activeTab === 'friends'" class="friends-list">
-      <div v-if="filteredFriends.length === 0" class="empty-state">
-        <div class="empty-icon">
-          <i class="fas fa-user-friends"></i>
-        </div>
-        <p>{{ searchQuery ? '검색 결과가 없습니다.' : '친구가 없습니다.' }}</p>
-        <button 
-          v-if="!searchQuery" 
-          class="add-friend-btn" 
-          @click="showAddFriendModal = true"
-        >
-          친구 추가하기
-        </button>
-      </div>
-      
-      <div v-else class="friends-grid">
-        <div 
-          v-for="friend in filteredFriends" 
-          :key="friend.id"
-          class="friend-card"
-        >
-          <div class="friend-status" :class="friend.status"></div>
-          <div class="friend-avatar">
-            <img :src="friend.profileImage" :alt="friend.nickname">
-          </div>
-          <div class="friend-info">
-            <div class="friend-name">
-              {{ friend.nickname }}
-              <span class="friend-level">Lv.{{ friend.level }}</span>
-            </div>
-            <div class="friend-meta">
-              <span v-if="friend.status === 'online'">온라인</span>
-              <span v-else-if="friend.status === 'ingame'">게임 중</span>
-              <span v-else>{{ formatLastSeen(friend.lastSeen) }}</span>
-            </div>
-          </div>
-          <div class="friend-actions">
-            <button class="action-btn invite-btn" v-if="friend.status !== 'offline'">
-              <i class="fas fa-gamepad"></i>
-              초대
-            </button>
-            <button class="action-btn message-btn">
-              <i class="fas fa-comment"></i>
-              메시지
-            </button>
-            <button class="action-btn more-btn">
-              <i class="fas fa-ellipsis-v"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- 친구 요청 탭 -->
-    <div v-else class="requests-list">
-      <div v-if="pendingRequests.length === 0" class="empty-state">
-        <div class="empty-icon">
-          <i class="fas fa-user-check"></i>
-        </div>
-        <p>새로운 친구 요청이 없습니다.</p>
-      </div>
-      
-      <div v-else>
-        <div 
-          v-for="request in pendingRequests" 
-          :key="request.id"
-          class="request-item"
-        >
-          <div class="request-avatar">
-            <img :src="request.profileImage" :alt="request.nickname">
-          </div>
-          <div class="request-info">
-            <div class="request-name">{{ request.nickname }}</div>
-            <div class="request-meta">
-              <span class="request-time">{{ formatTime(request.requestTime) }}</span>
-              <span v-if="request.mutualFriends" class="mutual-friends">
-                함께 아는 친구 {{ request.mutualFriends }}명
-              </span>
-            </div>
-          </div>
-          <div class="request-actions">
-            <button class="accept-btn" @click="acceptRequest(request.id)">
-              수락
-            </button>
-            <button class="reject-btn" @click="rejectRequest(request.id)">
-              거절
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- 친구 추가 모달 -->
-    <div v-if="showAddFriendModal" class="modal-overlay">
-      <div class="modal-container">
-        <div class="modal-header">
-          <h3>친구 추가</h3>
-          <button class="close-btn" @click="showAddFriendModal = false">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        
-        <div class="modal-content">
-          <div class="search-section">
-            <label for="friend-search">코스팟 ID 또는 이메일로 검색</label>
-            <div class="search-input">
+  <div class="friends-page">
+    <NavigationBar />
+    <div class="friends-content">
+      <div class="friends-container">
+        <div class="friends-header">
+          <h2>내 친구</h2>
+          <div class="header-controls">
+            <div class="search-bar">
+              <i class="fas fa-search"></i>
               <input 
                 type="text" 
-                id="friend-search" 
-                v-model="friendSearch"
-                placeholder="친구의 ID 또는 이메일 입력"
+                v-model="searchQuery" 
+                placeholder="친구 검색..." 
+                @input="filterFriends"
               >
-              <button class="search-btn" @click="searchFriend">
-                <i class="fas fa-search"></i>
-              </button>
             </div>
+            <button class="add-friend-btn" @click="showAddFriendModal = true">
+              <i class="fas fa-user-plus"></i>
+              친구 추가
+            </button>
           </div>
-          
-          <div class="search-results" v-if="searchResults.length > 0">
-            <h4>검색 결과</h4>
-            <div 
-              v-for="result in searchResults" 
-              :key="result.id"
-              class="result-item"
+        </div>
+        
+        <div class="tabs">
+          <div 
+            class="tab" 
+            :class="{ active: activeTab === 'friends' }"
+            @click="setActiveTab('friends')"
+          >
+            친구 목록 ({{ friends.length }})
+          </div>
+          <div 
+            class="tab" 
+            :class="{ active: activeTab === 'requests' }"
+            @click="setActiveTab('requests')"
+          >
+            친구 요청 
+            <span v-if="pendingRequests.length" class="request-badge">
+              {{ pendingRequests.length }}
+            </span>
+          </div>
+        </div>
+        
+        <!-- 친구 목록 탭 -->
+        <div v-if="activeTab === 'friends'" class="friends-list">
+          <div v-if="filteredFriends.length === 0" class="empty-state">
+            <div class="empty-icon">
+              <i class="fas fa-user-friends"></i>
+            </div>
+            <p>{{ searchQuery ? '검색 결과가 없습니다.' : '친구가 없습니다.' }}</p>
+            <button 
+              v-if="!searchQuery" 
+              class="add-friend-btn" 
+              @click="showAddFriendModal = true"
             >
-              <div class="result-avatar">
-                <img :src="result.profileImage" :alt="result.nickname">
+              친구 추가하기
+            </button>
+          </div>
+          
+          <div v-else class="friends-grid">
+            <div 
+              v-for="friend in filteredFriends" 
+              :key="friend.id"
+              class="friend-card"
+            >
+              <div class="friend-status" :class="friend.status"></div>
+              <div class="friend-avatar">
+                <img :src="friend.profileImage" :alt="friend.nickname">
               </div>
-              <div class="result-info">
-                <div class="result-name">{{ result.nickname }}</div>
-                <div class="result-id">@{{ result.userId }}</div>
+              <div class="friend-info">
+                <div class="friend-name">
+                  {{ friend.nickname }}
+                  <span class="friend-level">Lv.{{ friend.level }}</span>
+                </div>
+                <div class="friend-meta">
+                  <span v-if="friend.status === 'online'">온라인</span>
+                  <span v-else-if="friend.status === 'ingame'">게임 중</span>
+                  <span v-else>{{ formatLastSeen(friend.lastSeen) }}</span>
+                </div>
               </div>
-              <button 
-                class="add-btn" 
-                :class="{ 'sent': result.requestSent }"
-                :disabled="result.requestSent"
-                @click="sendFriendRequest(result.id)"
-              >
-                {{ result.requestSent ? '요청됨' : '친구 추가' }}
-              </button>
+              <div class="friend-actions">
+                <button class="action-btn invite-btn" v-if="friend.status !== 'offline'">
+                  <i class="fas fa-gamepad"></i>
+                  초대
+                </button>
+                <button class="action-btn message-btn">
+                  <i class="fas fa-comment"></i>
+                  메시지
+                </button>
+                <button class="action-btn more-btn">
+                  <i class="fas fa-ellipsis-v"></i>
+                </button>
+              </div>
             </div>
           </div>
-          
-          <div class="divider">
-            <span>또는</span>
+        </div>
+        
+        <!-- 친구 요청 탭 -->
+        <div v-else class="requests-list">
+          <div v-if="pendingRequests.length === 0" class="empty-state">
+            <div class="empty-icon">
+              <i class="fas fa-user-check"></i>
+            </div>
+            <p>새로운 친구 요청이 없습니다.</p>
           </div>
           
-          <div class="invite-section">
-            <h4>친구 초대</h4>
-            <p>아직 코스팟을 사용하지 않는 친구를 초대해 보세요.</p>
+          <div v-else>
+            <div 
+              v-for="request in pendingRequests" 
+              :key="request.id"
+              class="request-item"
+            >
+              <div class="request-avatar">
+                <img :src="request.profileImage" :alt="request.nickname">
+              </div>
+              <div class="request-info">
+                <div class="request-name">{{ request.nickname }}</div>
+                <div class="request-meta">
+                  <span class="request-time">{{ formatTime(request.requestTime) }}</span>
+                  <span v-if="request.mutualFriends" class="mutual-friends">
+                    함께 아는 친구 {{ request.mutualFriends }}명
+                  </span>
+                </div>
+              </div>
+              <div class="request-actions">
+                <button class="accept-btn" @click="acceptRequest(request.id)">
+                  수락
+                </button>
+                <button class="reject-btn" @click="rejectRequest(request.id)">
+                  거절
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 친구 추가 모달 -->
+        <div v-if="showAddFriendModal" class="modal-overlay">
+          <div class="modal-container">
+            <div class="modal-header">
+              <h3>친구 추가</h3>
+              <button class="close-btn" @click="showAddFriendModal = false">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
             
-            <div class="share-buttons">
-              <button class="share-btn kakao">
-                <i class="fas fa-comment"></i>
-                카카오톡
-              </button>
-              <button class="share-btn facebook">
-                <i class="fab fa-facebook-f"></i>
-                페이스북
-              </button>
-              <button class="share-btn email">
-                <i class="fas fa-envelope"></i>
-                이메일
-              </button>
-              <button class="share-btn link">
-                <i class="fas fa-link"></i>
-                링크 복사
-              </button>
+            <div class="modal-content">
+              <div class="search-section">
+                <label for="friend-search">코스팟 ID 또는 이메일로 검색</label>
+                <div class="search-input">
+                  <input 
+                    type="text" 
+                    id="friend-search" 
+                    v-model="friendSearch"
+                    placeholder="친구의 ID 또는 이메일 입력"
+                  >
+                  <button class="search-btn" @click="searchFriend">
+                    <i class="fas fa-search"></i>
+                  </button>
+                </div>
+              </div>
+              
+              <div class="search-results" v-if="searchResults.length > 0">
+                <h4>검색 결과</h4>
+                <div 
+                  v-for="result in searchResults" 
+                  :key="result.id"
+                  class="result-item"
+                >
+                  <div class="result-avatar">
+                    <img :src="result.profileImage" :alt="result.nickname">
+                  </div>
+                  <div class="result-info">
+                    <div class="result-name">{{ result.nickname }}</div>
+                    <div class="result-id">@{{ result.userId }}</div>
+                  </div>
+                  <button 
+                    class="add-btn" 
+                    :class="{ 'sent': result.requestSent }"
+                    :disabled="result.requestSent"
+                    @click="sendFriendRequest(result.id)"
+                  >
+                    {{ result.requestSent ? '요청됨' : '친구 추가' }}
+                  </button>
+                </div>
+              </div>
+              
+              <div class="divider">
+                <span>또는</span>
+              </div>
+              
+              <div class="invite-section">
+                <h4>친구 초대</h4>
+                <p>아직 코스팟을 사용하지 않는 친구를 초대해 보세요.</p>
+                
+                <div class="share-buttons">
+                  <button class="share-btn kakao">
+                    <i class="fas fa-comment"></i>
+                    카카오톡
+                  </button>
+                  <button class="share-btn facebook">
+                    <i class="fab fa-facebook-f"></i>
+                    페이스북
+                  </button>
+                  <button class="share-btn email">
+                    <i class="fas fa-envelope"></i>
+                    이메일
+                  </button>
+                  <button class="share-btn link">
+                    <i class="fas fa-link"></i>
+                    링크 복사
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -217,9 +222,13 @@
 </template>
 
 <script>
+import NavigationBar from '../shared/NavigationBar.vue';
+
 export default {
   name: 'FriendsList',
-  
+  components: {
+    NavigationBar,
+  },
   data() {
     return {
       activeTab: 'friends',
@@ -420,6 +429,20 @@ export default {
 </script>
 
 <style scoped>
+.friends-page {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
+.friends-content {
+  padding-top: 80px; /* 네비게이션바 높이만큼 여백 */
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
 .friends-container {
   background: white;
   border-radius: 12px;

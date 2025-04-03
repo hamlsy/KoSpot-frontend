@@ -16,6 +16,12 @@ import MultiplayerGame from '@/components/multiplayerMode/MultiplayerGame.vue';
 import AdminDashboard from '@/components/admin/AdminDashboard.vue';
 import UserManagement from '@/components/admin/UserManagement.vue';
 
+// 추가 컴포넌트 import
+import ShopMain from '@/components/shop/ShopMain.vue';
+import InventoryMain from '@/components/inventory/InventoryMain.vue';
+import MyProfile from '@/components/mypage/MyProfile.vue';
+import FriendsList from '@/components/mypage/FriendsList.vue';
+import AccountSettings from '@/components/mypage/AccountSettings.vue';
 
 Vue.use(VueRouter);
 
@@ -99,6 +105,40 @@ const routes = [
         path: '/admin/users',
         name: "UserManagement",
         component: UserManagement
+    },
+    // 추가 라우트
+    {
+        path: '/shopMain',
+        name: "ShopMain",
+        component: ShopMain
+    },
+    {
+        path: '/inventory',
+        name: "InventoryMain",
+        component: InventoryMain
+    },
+    {
+        path: '/myProfile',
+        name: "MyProfile",
+        component: MyProfile
+    },
+    {
+        path: '/friendsList',
+        name: "FriendsList",
+        component: FriendsList
+    },
+    {
+        path: '/accountSettings',
+        name: "AccountSettings",
+        component: AccountSettings
+    },
+    {
+        path: '/noticeList',
+        redirect: '/tempPage' // 임시 리디렉션, 공지사항 컴포넌트 개발 후 수정 필요
+    },
+    {
+        path: '/myPoints',
+        redirect: '/myProfile' // 임시 리디렉션, 포인트 관리 페이지는 마이프로필로 연결
     }
 ]
 

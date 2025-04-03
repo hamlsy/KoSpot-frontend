@@ -1,39 +1,7 @@
 <template>
   <div class="app-container">
-    <!-- Header -->
-    <header class="header">
-      <div class="header-content">
-        <div class="header-left">
-          <h1 class="logo">KoSpot</h1>
-          <span class="badge">Beta</span>
-        </div>
-
-        <!-- 네비게이션 추가 - 웹 전용 -->
-        <div class="main-nav desktop-only">
-          <a href="#" class="nav-link">공지사항</a>
-          <a href="#" class="nav-link">이벤트</a>
-          <a href="#" class="nav-link">통계</a>
-          <a href="#" class="nav-link">상점</a>
-          <a href="#" class="nav-link">마이페이지</a>
-          <router-link v-if="userProfile.isAdmin" to="/admin" class="nav-link admin-link">관리자</router-link>
-        </div>
-
-        <div class="header-right">
-          <button class="icon-button" @click="openNotifications">
-            <i class="fas fa-bell"></i>
-            <span class="notification-badge" v-if="unreadNotifications">3</span>
-          </button>
-          <div class="user-profile" @click="toggleProfileMenu">
-            <div class="user-avatar">
-              <img
-                :src="userProfile.avatar || '/default-avatar.png'"
-                alt="프로필"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </header>
+    <!-- 공통 네비게이션바 사용 -->
+    <NavigationBar />
 
     <!-- Main Content -->
     <main class="main-content">
@@ -175,7 +143,7 @@
             </div>
           </div>
         </router-link>
-        <router-link to="/friendList">
+        <router-link to="/friendsList">
           <div class="stat-card">
             <div class="stat-icon">👥</div>
             <div class="stat-info">
@@ -190,9 +158,9 @@
       <section class="notices-section">
         <div class="section-header">
           <h2 class="section-title">공지사항</h2>
-          <a href="/noticeList" class="view-all"
-            >전체보기 <i class="fas fa-angle-right"></i
-          ></a>
+          <router-link to="/noticeList" class="view-all">
+            전체보기 <i class="fas fa-angle-right"></i>
+          </router-link>
         </div>
         <div class="notices-list">
           <div
@@ -243,26 +211,26 @@
 
         <!-- 모바일용 내비게이션 메뉴 추가 -->
         <nav class="mobile-nav">
-          <a href="#" class="menu-item">
+          <router-link to="/noticeList" class="menu-item">
             <i class="fas fa-bullhorn"></i>
             공지사항
-          </a>
-          <a href="#" class="menu-item">
+          </router-link>
+          <router-link to="/tempPage" class="menu-item">
             <i class="fas fa-calendar-alt"></i>
             이벤트
-          </a>
-          <a href="#" class="menu-item">
+          </router-link>
+          <router-link to="/tempPage" class="menu-item">
             <i class="fas fa-chart-bar"></i>
             통계
-          </a>
-          <a href="#" class="menu-item">
+          </router-link>
+          <router-link to="/shopMain" class="menu-item">
             <i class="fas fa-shopping-cart"></i>
             상점
-          </a>
-          <a href="#" class="menu-item">
+          </router-link>
+          <router-link to="/myProfile" class="menu-item">
             <i class="fas fa-user-circle"></i>
             마이페이지
-          </a>
+          </router-link>
           <div class="menu-divider"></div>
           <a href="#" class="menu-item">
             <i class="fas fa-sign-out-alt"></i>
@@ -286,8 +254,13 @@
 </template>
 
 <script>
+import NavigationBar from './shared/NavigationBar.vue';
+
 export default {
-  name: "KoSpotMain",
+  name: "MainPage",
+  components: {
+    NavigationBar
+  },
   data() {
     return {
       showProfileMenu: false,
@@ -432,97 +405,16 @@ export default {
 
 .app-container {
   min-height: 100vh;
-  background-color: #f6f6f6;
-}
-
-/* 메인 네비게이션 - 웹 전용 */
-.main-nav {
-  display: flex;
-  gap: 24px;
-  margin-left: 40px;
-}
-
-@media (max-width: 768px) {
-  .main-nav {
-    display: none; /* 모바일에서 네비게이션 숨김 */
-  }
-  
-  .header-right {
-    margin-left: auto; /* 우측 정렬 유지 */
-  }
-}
-.nav-link {
-  color: #4b5563;
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 15px;
-  position: relative;
-  transition: color 0.3s;
-}
-
-.nav-link:hover {
-  color: #2563eb;
-}
-
-.nav-link:hover::after {
-  content: "";
-  position: absolute;
-  bottom: -6px;
-  left: 0;
   width: 100%;
-  height: 2px;
-  background-color: #2563eb;
-  transform: scaleX(1);
-  transition: transform 0.3s;
-}
-
-.icon-button {
-  position: relative;
-  padding: 8px;
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
-.notification-badge {
-  position: absolute;
-  top: 0;
-  right: 0;
-  background: #ef4444;
-  color: white;
-  font-size: 10px;
-  padding: 2px 4px;
-  border-radius: 10px;
-  min-width: 16px;
-  text-align: center;
-}
-
-.user-profile {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-}
-
-.user-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: #e5e7eb;
-  border: 2px solid #dbeafe;
-}
-
-.user-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  background-color: #f5f7fa;
 }
 
 .main-content {
-  padding: 80px 20px 20px;
+  padding-top: 80px; /* 네비게이션바 높이만큼 여백 추가 */
   max-width: 1200px;
   margin: 0 auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
 
 .stats-container {

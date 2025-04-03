@@ -126,7 +126,7 @@ export default {
       // Kakao Maps API 사용하여 구현
       // 실제 구현에서는 아래 주석 부분을 구현
       
-      /*
+    
       if (window.kakao && window.kakao.maps) {
         const container = this.$refs.mapContainer;
         const options = {
@@ -165,7 +165,7 @@ export default {
         console.error('Kakao Maps SDK가 로드되지 않았습니다.');
         this.isLoading = false;
       }
-      */
+      
       
       // 목업 데이터로 대체 (데모 목적)
       setTimeout(() => {

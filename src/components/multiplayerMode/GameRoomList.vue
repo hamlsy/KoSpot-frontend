@@ -146,7 +146,7 @@ export default {
   
   watch: {
     rooms: {
-      handler(newRooms) {
+      handler() {
         this.filterRooms();
       },
       deep: true
