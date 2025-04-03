@@ -11,6 +11,10 @@ import MyInfoPage from '@/components/MyInfoPage.vue';
 import CoordData from '@/components/dummy/coordData.vue';
 import KakaoMapTest from '@/components/dummy/KakaoMapTest.vue';
 import EncryptTest from '@/components/dummy/EncryptTest.vue';
+import MultiplayerLobby from '@/components/multiplayerMode/MultiplayerLobby.vue';
+import MultiplayerGame from '@/components/multiplayerMode/MultiplayerGame.vue';
+import AdminDashboard from '@/components/admin/AdminDashboard.vue';
+import UserManagement from '@/components/admin/UserManagement.vue';
 
 
 Vue.use(VueRouter);
@@ -74,6 +78,27 @@ const routes = [
         path: '/encryptTest',
         name: "EncryptTest",
         component: EncryptTest
+    },
+    {
+        path: '/multiplayerLobby',
+        name: "MultiplayerLobby",
+        component: MultiplayerLobby
+    },
+    {
+        path: '/multiplayerGame/:roomId',
+        name: "MultiplayerGame",
+        component: MultiplayerGame,
+        props: true
+    },
+    {
+        path: '/admin',
+        name: "AdminDashboard",
+        component: AdminDashboard
+    },
+    {
+        path: '/admin/users',
+        name: "UserManagement",
+        component: UserManagement
     }
 ]
 

@@ -15,6 +15,7 @@
           <a href="#" class="nav-link">통계</a>
           <a href="#" class="nav-link">상점</a>
           <a href="#" class="nav-link">마이페이지</a>
+          <router-link v-if="userProfile.isAdmin" to="/admin" class="nav-link admin-link">관리자</router-link>
         </div>
 
         <div class="header-right">
@@ -113,6 +114,30 @@
                   <i class="fas fa-user"></i> 195명 플레이 중
                 </span>
                 <span class="difficulty">
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          <div
+            class="mode-card multiplayer"
+            @click="navigateTo('multiplayerLobby')"
+          >
+            <div class="mode-background"></div>
+            <div class="mode-icon">
+              <i class="fas fa-users"></i>
+            </div>
+            <div class="mode-info">
+              <h3>멀티플레이어</h3>
+              <p>다른 플레이어들과 함께 게임하세요</p>
+              <div class="mode-stats">
+                <span class="active-players">
+                  <i class="fas fa-user"></i> 124명 플레이 중
+                </span>
+                <span class="difficulty">
+                  <i class="fas fa-star"></i>
                   <i class="fas fa-star"></i>
                   <i class="fas fa-star"></i>
                 </span>
@@ -243,6 +268,12 @@
             <i class="fas fa-sign-out-alt"></i>
             로그아웃
           </a>
+          
+          <!-- 관리자 페이지 링크 추가 -->
+          <router-link v-if="userProfile.isAdmin" to="/admin" class="menu-item admin-menu-item">
+            <i class="fas fa-user-shield"></i>
+            관리자 페이지
+          </router-link>
         </nav>
       </div>
     </transition>
@@ -270,6 +301,7 @@ export default {
         name: "김코스팟",
         email: "user@kospot.com",
         avatar: null,
+        isAdmin: true // 관리자 권한 설정 (실제 구현에서는 인증 서비스에서 가져옴)
       },
       banners: [
         {
@@ -880,5 +912,19 @@ export default {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+.admin-link {
+  color: #6366f1;
+  font-weight: 600;
+}
+
+.admin-menu-item {
+  color: #6366f1 !important;
+  font-weight: 600;
+}
+
+.admin-menu-item i {
+  color: #6366f1;
 }
 </style>
