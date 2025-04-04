@@ -329,7 +329,7 @@ export default {
       hintsLeft: 3,
       hintCount: 3, // 힌트 사용 가능 횟수
       hintCircle: null, // 힌트 원 객체
-      hintRadius: 150000, // 초기 힌트 원 반경 (미터)
+      hintRadius: 120000, // 초기 힌트 원 반경 (미터)
       hintAvailable: false, // 힌트 사용 가능 여부
       nextHintTime: 30, // 다음 힌트까지 남은 시간 (초)
       hintTimer: null, // 힌트 타이머
@@ -405,7 +405,7 @@ export default {
       
       // 힌트 상태 초기화
       this.hintCount = 3;
-      this.hintRadius = 150000;
+      this.hintRadius = 120000;
       this.hintAvailable = false;
       this.nextHintTime = 30;
       
@@ -501,7 +501,7 @@ export default {
       
       // 힌트 반경 줄이기
       if (this.hintCount === 2) {
-        this.hintRadius = 100000; // 두 번째 힌트는 100km
+        this.hintRadius = 80000; // 두 번째 힌트는 80km
       } else if (this.hintCount === 1) {
         this.hintRadius = 30000; // 세 번째 힌트는 30km
       }
@@ -659,7 +659,8 @@ export default {
       // 사용자 마커
       new kakao.maps.Marker({
         position: new kakao.maps.LatLng(guessPosition.lat, guessPosition.lng),
-        map: resultMap
+        map: resultMap,
+        imageSrc: "@/assets/images/roadViewMode/currentLocation.png",
       });
       
       // 실제 위치 마커

@@ -7,28 +7,28 @@
           <i class="fas fa-times"></i>
         </button>
       </div>
-      
+
       <div class="modal-body">
         <div class="form-group">
           <label for="roomName">방 이름</label>
-          <input 
-            type="text" 
-            id="roomName" 
-            v-model="roomName" 
+          <input
+            type="text"
+            id="roomName"
+            v-model="roomName"
             placeholder="방 이름을 입력하세요"
             maxlength="30"
           />
           <small>{{ roomName.length }}/30</small>
         </div>
-        
+
         <div class="form-group">
           <label>게임 모드</label>
           <div class="radio-group">
             <label class="radio-option">
-              <input 
-                type="radio" 
-                name="gameMode" 
-                value="로드뷰" 
+              <input
+                type="radio"
+                name="gameMode"
+                value="로드뷰"
                 v-model="gameMode"
               />
               <div class="radio-content">
@@ -37,10 +37,10 @@
               </div>
             </label>
             <label class="radio-option">
-              <input 
-                type="radio" 
-                name="gameMode" 
-                value="포토" 
+              <input
+                type="radio"
+                name="gameMode"
+                value="포토"
                 v-model="gameMode"
               />
               <div class="radio-content">
@@ -50,75 +50,90 @@
             </label>
           </div>
         </div>
-        
+
         <div class="form-group">
-          <label>지역 선택</label>
-          <div class="select-container">
-            <select v-model="region">
-              <option value="전국">전국</option>
-              <option value="서울">서울</option>
-              <option value="부산">부산</option>
-              <option value="제주">제주</option>
-              <option value="강원">강원</option>
-              <option value="경기도">경기도</option>
-              <option value="전라도">전라도</option>
-              <option value="경상도">경상도</option>
-              <option value="충청도">충청도</option>
-            </select>
-            <i class="fas fa-chevron-down"></i>
+          <label>게임 타입</label>
+          <div class="radio-group">
+            <label class="radio-option">
+              <input
+                type="radio"
+                name="gameType"
+                value="individual"
+                v-model="gameType"
+              />
+              <div class="radio-content">
+                <i class="fas fa-user"></i>
+                <span>개인전</span>
+              </div>
+            </label>
+            <label class="radio-option">
+              <input
+                type="radio"
+                name="gameType"
+                value="cooperative"
+                v-model="gameType"
+              />
+              <div class="radio-content">
+                <i class="fas fa-users"></i>
+                <span>협동전</span>
+              </div>
+            </label>
           </div>
         </div>
-        
+
         <div class="form-group">
           <label>인원 제한</label>
           <div class="player-count-control">
-            <button 
-              class="count-btn" 
-              @click="decreasePlayerCount" 
+            <button
+              class="count-btn"
+              @click="decreasePlayerCount"
               :disabled="maxPlayers <= 2"
             >
               <i class="fas fa-minus"></i>
             </button>
             <span class="player-count">{{ maxPlayers }}명</span>
-            <button 
-              class="count-btn" 
-              @click="increasePlayerCount" 
+            <button
+              class="count-btn"
+              @click="increasePlayerCount"
               :disabled="maxPlayers >= 8"
             >
               <i class="fas fa-plus"></i>
             </button>
           </div>
         </div>
-        
+
         <div class="form-group">
           <label>게임 설정</label>
           <div class="settings-group">
             <label class="checkbox-option">
               <input type="checkbox" v-model="gameSettings.isPrivate" />
-              <span>비공개 방 (초대 코드로만 입장 가능)</span>
+              <span>비공개 방 (비밀번호로 입장 가능)</span>
             </label>
-            <label class="checkbox-option">
+            <!-- <label class="checkbox-option">
               <input type="checkbox" v-model="gameSettings.allowSpectators" />
               <span>관전자 허용</span>
-            </label>
-            <label class="checkbox-option">
-              <input type="checkbox" v-model="gameSettings.useVoiceChat" />
-              <span>음성 채팅 사용</span>
-            </label>
+            </label> -->
           </div>
         </div>
-        
+
         <div v-if="gameSettings.isPrivate" class="private-room-notice">
-          <i class="fas fa-info-circle"></i>
-          <p>비공개 방으로 생성하면 초대 코드가 발급됩니다. 이 코드를 공유해야만 다른 사용자가 방에 참여할 수 있습니다.</p>
+          <div class="form-group password-form">
+            <input
+              type="password"
+              v-model="password"
+              placeholder="비밀번호를 입력하세요"
+              maxlength="10"
+              class="password-input"
+            />
+          </div>
         </div>
       </div>
-      
+
       <div class="modal-footer">
         <button class="cancel-button" @click="closeModal">취소</button>
-        <button 
-          class="create-button" 
-          @click="createRoom" 
+        <button
+          class="create-button"
+          @click="createRoom"
           :disabled="!roomName.trim()"
         >
           방 만들기
@@ -131,52 +146,57 @@
 <script>
 export default {
   name: "CreateRoomModal",
-  
+
   data() {
     return {
-      roomName: '',
-      gameMode: '로드뷰',
-      region: '전국',
+      roomName: "",
+      gameMode: "로드뷰",
+      region: "전국",
       maxPlayers: 4,
+      gameType: "individual",
+      password: "",
       gameSettings: {
         isPrivate: false,
         allowSpectators: true,
-        useVoiceChat: false
-      }
+        useVoiceChat: false,
+      },
     };
   },
-  
+
   methods: {
     closeModal() {
-      this.$emit('close');
+      this.$emit("close");
     },
-    
+
     createRoom() {
       if (!this.roomName.trim()) return;
-      
+
       const roomData = {
         name: this.roomName,
         gameMode: this.gameMode,
         region: this.region,
         maxPlayers: this.maxPlayers,
-        settings: { ...this.gameSettings }
+        gameType: this.gameType,
+        settings: { ...this.gameSettings },
+        privacy: this.gameSettings.isPrivate ? "private" : "public",
+        password: this.password,
       };
-      
-      this.$emit('create-room', roomData);
+
+      this.$emit("create-room", roomData);
     },
-    
+
     increasePlayerCount() {
       if (this.maxPlayers < 8) {
         this.maxPlayers++;
       }
     },
-    
+
     decreasePlayerCount() {
       if (this.maxPlayers > 2) {
         this.maxPlayers--;
       }
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -422,6 +442,26 @@ export default {
   line-height: 1.4;
 }
 
+.password-form {
+  margin-top: 10px;
+  width: 100%;
+}
+
+.password-input {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.password-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
 .modal-footer {
   display: flex;
   justify-content: flex-end;
@@ -476,22 +516,22 @@ export default {
   .modal-container {
     width: 95%;
   }
-  
+
   .radio-group {
     flex-direction: column;
     gap: 0.8rem;
   }
-  
+
   .modal-header h2 {
     font-size: 1.2rem;
   }
-  
+
   .modal-body {
     padding: 1.2rem;
   }
-  
+
   .modal-footer {
     padding: 1rem 1.2rem;
   }
 }
-</style> 
+</style>

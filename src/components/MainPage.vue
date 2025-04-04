@@ -24,7 +24,7 @@
             </div>
           </div>
         </div>
-
+      
         <!-- Banner Navigation Dots -->
         <div class="banner-dots">
           <button
@@ -818,5 +818,34 @@ export default {
 
 .admin-menu-item i {
   color: #6366f1;
+}
+
+/* 광고 섹션 스타일 */
+.ad-section {
+  margin: 20px 0;
+  width: 100%;
+}
+
+.ad-container {
+  width: 100%;
+  height: 120px;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.ad-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #e9ecef;
+  color: #6c757d;
+  font-size: 14px;
+  border: 1px dashed #adb5bd;
 }
 </style>

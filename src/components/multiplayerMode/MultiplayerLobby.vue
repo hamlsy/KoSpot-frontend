@@ -390,6 +390,30 @@ export default {
   min-width: 300px;
 }
 
+.ad-container {
+  width: 100%;
+  height: 120px;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.ad-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #e9ecef;
+  color: #6c757d;
+  font-size: 14px;
+  border: 1px dashed #adb5bd;
+}
+
 .create-room-button {
   display: flex;
   align-items: center;
