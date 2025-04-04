@@ -3,7 +3,7 @@
     <!-- Animated Korea Map Section -->
     <div class="logo-section">
       <div class="map-animation">
-        <img src="../../public/korea.png" alt="한반도 지도" class="korea-map" />
+        <img src="@/assets/korea.png" alt="한반도 지도" class="korea-map" />
         <h1 class="main-title">KoSpot</h1>
       </div>
     </div>

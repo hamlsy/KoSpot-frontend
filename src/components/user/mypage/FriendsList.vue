@@ -222,7 +222,7 @@
 </template>
 
 <script>
-import NavigationBar from '../shared/NavigationBar.vue';
+import NavigationBar from '@/components/common/NavigationBar.vue';
 
 export default {
   name: 'FriendsList',

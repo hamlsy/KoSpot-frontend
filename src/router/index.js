@@ -1,27 +1,27 @@
 import Vue from 'vue';
 import VueRouter from 'vue-router';
-import TempPage from '@/components/TempPage.vue';
-import RoadViewModeMain from '@/components/roadViewMode/RoadViewModeMain.vue';
-import PhotoModeMain from '@/components/photoMode/PhotoModeMain.vue';
-import HomePage from '@/components/HomePage.vue';
-import MainPage from '@/components/MainPage.vue';
-import RoadViewPractice from '@/components/roadViewMode/RoadViewPractice.vue';
-import TestMapPage from '@/components/TestMapPage.vue';
+
+import MainPage from '@/components/main/MainPage.vue';
+import HomePage from '@/components/main/HomePage.vue';
+import RoadViewModeMain from '@/components/game/roadViewMode/RoadViewModeMain.vue';
+import PhotoModeMain from '@/components/game/photoMode/PhotoModeMain.vue';
+import RoadViewPractice from '@/components/game/roadViewMode/RoadViewPractice.vue';
 import MyInfoPage from '@/components/MyInfoPage.vue';
+import TempPage from '@/components/dummy/TempPage.vue';
+import TestMapPage from '@/components/dummy/TestMapPage.vue';
 import CoordData from '@/components/dummy/coordData.vue';
 import KakaoMapTest from '@/components/dummy/KakaoMapTest.vue';
 import EncryptTest from '@/components/dummy/EncryptTest.vue';
-import MultiplayerLobby from '@/components/multiplayerMode/MultiplayerLobby.vue';
-import MultiplayerGame from '@/components/multiplayerMode/MultiplayerGame.vue';
+import MultiplayerLobby from '@/components/game/multiplayerMode/MultiplayerLobby.vue';
+import MultiplayerGame from '@/components/game/multiplayerMode/MultiplayerGame.vue';
 import AdminDashboard from '@/components/admin/AdminDashboard.vue';
 import UserManagement from '@/components/admin/UserManagement.vue';
+import ShopMain from '@/components/user/shop/ShopMain.vue';
+import InventoryMain from '@/components/user/inventory/InventoryMain.vue';
+import MyProfile from '@/components/user/mypage/MyProfile.vue';
+import FriendsList from '@/components/user/mypage/FriendsList.vue';
+import AccountSettings from '@/components/user/mypage/AccountSettings.vue';
 
-// 추가 컴포넌트 import
-import ShopMain from '@/components/shop/ShopMain.vue';
-import InventoryMain from '@/components/inventory/InventoryMain.vue';
-import MyProfile from '@/components/mypage/MyProfile.vue';
-import FriendsList from '@/components/mypage/FriendsList.vue';
-import AccountSettings from '@/components/mypage/AccountSettings.vue';
 
 Vue.use(VueRouter);
 

@@ -147,14 +147,14 @@
 </template>
 
 <script>
-import GameTimer from '@/components/shared/GameTimer.vue';
-import PlayerList from './PlayerList.vue';
-import RoadView from '@/components/shared/RoadView.vue';
-import PhotoView from '@/components/shared/PhotoView.vue';
-import KakaoMap from '@/components/shared/KakaoMap.vue';
-import ChatWindow from './ChatWindow.vue';
-import RoundResults from './RoundResults.vue';
-import GameResults from './GameResults.vue';
+import GameTimer from '@/components/game/common/shared/GameTimer.vue';
+import PlayerList from '@/components/game/multiplayerMode/PlayerList.vue';
+import RoadView from '@/components/game/common/roadview/RoadView.vue';
+import PhotoView from '@/components/game/common/photo/PhotoView.vue';
+import KakaoMap from '@/components/game/common/kakao/KakaoMap.vue';
+import ChatWindow from '@/components/game/multiplayerMode/ChatWindow.vue';
+import RoundResults from '@/components/game/multiplayerMode/RoundResults.vue';
+import GameResults from '@/components/game/multiplayerMode/GameResults.vue';
 
 export default {
   name: 'MultiplayerGame',

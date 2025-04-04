@@ -125,7 +125,7 @@
 </template>
 
 <script>
-import KakaoMap from '@/components/shared/KakaoMap.vue';
+import KakaoMap from '@/components/game/common/kakao/KakaoMap.vue';
 
 export default {
   name: 'RoundResults',

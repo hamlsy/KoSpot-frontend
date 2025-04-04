@@ -242,8 +242,8 @@
 </template>
 
 <script>
-import RoadViewGame from "@/components/shared/RoadViewGame.vue";
-import KakaoMapGame from "@/components/shared/KakaoMapGame.vue";
+import RoadViewGame from "@/components/game/common/roadview/RoadViewGame.vue";
+import KakaoMapGame from "@/components/game/common/kakao/KakaoMapGame.vue";
 
 export default {
   name: "RoadViewPractice",
@@ -660,7 +660,7 @@ export default {
       new kakao.maps.Marker({
         position: new kakao.maps.LatLng(guessPosition.lat, guessPosition.lng),
         map: resultMap,
-        imageSrc: "@/assets/images/roadViewMode/currentLocation.png",
+        imageSrc: "@/assets/currentLocation.png",
       });
       
       // 실제 위치 마커

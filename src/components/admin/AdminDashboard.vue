@@ -165,8 +165,8 @@
 </template>
 
 <script>
-import AdminPanel from './AdminPanel.vue';
-import NavigationBar from '../shared/NavigationBar.vue';
+import AdminPanel from '@/components/admin/AdminPanel.vue';
+import NavigationBar from '@/components/common/NavigationBar.vue';
 
 export default {
   name: 'AdminDashboard',
