@@ -12,8 +12,8 @@ import TestMapPage from '@/components/dummy/TestMapPage.vue';
 import CoordData from '@/components/dummy/coordData.vue';
 import KakaoMapTest from '@/components/dummy/KakaoMapTest.vue';
 import EncryptTest from '@/components/dummy/EncryptTest.vue';
-import MultiplayerLobby from '@/components/game/multiplayerMode/MultiplayerLobby.vue';
-import MultiplayerGame from '@/components/game/multiplayerMode/MultiplayerGame.vue';
+import MultiplayerLobby from '@/components/game/multiplayerMode/lobbyScreen/MultiplayerLobby.vue';
+import MultiplayerGame from '@/components/game/multiplayerMode/gameplayScreen/MultiplayerGame.vue';
 import AdminDashboard from '@/components/admin/AdminDashboard.vue';
 import UserManagement from '@/components/admin/UserManagement.vue';
 import ShopMain from '@/components/user/shop/ShopMain.vue';
@@ -50,7 +50,7 @@ const routes = [
         name: "PhotoModeMain",
         component: PhotoModeMain
     },
-    {
+    { 
         path:'/roadViewPractice',
         name: "RoadViewPractice",
         component: RoadViewPractice

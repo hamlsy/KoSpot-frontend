@@ -241,7 +241,7 @@ export default {
       
       setTimeout(() => {
         this.isLoading = false;
-        // 게임 화면으로 라우팅
+        // 게임 방으로 이동 (대기실 모드로 시작됨)
         this.$router.push({
           name: 'MultiplayerGame',
           params: { roomId }
@@ -283,8 +283,8 @@ export default {
           system: true
         });
         
-        // 실제 구현에서는 생성된 방으로 자동 입장
-        // this.joinRoom(newRoom.id);
+        // 생성한 방으로 자동 입장 (대기실 모드로 시작됨)
+        this.joinRoom(newRoom.id);
       }, 1000);
     }
   }
