@@ -37,7 +37,8 @@
         
         <div class="header-right">
           <game-timer 
-            :time="remainingTime"
+            :initialTime="remainingTime"
+            :totalTime="120"
             :warning-threshold="30"
             :danger-threshold="10"
           />
@@ -95,8 +96,20 @@
         <!-- 오른쪽 패널: 채팅 -->
         <div class="right-panel">
           <chat-window 
+            v-if="!isTeamMode"
             :messages="chatMessages"
             @send-message="sendChatMessage"
+          />
+          
+          <!-- 팀 모드일 경우 팀 채팅 표시 -->
+          <team-chat
+            v-if="isTeamMode && currentUser.teamId"
+            :team-id="currentUser.teamId"
+            :team-name="currentUserTeam ? currentUserTeam.name : ''"
+            :team-color="currentUserTeam ? getTeamColor(currentUserTeam.id) : 'blue'"
+            :team-messages="currentTeamMessages"
+            :current-user-id="currentUser.id"
+            @send-team-message="sendTeamMessage"
           />
         </div>
       </div>
@@ -128,7 +141,7 @@
       
       <!-- 라운드 결과 모달 -->
       <round-results
-        v-if="showRoundResults"
+        v-if="showRoundResults && !isTeamMode"
         :visible="showRoundResults"
         :players="players"
         :actual-location="actualLocation"
@@ -143,16 +156,62 @@
         @next-round="startNextRound"
         @finish-game="finishGame"
       />
+
+      <!-- 팀 모드 라운드 결과 모달 -->
+      <team-round-results
+        v-if="showRoundResults && isTeamMode"
+        :visible="showRoundResults"
+        :teams="teams"
+        :players="players"
+        :actual-location="actualLocation"
+        :round="currentRound"
+        :total-rounds="totalRounds"
+        :current-user-id="currentUser.id"
+        :current-user-team="currentUser.teamId"
+        :location-name="currentLocationName"
+        :location-description="currentLocationDescription"
+        :location-image="currentLocationImage"
+        :interesting-fact="currentInterestingFact"
+        @close="closeRoundResults"
+        @next-round="startNextRound"
+        @finish-game="finishGame"
+      />
     </div>
     
     <!-- 게임 결과 모달 -->
     <game-results
-      v-if="showGameResults"
+      v-if="showGameResults && !isTeamMode"
       :visible="showGameResults"
       :players="players"
       :room-data="roomData"
       @play-again="restartGame"
       @exit="exitToLobby"
+    />
+
+    <!-- 팀 게임 결과 모달 -->
+    <team-game-results
+      v-if="showGameResults && isTeamMode"
+      :visible="showGameResults"
+      :teams="teams"
+      :players="players"
+      :room-data="roomData"
+      :chat-messages="chatMessages"
+      @play-again="restartGame"
+      @exit="exitToLobby"
+      @send-chat-message="sendChatMessage"
+    />
+
+    <!-- 팀 투표 모달 -->
+    <team-voting-modal
+      v-if="showTeamVoting"
+      :visible="showTeamVoting"
+      :initiator="voteInitiator"
+      :guess-position="guessPosition"
+      :time-limit="20"
+      :map-preview-url="mapPreviewUrl"
+      :current-user-id="currentUser.id"
+      @vote-submitted="handleVoteSubmission"
+      @voting-completed="handleVotingComplete"
     />
     
     <!-- 로딩 오버레이 -->
@@ -175,6 +234,13 @@ import ChatWindow from '../lobbyScreen/ChatWindow.vue';
 import RoundResults from './RoundResults.vue';
 import GameResults from './GameResults.vue';
 import GameRoomWaiting from '../gameRoomScreen/GameRoomWaiting.vue';
+import TeamChat from './TeamChat.vue';
+import TeamVotingModal from './TeamVotingModal.vue';
+import TeamGameResults from './TeamGameResults.vue';
+import TeamRoundResults from './TeamRoundResults.vue';
+
+// 테스트 데이터 가져오기
+import { testData, individualTestData, getRandomLocation } from '../MultiplayerGameTestData.js';
 
 export default {
   name: 'MultiplayerGame',
@@ -188,7 +254,11 @@ export default {
     ChatWindow,
     RoundResults,
     GameResults,
-    GameRoomWaiting
+    GameRoomWaiting,
+    TeamChat,
+    TeamVotingModal,
+    TeamGameResults,
+    TeamRoundResults
   },
   
   props: {
@@ -199,7 +269,12 @@ export default {
   },
   
   data() {
-    return {
+    // 기본 데이터와 테스트 데이터 합치기
+    const useTestData = true; // 테스트 데이터 사용 여부 (프로덕션에서는 false로 변경 필요)
+    const isTeamMode = true; // 팀 모드 테스트 여부
+    
+    // 테스트 모드에서 사용할 데이터 선택
+    const defaultData = {
       // 게임 상태 (waiting: 대기실, playing: 게임 중)
       gameState: 'waiting',
       
@@ -207,6 +282,7 @@ export default {
       roomData: {
         name: '멋진 게임방',
         gameMode: '로드뷰',
+        matchType: 'individual', // 'individual' 또는 'team'
         region: '서울',
         maxPlayers: 4
       },
@@ -216,15 +292,18 @@ export default {
         id: 'user123',
         nickname: '김코스팟',
         level: 23,
-        profileImage: '/assets/default-profile.png'
+        profileImage: '/assets/default-profile.png',
+        teamId: null
       },
       
       // 게임 플레이 데이터
       players: [],
+      teams: [], // 팀 모드에서 사용할 팀 정보
       currentRound: 1,
       totalRounds: 5,
       remainingTime: 120,
       chatMessages: [],
+      teamChatMessages: {}, // 팀별 채팅 메시지
       currentLocation: null,
       currentPhotoUrl: null,
       actualLocation: null,
@@ -241,12 +320,134 @@ export default {
       showRoundResults: false,
       showGameResults: false,
       isLoading: false,
-      canSubmit: false
+      canSubmit: false,
+      
+      // 팀 모드 관련 데이터
+      showTeamVoting: false,
+      voteInitiator: null,
+      votingResults: {
+        yes: 0,
+        no: 0,
+        total: 0
+      },
+      activeTeamChatId: null,
+      mapPreviewUrl: '',
+      
+      // 테스트용 가상 데이터
+      mockTeams: [
+        {
+          id: 'team1',
+          name: '블루',
+          color: 'blue',
+          totalScore: 0
+        },
+        {
+          id: 'team2',
+          name: '레드',
+          color: 'red',
+          totalScore: 0
+        },
+        {
+          id: 'team3',
+          name: '그린',
+          color: 'green',
+          totalScore: 0
+        },
+        {
+          id: 'team4',
+          name: '옐로우',
+          color: 'yellow',
+          totalScore: 0
+        }
+      ]
     };
+    
+    // 테스트 모드에서는 테스트 데이터 사용
+    if (useTestData) {
+      const selectedTestData = isTeamMode ? testData : individualTestData;
+      
+      return {
+        ...defaultData,
+        gameState: 'playing', // 테스트를 위해 바로 게임 시작
+        roomData: selectedTestData.roomData,
+        currentUser: selectedTestData.currentUser,
+        players: selectedTestData.players,
+        teams: selectedTestData.teams,
+        chatMessages: selectedTestData.chatMessages,
+        teamChatMessages: selectedTestData.teamChatMessages || {}
+      };
+    }
+    
+    return defaultData;
   },
   
   computed: {
-    // 기존 computed 속성
+    // 팀 모드인지 확인
+    isTeamMode() {
+      return this.roomData.matchType === 'team';
+    },
+    
+    // 현재 사용자의 팀
+    currentUserTeam() {
+      if (!this.isTeamMode || !this.currentUser.teamId) return null;
+      
+      return this.teams.find(team => team.id === this.currentUser.teamId);
+    },
+    
+    // 현재 사용자 팀의 다른 팀원들
+    teamMembers() {
+      if (!this.isTeamMode || !this.currentUser.teamId) return [];
+      
+      return this.players.filter(player => 
+        player.teamId === this.currentUser.teamId && 
+        player.id !== this.currentUser.id
+      );
+    },
+    
+    // 현재 사용자 팀의 채팅 메시지
+    currentTeamMessages() {
+      if (!this.isTeamMode || !this.currentUser.teamId) return [];
+      
+      return this.teamChatMessages[this.currentUser.teamId] || [];
+    },
+    
+    // 현재 팀에서 제출할 수 있는지 여부 (팀 모드일 경우)
+    canTeamSubmit() {
+      if (!this.isTeamMode) return this.canSubmit;
+      
+      // 이미 제출했거나 라운드가 끝난 경우
+      if (this.hasSubmittedGuess || this.roundEnded) return false;
+      
+      // 위치를 선택했는지 확인
+      return !!this.guessPosition;
+    },
+    
+    // 맵 미리보기 URL (투표 모달에서 사용)
+    // 실제 구현에서는 Kakao Maps API를 사용하여 정적 지도 이미지 URL 생성
+    // mapPreviewUrl() {
+    //   if (!this.guessPosition) return '';
+      
+    //   // 정적 지도 이미지 URL 예시 (실제로는 Kakao Maps API 사용)
+    //   return `https://via.placeholder.com/300x150?text=Map+Preview+(${this.guessPosition.lat.toFixed(4)},${this.guessPosition.lng.toFixed(4)})`;
+    // }
+  },
+  
+  watch: {
+    // 기존 watch...
+    
+    // 팀 모드에서 투표 시작시 타이머 일시정지
+    showTeamVoting(newValue) {
+      if (newValue) {
+        this.pauseTimer();
+      } else {
+        this.resumeTimer();
+      }
+    }
+  },
+  
+  created() {
+    // 테스트 모드에서는 컴포넌트 생성 시 게임 초기화
+    this.initializeGame();
   },
   
   methods: {
@@ -263,19 +464,19 @@ export default {
     },
     
     // 게임 초기화
-    initializeGame() {
-      this.currentRound = 1;
-      this.hasSubmittedGuess = false;
-      this.roundEnded = false;
-      this.showRoundResults = false;
-      this.showGameResults = false;
+    // initializeGame() {
+    //   this.currentRound = 1;
+    //   this.hasSubmittedGuess = false;
+    //   this.roundEnded = false;
+    //   this.showRoundResults = false;
+    //   this.showGameResults = false;
       
-      // 게임 위치 데이터 로드
-      this.loadLocationData();
+    //   // 게임 위치 데이터 로드
+    //   this.loadLocationData();
       
-      // 타이머 시작
-      this.startRoundTimer();
-    },
+    //   // 타이머 시작
+    //   this.startRoundTimer();
+    // },
     
     // 게임 종료 후 대기실로 돌아가기
     returnToWaitingRoom() {
@@ -414,112 +615,126 @@ export default {
       }, 1000);
     },
     
+    // 타이머 시작
+    startTimer() {
+      if (this.roundTimer) {
+        clearInterval(this.roundTimer);
+      }
+      
+      this.roundTimer = setInterval(() => {
+        this.remainingTime--;
+        
+        if (this.remainingTime <= 0) {
+          clearInterval(this.roundTimer);
+          this.endRound();
+        }
+      }, 1000);
+    },
+    
+    // 라운드 데이터 가져오기
+    fetchRoundData() {
+      // 실제 구현에서는 API를 통해 데이터를 가져옴
+      // 테스트를 위한 가상 데이터
+      setTimeout(() => {
+        // 가상의 위치 데이터 설정
+        const location = getRandomLocation();
+        
+        this.currentLocation = { lat: location.lat, lng: location.lng };
+        this.currentLocationName = location.name;
+        this.currentLocationDescription = location.description;
+        this.currentLocationImage = location.image;
+        this.currentInterestingFact = location.fact;
+        
+        // 로딩 상태 해제
+        this.isLoading = false;
+        
+        // 타이머 시작
+        this.remainingTime = 120;
+        this.startRoundTimer();
+      }, 1500);
+    },
+    
     // 추측 제출
     submitGuess() {
-      if (!this.guessPosition || this.hasSubmittedGuess) return;
+      // 팀 모드인 경우 팀 제출 처리
+      if (this.isTeamMode) {
+        this.submitTeamGuess();
+        return;
+      }
+      
+      // 개인전 모드일 경우 기존 처리
+      if (!this.canSubmit) return;
       
       this.hasSubmittedGuess = true;
       
-      // 플레이어 데이터 업데이트
-      const playerIndex = this.players.findIndex(p => p.id === this.currentUser.id);
-      if (playerIndex !== -1) {
-        this.players[playerIndex].hasSubmitted = true;
-        this.players[playerIndex].guessPosition = this.guessPosition;
-      }
-      
-      // 모든 플레이어가 제출했는지 확인
-      const allSubmitted = this.players.every(p => p.hasSubmitted);
-      if (allSubmitted) {
-        clearInterval(this.roundTimer);
+      // 실제 구현에서는 서버로 제출 처리
+      // 테스트를 위해 일정 시간 후 라운드 종료 처리
+      setTimeout(() => {
         this.endRound();
-      }
+      }, 1000);
     },
     
     // 라운드 종료
     endRound() {
       this.roundEnded = true;
+      this.clearTimer();
       
-      // 점수 계산
-      this.calculateScores();
+      // 테스트를 위한 실제 위치 세팅 (실제로는 서버에서 받아옴)
+      this.actualLocation = {
+        lat: this.currentLocation.latitude + (Math.random() * 0.1 - 0.05),
+        lng: this.currentLocation.longitude + (Math.random() * 0.1 - 0.05)
+      };
       
-      // 결과 표시
+      // 팀 모드 게임에서 점수 계산
+      if (this.isTeamMode) {
+        // 각 팀별 점수 계산 (실제로는 서버에서 계산)
+        this.teams.forEach(team => {
+          // 해당 팀의 플레이어들
+          const teamPlayers = this.players.filter(p => p.teamId === team.id);
+          
+          // 무작위 점수 부여 (테스트용)
+          const teamScore = Math.floor(Math.random() * 500) + 500;
+          team.totalScore += teamScore;
+          
+          // 팀원들에게도 점수 배분
+          teamPlayers.forEach(player => {
+            if (!player.score) player.score = 0;
+            player.score += Math.floor(teamScore / teamPlayers.length);
+          });
+        });
+      } else {
+        // 개인전 모드 점수 계산 (기존 방식)
+        this.players.forEach(player => {
+          if (!player.score) player.score = 0;
+          player.score += Math.floor(Math.random() * 500) + 500;
+        });
+      }
+      
+      // 라운드 결과 표시
       setTimeout(() => {
         this.showRoundResults = true;
-      }, 1000);
+      }, 500);
     },
     
-    // 점수 계산
-    calculateScores() {
-      // 각 플레이어의 점수 계산
-      this.players.forEach(player => {
-        if (!player.guessPosition) {
-          // 제출하지 않은 경우
-          player.distance = Infinity;
-          player.score = 0;
-        } else {
-          // 거리 계산 (실제로는 Haversine 공식 등 사용)
-          const dx = player.guessPosition.lat - this.actualLocation.lat;
-          const dy = player.guessPosition.lng - this.actualLocation.lng;
-          const distance = Math.sqrt(dx * dx + dy * dy) * 111; // 대략적인 km 변환
-          
-          player.distance = distance;
-          
-          // 거리에 따른 점수 계산
-          if (distance < 1) {
-            player.score = 5000;
-          } else if (distance < 5) {
-            player.score = 4000 - (distance - 1) * 300;
-          } else if (distance < 10) {
-            player.score = 2500 - (distance - 5) * 200;
-          } else if (distance < 50) {
-            player.score = 1500 - (distance - 10) * 30;
-          } else {
-            player.score = Math.max(0, 500 - (distance - 50) * 10);
-          }
-          
-          player.score = Math.round(player.score);
-          player.totalScore += player.score;
-        }
-      });
-      
-      // 점수 기준으로 정렬
-      this.players.sort((a, b) => b.score - a.score);
-    },
-    
-    // 결과 창 닫기
-    closeRoundResults() {
-      this.showRoundResults = false;
-    },
-    
-    // 다음 라운드 시작
+    // 라운드 변경 확장
     startNextRound() {
-      this.currentRound++;
+      this.closeRoundResults();
       
-      if (this.currentRound > this.totalRounds) {
-        // 게임 종료
+      if (this.currentRound >= this.totalRounds) {
         this.finishGame();
         return;
       }
       
-      // 라운드 초기화
-      this.guessPosition = null;
-      this.hasSubmittedGuess = false;
+      // 다음 라운드 설정
+      this.currentRound++;
       this.roundEnded = false;
-      this.showRoundResults = false;
+      this.hasSubmittedGuess = false;
+      this.guessPosition = null;
+      this.actualLocation = null;
+      this.isLoading = true;
       
-      // 플레이어 데이터 초기화
-      this.players.forEach(player => {
-        player.guessPosition = null;
-        player.distance = null;
-        player.hasSubmitted = false;
-        player.score = 0;
-      });
-      
-      // 새 위치 데이터 로드
-      this.loadLocationData();
-      
-      // 타이머 재시작
-      this.startRoundTimer();
+      // 새 라운드 데이터 가져오기
+      this.fetchRoundData();
     },
     
     // 게임 종료
@@ -535,21 +750,208 @@ export default {
     restartGame() {
       this.showGameResults = false;
       this.returnToWaitingRoom();
-    }
-  },
-  
-  mounted() {
-    // 게임 방 정보 로드
-    // 실제 구현에서는 API 호출로 대체
-    console.log(`Loading game room: ${this.roomId}`);
-  },
-  
-  beforeDestroy() {
-    // 타이머 정리
-    if (this.roundTimer) {
-      clearInterval(this.roundTimer);
-      this.roundTimer = null;
-    }
+    },
+    
+    // 라운드 결과 닫기
+    closeRoundResults() {
+      this.showRoundResults = false;
+    },
+    
+    // 타이머 일시정지
+    pauseTimer() {
+      if (this.roundTimer) {
+        clearInterval(this.roundTimer);
+      }
+    },
+    
+    // 타이머 재개
+    resumeTimer() {
+      if (!this.roundEnded) {
+        this.startTimer();
+      }
+    },
+    
+    // 타이머 완전히 중단
+    clearTimer() {
+      if (this.roundTimer) {
+        clearInterval(this.roundTimer);
+        this.roundTimer = null;
+      }
+    },
+    
+    // 팀 모드에서 제출 버튼 클릭 시
+    submitTeamGuess() {
+      if (!this.canTeamSubmit) return;
+      
+      // 팀 투표 시작
+      this.voteInitiator = this.currentUser;
+      this.showTeamVoting = true;
+      
+      // 채팅 메시지 추가
+      this.addTeamSystemMessage(
+        this.currentUser.teamId,
+        `${this.currentUser.nickname}님이 위치 제출을 제안했습니다. 투표해주세요!`
+      );
+      
+      // 실제 구현에서는 서버로 투표 시작 이벤트 전송
+    },
+    
+    // 투표 제출 처리
+    handleVoteSubmission(vote) {
+      // 실제 구현에서는 서버로 투표 결과 전송
+      console.log(`${vote.userId}의 투표: ${vote.approved ? '찬성' : '반대'}`);
+      
+      // 테스트용 로직
+      if (vote.approved) {
+        this.votingResults.yes++;
+      } else {
+        this.votingResults.no++;
+      }
+      this.votingResults.total++;
+      
+      // 모든 팀원이 투표했는지 확인
+      if (this.votingResults.total >= this.teamMembers.length) {
+        this.finalizeTeamVoting();
+      }
+    },
+    
+    // 투표 완료 처리
+    handleVotingComplete(result) {
+      this.finalizeTeamVoting(result.approved);
+    },
+    
+    // 팀 투표 종료 및 결과 처리
+    finalizeTeamVoting(approved = null) {
+      // 투표 결과가 전달되지 않은 경우 찬성표가 더 많은지 확인
+      if (approved === null) {
+        approved = this.votingResults.yes > this.votingResults.no;
+      }
+      
+      // 투표 상태 초기화
+      this.showTeamVoting = false;
+      this.votingResults = { yes: 0, no: 0, total: 0 };
+      
+      // 투표 결과에 따라 처리
+      if (approved) {
+        // 찬성이 더 많으면 제출 처리
+        this.addTeamSystemMessage(
+          this.currentUser.teamId,
+          '팀원들이 위치 제출에 동의했습니다!'
+        );
+        
+        this.hasSubmittedGuess = true;
+        
+        // 라운드 종료 처리는 서버에서 처리 (여기서는 테스트를 위해 바로 처리)
+        setTimeout(() => {
+          this.endRound();
+        }, 1000);
+      } else {
+        // 반대가 더 많으면 취소
+        this.addTeamSystemMessage(
+          this.currentUser.teamId,
+          '팀원들이 위치 제출을 거부했습니다. 다시 시도해주세요.'
+        );
+      }
+    },
+    
+    // 팀 채팅 메시지 추가
+    addTeamSystemMessage(teamId, message) {
+      if (!teamId) return;
+      
+      // 팀 채팅 메시지 초기화
+      if (!this.teamChatMessages[teamId]) {
+        this.$set(this.teamChatMessages, teamId, []);
+      }
+      
+      // 시스템 메시지 추가
+      this.teamChatMessages[teamId].push({
+        id: `team-sys-${Date.now()}`,
+        system: true,
+        message: message,
+        timestamp: new Date().toISOString()
+      });
+    },
+    
+    // 팀 채팅 메시지 전송
+    sendTeamMessage(data) {
+      const { teamId, message } = data;
+      
+      if (!teamId || !message.trim()) return;
+      
+      // 팀 채팅 메시지 초기화
+      if (!this.teamChatMessages[teamId]) {
+        this.$set(this.teamChatMessages, teamId, []);
+      }
+      
+      // 메시지 추가
+      this.teamChatMessages[teamId].push({
+        id: `team-msg-${Date.now()}`,
+        system: false,
+        sender: this.currentUser.nickname,
+        senderId: this.currentUser.id,
+        senderLevel: this.currentUser.level,
+        message: message,
+        timestamp: new Date().toISOString()
+      });
+      
+      // 실제 구현에서는 서버로 메시지 전송
+    },
+    
+    // 팀 채팅 탭 변경
+    setActiveTeamChat(teamId) {
+      this.activeTeamChatId = teamId;
+    },
+    
+    // 게임 초기화 확장
+    initializeGame() {
+      // 기존 초기화 로직
+      this.currentRound = 1;
+      this.roundEnded = false;
+      this.hasSubmittedGuess = false;
+      this.isLoading = true;
+      this.guessPosition = null;
+      
+      // 팀 모드 관련 초기화
+      if (this.isTeamMode) {
+        // 테스트용 팀 데이터 사용 (실제로는 서버에서 받아옴)
+        this.teams = JSON.parse(JSON.stringify(this.mockTeams));
+        
+        // 팀 점수 초기화
+        this.teams.forEach(team => {
+          team.totalScore = 0;
+        });
+        
+        // 팀 채팅 메시지 초기화
+        this.teamChatMessages = {};
+        this.teams.forEach(team => {
+          this.$set(this.teamChatMessages, team.id, []);
+          
+          // 시작 시스템 메시지 추가
+          this.addTeamSystemMessage(
+            team.id,
+            '팀 채팅이 시작되었습니다. 팀원들과 소통하세요!'
+          );
+        });
+        
+        // 처음 활성화할 팀 채팅 설정
+        this.activeTeamChatId = this.currentUser.teamId;
+      }
+      
+      // 실제 구현에서는 서버에서 첫 라운드 데이터 가져오기
+      this.fetchRoundData();
+    },
+    
+    // 팀 색상 가져오기
+    getTeamColor(teamId) {
+      const colorMap = {
+        'team1': 'blue',
+        'team2': 'red',
+        'team3': 'green',
+        'team4': 'yellow'
+      };
+      
+      return colorMap[teamId] || 'blue';
+    },
   }
 };
 </script>
@@ -840,5 +1242,85 @@ export default {
   .header-right {
     align-self: flex-end;
   }
+}
+
+/* 팀 모드 관련 스타일 */
+.team-chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.team-chat-tabs {
+  display: flex;
+  border-bottom: 1px solid #eee;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.team-chat-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.team-chat-tab {
+  padding: 0.8rem 1.2rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.team-chat-tab::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: transparent;
+  transition: background-color 0.2s ease;
+}
+
+.team-chat-tab.active::after {
+  background-color: currentColor;
+}
+
+.team-chat-tab.blue {
+  color: #3b82f6;
+}
+
+.team-chat-tab.red {
+  color: #ef4444;
+}
+
+.team-chat-tab.green {
+  color: #10b981;
+}
+
+.team-chat-tab.yellow {
+  color: #f59e0b;
+}
+
+.team-chat-tabs .unread-badge {
+  background-color: #ef4444;
+  color: white;
+  font-size: 0.7rem;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+}
+
+.team-chat-content {
+  flex: 1;
+  overflow: hidden;
 }
 </style> 

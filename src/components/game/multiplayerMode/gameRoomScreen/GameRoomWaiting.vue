@@ -87,53 +87,110 @@
           </h3>
           
           <!-- 팀 모드인 경우 팀 선택 버튼 표시 -->
-          <div v-if="isTeamMode" class="team-selection-buttons">
+          <div v-if="isTeamMode" class="team-selection">
+            <div class="current-team" v-if="currentUser.teamId">
+              <span class="team-label">내 팀:</span>
+              <span 
+                class="team-name" 
+                :class="`team-${getTeamColor(currentUser.teamId)}`"
+              >
+                {{ getTeamName(currentUser.teamId) }}
+              </span>
+            </div>
             <button 
-              class="team-button team1" 
-              :class="{ active: currentUser.team === 'team1' }"
-              @click="changeTeam('team1')"
-              title="블루팀"
+              class="team-selection-button"
+              @click="openTeamSelectionModal"
             >
-              <i class="fas fa-square"></i> 블루
-            </button>
-            <button 
-              class="team-button team2" 
-              :class="{ active: currentUser.team === 'team2' }"
-              @click="changeTeam('team2')"
-              title="레드팀"
-            >
-              <i class="fas fa-square"></i> 레드
-            </button>
-            <button 
-              class="team-button team3" 
-              :class="{ active: currentUser.team === 'team3' }"
-              @click="changeTeam('team3')"
-              title="그린팀"
-            >
-              <i class="fas fa-square"></i> 그린
-            </button>
-            <button 
-              class="team-button team4" 
-              :class="{ active: currentUser.team === 'team4' }"
-              @click="changeTeam('team4')"
-              title="옐로우팀"
-            >
-              <i class="fas fa-square"></i> 옐로우
+              <i class="fas fa-users"></i>
+              {{ currentUser.teamId ? '팀 변경하기' : '팀 선택하기' }}
             </button>
           </div>
           
-          <div class="players-list">
+          <!-- 팀 모드인 경우 팀별로 플레이어 목록 표시 -->
+          <div v-if="isTeamMode" class="teams-container">
+            <div 
+              v-for="team in availableTeams"
+              :key="team.id"
+              class="team-players-card"
+              :class="`team-${team.color}-card`"
+            >
+              <div class="team-header">
+                <div class="team-icon" :class="`team-${team.color}-bg`">
+                  <i class="fas fa-users"></i>
+                </div>
+                <h4 class="team-title">{{ team.name }} 팀</h4>
+                <div class="team-count">
+                  {{ getTeamPlayers(team.id).length }}/{{ maxTeamSize }}
+                </div>
+              </div>
+              
+              <div class="team-players-list">
+                <div 
+                  v-for="player in getTeamPlayers(team.id)"
+                  :key="player.id"
+                  class="player-card"
+                  :class="{ 
+                    'is-host': player.isHost, 
+                    'is-current': player.id === currentUser.id
+                  }"
+                >
+                  <!-- 채팅 말풍선 -->
+                  <div class="chat-bubble" v-if="playerMessages[player.id]" :class="{ 'active': playerMessages[player.id].show }">
+                    {{ playerMessages[player.id].message }}
+                  </div>
+                  
+                  <div class="player-avatar">
+                    <img :src="player.profileImage || '/assets/default-avatar.png'" :alt="player.nickname">
+                    <div class="host-badge" v-if="player.isHost">
+                      <i class="fas fa-crown"></i>
+                    </div>
+                  </div>
+                  <div class="player-info">
+                    <div class="player-name">{{ player.nickname }}</div>
+                    <div class="player-level">Lv. {{ player.level }}</div>
+                  </div>
+                  <div class="player-actions">
+                    <!-- 준비 완료 상태 표시 -->
+                    <span class="status-badge ready" v-if="player.isReady && !player.isHost">
+                      <i class="fas fa-check"></i> 준비완료
+                    </span>
+                    
+                    <!-- 호스트만 볼 수 있는 강퇴 버튼 -->
+                    <button 
+                      v-if="isHost && player.id !== currentUser.id" 
+                      class="kick-button"
+                      @click="kickPlayer(player.id)"
+                      title="강퇴하기"
+                    >
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- 빈 슬롯 표시 -->
+                <div 
+                  v-for="n in (maxTeamSize - getTeamPlayers(team.id).length)" 
+                  :key="`empty-${team.id}-${n}`" 
+                  class="player-card empty"
+                >
+                  <div class="empty-slot">
+                    <i class="fas fa-user-plus"></i>
+                    <span>비어있음</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 개인전 모드일 경우 기존 플레이어 목록 표시 -->
+          <div v-else class="players-list">
             <div 
               v-for="player in players" 
               :key="player.id" 
               class="player-card"
               :class="{ 
                 'is-host': player.isHost, 
-                'is-current': player.id === currentUser.id,
-                'team1': isTeamMode && player.team === 'team1',
-                'team2': isTeamMode && player.team === 'team2',
-                'team3': isTeamMode && player.team === 'team3',
-                'team4': isTeamMode && player.team === 'team4'
+                'is-current': player.id === currentUser.id
               }"
             >
               <!-- 채팅 말풍선 -->
@@ -168,18 +225,6 @@
                 </button>
               </div>
             </div>
-
-            <!-- 빈 슬롯 표시 -->
-            <div 
-              v-for="n in (roomData.maxPlayers - players.length)" 
-              :key="`empty-${n}`" 
-              class="player-card empty"
-            >
-              <div class="empty-slot">
-                <i class="fas fa-user-plus"></i>
-                <span>비어있음</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -200,6 +245,18 @@
         @close="closeRoomSettingsModal"
         @apply="applyRoomSettings"
       />
+      
+      <!-- 팀 선택 모달 -->
+      <team-selection-modal
+        :visible="isTeamSelectionModalOpen"
+        :players="players"
+        :available-teams="availableTeams"
+        :max-team-size="maxTeamSize"
+        :current-user-id="currentUser.id"
+        :current-user-team="currentUser.teamId"
+        @close="closeTeamSelectionModal"
+        @join-team="handleJoinTeam"
+      />
     </div>
 
     <!-- 게임 시작 카운트다운 오버레이 -->
@@ -215,13 +272,15 @@
 <script>
 import RoomSettingsModal from './RoomSettingsModal.vue';
 import ChatModal from './ChatModal.vue';
+import TeamSelectionModal from './TeamSelectionModal.vue';
 
 export default {
   name: 'GameRoomWaiting',
   
   components: {
     RoomSettingsModal,
-    ChatModal
+    ChatModal,
+    TeamSelectionModal
   },
   
   props: {
@@ -248,87 +307,65 @@ export default {
         id: 'user123',
         nickname: '김코스팟',
         level: 23,
-        profileImage: '/assets/default-profile.png'
+        profileImage: null,
+        isHost: true,
+        isReady: false,
+        teamId: null
       },
       players: [
         {
           id: 'user123',
           nickname: '김코스팟',
           level: 23,
-          profileImage: '/assets/default-profile.png',
+          profileImage: null,
           isHost: true,
-          isReady: true,
-          team: 'team1'
+          isReady: false,
+          teamId: null
         },
         {
           id: 'user456',
-          nickname: '지리학자',
-          level: 45,
-          profileImage: '/assets/avatar1.png',
+          nickname: '박지금',
+          level: 15,
+          profileImage: null,
           isHost: false,
           isReady: true,
-          team: 'team1'
+          teamId: null
         },
         {
           id: 'user789',
-          nickname: '여행마니아',
-          level: 31,
-          profileImage: '/assets/avatar2.png',
+          nickname: '이강산',
+          level: 30,
+          profileImage: null,
           isHost: false,
           isReady: false,
-          team: 'team2'
+          teamId: null
         }
       ],
-      // 플레이어별 채팅 메시지 말풍선
+      chatMessages: [],
       playerMessages: {},
-      // 모바일에서 채팅창 표시 여부
-      showMobileChat: false,
-      // 팀 선택 모달
-      showTeamSelectionModal: false,
-      currentUserTeam: 'team1',  // 기본 팀
-      // 방 설정 모달
-      showRoomSettingsModal: false,
-      chatMessages: [
-        {
-          id: 'chat1',
-          sender: '시스템',
-          message: '게임 방에 오신 것을 환영합니다.',
-          timestamp: new Date(),
-          system: true
-        },
-        {
-          id: 'chat2',
-          sender: '지리학자',
-          message: '안녕하세요! 다들 준비되셨나요?',
-          timestamp: new Date(),
-          system: false
-        }
-      ],
       isReady: false,
+      showMobileChat: false,
+      showRoomSettingsModal: false,
+      editSettings: {},
       showCountdown: false,
       countdownNumber: 5,
+      countdownTimer: null,
       
-      // 팀 모드 관련
-      activeTeamTab: 'all', // 'all', 'team1', 'team2'
-      
-      // 설정 수정 관련
-      isEditingSettings: false,
-      editSettings: {
-        gameMode: '로드뷰',
-        matchType: 'individual',
-        region: '서울',
-        rounds: 3,
-        timeLimit: 120,
-        isPrivate: true,
-        password: '1234'
-      }
+      // 팀 모드 관련 데이터
+      isTeamSelectionModalOpen: false,
+      availableTeams: [
+        { id: 'blue', name: '블루팀', color: '#3b82f6', icon: 'people' },
+        { id: 'red', name: '레드팀', color: '#ef4444', icon: 'people' },
+        { id: 'green', name: '그린팀', color: '#10b981', icon: 'people' },
+        { id: 'yellow', name: '옐로우팀', color: '#f59e0b', icon: 'people' }
+      ],
+      maxTeamSize: 2 // 팀당 최대 인원
     };
   },
   
   computed: {
     isHost() {
-      const currentPlayer = this.players.find(p => p.id === this.currentUser.id);
-      return currentPlayer && currentPlayer.isHost;
+      return this.currentUser.isHost;
     },
     
     isRoadViewMode() {
@@ -344,30 +381,27 @@ export default {
     },
     
     canStartGame() {
-      // 호스트만 게임을 시작할 수 있음
-      if (!this.isHost) return false;
-      
-      // 최소 2명 이상의 플레이어 필요
+      // 최소 2명 이상의 플레이어가 필요
       if (this.players.length < 2) return false;
       
       // 호스트를 제외한 모든 플레이어가 준비 완료되어야 함
-      const allPlayersReady = this.players
-        .filter(p => !p.isHost)
-        .every(p => p.isReady);
+      const nonHostPlayers = this.players.filter(p => !p.isHost);
+      const allReady = nonHostPlayers.every(p => p.isReady);
       
-      // 팀 모드인 경우 각 팀에 최소 1명 이상 있어야 함
-      if (this.isTeamMode) {
-        const team1Count = this.getTeamPlayerCount('team1');
-        const team2Count = this.getTeamPlayerCount('team2');
-        return allPlayersReady && team1Count > 0 && team2Count > 0;
-      }
+      // 팀 모드일 경우 모든 플레이어가 팀을 선택해야 함
+      const allTeamAssigned = !this.isTeamMode || this.players.every(p => p.teamId);
       
-      return allPlayersReady;
+      return allReady && allTeamAssigned;
     },
     
     maxRounds() {
       // 로드뷰는 최대 10라운드, 포토 모드는 최대 15라운드
       return this.editSettings.gameMode === '로드뷰' ? 10 : 15;
+    },
+    
+    currentUserTeam() {
+      const currentUser = this.players.find(player => player.id === this.currentUser.id);
+      return currentUser ? currentUser.teamId : null;
     }
   },
   
@@ -387,28 +421,60 @@ export default {
     },
     
     getTeamPlayerCount(team) {
-      return this.players.filter(p => p.team === team).length;
+      return this.players.filter(p => p.teamId === team).length;
     },
     
     openTeamSelectionModal() {
-      const currentPlayer = this.players.find(p => p.id === this.currentUser.id);
-      if (currentPlayer) {
-        this.currentUserTeam = currentPlayer.team;
-      }
-      this.showTeamSelectionModal = true;
+      this.isTeamSelectionModalOpen = true;
     },
     
     closeTeamSelectionModal() {
-      this.showTeamSelectionModal = false;
+      this.isTeamSelectionModalOpen = false;
     },
     
-    selectTeam(team) {
-      this.currentUserTeam = team;
-    },
-    
-    applyTeamSelection() {
-      this.changeTeam(this.currentUserTeam);
+    handleJoinTeam(teamId) {
+      this.changeTeam(teamId);
       this.closeTeamSelectionModal();
+    },
+    
+    changeTeam(teamId) {
+      if (this.roomData.matchType !== 'team') return;
+      
+      // 원래 코드가 있는 경우 유지하고, 모달을 열도록 수정
+      if (!teamId) {
+        this.openTeamSelectionModal();
+        return;
+      }
+      
+      // 원래 팀 변경 로직
+      const currentUser = this.players.find(player => player.id === this.currentUser.id);
+      const oldTeam = currentUser.teamId;
+      
+      if (oldTeam === teamId) return; // 같은 팀이면 변경 불필요
+      
+      // 팀 변경
+      currentUser.teamId = teamId;
+      
+      // 시스템 메시지 추가
+      const teamName = this.getTeamName(teamId);
+      this.addSystemMessage(`${this.currentUser.nickname}님이 ${teamName}에 참가했습니다.`);
+      
+      // 실제 구현에서는 서버에 팀 변경 요청 필요
+      console.log(`Changed team to: ${teamId}`);
+    },
+    
+    getTeamPlayers(teamId) {
+      return this.players.filter(player => player.teamId === teamId);
+    },
+    
+    getTeamName(teamId) {
+      const team = this.availableTeams.find(t => t.id === teamId);
+      return team ? team.name : '팀 없음';
+    },
+    
+    getTeamColor(teamId) {
+      const team = this.availableTeams.find(t => t.id === teamId);
+      return team ? team.color : 'gray';
     },
     
     openRoomSettingsModal() {
@@ -422,61 +488,30 @@ export default {
       this.showRoomSettingsModal = false;
     },
     
-    applyRoomSettings() {
-      // 방 설정 적용
-      this.roomData.gameMode = this.editSettings.gameMode;
-      this.roomData.matchType = this.editSettings.matchType;
-      this.roomData.region = this.editSettings.region;
-      this.roomData.rounds = this.editSettings.rounds;
-      this.roomData.timeLimit = this.editSettings.timeLimit;
-      this.roomData.isPrivate = this.editSettings.isPrivate;
-      this.roomData.password = this.editSettings.password;
+    applyRoomSettings(settings) {
+      // 기존 로직 유지
+      this.roomData = {
+        ...this.roomData,
+        ...settings
+      };
       
-      // 실제 구현에서는 API 호출 필요
-      this.chatMessages.push({
-        id: `chat-${Date.now()}`,
-        sender: '시스템',
-        message: `게임 설정이 변경되었습니다.`,
-        timestamp: new Date(),
-        system: true
-      });
+      // 팀 모드 변경 처리
+      if (settings.matchType !== undefined) {
+        // 개인전으로 변경된 경우 팀 정보 초기화
+        if (settings.matchType === 'individual') {
+          this.players.forEach(player => {
+            player.teamId = null;
+          });
+          this.currentUser.teamId = null;
+          
+          this.addSystemMessage('게임 모드가 개인전으로 변경되었습니다.');
+        } else {
+          // 팀 모드로 변경된 경우 안내 메시지
+          this.addSystemMessage('게임 모드가 팀전으로 변경되었습니다. 팀을 선택해주세요.');
+        }
+      }
       
-      // 설정 모달 닫기
       this.closeRoomSettingsModal();
-    },
-    
-    changeTeam(team) {
-      // 팀 변경 (본인만 가능)
-      const playerIndex = this.players.findIndex(p => p.id === this.currentUser.id);
-      if (playerIndex !== -1) {
-        this.players[playerIndex].team = team;
-        
-        // 실제 구현에서는 API 호출 필요
-        this.chatMessages.push({
-          id: `chat-${Date.now()}`,
-          sender: '시스템',
-          message: `${this.currentUser.nickname}님이 ${
-            team === 'team1' ? '블루팀' : 
-            team === 'team2' ? '레드팀' : 
-            team === 'team3' ? '그린팀' : '옐로우팀'
-          }으로 이동했습니다.`,
-          timestamp: new Date(),
-          system: true
-        });
-      }
-    },
-    
-    toggleReady() {
-      // 준비 상태 토글 (호스트가 아닌 경우만)
-      if (this.isHost) return;
-      
-      this.isReady = !this.isReady;
-      
-      // 실제 구현에서는 API 호출 필요
-      const playerIndex = this.players.findIndex(p => p.id === this.currentUser.id);
-      if (playerIndex !== -1) {
-        this.players[playerIndex].isReady = this.isReady;
-      }
     },
     
     startGame() {
@@ -607,6 +642,17 @@ export default {
         id: `chat-${Date.now()}`,
         sender: '시스템',
         message: `${kickedNickname}님이 방에서 강퇴되었습니다.`,
+        timestamp: new Date(),
+        system: true
+      });
+    },
+    
+    addSystemMessage(message) {
+      // 시스템 메시지 추가
+      this.chatMessages.push({
+        id: `chat-${Date.now()}`,
+        sender: '시스템',
+        message: message,
         timestamp: new Date(),
         system: true
       });
@@ -867,224 +913,159 @@ export default {
   background-color: #e2e8f0;
 }
 
-/* 팀 선택 탭 */
-.team-tabs {
-  display: flex;
-  margin-bottom: 1rem;
-  background-color: #f1f5f9;
-  border-radius: 8px;
-  padding: 0.25rem;
-}
-
-.team-tab {
-  flex: 1;
-  padding: 0.5rem;
-  text-align: center;
-  background: none;
-  border: none;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  color: #475569;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.team-tab.active {
-  background-color: white;
-  color: #333;
-  font-weight: 500;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-/* 플레이어 목록 스타일 */
-.players-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1rem;
-}
-
-.player-card {
+/* 팀 선택 관련 스타일 */
+.team-selection {
   display: flex;
   align-items: center;
-  padding: 1rem;
-  background-color: #f8fafc;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.8rem;
+  background-color: #f9fafb;
   border-radius: 8px;
-  transition: all 0.2s;
-  border-left: 4px solid transparent;
 }
 
-.player-card:hover {
-  background-color: #f1f5f9;
-}
-
-.player-card.is-host {
-  background-color: #eff6ff;
-  border-left-color: #2563eb;
-}
-
-.player-card.is-current {
-  background-color: #ecfdf5;
-  border-left-color: #10b981;
-}
-
-.player-card.team1 {
-  border-left-color: #3b82f6;
-}
-
-.player-card.team2 {
-  border-left-color: #ef4444;
-}
-
-.player-card.team3 {
-  border-left-color: #22c55e;
-}
-
-.player-card.team4 {
-  border-left-color: #fbbf24;
-}
-
-.player-card.empty {
-  border: 1px dashed #cbd5e1;
-  border-left: 4px solid transparent;
-  justify-content: center;
-  color: #94a3b8;
-}
-
-.empty-slot {
+.current-team {
   display: flex;
-  flex-direction: column;
   align-items: center;
   gap: 0.5rem;
 }
 
-.empty-slot i {
-  font-size: 1.5rem;
-  opacity: 0.5;
-}
-
-.player-avatar {
-  position: relative;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  overflow: hidden;
-  margin-right: 1rem;
-}
-
-.player-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.host-badge {
-  position: absolute;
-  bottom: -3px;
-  right: -3px;
-  width: 16px;
-  height: 16px;
-  background-color: #fbbf24;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.host-badge i {
-  font-size: 0.6rem;
-  color: white;
-}
-
-.player-info {
-  flex: 1;
-}
-
-.player-name {
-  font-weight: 500;
-  color: #334155;
-}
-
-.player-level {
-  font-size: 0.75rem;
+.team-label {
+  font-size: 0.9rem;
   color: #64748b;
 }
 
-.player-actions {
-  margin-left: auto;
+.team-name {
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 16px;
+}
+
+.team-blue {
+  color: #3b82f6;
+  background-color: #dbeafe;
+}
+
+.team-red {
+  color: #ef4444;
+  background-color: #fee2e2;
+}
+
+.team-green {
+  color: #10b981;
+  background-color: #dcfce7;
+}
+
+.team-yellow {
+  color: #f59e0b;
+  background-color: #fef3c7;
+}
+
+.team-selection-button {
+  padding: 0.6rem 1rem;
+  background-color: #4a6cf7;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.team-selection-button:hover {
+  background-color: #3b5de7;
+}
+
+.teams-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.team-players-card {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  border: 1px solid #eee;
+}
+
+.team-blue-card {
+  border-top: 4px solid #3b82f6;
+}
+
+.team-red-card {
+  border-top: 4px solid #ef4444;
+}
+
+.team-green-card {
+  border-top: 4px solid #10b981;
+}
+
+.team-yellow-card {
+  border-top: 4px solid #f59e0b;
+}
+
+.team-header {
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.team-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.team-blue-bg {
+  background-color: #3b82f6;
+}
+
+.team-red-bg {
+  background-color: #ef4444;
+}
+
+.team-green-bg {
+  background-color: #10b981;
+}
+
+.team-yellow-bg {
+  background-color: #f59e0b;
+}
+
+.team-title {
+  flex: 1;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.team-count {
+  font-size: 0.8rem;
+  color: #64748b;
+  background-color: #f1f5f9;
+  padding: 0.3rem 0.6rem;
+  border-radius: 16px;
+}
+
+.team-players-list {
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 0.5rem;
-}
-
-.status-badge {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.status-badge.ready {
-  background-color: #d1fae5;
-  color: #059669;
-}
-
-.team-selector {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.team-button {
-  background: none;
-  border: none;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  cursor: pointer;
-  opacity: 0.6;
-  transition: all 0.2s;
-}
-
-.team-button.active {
-  opacity: 1;
-}
-
-.team-button.team1 {
-  background-color: #dbeafe;
-  color: #2563eb;
-}
-
-.team-button.team2 {
-  background-color: #fee2e2;
-  color: #ef4444;
-}
-
-.team-button.team3 {
-  background-color: #dcfce7;
-  color: #22c55e;
-}
-
-.team-button.team4 {
-  background-color: #fef9c3;
-  color: #eab308;
-}
-
-.kick-button {
-  background: none;
-  border: none;
-  color: #ef4444;
-  opacity: 0;
-  cursor: pointer;
-  transition: opacity 0.2s;
-  padding: 0.25rem;
-}
-
-.player-card:hover .kick-button {
-  opacity: 1;
+  gap: 0.8rem;
 }
 
 /* 게임 설정 스타일 */
@@ -1474,35 +1455,38 @@ export default {
 /* 채팅 말풍선 스타일 */
 .chat-bubble {
   position: absolute;
-  top: -40px;
-  left: 20%;
+  top: -35px;
+  left: 20px;
   background-color: white;
-  border-radius: 12px;
-  padding: 8px 12px;
-  font-size: 0.875rem;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
   max-width: 200px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   opacity: 0;
-  visibility: hidden;
   transform: translateY(10px);
-  transition: all 0.3s;
-  z-index: 10;
-  word-break: break-word;
+  transition: opacity 0.3s, transform 0.3s;
+  z-index: 5;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.chat-bubble:after {
+.chat-bubble::after {
   content: '';
   position: absolute;
-  bottom: -8px;
+  bottom: -6px;
   left: 20px;
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-top: 8px solid white;
+  width: 12px;
+  height: 12px;
+  background-color: white;
+  transform: rotate(45deg);
+  z-index: -1;
 }
 
 .chat-bubble.active {
   opacity: 1;
-  visibility: visible;
   transform: translateY(0);
 }
 
@@ -1522,58 +1506,6 @@ export default {
 .room-privacy-badge.public {
   background-color: #f1f5f9;
   color: #475569;
-}
-
-/* 팀 선택 버튼 */
-.team-selection-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.team-selection-buttons .team-button {
-  background-color: #f8fafc;
-  border: 2px solid transparent;
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  opacity: 0.8;
-}
-
-.team-selection-buttons .team-button:hover {
-  opacity: 1;
-}
-
-.team-selection-buttons .team-button.active {
-  opacity: 1;
-  border-color: currentColor;
-}
-
-.team-selection-buttons .team-button.team1 {
-  background-color: #dbeafe;
-  color: #2563eb;
-}
-
-.team-selection-buttons .team-button.team2 {
-  background-color: #fee2e2;
-  color: #ef4444;
-}
-
-.team-selection-buttons .team-button.team3 {
-  background-color: #dcfce7;
-  color: #22c55e;
-}
-
-.team-selection-buttons .team-button.team4 {
-  background-color: #fef9c3;
-  color: #eab308;
 }
 
 /* 모바일 채팅 토글 버튼 */
@@ -1608,8 +1540,6 @@ export default {
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
 }
 
-/* 방 설정 모달 관련 스타일은 RoomSettingsModal로 이동 */
-
 /* 모바일 반응형 추가 스타일 */
 @media (max-width: 768px) {
   .room-settings-content {
@@ -1632,5 +1562,139 @@ export default {
     font-size: 0.75rem;
     padding: 0.4rem 0.8rem;
   }
+}
+
+/* 플레이어 목록 스타일 */
+.players-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.player-card {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  transition: all 0.2s;
+  border-left: 4px solid transparent;
+  position: relative;
+}
+
+.player-card:hover {
+  background-color: #f1f5f9;
+}
+
+.player-card.is-host {
+  background-color: #eff6ff;
+  border-left-color: #2563eb;
+}
+
+.player-card.is-current {
+  background-color: #ecfdf5;
+  border-left-color: #10b981;
+}
+
+.player-card.empty {
+  border: 1px dashed #cbd5e1;
+  border-left: 4px solid transparent;
+  justify-content: center;
+  color: #94a3b8;
+}
+
+.empty-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.empty-slot i {
+  font-size: 1.5rem;
+  opacity: 0.5;
+}
+
+.player-avatar {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-right: 1rem;
+}
+
+.player-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.host-badge {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  width: 16px;
+  height: 16px;
+  background-color: #fbbf24;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.host-badge i {
+  font-size: 0.6rem;
+  color: white;
+}
+
+.player-info {
+  flex: 1;
+}
+
+.player-name {
+  font-weight: 500;
+  color: #334155;
+}
+
+.player-level {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.player-actions {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.status-badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.status-badge.ready {
+  background-color: #d1fae5;
+  color: #059669;
+}
+
+.kick-button {
+  background: none;
+  border: none;
+  color: #ef4444;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  padding: 0.25rem;
+}
+
+.player-card:hover .kick-button {
+  opacity: 1;
 }
 </style> 

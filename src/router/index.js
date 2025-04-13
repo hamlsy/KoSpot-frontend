@@ -13,7 +13,6 @@ import CoordData from '@/components/dummy/coordData.vue';
 import KakaoMapTest from '@/components/dummy/KakaoMapTest.vue';
 import EncryptTest from '@/components/dummy/EncryptTest.vue';
 import MultiplayerLobby from '@/components/game/multiplayerMode/lobbyScreen/MultiplayerLobby.vue';
-import MultiplayerGame from '@/components/game/multiplayerMode/gameplayScreen/MultiplayerGame.vue';
 import AdminDashboard from '@/components/admin/AdminDashboard.vue';
 import UserManagement from '@/components/admin/UserManagement.vue';
 import ShopMain from '@/components/user/shop/ShopMain.vue';
@@ -91,10 +90,34 @@ const routes = [
         component: MultiplayerLobby
     },
     {
-        path: '/multiplayerGame/:roomId',
-        name: "MultiplayerGame",
-        component: MultiplayerGame,
+        path: '/gameRoom/:roomId',
+        name: "GameRoomWaiting",
+        component: () => import('@/components/game/multiplayerMode/gameRoomScreen/GameRoomWaiting.vue'),
         props: true
+    },
+    {
+        path: '/game/roadview/:roomId',
+        name: "RoadViewGame",
+        component: () => import('@/components/game/multiplayerMode/gameplayScreen/MultiplayerRoadViewGame.vue'),
+        props: true
+    },
+    {
+        path: '/game/photo/:roomId',
+        name: "PhotoGame",
+        component: () => import('@/components/game/multiplayerMode/gameplayScreen/MultiplayerPhotoGame.vue'),
+        props: true
+    },
+    {
+        path: '/testTeamGame',
+        name: "TestTeamGame",
+        component: () => import('@/components/game/multiplayerMode/gameplayScreen/MultiplayerRoadViewGame.vue'),
+        props: { roomId: 'team-test-123', isTeamMode: true }
+    },
+    {
+        path: '/testIndividualGame',
+        name: "TestIndividualGame",
+        component: () => import('@/components/game/multiplayerMode/gameplayScreen/MultiplayerRoadViewGame.vue'),
+        props: { roomId: 'individual-test-123', isTeamMode: false }
     },
     {
         path: '/admin',
@@ -106,7 +129,6 @@ const routes = [
         name: "UserManagement",
         component: UserManagement
     },
-    // 추가 라우트
     {
         path: '/shopMain',
         name: "ShopMain",
@@ -134,11 +156,17 @@ const routes = [
     },
     {
         path: '/noticeList',
-        redirect: '/tempPage' // 임시 리디렉션, 공지사항 컴포넌트 개발 후 수정 필요
+        redirect: '/tempPage'
     },
     {
         path: '/myPoints',
-        redirect: '/myProfile' // 임시 리디렉션, 포인트 관리 페이지는 마이프로필로 연결
+        redirect: '/myProfile'
+    },
+    {
+        path: '/team-mode',
+        name: 'TeamModeGame',
+        component: () => import('@/components/game/multiplayerMode/gameplayScreen/MultiplayerRoadViewGame.vue'),
+        props: { isTeamMode: true }
     }
 ]
 

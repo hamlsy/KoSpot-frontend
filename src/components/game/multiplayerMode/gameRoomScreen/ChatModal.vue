@@ -158,11 +158,12 @@ export default {
     transform: translateY(0);
   }
   
-  /* 모바일에서 채팅 헤더 표시 */
+  /* 모바일에서 채팅 헤더 표시 및 위치 조정 */
   .mobile-chat-header {
     display: flex;
     position: relative;
     z-index: 1600;
+    margin-top: 60px; /* 네비게이션 바 높이만큼 아래로 내림 */
   }
   
   /* 채팅창 크기 조정 */
@@ -173,8 +174,8 @@ export default {
   
   /* 채팅 활성화시에도 버튼이 보이도록 패딩 추가 */
   .right-panel.mobile-chat-active + .mobile-chat-toggle {
-    bottom: 90vh; /* 화면 상단 쪽으로 이동 */
-    right: 10px;
+    bottom: 20px; /* 하단에 고정 */
+    right: 20px;
     transition: all 0.3s ease;
   }
 }

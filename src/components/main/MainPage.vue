@@ -180,6 +180,21 @@
           </div>
         </div>
       </section>
+
+      <!-- 테스트 링크 - 개발 중에만 표시 -->
+      <div class="test-links">
+        <h3>테스트 링크</h3>
+        <div class="test-links-grid">
+          <router-link to="/testTeamGame" class="test-link team-test">
+            <i class="fas fa-users"></i>
+            <span>협동전 테스트</span>
+          </router-link>
+          <router-link to="/testIndividualGame" class="test-link individual-test">
+            <i class="fas fa-user"></i>
+            <span>개인전 테스트</span>
+          </router-link>
+        </div>
+      </div>
     </main>
     <!-- 수정: 프로필 메뉴 오버레이 추가 -->
     <transition name="fade">
@@ -847,5 +862,62 @@ export default {
   color: #6c757d;
   font-size: 14px;
   border: 1px dashed #adb5bd;
+}
+
+/* 테스트 링크 스타일 */
+.test-links {
+  margin-top: 2rem;
+  padding: 1rem;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.test-links h3 {
+  font-size: 1.2rem;
+  color: #334155;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.test-links-grid {
+  display: flex;
+  gap: 1rem;
+}
+
+.test-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 1rem;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #334155;
+  transition: all 0.2s ease;
+  flex: 1;
+}
+
+.test-link i {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.test-link.team-test {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+.test-link.individual-test {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.test-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 </style>

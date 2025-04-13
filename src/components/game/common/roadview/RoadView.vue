@@ -2,13 +2,6 @@
   <div class="road-view">
     <div id="roadview-container" ref="roadviewContainer"></div>
     
-    <div class="loading-overlay" v-if="isLoading">
-      <div class="loading-spinner">
-        <i class="fas fa-spinner fa-spin"></i>
-        <p>로드뷰 로딩 중...</p>
-      </div>
-    </div>
-    
     <div class="road-error" v-if="hasError">
       <div class="error-icon">
         <i class="fas fa-exclamation-triangle"></i>
@@ -53,7 +46,7 @@ export default {
     return {
       roadview: null,
       viewpoint: null,
-      isLoading: true,
+      isLoading: false,
       hasError: false,
       compassHeading: 0,
       panAmount: 30, // 이동 단위 (도)
@@ -109,14 +102,12 @@ export default {
       
       // Kakao Maps Roadview API 사용하여 구현
       if (window.kakao && window.kakao.maps) {
-        this.isLoading = true;
         this.hasError = false;
         
         try {
           const container = this.$refs.roadviewContainer;
           if (!container) {
             console.error('로드뷰 컨테이너를 찾을 수 없습니다.');
-            this.isLoading = false;
             this.hasError = true;
             this.$emit('load-error');
             return;
@@ -133,7 +124,6 @@ export default {
           roadviewClient.getNearestPanoId(position, 100, (panoId) => {
             if (panoId === null) {
               console.error('해당 위치에서 로드뷰를 찾을 수 없습니다.');
-              this.isLoading = false;
               this.hasError = true;
               this.$emit('load-error');
               return;
@@ -154,7 +144,6 @@ export default {
               // 로드뷰 로드 완료 이벤트
               kakao.maps.event.addListener(this.roadview, 'init', () => {
                 console.log('로드뷰 초기화 완료');
-                this.isLoading = false;
                 this.viewpoint = this.roadview.getViewpoint();
                 this.compassHeading = this.viewpoint.pan;
                 this.zoomLevel = 0;
@@ -167,20 +156,17 @@ export default {
               });
             } catch (error) {
               console.error('로드뷰 설정 중 오류 발생:', error);
-              this.isLoading = false;
               this.hasError = true;
               this.$emit('load-error');
             }
           });
         } catch (error) {
           console.error('로드뷰 초기화 중 오류 발생:', error);
-          this.isLoading = false;
           this.hasError = true;
           this.$emit('load-error');
         }
       } else {
         console.error('Kakao Maps SDK가 로드되지 않았습니다.');
-        this.isLoading = false;
         this.hasError = true;
         this.$emit('load-error');
       }
@@ -194,7 +180,6 @@ export default {
         return;
       }
       
-      this.isLoading = true;
       this.hasError = false;
       
       if (window.kakao && window.kakao.maps) {
@@ -205,7 +190,6 @@ export default {
           roadviewClient.getNearestPanoId(position, 100, (panoId) => {
             if (panoId === null) {
               console.error('새 위치에서 로드뷰를 찾을 수 없습니다.');
-              this.isLoading = false;
               this.hasError = true;
               this.$emit('load-error');
               return;
@@ -216,13 +200,11 @@ export default {
           });
         } catch (error) {
           console.error('로드뷰 위치 업데이트 중 오류 발생:', error);
-          this.isLoading = false;
           this.hasError = true;
           this.$emit('load-error');
         }
       } else {
         console.error('Kakao Maps SDK가 로드되지 않았습니다.');
-        this.isLoading = false;
         this.hasError = true;
         this.$emit('load-error');
       }
@@ -281,11 +263,6 @@ export default {
 .loading-spinner i {
   font-size: 2.5rem;
   color: #4285F4;
-}
-
-.loading-spinner p {
-  font-size: 1rem;
-  color: #333;
 }
 
 .road-error {
