@@ -86,39 +86,19 @@
             참가자 ({{ players.length }}/{{ roomData.maxPlayers }})
           </h3>
           
-          <!-- 팀 모드인 경우 팀 선택 버튼 표시 -->
-          <div v-if="isTeamMode" class="team-selection">
-            <div class="current-team" v-if="currentUser.teamId">
-              <span class="team-label">내 팀:</span>
-              <span 
-                class="team-name" 
-                :class="`team-${getTeamColor(currentUser.teamId)}`"
-              >
-                {{ getTeamName(currentUser.teamId) }}
-              </span>
-            </div>
-            <button 
-              class="team-selection-button"
-              @click="openTeamSelectionModal"
-            >
-              <i class="fas fa-users"></i>
-              {{ currentUser.teamId ? '팀 변경하기' : '팀 선택하기' }}
-            </button>
-          </div>
-          
           <!-- 팀 모드인 경우 팀별로 플레이어 목록 표시 -->
           <div v-if="isTeamMode" class="teams-container">
             <div 
               v-for="team in availableTeams"
               :key="team.id"
               class="team-players-card"
-              :class="`team-${team.color}-card`"
+              :class="`team-${team.id}-card`"
             >
               <div class="team-header">
-                <div class="team-icon" :class="`team-${team.color}-bg`">
+                <div class="team-icon" :class="`team-${team.id}-bg`">
                   <i class="fas fa-users"></i>
                 </div>
-                <h4 class="team-title">{{ team.name }} 팀</h4>
+                <h4 class="team-title">{{ team.name }}</h4>
                 <div class="team-count">
                   {{ getTeamPlayers(team.id).length }}/{{ maxTeamSize }}
                 </div>
@@ -131,7 +111,8 @@
                   class="player-card"
                   :class="{ 
                     'is-host': player.isHost, 
-                    'is-current': player.id === currentUser.id
+                    'is-current': player.id === currentUser.id,
+                    [`team-${team.id}-player`]: true
                   }"
                 >
                   <!-- 채팅 말풍선 -->
@@ -159,7 +140,7 @@
                     <button 
                       v-if="isHost && player.id !== currentUser.id" 
                       class="kick-button"
-                      @click="kickPlayer(player.id)"
+                      @click="confirmKickPlayer(player)"
                       title="강퇴하기"
                     >
                       <i class="fas fa-times"></i>
@@ -167,15 +148,17 @@
                   </div>
                 </div>
                 
-                <!-- 빈 슬롯 표시 -->
+                <!-- 빈 슬롯: 클릭 시 팀 참가 가능 -->
                 <div 
                   v-for="n in (maxTeamSize - getTeamPlayers(team.id).length)" 
                   :key="`empty-${team.id}-${n}`" 
                   class="player-card empty"
+                  :class="`team-${team.id}-empty`"
+                  @click="joinTeam(team.id)"
                 >
                   <div class="empty-slot">
                     <i class="fas fa-user-plus"></i>
-                    <span>비어있음</span>
+                    <span>클릭하여 참가</span>
                   </div>
                 </div>
               </div>
@@ -183,7 +166,7 @@
           </div>
           
           <!-- 개인전 모드일 경우 기존 플레이어 목록 표시 -->
-          <div v-else class="players-list">
+          <div v-else class="players-grid">
             <div 
               v-for="player in players" 
               :key="player.id" 
@@ -206,7 +189,24 @@
               </div>
               <div class="player-info">
                 <div class="player-name">{{ player.nickname }}</div>
-                <div class="player-level">Lv. {{ player.level }}</div>
+                <div class="player-stats">
+                  <div class="player-level">Lv. {{ player.level }}</div>
+                  <div class="multiplayer-stats">멀티: {{ player.multiplayCount || 0 }}판</div>
+                </div>
+              </div>
+              <div class="player-ranks">
+                <div class="rank-badge roadview">
+                  <i class="fas fa-street-view"></i>
+                  <span class="rank-tier" :class="getRankClass(player.roadviewRank)">
+                    {{ formatRank(player.roadviewRank) }}
+                  </span>
+                </div>
+                <div class="rank-badge photo">
+                  <i class="fas fa-camera"></i>
+                  <span class="rank-tier" :class="getRankClass(player.photoRank)">
+                    {{ formatRank(player.photoRank) }}
+                  </span>
+                </div>
               </div>
               <div class="player-actions">
                 <!-- 준비 완료 상태 표시 -->
@@ -218,7 +218,7 @@
                 <button 
                   v-if="isHost && player.id !== currentUser.id" 
                   class="kick-button"
-                  @click="kickPlayer(player.id)"
+                  @click="confirmKickPlayer(player)"
                   title="강퇴하기"
                 >
                   <i class="fas fa-times"></i>
@@ -245,18 +245,6 @@
         @close="closeRoomSettingsModal"
         @apply="applyRoomSettings"
       />
-      
-      <!-- 팀 선택 모달 -->
-      <team-selection-modal
-        :visible="isTeamSelectionModalOpen"
-        :players="players"
-        :available-teams="availableTeams"
-        :max-team-size="maxTeamSize"
-        :current-user-id="currentUser.id"
-        :current-user-team="currentUser.teamId"
-        @close="closeTeamSelectionModal"
-        @join-team="handleJoinTeam"
-      />
     </div>
 
     <!-- 게임 시작 카운트다운 오버레이 -->
@@ -266,21 +254,33 @@
         <div class="countdown-text">게임 시작까지</div>
       </div>
     </div>
+    
+    <!-- 강퇴 확인 모달 -->
+    <div class="kick-confirmation-modal" v-if="showKickConfirmation">
+      <div class="kick-modal-content">
+        <h4 class="kick-modal-title">플레이어 강퇴</h4>
+        <p class="kick-modal-message">
+          <span class="player-to-kick">{{ playerToKick.nickname }}</span>님을 정말 강퇴하시겠습니까?
+        </p>
+        <div class="kick-modal-actions">
+          <button class="cancel-kick-button" @click="cancelKickPlayer">취소</button>
+          <button class="confirm-kick-button" @click="kickPlayerConfirmed">강퇴하기</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import RoomSettingsModal from './RoomSettingsModal.vue';
 import ChatModal from './ChatModal.vue';
-import TeamSelectionModal from './TeamSelectionModal.vue';
 
 export default {
   name: 'GameRoomWaiting',
   
   components: {
     RoomSettingsModal,
-    ChatModal,
-    TeamSelectionModal
+    ChatModal
   },
   
   props: {
@@ -310,7 +310,10 @@ export default {
         profileImage: null,
         isHost: true,
         isReady: false,
-        teamId: null
+        teamId: null,
+        roadviewRank: 'gold-3',
+        photoRank: 'platinum-2',
+        multiplayCount: 15
       },
       players: [
         {
@@ -320,7 +323,10 @@ export default {
           profileImage: null,
           isHost: true,
           isReady: false,
-          teamId: null
+          teamId: null,
+          roadviewRank: 'gold-3',
+          photoRank: 'platinum-2',
+          multiplayCount: 15
         },
         {
           id: 'user456',
@@ -329,7 +335,10 @@ export default {
           profileImage: null,
           isHost: false,
           isReady: true,
-          teamId: null
+          teamId: null,
+          roadviewRank: 'master-1',
+          photoRank: 'diamond-4',
+          multiplayCount: 32
         },
         {
           id: 'user789',
@@ -338,7 +347,10 @@ export default {
           profileImage: null,
           isHost: false,
           isReady: false,
-          teamId: null
+          teamId: null,
+          roadviewRank: 'bronze-5',
+          photoRank: 'silver-2',
+          multiplayCount: 7
         }
       ],
       chatMessages: [],
@@ -351,15 +363,29 @@ export default {
       countdownNumber: 5,
       countdownTimer: null,
       
+      // 강퇴 관련
+      showKickConfirmation: false,
+      playerToKick: null,
+      
       // 팀 모드 관련 데이터
-      isTeamSelectionModalOpen: false,
       availableTeams: [
         { id: 'blue', name: '블루팀', color: '#3b82f6', icon: 'people' },
         { id: 'red', name: '레드팀', color: '#ef4444', icon: 'people' },
         { id: 'green', name: '그린팀', color: '#10b981', icon: 'people' },
         { id: 'yellow', name: '옐로우팀', color: '#f59e0b', icon: 'people' }
       ],
-      maxTeamSize: 2 // 팀당 최대 인원
+      maxTeamSize: 2, // 팀당 최대 인원
+      
+      // 랭크 정보
+      rankTiers: [
+        { id: 'bronze', name: '브론즈', color: '#CD7F32' },
+        { id: 'silver', name: '실버', color: '#C0C0C0' },
+        { id: 'gold', name: '골드', color: '#FFD700' },
+        { id: 'platinum', name: '플래티넘', color: '#00CED1' },
+        { id: 'diamond', name: '다이아', color: '#B9F2FF' },
+        { id: 'master', name: '마스터', color: '#9370DB' },
+        { id: 'admin', name: '관리자', color: '#FF5675' }
+      ]
     };
   },
   
@@ -424,27 +450,72 @@ export default {
       return this.players.filter(p => p.teamId === team).length;
     },
     
-    openTeamSelectionModal() {
-      this.isTeamSelectionModalOpen = true;
+    confirmKickPlayer(player) {
+      // 강퇴 확인 모달 표시
+      this.playerToKick = player;
+      this.showKickConfirmation = true;
     },
     
-    closeTeamSelectionModal() {
-      this.isTeamSelectionModalOpen = false;
+    cancelKickPlayer() {
+      // 강퇴 취소
+      this.showKickConfirmation = false;
+      this.playerToKick = null;
     },
     
-    handleJoinTeam(teamId) {
+    kickPlayerConfirmed() {
+      // 강퇴 확인 후 실행
+      if (!this.isHost || !this.playerToKick) return;
+      
+      const kickedNickname = this.playerToKick.nickname;
+      const kickedId = this.playerToKick.id;
+      
+      // 실제 구현에서는 API 호출 필요
+      this.players = this.players.filter(p => p.id !== kickedId);
+      
+      // 시스템 메시지 추가
+      this.chatMessages.push({
+        id: `chat-${Date.now()}`,
+        sender: '시스템',
+        message: `${kickedNickname}님이 방에서 강퇴되었습니다.`,
+        timestamp: new Date(),
+        system: true
+      });
+      
+      // 모달 닫기
+      this.showKickConfirmation = false;
+      this.playerToKick = null;
+    },
+    
+    joinTeam(teamId) {
+      if (this.roomData.matchType !== 'team') return;
+      
+      // 팀이 가득 찼는지 확인
+      const teamPlayers = this.getTeamPlayers(teamId);
+      if (teamPlayers.length >= this.maxTeamSize) {
+        // 팀이 가득 찬 경우 참가 불가
+        return;
+      }
+      
+      // 사용자 팀 변경
       this.changeTeam(teamId);
-      this.closeTeamSelectionModal();
+    },
+    
+    getTeamPlayers(teamId) {
+      return this.players.filter(player => player.teamId === teamId);
+    },
+    
+    getTeamName(teamId) {
+      const team = this.availableTeams.find(t => t.id === teamId);
+      return team ? team.name : '팀 없음';
+    },
+    
+    getTeamColor(teamId) {
+      const team = this.availableTeams.find(t => t.id === teamId);
+      return team ? team.id : 'gray';
     },
     
     changeTeam(teamId) {
       if (this.roomData.matchType !== 'team') return;
-      
-      // 원래 코드가 있는 경우 유지하고, 모달을 열도록 수정
-      if (!teamId) {
-        this.openTeamSelectionModal();
-        return;
-      }
       
       // 원래 팀 변경 로직
       const currentUser = this.players.find(player => player.id === this.currentUser.id);
@@ -461,20 +532,6 @@ export default {
       
       // 실제 구현에서는 서버에 팀 변경 요청 필요
       console.log(`Changed team to: ${teamId}`);
-    },
-    
-    getTeamPlayers(teamId) {
-      return this.players.filter(player => player.teamId === teamId);
-    },
-    
-    getTeamName(teamId) {
-      const team = this.availableTeams.find(t => t.id === teamId);
-      return team ? team.name : '팀 없음';
-    },
-    
-    getTeamColor(teamId) {
-      const team = this.availableTeams.find(t => t.id === teamId);
-      return team ? team.color : 'gray';
     },
     
     openRoomSettingsModal() {
@@ -627,26 +684,6 @@ export default {
       }
     },
     
-    kickPlayer(playerId) {
-      // 플레이어 강퇴 (호스트만 가능)
-      if (!this.isHost) return;
-      
-      const kickedPlayer = this.players.find(p => p.id === playerId);
-      const kickedNickname = kickedPlayer ? kickedPlayer.nickname : '플레이어';
-      
-      // 실제 구현에서는 API 호출 필요
-      this.players = this.players.filter(p => p.id !== playerId);
-      
-      // 시스템 메시지 추가
-      this.chatMessages.push({
-        id: `chat-${Date.now()}`,
-        sender: '시스템',
-        message: `${kickedNickname}님이 방에서 강퇴되었습니다.`,
-        timestamp: new Date(),
-        system: true
-      });
-    },
-    
     addSystemMessage(message) {
       // 시스템 메시지 추가
       this.chatMessages.push({
@@ -656,6 +693,27 @@ export default {
         timestamp: new Date(),
         system: true
       });
+    },
+    
+    formatRank(rankString) {
+      if (!rankString) return 'N/A';
+      
+      // 랭크 형식이 'tier-level'이 아닌 경우 그대로 반환
+      if (!rankString.includes('-')) return rankString;
+      
+      const [tier, level] = rankString.split('-');
+      const rankTier = this.rankTiers.find(r => r.id === tier);
+      
+      if (!rankTier) return rankString;
+      
+      return `${rankTier.name} ${level}`;
+    },
+    
+    getRankClass(rankString) {
+      if (!rankString || !rankString.includes('-')) return '';
+      
+      const tier = rankString.split('-')[0];
+      return `rank-${tier}`;
     }
   },
   
@@ -714,9 +772,10 @@ export default {
   align-items: center;
   padding: 1rem 2rem;
   background-color: white;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   position: relative;
   z-index: 10;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .header-left {
@@ -728,18 +787,21 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1.2rem;
   background-color: #f1f5f9;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   color: #475569;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .exit-button:hover {
   background-color: #e2e8f0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .room-info {
@@ -747,8 +809,8 @@ export default {
 }
 
 .room-name {
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 1.4rem;
+  font-weight: 700;
   color: #1e293b;
   margin-bottom: 0.25rem;
 }
@@ -757,7 +819,7 @@ export default {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
 
 .header-right {
@@ -771,18 +833,21 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1.2rem;
   background-color: #f1f5f9;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   color: #475569;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .settings-button:hover {
   background-color: #e2e8f0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* 헤더 배지 스타일 */
@@ -793,10 +858,11 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 500;
+  padding: 0.35rem 0.7rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .game-mode-badge {
@@ -804,11 +870,11 @@ export default {
 }
 
 .game-mode-badge.roadview {
-  background-color: #2563eb;
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
 }
 
 .game-mode-badge.photo {
-  background-color: #16a34a;
+  background: linear-gradient(135deg, #16a34a 0%, #0d9488 100%);
 }
 
 .match-type-badge {
@@ -817,8 +883,8 @@ export default {
 }
 
 .match-type-badge.team {
-  background-color: #fef2f2;
-  color: #ef4444;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
 }
 
 .region-badge,
@@ -831,26 +897,6 @@ export default {
   color: #94a3b8;
 }
 
-.room-password {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background-color: #f1f5f9;
-  border-radius: 8px;
-}
-
-.password-label {
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
-.password-value {
-  font-weight: 600;
-  color: #334155;
-  letter-spacing: 1px;
-}
-
 /* 메인 컨텐츠 스타일 */
 .room-content {
   display: flex;
@@ -859,8 +905,8 @@ export default {
   gap: 1.5rem;
   position: relative;
   z-index: 5;
-  overflow-y: auto; /* 전체 화면에서도 스크롤 가능하도록 */
-  height: calc(100vh - 80px); /* 헤더 높이 고려 */
+  overflow-y: auto;
+  height: calc(100vh - 90px);
 }
 
 .left-panel {
@@ -877,53 +923,35 @@ export default {
 
 .panel-section {
   background-color: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  border-radius: 16px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
   padding: 1.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .section-title {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 1.125rem;
-  font-weight: 600;
+  font-size: 1.25rem;
+  font-weight: 700;
   color: #334155;
-  margin-bottom: 1rem;
+  margin-bottom: 1.2rem;
+  position: relative;
 }
 
-/* 설정 수정 버튼 */
-.edit-settings-button {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.75rem;
-  background-color: #f1f5f9;
-  border: none;
-  border-radius: 6px;
-  color: #475569;
-  font-size: 0.75rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.edit-settings-button:hover {
-  background-color: #e2e8f0;
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 40px;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  border-radius: 3px;
 }
 
 /* 팀 선택 관련 스타일 */
-.team-selection {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 0.5rem;
-  margin-bottom: 1rem;
-  padding: 0.8rem;
-  background-color: #f9fafb;
-  border-radius: 8px;
-}
 
 .current-team {
   display: flex;
@@ -934,13 +962,15 @@ export default {
 .team-label {
   font-size: 0.9rem;
   color: #64748b;
+  font-weight: 500;
 }
 
 .team-name {
   font-weight: 600;
   font-size: 1rem;
-  padding: 0.3rem 0.8rem;
-  border-radius: 16px;
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .team-blue {
@@ -964,277 +994,317 @@ export default {
 }
 
 .team-selection-button {
-  padding: 0.6rem 1rem;
-  background-color: #4a6cf7;
+  padding: 0.6rem 1.2rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   font-weight: 600;
   font-size: 0.9rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
 }
 
 .team-selection-button:hover {
-  background-color: #3b5de7;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 .teams-container {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 1.2rem;
+  margin-bottom: 1.2rem;
 }
 
 .team-players-card {
   background-color: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-radius: 16px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
   overflow: hidden;
-  border: 1px solid #eee;
+  border: 1px solid #f1f5f9;
+  transition: all 0.3s ease;
 }
 
+.team-players-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* 팀 색상별 카드 스타일 */
 .team-blue-card {
-  border-top: 4px solid #3b82f6;
+  border-top: 5px solid #3b82f6;
 }
 
 .team-red-card {
-  border-top: 4px solid #ef4444;
+  border-top: 5px solid #ef4444;
 }
 
 .team-green-card {
-  border-top: 4px solid #10b981;
+  border-top: 5px solid #10b981;
 }
 
 .team-yellow-card {
-  border-top: 4px solid #f59e0b;
+  border-top: 5px solid #f59e0b;
 }
 
 .team-header {
-  padding: 1rem;
+  padding: 1.2rem;
   display: flex;
   align-items: center;
   gap: 0.8rem;
   border-bottom: 1px solid #f1f5f9;
+  background-color: #f8fafc;
 }
 
 .team-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
 }
 
 .team-blue-bg {
-  background-color: #3b82f6;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
 }
 
 .team-red-bg {
-  background-color: #ef4444;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
 }
 
 .team-green-bg {
-  background-color: #10b981;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
 }
 
 .team-yellow-bg {
-  background-color: #f59e0b;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
 }
 
 .team-title {
   flex: 1;
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #334155;
 }
 
 .team-count {
   font-size: 0.8rem;
   color: #64748b;
   background-color: #f1f5f9;
-  padding: 0.3rem 0.6rem;
-  border-radius: 16px;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-weight: 600;
 }
 
 .team-players-list {
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* 플레이어 카드 기본 스타일 */
+.player-card {
+  display: flex;
+  align-items: center;
   padding: 1rem;
+  background-color: #f8fafc;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  border-left: 4px solid transparent;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.player-card:hover {
+  background-color: #f1f5f9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* 팀별 플레이어 카드 스타일 */
+.team-blue-player {
+  background-color: #eff6ff;
+  border-left-color: #3b82f6;
+}
+
+.team-red-player {
+  background-color: #fee2e2;
+  border-left-color: #ef4444;
+}
+
+.team-green-player {
+  background-color: #ecfdf5;
+  border-left-color: #10b981;
+}
+
+.team-yellow-player {
+  background-color: #fef3c7;
+  border-left-color: #f59e0b;
+}
+
+/* 호스트와 현재 유저 스타일 */
+.player-card.is-host {
+  box-shadow: 0 3px 10px rgba(59, 130, 246, 0.1);
+}
+
+.player-card.is-current {
+  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.1);
+}
+
+/* 빈 슬롯 스타일 */
+.player-card.empty {
+  border: 2px dashed #cbd5e1;
+  border-left: 4px solid transparent;
+  justify-content: center;
+  color: #94a3b8;
+  background-color: transparent;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.player-card.empty:hover {
+  background-color: rgba(255, 255, 255, 0.7);
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+/* 팀별 빈 슬롯 호버 스타일 */
+.team-blue-empty:hover {
+  border-color: #93c5fd;
+  color: #3b82f6;
+}
+
+.team-red-empty:hover {
+  border-color: #fca5a5;
+  color: #ef4444;
+}
+
+.team-green-empty:hover {
+  border-color: #6ee7b7;
+  color: #10b981;
+}
+
+.team-yellow-empty:hover {
+  border-color: #fcd34d;
+  color: #f59e0b;
+}
+
+.empty-slot {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
-}
-
-/* 게임 설정 스타일 */
-.settings-section {
-  border-top: 4px solid #e2e8f0;
-}
-
-.roadview-mode .settings-section {
-  border-top-color: #2563eb;
-}
-
-.photo-mode .settings-section {
-  border-top-color: #16a34a;
-}
-
-.game-settings {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-
-.setting-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.setting-label {
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
-.setting-value {
-  font-weight: 500;
-  color: #334155;
-}
-
-/* 설정 수정 모드 */
-.game-settings.edit-mode {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.setting-row {
-  display: flex;
   align-items: center;
-  gap: 1rem;
-}
-
-.setting-row .setting-label {
-  width: 100px;
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
-.setting-controls {
-  display: flex;
   gap: 0.5rem;
 }
 
-.mode-button,
-.match-button {
-  background-color: #f1f5f9;
-  color: #64748b;
-  border: none;
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.empty-slot i {
+  font-size: 1.5rem;
+  opacity: 0.7;
 }
 
-.mode-button.active,
-.match-button.active {
-  background-color: #dbeafe;
-  color: #2563eb;
+/* 플레이어 아바타 스타일 */
+.player-avatar {
+  position: relative;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-right: 1rem;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+  border: 3px solid white;
 }
 
-.mode-button.active:nth-child(2) {
-  background-color: #dcfce7;
-  color: #16a34a;
+.player-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.setting-select {
-  flex: 1;
-  padding: 0.5rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  color: #334155;
-  background-color: white;
-}
-
-.round-minus,
-.round-plus {
-  width: 30px;
-  height: 30px;
-  background-color: #f1f5f9;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  color: #64748b;
-  cursor: pointer;
+.host-badge {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(251, 191, 36, 0.3);
+  border: 2px solid white;
 }
 
-.round-minus:hover,
-.round-plus:hover {
-  background-color: #e2e8f0;
-}
-
-.rounds-value {
-  width: 60px;
-  text-align: center;
-  font-weight: 500;
-  color: #334155;
-}
-
-.setting-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-
-.cancel-button,
-.apply-button {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.cancel-button {
-  background-color: #f1f5f9;
-  color: #64748b;
-}
-
-.apply-button {
-  background-color: #2563eb;
+.host-badge i {
+  font-size: 0.6rem;
   color: white;
 }
 
-.cancel-button:hover {
-  background-color: #e2e8f0;
+.player-info {
+  flex: 1;
 }
 
-.apply-button:hover {
-  background-color: #1d4ed8;
+.player-name {
+  font-weight: 600;
+  color: #334155;
+  font-size: 1rem;
+}
+
+.player-level {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 0.2rem;
+}
+
+.player-actions {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.status-badge {
+  font-size: 0.75rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 600;
+}
+
+.status-badge.ready {
+  background-color: #d1fae5;
+  color: #059669;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.1);
+}
+
+.kick-button {
+  background: none;
+  border: none;
+  color: #ef4444;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  padding: 0.25rem;
+  font-size: 1rem;
+}
+
+.player-card:hover .kick-button {
+  opacity: 1;
 }
 
 /* 액션 버튼 스타일 */
-.action-buttons {
-  display: flex;
-  justify-content: center;
-  margin-top: auto;
-  padding: 1rem 0;
-}
-
 .start-game-button, .ready-button {
   display: flex;
   align-items: center;
@@ -1242,15 +1312,16 @@ export default {
   gap: 0.5rem;
   padding: 0.75rem 2rem;
   border: none;
-  border-radius: 8px;
-  font-weight: 600;
+  border-radius: 12px;
+  font-weight: 700;
   font-size: 1rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .start-game-button {
-  background-color: #3b82f6;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
   color: white;
 }
 
@@ -1263,33 +1334,36 @@ export default {
 }
 
 .start-game-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
 }
 
 .start-game-button:disabled {
-  background-color: #94a3b8;
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
   transform: none;
-  box-shadow: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
   cursor: not-allowed;
+  opacity: 0.8;
 }
 
 .ready-button {
-  background-color: #e2e8f0;
+  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
   color: #475569;
 }
 
 .ready-button:hover {
-  background-color: #cbd5e1;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
 
 .ready-button.ready-on {
-  background-color: #10b981;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
 }
 
 .ready-button.ready-on:hover {
-  background-color: #059669;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
 }
 
 /* 카운트다운 오버레이 스타일 */
@@ -1302,40 +1376,120 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(0, 0, 0, 0.8);
   z-index: 1000;
+  backdrop-filter: blur(5px);
 }
 
 .countdown-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 1.5rem;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .countdown-number {
-  font-size: 6rem;
-  font-weight: 700;
+  font-size: 8rem;
+  font-weight: 800;
   color: white;
   animation: pulse 1s infinite;
+  text-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
 }
 
 .countdown-text {
-  font-size: 1.5rem;
-  font-weight: 500;
+  font-size: 1.8rem;
+  font-weight: 600;
   color: white;
+  text-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
 }
 
 @keyframes pulse {
   0% {
     transform: scale(1);
+    text-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
   }
   50% {
     transform: scale(1.1);
+    text-shadow: 0 0 30px rgba(59, 130, 246, 1);
   }
   100% {
     transform: scale(1);
+    text-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
   }
+}
+
+/* 비밀방 배지 */
+.room-privacy-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.room-privacy-badge.public {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: #475569;
+}
+
+.room-privacy-badge:not(.public) {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #ef4444;
+}
+
+/* 채팅 말풍선 스타일 */
+.chat-bubble {
+  position: absolute;
+  top: -40px;
+  left: 20px;
+  background-color: white;
+  border-radius: 12px;
+  padding: 0.6rem 1rem;
+  font-size: 0.8rem;
+  max-width: 200px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.3s, transform 0.3s;
+  z-index: 5;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.chat-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 20px;
+  width: 16px;
+  height: 16px;
+  background-color: white;
+  transform: rotate(45deg);
+  z-index: -1;
+  box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.03);
+}
+
+.chat-bubble.active {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* 반응형 스타일 */
@@ -1352,13 +1506,8 @@ export default {
     min-height: 300px;
   }
   
-  .players-list {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  }
-  
-  /* 모바일에서만 팀 선택 버튼 가리고, 팀 선택 간소화 버튼 표시 */
-  .team-selector {
-    display: none;
+  .players-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   }
   
   /* 헤더 조정 */
@@ -1371,8 +1520,8 @@ export default {
   .settings-button,
   .start-game-button,
   .ready-button {
-    font-size: 0.8rem;
-    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
   }
 }
 
@@ -1382,259 +1531,264 @@ export default {
   }
   
   .room-content {
-    height: calc(100vh - 120px); /* 헤더 높이 조정 */
+    height: calc(100vh - 130px);
     overflow-y: auto;
-    -webkit-overflow-scrolling: touch; /* 모바일 스크롤 부드럽게 */
+    -webkit-overflow-scrolling: touch;
+    padding: 1rem;
   }
   
   .room-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
+    padding: 1rem;
   }
   
   .header-right {
     align-self: flex-end;
   }
   
-  .game-settings {
+  .teams-container {
     grid-template-columns: 1fr;
-    overflow-y: auto;
-    max-height: calc(100vh - 400px);
   }
   
-  .setting-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
+  .players-grid {
+    grid-template-columns: 1fr;
   }
   
-  .setting-row .setting-label {
-    width: 100%;
+  .player-card {
+    padding: 0.8rem;
   }
   
-  .setting-controls {
-    width: 100%;
-    justify-content: space-between;
+  .player-avatar {
+    width: 40px;
+    height: 40px;
+    margin-right: 0.8rem;
   }
   
-  .mode-button, .match-button {
-    flex: 1;
-    padding: 0.5rem;
-    font-size: 0.8rem;
+  .player-ranks {
+    flex-direction: row;
+    margin-right: 0;
   }
   
-  /* 모바일 채팅 스타일은 ChatModal로 이동 */
+  .team-icon {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .section-title {
+    font-size: 1.1rem;
+  }
 }
 
-/* 스크롤바 스타일 */
-.game-settings::-webkit-scrollbar {
-  width: 8px;
-}
-
-.game-settings::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 4px;
-}
-
-.game-settings::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-
-.game-settings::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* 채팅 말풍선 스타일 */
-.chat-bubble {
-  position: absolute;
-  top: -35px;
-  left: 20px;
-  background-color: white;
-  border-radius: 8px;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.75rem;
-  max-width: 200px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 0.3s, transform 0.3s;
-  z-index: 5;
-  pointer-events: none;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.chat-bubble::after {
-  content: '';
-  position: absolute;
-  bottom: -6px;
-  left: 20px;
-  width: 12px;
-  height: 12px;
-  background-color: white;
-  transform: rotate(45deg);
-  z-index: -1;
-}
-
-.chat-bubble.active {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* 비밀방 배지 */
-.room-privacy-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.5rem 1rem;
-  background-color: #fee2e2;
-  color: #ef4444;
-  border-radius: 8px;
-  font-weight: 500;
-  font-size: 0.875rem;
-}
-
-.room-privacy-badge.public {
-  background-color: #f1f5f9;
-  color: #475569;
-}
-
-/* 플레이어 목록 스타일 */
-.players-list {
+.players-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.2rem;
 }
 
+/* 플레이어 카드 기본 스타일 */
 .player-card {
   display: flex;
   align-items: center;
   padding: 1rem;
   background-color: #f8fafc;
-  border-radius: 8px;
-  transition: all 0.2s;
+  border-radius: 12px;
+  transition: all 0.2s ease;
   border-left: 4px solid transparent;
   position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
 }
 
 .player-card:hover {
   background-color: #f1f5f9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.player-card.is-host {
-  background-color: #eff6ff;
-  border-left-color: #2563eb;
-}
-
-.player-card.is-current {
-  background-color: #ecfdf5;
-  border-left-color: #10b981;
-}
-
-.player-card.empty {
-  border: 1px dashed #cbd5e1;
-  border-left: 4px solid transparent;
-  justify-content: center;
-  color: #94a3b8;
-}
-
-.empty-slot {
+/* 플레이어 정보 스타일 */
+.player-info {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
+  gap: 0.3rem;
+  flex: 1.5;
 }
 
-.empty-slot i {
-  font-size: 1.5rem;
-  opacity: 0.5;
-}
-
-.player-avatar {
-  position: relative;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  overflow: hidden;
-  margin-right: 1rem;
-}
-
-.player-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.host-badge {
-  position: absolute;
-  bottom: -3px;
-  right: -3px;
-  width: 16px;
-  height: 16px;
-  background-color: #fbbf24;
-  border-radius: 50%;
+.player-stats {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 0.8rem;
 }
 
-.host-badge i {
-  font-size: 0.6rem;
-  color: white;
-}
-
-.player-info {
-  flex: 1;
-}
-
-.player-name {
-  font-weight: 500;
-  color: #334155;
-}
-
-.player-level {
-  font-size: 0.75rem;
+.player-level, .multiplayer-stats {
+  font-size: 0.8rem;
   color: #64748b;
 }
 
-.player-actions {
-  margin-left: auto;
+/* 랭크 표시 스타일 */
+.player-ranks {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
   gap: 0.5rem;
+  flex: 1;
+  margin-right: 0.5rem;
 }
 
-.status-badge {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+.rank-badge {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.4rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.status-badge.ready {
-  background-color: #d1fae5;
-  color: #059669;
+.rank-badge.roadview {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(30, 58, 138, 0.15) 100%);
+  color: #2563eb;
+  border: 1px solid rgba(37, 99, 235, 0.2);
 }
 
-.kick-button {
-  background: none;
-  border: none;
+.rank-badge.photo {
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.15) 0%, rgba(20, 83, 45, 0.15) 100%);
+  color: #16a34a;
+  border: 1px solid rgba(22, 163, 74, 0.2);
+}
+
+/* 티어별 랭크 색상 */
+.rank-tier {
+  font-weight: 700;
+}
+
+.rank-bronze {
+  color: #CD7F32;
+  text-shadow: 0 0 1px rgba(205, 127, 50, 0.4);
+}
+
+.rank-silver {
+  color: #6b7280;
+  text-shadow: 0 0 1px rgba(192, 192, 192, 0.4);
+}
+
+.rank-gold {
+  color: #b45309;
+  text-shadow: 0 0 1px rgba(255, 215, 0, 0.5);
+}
+
+.rank-platinum {
+  color: #0891b2;
+  text-shadow: 0 0 1px rgba(0, 206, 209, 0.5);
+}
+
+.rank-diamond {
+  color: #1e40af;
+  text-shadow: 0 0 1px rgba(185, 242, 255, 0.5);
+}
+
+.rank-master {
+  color: #7e22ce;
+  text-shadow: 0 0 1px rgba(147, 112, 219, 0.5);
+}
+
+.rank-admin {
+  color: #be123c;
+  text-shadow: 0 0 2px rgba(255, 86, 117, 0.5);
+  font-style: italic;
+}
+
+/* 강퇴 확인 모달 스타일 */
+.kick-confirmation-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 3000;
+  backdrop-filter: blur(5px);
+}
+
+.kick-modal-content {
+  background-color: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: modalAppear 0.3s ease-out;
+}
+
+.kick-modal-title {
+  font-size: 1.3rem;
+  font-weight: 700;
   color: #ef4444;
-  opacity: 0;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.kick-modal-message {
+  text-align: center;
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  color: #334155;
+}
+
+.player-to-kick {
+  font-weight: 700;
+  color: #ef4444;
+}
+
+.kick-modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.cancel-kick-button, 
+.confirm-kick-button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s;
-  padding: 0.25rem;
+  transition: all 0.2s ease;
 }
 
-.player-card:hover .kick-button {
-  opacity: 1;
+.cancel-kick-button {
+  background-color: #f1f5f9;
+  color: #64748b;
 }
 
-/* 모바일 채팅 관련 스타일은 ChatModal 컴포넌트로 이동됨 */
+.cancel-kick-button:hover {
+  background-color: #e2e8f0;
+  transform: translateY(-2px);
+}
+
+.confirm-kick-button {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+
+.confirm-kick-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+@keyframes modalAppear {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 </style> 

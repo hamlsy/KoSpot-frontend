@@ -45,10 +45,16 @@
         
         <div class="setting-group">
           <label class="setting-label">라운드:</label>
-          <div class="setting-controls">
-            <button class="round-minus" @click="decrementRounds">-</button>
-            <span class="rounds-value">{{ settings.rounds }}회</span>
-            <button class="round-plus" @click="incrementRounds">+</button>
+          <div class="rounds-selector">
+            <div 
+              v-for="num in maxRounds - 2" 
+              :key="num"
+              class="round-option"
+              :class="{ active: settings.rounds === num + 2 }"
+              @click="settings.rounds = num + 2"
+            >
+              {{ num + 2 }}
+            </div>
           </div>
         </div>
         
@@ -145,20 +151,6 @@ export default {
     
     apply() {
       this.$emit('apply', this.settings);
-    },
-    
-    incrementRounds() {
-      // 라운드 수 증가 (최대값 제한)
-      if (this.settings.rounds < this.maxRounds) {
-        this.settings.rounds++;
-      }
-    },
-    
-    decrementRounds() {
-      // 라운드 수 감소 (최소 3)
-      if (this.settings.rounds > 3) {
-        this.settings.rounds--;
-      }
     }
   },
   
@@ -176,135 +168,203 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000; /* 더 높은 z-index로 설정 */
+  z-index: 2000;
+  backdrop-filter: blur(3px);
 }
 
 .room-settings-content {
   background-color: white;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 1.5rem;
   width: 90%;
   max-width: 500px;
   max-height: 80vh;
   overflow-y: auto;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: modalAppear 0.3s ease-out;
+}
+
+@keyframes modalAppear {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .room-settings-content h3 {
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 1.5rem;
+  font-weight: 700;
   color: #334155;
   margin-bottom: 1.5rem;
   text-align: center;
+  position: relative;
+}
+
+.room-settings-content h3::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  border-radius: 10px;
 }
 
 .room-settings-form {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.5rem;
   margin-bottom: 1.5rem;
 }
 
 .setting-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .setting-group .setting-label {
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-size: 1rem;
+  font-weight: 600;
   color: #475569;
 }
 
 .setting-controls {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .mode-button,
 .match-button {
-  background-color: #f1f5f9;
+  flex: 1;
+  background-color: #f8fafc;
   color: #64748b;
-  border: none;
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
+}
+
+.mode-button:hover,
+.match-button:hover {
+  background-color: #f1f5f9;
+  transform: translateY(-2px);
 }
 
 .mode-button.active,
 .match-button.active {
-  background-color: #dbeafe;
-  color: #2563eb;
+  background-color: #eff6ff;
+  color: #3b82f6;
+  border-color: #3b82f6;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
 
 .mode-button.active:nth-child(2) {
-  background-color: #dcfce7;
-  color: #16a34a;
+  background-color: #ecfdf5;
+  color: #10b981;
+  border-color: #10b981;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
 }
 
 .setting-select {
   flex: 1;
-  padding: 0.5rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
   color: #334155;
-  background-color: white;
+  background-color: #f8fafc;
+  font-size: 0.95rem;
+  font-weight: 500;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1.25rem;
+  padding-right: 2.5rem;
+  transition: all 0.2s ease;
 }
 
-.round-minus,
-.round-plus {
-  width: 30px;
-  height: 30px;
-  background-color: #f1f5f9;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  color: #64748b;
-  cursor: pointer;
+.setting-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* 라운드 선택기 스타일 */
+.rounds-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  padding: 0.5rem;
+  background-color: #f8fafc;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+}
+
+.round-option {
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  background-color: white;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.round-minus:hover,
-.round-plus:hover {
-  background-color: #e2e8f0;
+.round-option:hover {
+  background-color: #f1f5f9;
+  transform: translateY(-2px);
 }
 
-.rounds-value {
-  width: 60px;
-  text-align: center;
-  font-weight: 500;
-  color: #334155;
+.round-option.active {
+  background-color: #3b82f6;
+  color: white;
+  border-color: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
 
 .room-settings-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
+  gap: 1rem;
+  margin-top: 1rem;
 }
 
 .cancel-button,
 .apply-button {
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1.5rem;
   border: none;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 .cancel-button {
@@ -312,25 +372,27 @@ export default {
   color: #64748b;
 }
 
+.cancel-button:hover {
+  background-color: #e2e8f0;
+  transform: translateY(-2px);
+}
+
 .apply-button {
-  background-color: #2563eb;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
 }
 
-.cancel-button:hover {
-  background-color: #e2e8f0;
-}
-
 .apply-button:hover {
-  background-color: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 /* 토글 스위치 스타일 */
 .toggle-switch {
   position: relative;
   display: inline-block;
-  width: 46px;
-  height: 24px;
+  width: 50px;
+  height: 26px;
 }
 
 .toggle-switch input {
@@ -346,44 +408,56 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #cbd5e1;
+  background-color: #e2e8f0;
   transition: .4s;
-  border-radius: 24px;
+  border-radius: 26px;
 }
 
 .toggle-slider:before {
   position: absolute;
   content: "";
-  height: 18px;
-  width: 18px;
+  height: 20px;
+  width: 20px;
   left: 3px;
   bottom: 3px;
   background-color: white;
   transition: .4s;
   border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 input:checked + .toggle-slider {
-  background-color: #2563eb;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
 }
 
 input:checked + .toggle-slider:before {
-  transform: translateX(22px);
+  transform: translateX(24px);
 }
 
 .toggle-label {
-  margin-left: 10px;
-  font-size: 0.875rem;
+  margin-left: 12px;
+  font-size: 0.95rem;
+  font-weight: 500;
   color: #334155;
 }
 
 .password-input {
-  padding: 0.5rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  font-size: 0.875rem;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  background-color: #f8fafc;
+  font-size: 0.95rem;
   color: #334155;
   width: 100%;
+  font-family: monospace;
+  letter-spacing: 1px;
+  transition: all 0.2s ease;
+}
+
+.password-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 /* 모바일 반응형 추가 스타일 */
@@ -391,7 +465,7 @@ input:checked + .toggle-slider:before {
   .room-settings-content {
     width: 95%;
     max-height: 90vh;
-    padding: 1rem;
+    padding: 1.25rem;
   }
   
   .setting-controls {
@@ -400,8 +474,18 @@ input:checked + .toggle-slider:before {
   
   .mode-button,
   .match-button {
-    flex: 1;
-    min-width: 45%;
+    padding: 0.6rem;
+    font-size: 0.85rem;
+  }
+  
+  .rounds-selector {
+    gap: 0.35rem;
+  }
+  
+  .round-option {
+    width: 36px;
+    height: 36px;
+    font-size: 0.85rem;
   }
 }
 </style> 

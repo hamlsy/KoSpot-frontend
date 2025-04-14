@@ -168,12 +168,9 @@ export default {
 }
 
 .logo {
-  margin: 0;
-  font-size: 1.8rem;
-  font-weight: bold;
-  background: linear-gradient(135deg, #2c3e50 0%, #4ca1af 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  font-size: 20px;
+  font-weight: 700;
+  color: #2563eb;
 }
 
 .badge {
@@ -234,7 +231,6 @@ export default {
 .icon-button:hover {
   background: #f0f2f5;
 }
-
 .notification-badge {
   position: absolute;
   top: 0;
