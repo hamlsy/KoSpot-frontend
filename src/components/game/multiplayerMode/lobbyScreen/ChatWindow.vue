@@ -13,7 +13,10 @@
         v-for="message in messages" 
         :key="message.id"
         class="message"
-        :class="{ 'system-message': message.system }"
+        :class="{ 
+          'system-message': message.system, 
+          'my-message': isMyMessage(message)
+        }"
       >
         <div v-if="!message.system" class="message-header">
           <span class="message-sender">{{ message.sender }}</span>
@@ -21,7 +24,10 @@
         </div>
         <div 
           class="message-content"
-          :class="{ 'system-content': message.system }"
+          :class="{ 
+            'system-content': message.system,
+            'my-content': isMyMessage(message)
+          }"
         >
           {{ message.message }}
         </div>
@@ -38,6 +44,10 @@
       <button class="send-button" @click="sendMessage" :disabled="!newMessage.trim()">
         <i class="fas fa-paper-plane"></i>
       </button>
+      <!-- 모바일에서 채팅창이 열렸을 때만 닫기 버튼 표시 -->
+      <button v-if="showMobileClose" class="close-chat-button" @click="closeChat">
+        <i class="fas fa-times"></i>
+      </button>
     </div>
   </div>
 </template>
@@ -50,6 +60,14 @@ export default {
     messages: {
       type: Array,
       required: true
+    },
+    currentUserId: {
+      type: String,
+      default: ''
+    },
+    showMobileClose: {
+      type: Boolean,
+      default: false
     }
   },
   
@@ -94,6 +112,10 @@ export default {
       this.newMessage = '';
     },
     
+    closeChat() {
+      this.$emit('close');
+    },
+    
     scrollToBottom() {
       const messageContainer = this.$refs.messageContainer;
       if (messageContainer) {
@@ -111,6 +133,18 @@ export default {
       hours = hours ? hours : 12; // 0시는 12시로 표시
       
       return `${ampm} ${hours}:${minutes}`;
+    },
+    
+    isMyMessage(message) {
+      // 메시지의 senderId 또는 sender가 현재 사용자와 일치하는지 확인
+      if (message.system) return false;
+      
+      if (message.senderId) {
+        return message.senderId === this.currentUserId;
+      }
+      
+      // 테스트 환경에서 사용
+      return message.sender === '김코스팟';
     }
   }
 };
@@ -134,6 +168,7 @@ export default {
   align-items: center;
   padding: 1rem;
   border-bottom: 1px solid #eee;
+  flex-shrink: 0;
 }
 
 .chat-title {
@@ -178,6 +213,21 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
+  scrollbar-width: thin;
+  scrollbar-color: #ccc transparent;
+}
+
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 6px;
 }
 
 .message {
@@ -191,6 +241,29 @@ export default {
   border-radius: 12px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   align-self: flex-start;
+}
+
+/* 내가 보낸 메시지 스타일 */
+.message.my-message {
+  align-self: flex-end;
+  background: #3b82f6;
+  color: white;
+}
+
+.message.my-message .message-header {
+  flex-direction: row-reverse;
+}
+
+.message.my-message .message-sender {
+  color: #e0e7ff;
+}
+
+.message.my-message .message-time {
+  color: #bfdbfe;
+}
+
+.message.my-message .message-content {
+  color: white;
 }
 
 .system-message {
@@ -234,6 +307,9 @@ export default {
   padding: 1rem;
   border-top: 1px solid #eee;
   background: white;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .chat-input input {
@@ -276,9 +352,34 @@ export default {
   cursor: not-allowed;
 }
 
+/* 채팅방 닫기 버튼 */
+.close-chat-button {
+  background: #ef4444;
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-left: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.close-chat-button:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+}
+
 @media (max-width: 768px) {
   .message {
     max-width: 90%;
+  }
+  
+  .chat-input {
+    padding: 1rem;
   }
 }
 </style> 

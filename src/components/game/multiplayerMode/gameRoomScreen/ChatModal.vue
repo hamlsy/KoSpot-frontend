@@ -7,17 +7,22 @@
           <i class="fas fa-times"></i>
         </button>
       </div>
-      <chat-window 
-        :messages="messages"
-        :height="'calc(100vh - 180px)'"
-        @send-message="sendMessage"
-      />
+      <div class="chat-container">
+        <chat-window 
+          :messages="messages"
+          :height="'100%'"
+          :current-user-id="'user123'"
+          @send-message="sendMessage"
+          :show-mobile-close="show"
+          @close="close"
+        />
+      </div>
     </div>
     
-    <!-- 모바일 채팅 토글 버튼 -->
-    <button class="mobile-chat-toggle" :class="{ 'is-open': show }" @click="toggle">
-      <i :class="show ? 'fas fa-times' : 'fas fa-comment'"></i>
-      <span>{{ show ? '채팅 닫기' : '채팅 열기' }}</span>
+    <!-- 모바일에서만 채팅 토글 버튼 표시 (채팅 닫혀있을 때만) -->
+    <button v-if="!show" class="mobile-chat-toggle" @click="toggle">
+      <i class="fas fa-comment"></i>
+      <span>채팅 열기</span>
     </button>
   </div>
 </template>
@@ -66,6 +71,16 @@ export default {
 
 .right-panel {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.chat-container {
+  flex: 1;
+  overflow: hidden;
+  height: calc(100vh - 180px);
+  max-height: calc(100vh - 180px);
 }
 
 /* 모바일 채팅 헤더 */
@@ -107,7 +122,7 @@ export default {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   cursor: pointer;
   z-index: 2000;
-  display: flex;
+  display: none; /* 기본적으로 숨김 (반응형에서만 표시) */
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -125,13 +140,15 @@ export default {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
-.mobile-chat-toggle.is-open {
-  background-color: #ef4444;
-}
-
 @media (max-width: 1024px) {
-  .right-panel {
-    min-height: 300px;
+  .chat-container {
+    height: 50vh;
+    max-height: 50vh;
+  }
+  
+  /* 태블릿에서 토글 버튼 표시 */
+  .mobile-chat-toggle {
+    display: flex;
   }
 }
 
@@ -148,7 +165,7 @@ export default {
     transform: translateY(100%);
     transition: transform 0.3s ease-in-out;
     padding: 0;
-    max-height: 100vh;
+    height: 100%;
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -158,25 +175,19 @@ export default {
     transform: translateY(0);
   }
   
-  /* 모바일에서 채팅 헤더 표시 및 위치 조정 */
+  .chat-container {
+    flex: 1;
+    height: calc(100% - 130px);
+    max-height: calc(100% - 130px);
+    overflow: hidden;
+  }
+  
+  /* 모바일에서 채팅 헤더 표시 */
   .mobile-chat-header {
     display: flex;
     position: relative;
     z-index: 1600;
-    margin-top: 60px; /* 네비게이션 바 높이만큼 아래로 내림 */
-  }
-  
-  /* 채팅창 크기 조정 */
-  .right-panel ::v-deep chat-window {
-    flex: 1;
-    overflow: hidden;
-  }
-  
-  /* 채팅 활성화시에도 버튼이 보이도록 패딩 추가 */
-  .right-panel.mobile-chat-active + .mobile-chat-toggle {
-    bottom: 20px; /* 하단에 고정 */
-    right: 20px;
-    transition: all 0.3s ease;
+    height: 130px;
   }
 }
 </style> 

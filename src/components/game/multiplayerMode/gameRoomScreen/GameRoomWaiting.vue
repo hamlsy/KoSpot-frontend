@@ -1361,12 +1361,6 @@ export default {
     display: none;
   }
   
-  /* 모바일에서 채팅 토글 버튼 표시 */
-  .mobile-chat-toggle {
-    display: flex;
-    z-index: 1100; /* 더 높은 z-index */
-  }
-  
   /* 헤더 조정 */
   .header-right {
     flex-wrap: wrap;
@@ -1508,62 +1502,6 @@ export default {
   color: #475569;
 }
 
-/* 모바일 채팅 토글 버튼 */
-.mobile-chat-toggle {
-  display: none; /* 기본적으로 숨김 (모바일에서만 표시) */
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 60px;
-  height: 60px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  z-index: 2000; /* 더 높은 z-index로 설정 */
-  cursor: pointer;
-  transition: all 0.3s;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  font-size: 0.7rem;
-}
-
-.mobile-chat-toggle i {
-  font-size: 1.2rem;
-}
-
-.mobile-chat-toggle:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-}
-
-/* 모바일 반응형 추가 스타일 */
-@media (max-width: 768px) {
-  .room-settings-content {
-    width: 95%;
-    max-height: 90vh;
-    padding: 1rem;
-  }
-  
-  .setting-controls {
-    flex-wrap: wrap;
-  }
-  
-  .mode-button,
-  .match-button {
-    flex: 1;
-    min-width: 45%;
-  }
-  
-  .my-team-button {
-    font-size: 0.75rem;
-    padding: 0.4rem 0.8rem;
-  }
-}
-
 /* 플레이어 목록 스타일 */
 .players-list {
   display: grid;
@@ -1697,4 +1635,6 @@ export default {
 .player-card:hover .kick-button {
   opacity: 1;
 }
+
+/* 모바일 채팅 관련 스타일은 ChatModal 컴포넌트로 이동됨 */
 </style> 
