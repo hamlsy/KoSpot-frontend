@@ -41,11 +41,21 @@
         placeholder="메시지를 입력하세요" 
         @keyup.enter="sendMessage"
       />
-      <button class="send-button" @click="sendMessage" :disabled="!newMessage.trim()">
+      <button 
+        class="send-button" 
+        @click="sendMessage" 
+        :disabled="!newMessage.trim()"
+        type="button"
+      >
         <i class="fas fa-paper-plane"></i>
       </button>
       <!-- 모바일에서 채팅창이 열렸을 때만 닫기 버튼 표시 -->
-      <button v-if="showMobileClose" class="close-chat-button" @click="closeChat">
+      <button 
+        v-if="showMobileClose" 
+        class="close-chat-button" 
+        @click="closeChat"
+        type="button"
+      >
         <i class="fas fa-times"></i>
       </button>
     </div>
@@ -168,6 +178,7 @@ export default {
   align-items: center;
   padding: 1rem;
   border-bottom: 1px solid #eee;
+  background-color: #f8f9fa;
   flex-shrink: 0;
 }
 
@@ -176,6 +187,7 @@ export default {
   font-size: 1.1rem;
   color: #333;
   position: relative;
+  font-weight: 700;
 }
 
 .chat-title::after {
@@ -183,7 +195,7 @@ export default {
   position: absolute;
   bottom: -5px;
   left: 0;
-  width: 20px;
+  width: 30px;
   height: 3px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 3px;
@@ -309,7 +321,7 @@ export default {
   background: white;
   flex-shrink: 0;
   position: relative;
-  z-index: 1;
+  z-index: 10;
 }
 
 .chat-input input {
@@ -331,8 +343,9 @@ export default {
   background: #667eea;
   color: white;
   border: none;
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
   border-radius: 50%;
   margin-left: 0.8rem;
   cursor: pointer;
@@ -340,6 +353,8 @@ export default {
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
+  z-index: 15;
+  position: relative;
 }
 
 .send-button:hover:not(:disabled) {
@@ -357,8 +372,9 @@ export default {
   background: #ef4444;
   color: white;
   border: none;
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
   border-radius: 50%;
   margin-left: 0.8rem;
   cursor: pointer;
@@ -366,6 +382,8 @@ export default {
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
+  z-index: 15;
+  position: relative;
 }
 
 .close-chat-button:hover {

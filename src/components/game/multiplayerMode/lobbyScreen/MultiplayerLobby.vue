@@ -29,7 +29,8 @@
         <div class="right-panel">
           <ChatWindow 
             :messages="chatMessages" 
-            @send-message="sendChatMessage" 
+            @send-message="sendChatMessage"
+            :current-user-id="currentUser.id"
           />
           
           <button class="create-room-button" @click="showCreateRoomModal = true">
@@ -160,14 +161,29 @@ export default {
             },
             {
               id: 'room5',
-              name: '게임 진행 중 (관전 가능)',
+              name: '게임 진행 중 - 3라운드',
               host: '지리마스터',
               players: 4,
               maxPlayers: 8,
               mode: '로드뷰',
               status: 'playing',
               region: '전국',
+              currentRound: 3,
+              totalRounds: 5,
               createdAt: new Date().toISOString()
+            },
+            {
+              id: 'room6',
+              name: '포토모드 5라운드 진행중',
+              host: '사진킹',
+              players: 6,
+              maxPlayers: 6,
+              mode: '포토',
+              status: 'playing',
+              region: '제주도',
+              currentRound: 5,
+              totalRounds: 8,
+              createdAt: new Date(Date.now() - 3600000).toISOString()
             }
           ];
           this.isLoading = false;
@@ -225,6 +241,7 @@ export default {
       const newMessage = {
         id: `m${Date.now()}`,
         sender: this.currentUser.nickname,
+        senderId: this.currentUser.id,
         message: message,
         timestamp: new Date().toISOString(),
         system: false
@@ -296,7 +313,7 @@ export default {
 
 .multiplayer-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e9edf2 100%);
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
   padding-bottom: 40px;
   position: relative;
 }
@@ -307,7 +324,7 @@ export default {
   top: 0;
   left: 0;
   right: 0;
-  background: white;
+  background: linear-gradient(to right, #ffffff, #f8f9fa);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   z-index: 100;
   transition: all 0.3s ease;
@@ -356,6 +373,8 @@ export default {
   border-radius: 4px;
   font-size: 0.7rem;
   margin-left: 0.5rem;
+  text-transform: uppercase;
+  font-weight: 700;
 }
 
 .header-right {
@@ -366,6 +385,19 @@ export default {
   margin: 0;
   font-size: 1.2rem;
   color: #333;
+  font-weight: 700;
+  position: relative;
+}
+
+.header-right h3::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 0;
+  width: 40%;
+  height: 2px;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  border-radius: 2px;
 }
 
 /* 메인 콘텐츠 스타일 */
@@ -380,7 +412,8 @@ export default {
   display: flex;
   gap: 1.5rem;
   position: relative;
-  min-height: calc(100vh - 120px);
+  height: calc(100vh - 120px);
+  max-height: 700px;
 }
 
 .right-panel {
@@ -388,30 +421,6 @@ export default {
   flex-direction: column;
   width: 30%;
   min-width: 300px;
-}
-
-.ad-container {
-  width: 100%;
-  height: 120px;
-  background-color: #f8f9fa;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  margin-bottom: 16px;
-}
-
-.ad-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #e9ecef;
-  color: #6c757d;
-  font-size: 14px;
-  border: 1px dashed #adb5bd;
 }
 
 .create-room-button {
@@ -433,6 +442,7 @@ export default {
 
 .create-room-button i {
   margin-right: 0.5rem;
+  font-size: 0.9rem;
 }
 
 .create-room-button:hover {
@@ -465,17 +475,36 @@ export default {
   font-size: 3rem;
   color: #667eea;
   margin-bottom: 1rem;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
 }
 
 .loading-spinner p {
   color: #333;
   font-size: 1.2rem;
+  font-weight: 600;
 }
 
 /* 반응형 스타일 */
 @media (max-width: 900px) {
   .lobby-layout {
     flex-direction: column;
+    height: auto;
+    max-height: none;
   }
   
   .right-panel {
