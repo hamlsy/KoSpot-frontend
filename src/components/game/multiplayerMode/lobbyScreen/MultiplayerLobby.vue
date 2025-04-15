@@ -82,18 +82,13 @@ export default {
         nickname: '김코스팟',
         level: 23,
         profileImage: '/assets/default-profile.png'
-      }
+      },
+      isInitialized: false
     };
   },
   
   mounted() {
-    this.fetchRooms();
-    this.connectToChat();
-    
-    // 30초마다 방 목록 갱신
-    this.refreshInterval = setInterval(() => {
-      this.fetchRooms();
-    }, 30000);
+    this.initializeData();
   },
   
   beforeDestroy() {
@@ -104,93 +99,113 @@ export default {
   },
   
   methods: {
-    async fetchRooms() {
+    async initializeData() {
       this.isLoading = true;
+      await this.fetchRooms();
+      this.connectToChat();
+      this.isInitialized = true;
+      this.isLoading = false;
+      
+      // 30초마다 방 목록 갱신
+      this.refreshInterval = setInterval(() => {
+        this.fetchRooms();
+      }, 30000);
+    },
+    
+    async fetchRooms() {
+      if (!this.isInitialized) {
+        this.isLoading = true;
+      }
       
       try {
-        // 실제 구현에서는 API 호출로 대체
+        // 실제 구현에서는 API 호출로
         // const response = await axios.get('/api/multiplayer/rooms');
         // this.rooms = response.data.rooms;
         
-        // 테스트용 데이터
-        setTimeout(() => {
-          this.rooms = [
-            {
-              id: 'room1',
-              name: '초보 환영! 같이 게임해요',
-              host: '로드마스터',
-              players: 2,
-              maxPlayers: 4,
-              mode: '로드뷰',
-              status: 'waiting',
-              region: '전국',
-              createdAt: new Date().toISOString()
-            },
-            {
-              id: 'room2',
-              name: '숙련자만! 경상도 지역 배틀',
-              host: '포토킹',
-              players: 3,
-              maxPlayers: 4,
-              mode: '포토',
-              status: 'waiting',
-              region: '경상도',
-              createdAt: new Date().toISOString()
-            },
-            {
-              id: 'room3',
-              name: '서울 지역만 대회 연습',
-              host: '김서울',
-              players: 1,
-              maxPlayers: 2,
-              mode: '로드뷰',
-              status: 'waiting',
-              region: '서울',
-              createdAt: new Date().toISOString()
-            },
-            {
-              id: 'room4',
-              name: '부산 로컬들의 모임',
-              host: '부산바다',
-              players: 2,
-              maxPlayers: 6,
-              mode: '포토',
-              status: 'waiting',
-              region: '부산',
-              createdAt: new Date().toISOString()
-            },
-            {
-              id: 'room5',
-              name: '게임 진행 중 - 3라운드',
-              host: '지리마스터',
-              players: 4,
-              maxPlayers: 8,
-              mode: '로드뷰',
-              status: 'playing',
-              region: '전국',
-              currentRound: 3,
-              totalRounds: 5,
-              createdAt: new Date().toISOString()
-            },
-            {
-              id: 'room6',
-              name: '포토모드 5라운드 진행중',
-              host: '사진킹',
-              players: 6,
-              maxPlayers: 6,
-              mode: '포토',
-              status: 'playing',
-              region: '제주도',
-              currentRound: 5,
-              totalRounds: 8,
-              createdAt: new Date(Date.now() - 3600000).toISOString()
-            }
-          ];
+        // 테스트용 즉시 데이터 설정 (setTimeout 제거)
+        this.rooms = [
+          {
+            id: 'room1',
+            name: '초보 환영! 같이 게임해요',
+            host: '로드마스터',
+            players: 2,
+            maxPlayers: 4,
+            mode: '로드뷰',
+            status: 'waiting',
+            region: '전국',
+            createdAt: new Date().toISOString()
+          },
+          {
+            id: 'room2',
+            name: '숙련자만! 경상도 지역 배틀',
+            host: '포토킹',
+            players: 3,
+            maxPlayers: 4,
+            mode: '포토',
+            status: 'waiting',
+            region: '경상도',
+            createdAt: new Date().toISOString()
+          },
+          {
+            id: 'room3',
+            name: '서울 지역만 대회 연습',
+            host: '김서울',
+            players: 1,
+            maxPlayers: 2,
+            mode: '로드뷰',
+            status: 'waiting',
+            region: '서울',
+            createdAt: new Date().toISOString()
+          },
+          {
+            id: 'room4',
+            name: '부산 로컬들의 모임',
+            host: '부산바다',
+            players: 2,
+            maxPlayers: 6,
+            mode: '포토',
+            status: 'waiting',
+            region: '부산',
+            createdAt: new Date().toISOString()
+          },
+          {
+            id: 'room5',
+            name: '게임 진행 중 - 3라운드',
+            host: '지리마스터',
+            players: 4,
+            maxPlayers: 8,
+            mode: '로드뷰',
+            status: 'playing',
+            region: '전국',
+            currentRound: 3,
+            totalRounds: 5,
+            createdAt: new Date().toISOString()
+          },
+          {
+            id: 'room6',
+            name: '포토모드 5라운드 진행중',
+            host: '사진킹',
+            players: 6,
+            maxPlayers: 6,
+            mode: '포토',
+            status: 'playing',
+            region: '제주도',
+            currentRound: 5,
+            totalRounds: 8,
+            createdAt: new Date(Date.now() - 3600000).toISOString()
+          }
+        ];
+        
+        // 초기화 이후에는 로딩 상태 해제
+        if (!this.isInitialized) {
           this.isLoading = false;
-        }, 800);
+        }
+        
+        return Promise.resolve();
       } catch (error) {
         console.error('방 목록 조회 중 오류 발생:', error);
         this.isLoading = false;
+        return Promise.reject(error);
       }
     },
     

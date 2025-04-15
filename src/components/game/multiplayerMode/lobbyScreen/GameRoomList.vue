@@ -8,7 +8,6 @@
             type="text" 
             v-model="searchQuery" 
             placeholder="방 이름 또는 지역 검색" 
-            @input="filterRooms"
           />
           <i class="fas fa-search"></i>
         </div>
@@ -18,102 +17,88 @@
       </div>
     </div>
     
-    <div class="room-filters">
-      <div class="filter-group">
-        <button 
-          v-for="filter in modeFilters" 
-          :key="filter.value"
-          :class="{ active: selectedModeFilter === filter.value }"
-          @click="setModeFilter(filter.value)"
-          type="button"
-        >
-          <i :class="filter.icon" v-if="filter.icon"></i>
-          {{ filter.label }}
-        </button>
-      </div>
-      <div class="filter-group">
-        <button 
-          v-for="filter in statusFilters" 
-          :key="filter.value"
-          :class="{ active: selectedStatusFilter === filter.value }"
-          @click="setStatusFilter(filter.value)"
-          type="button"
-        >
-          <i :class="filter.icon" v-if="filter.icon"></i>
-          {{ filter.label }}
-        </button>
-      </div>
-    </div>
-    
-    <div class="rooms-container" v-if="filteredRooms.length > 0">
+    <div class="rooms-container" v-if="rooms && rooms.length > 0">
       <div 
-        v-for="room in filteredRooms" 
+        v-for="room in rooms" 
         :key="room.id"
         class="room-card"
         :class="{ 'playing': room.status === 'playing' }"
+        @click="joinRoom(room)"
       >
-        <div class="room-header">
-          <div class="room-info">
-            <h3 class="room-name">{{ room.name }}</h3>
-            <span class="room-host">방장: {{ room.host }}</span>
-          </div>
-          <div class="room-badges">
-            <span 
-              class="mode-badge"
-              :class="{ 
-                'roadview-mode': room.mode === '로드뷰',
-                'photo-mode': room.mode === '포토'
-              }"
-            >
-              <i :class="room.mode === '로드뷰' ? 'fas fa-street-view' : 'fas fa-camera'"></i>
-              {{ room.mode }}
-            </span>
-            <span 
-              class="status-badge"
-              :class="{ 
-                'waiting': room.status === 'waiting',
-                'playing': room.status === 'playing'
-              }"
-            >
-              {{ room.status === 'waiting' ? '대기중' : '게임중' }}
-              <span v-if="room.status === 'playing' && room.currentRound" class="round-info">
-                {{ room.currentRound }}/{{ room.totalRounds }}R
+        <div class="room-content">
+          <div class="room-header">
+            <div class="room-info">
+              <h3 class="room-name">{{ room.name }}</h3>
+              <span class="room-host">방장: {{ room.host }}</span>
+            </div>
+            <div class="room-badges">
+              <span 
+                class="mode-badge"
+                :class="{ 
+                  'roadview-mode': room.mode === '로드뷰',
+                  'photo-mode': room.mode === '포토'
+                }"
+              >
+                <i :class="room.mode === '로드뷰' ? 'fas fa-street-view' : 'fas fa-camera'"></i>
+                {{ room.mode }}
               </span>
-            </span>
+              <span 
+                class="status-badge"
+                :class="{ 
+                  'waiting': room.status === 'waiting',
+                  'playing': room.status === 'playing'
+                }"
+              >
+                {{ room.status === 'waiting' ? '대기중' : '게임중' }}
+                <span v-if="room.status === 'playing' && room.currentRound" class="round-info">
+                  {{ room.currentRound }}/{{ room.totalRounds }}R
+                </span>
+              </span>
+            </div>
           </div>
-        </div>
-        
-        <div class="room-details">
-          <div class="detail-item">
-            <i class="fas fa-map-marker-alt"></i>
-            <span>{{ room.region }}</span>
+          
+          <div class="room-details">
+            <div class="detail-item">
+              <i class="fas fa-map-marker-alt"></i>
+              <span>{{ room.region }}</span>
+            </div>
+            <div class="detail-item">
+              <i class="fas fa-users"></i>
+              <span>{{ room.players }}/{{ room.maxPlayers }}명</span>
+            </div>
+            <div class="detail-item">
+              <i class="fas fa-clock"></i>
+              <span>{{ formatTimeAgo(room.createdAt) }}</span>
+            </div>
+            <div class="detail-item" v-if="room.isPrivate">
+              <i class="fas fa-lock"></i>
+              <span>비밀방</span>
+            </div>
           </div>
-          <div class="detail-item">
-            <i class="fas fa-users"></i>
-            <span>{{ room.players }}/{{ room.maxPlayers }}명</span>
-          </div>
-          <div class="detail-item">
-            <i class="fas fa-clock"></i>
-            <span>{{ formatTimeAgo(room.createdAt) }}</span>
-          </div>
-        </div>
-        
-        <div class="room-actions">
-          <button 
-            class="join-button"
-            @click="joinRoom(room.id)"
-            :disabled="room.players >= room.maxPlayers || room.status === 'playing'"
-          >
-            참가하기
-          </button>
         </div>
       </div>
     </div>
     
     <div class="empty-state" v-else>
       <i class="fas fa-gamepad"></i>
-      <p>검색 조건에 맞는 방이 없습니다.</p>
-      <button class="reset-filters" @click="resetFilters">필터 초기화</button>
+      <p>현재 생성된 방이 없습니다.</p>
+    </div>
+
+    <!-- 비밀번호 입력 모달 -->
+    <div class="modal-overlay" v-if="showPasswordModal">
+      <div class="password-modal">
+        <h3>비밀번호 입력</h3>
+        <input 
+          type="password" 
+          v-model="passwordInput"
+          placeholder="비밀번호를 입력하세요"
+          @keyup.enter="handlePasswordSubmit(passwordInput)"
+        />
+        <div class="modal-actions">
+          <button class="cancel-button" @click="showPasswordModal = false">취소</button>
+          <button class="submit-button" @click="handlePasswordSubmit(passwordInput)">확인</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -125,93 +110,68 @@ export default {
   props: {
     rooms: {
       type: Array,
-      required: true
+      required: true,
+      default: () => []
     }
   },
   
   data() {
     return {
       searchQuery: '',
-      filteredRooms: [],
-      selectedModeFilter: 'all',
-      selectedStatusFilter: 'all',
-      modeFilters: [
-        { label: '전체', value: 'all', icon: 'fas fa-th-large' },
-        { label: '로드뷰', value: '로드뷰', icon: 'fas fa-street-view' },
-        { label: '포토', value: '포토', icon: 'fas fa-camera' }
-      ],
-      statusFilters: [
-        { label: '전체', value: 'all', icon: 'fas fa-th-large' },
-        { label: '대기중', value: 'waiting', icon: 'fas fa-hourglass-half' },
-        { label: '게임중', value: 'playing', icon: 'fas fa-play-circle' }
-      ]
+      showPasswordModal: false,
+      selectedRoom: null,
+      passwordInput: ''
     };
   },
   
   created() {
-    this.filteredRooms = [...this.rooms];
+    console.log('GameRoomList created:', this.rooms);
   },
   
   watch: {
     rooms: {
-      handler() {
-        this.filterRooms();
+      handler(newRooms) {
+        console.log('Rooms updated:', newRooms);
       },
-      deep: true
+      immediate: true
     }
   },
   
   methods: {
-    filterRooms() {
-      let filtered = [...this.rooms];
-      
-      // 검색어 필터링
-      if (this.searchQuery) {
-        const query = this.searchQuery.toLowerCase();
-        filtered = filtered.filter(room => 
-          room.name.toLowerCase().includes(query) || 
-          room.region.toLowerCase().includes(query) ||
-          room.host.toLowerCase().includes(query)
-        );
-      }
-      
-      // 게임 모드 필터링
-      if (this.selectedModeFilter !== 'all') {
-        filtered = filtered.filter(room => room.mode === this.selectedModeFilter);
-      }
-      
-      // 상태 필터링
-      if (this.selectedStatusFilter !== 'all') {
-        filtered = filtered.filter(room => room.status === this.selectedStatusFilter);
-      }
-      
-      // 관전 제외 - 게임중인 방은 필터링에서만 보이고 참가는 못하게
-      this.filteredRooms = filtered;
-    },
-    
-    setModeFilter(value) {
-      this.selectedModeFilter = value;
-      this.filterRooms();
-    },
-    
-    setStatusFilter(value) {
-      this.selectedStatusFilter = value;
-      this.filterRooms();
-    },
-    
-    resetFilters() {
-      this.searchQuery = '';
-      this.selectedModeFilter = 'all';
-      this.selectedStatusFilter = 'all';
-      this.filterRooms();
-    },
-    
     refreshRooms() {
       this.$emit('refresh-rooms');
     },
     
-    joinRoom(roomId) {
-      this.$emit('join-room', roomId);
+    joinRoom(room) {
+      if (room.players >= room.maxPlayers) {
+        alert('방이 가득 찼습니다.');
+        return;
+      }
+      
+      if (room.status === 'playing') {
+        alert('이미 게임이 진행중인 방입니다.');
+        return;
+      }
+      
+      if (room.isPrivate) {
+        this.selectedRoom = room;
+        this.showPasswordModal = true;
+        this.passwordInput = '';
+      } else {
+        this.$emit('join-room', room.id);
+      }
+    },
+    
+    handlePasswordSubmit(password) {
+      if (!this.selectedRoom) return;
+      
+      if (password === this.selectedRoom.password) {
+        this.$emit('join-room', this.selectedRoom.id);
+        this.showPasswordModal = false;
+        this.selectedRoom = null;
+      } else {
+        alert('비밀번호가 일치하지 않습니다.');
+      }
     },
     
     formatTimeAgo(timestamp) {
@@ -325,70 +285,6 @@ export default {
   transform: rotate(180deg);
 }
 
-.room-filters {
-  padding: 0.8rem 1.2rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.8rem;
-  border-bottom: 1px solid #eee;
-  background-color: rgba(249, 250, 251, 0.7);
-  position: relative;
-}
-
-.filter-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-right: 0.5rem;
-  position: relative;
-}
-
-.filter-group:first-child {
-  margin-right: 1.5rem;
-}
-
-.filter-group:first-child::after {
-  content: '';
-  position: absolute;
-  right: -0.8rem;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background-color: #e2e8f0;
-  height: 100%;
-}
-
-.filter-group button {
-  background: #f0f2f5;
-  border: none;
-  border-radius: 16px;
-  padding: 0.4rem 0.8rem;
-  font-size: 0.85rem;
-  color: #666;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  z-index: 1;
-}
-
-.filter-group button i {
-  font-size: 0.8rem;
-}
-
-.filter-group button:hover {
-  background: #e8e8e8;
-  transform: translateY(-1px);
-}
-
-.filter-group button.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-}
-
 .rooms-container {
   flex: 1;
   padding: 1rem;
@@ -404,31 +300,36 @@ export default {
   border-radius: 12px;
   padding: 0.8rem 1rem;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-  transition: all 0.3s ease;
+  transition: background-color 0.2s ease;
   border-left: 4px solid #667eea;
   position: relative;
   overflow: hidden;
-}
-
-.room-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  min-height: 105px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
 }
 
 .room-card.playing {
   border-left-color: #ff9800;
+  cursor: not-allowed;
+  opacity: 0.85;
 }
 
-.room-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 30%;
-  background: linear-gradient(to left, rgba(249, 250, 251, 0.5), transparent);
+.room-card:not(.playing):hover {
+  background-color: #f7f9fc;
+}
+
+.room-card:not(.playing):hover::after,
+.room-card:not(.playing):hover::before,
+.room-card:not(.playing):hover .room-content {
+  /* 모두 제거 */
+}
+
+.room-content {
+  position: relative;
   z-index: 1;
-  pointer-events: none;
 }
 
 .room-header {
@@ -515,36 +416,6 @@ export default {
   color: #999;
 }
 
-.room-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.join-button {
-  padding: 0.5rem 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 5px rgba(102, 126, 234, 0.2);
-}
-
-.join-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #5a6edb 0%, #6a4496 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
-}
-
-.join-button:disabled {
-  background: #cccccc;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
 .empty-state {
   flex: 1;
   display: flex;
@@ -568,21 +439,76 @@ export default {
   font-size: 1rem;
 }
 
-.reset-filters {
-  background: none;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
-  color: #666;
-  cursor: pointer;
-  transition: all 0.2s ease;
+/* 비밀번호 모달 스타일 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
 }
 
-.reset-filters:hover {
-  background: #f0f0f0;
+.password-modal {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.password-modal h3 {
+  margin: 0 0 1rem 0;
   color: #333;
-  transform: translateY(-1px);
+  font-size: 1.2rem;
+}
+
+.password-modal input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.cancel-button, .submit-button {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancel-button {
+  background: #f0f2f5;
+  border: 1px solid #ddd;
+  color: #666;
+}
+
+.submit-button {
+  background: #667eea;
+  border: none;
+  color: white;
+}
+
+.cancel-button:hover {
+  background: #e0e2e5;
+}
+
+.submit-button:hover {
+  background: #5a6edb;
 }
 
 @media (max-width: 768px) {
