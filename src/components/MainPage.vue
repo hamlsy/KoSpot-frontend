@@ -1,7 +1,38 @@
 <template>
   <div class="app-container">
-    <!-- 공통 네비게이션바 사용 -->
-    <NavigationBar />
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="logo">KoSpot</h1>
+          <span class="badge">Beta</span>
+        </div>
+
+        <!-- 네비게이션 추가 - 웹 전용 -->
+        <div class="main-nav desktop-only">
+          <a href="#" class="nav-link">공지사항</a>
+          <a href="#" class="nav-link">이벤트</a>
+          <a href="#" class="nav-link">통계</a>
+          <a href="#" class="nav-link">상점</a>
+          <a href="#" class="nav-link">마이페이지</a>
+        </div>
+
+        <div class="header-right">
+          <button class="icon-button" @click="openNotifications">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge" v-if="unreadNotifications">3</span>
+          </button>
+          <div class="user-profile" @click="toggleProfileMenu">
+            <div class="user-avatar">
+              <img
+                :src="userProfile.avatar || '/default-avatar.png'"
+                alt="프로필"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -24,7 +55,7 @@
             </div>
           </div>
         </div>
-      
+
         <!-- Banner Navigation Dots -->
         <div class="banner-dots">
           <button
@@ -65,11 +96,12 @@
             </div>
           </div>
 
-          <div 
-            class="mode-card photo"
-            @click="navigateTo('photoModeMain')"
-          >
+          <div class="mode-card photo locked" @click="showLockedMessage">
             <div class="mode-background"></div>
+            <div class="mode-overlay">
+              <i class="fas fa-lock"></i>
+              <p>곧 오픈 예정</p>
+            </div>
             <div class="mode-icon">
               <i class="fas fa-camera"></i>
             </div>
@@ -81,30 +113,6 @@
                   <i class="fas fa-user"></i> 195명 플레이 중
                 </span>
                 <span class="difficulty">
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                </span>
-              </div>
-            </div>
-          </div>
-          
-          <div
-            class="mode-card multiplayer"
-            @click="navigateTo('multiplayerLobby')"
-          >
-            <div class="mode-background"></div>
-            <div class="mode-icon">
-              <i class="fas fa-users"></i>
-            </div>
-            <div class="mode-info">
-              <h3>멀티플레이어</h3>
-              <p>다른 플레이어들과 함께 게임하세요</p>
-              <div class="mode-stats">
-                <span class="active-players">
-                  <i class="fas fa-user"></i> 124명 플레이 중
-                </span>
-                <span class="difficulty">
-                  <i class="fas fa-star"></i>
                   <i class="fas fa-star"></i>
                   <i class="fas fa-star"></i>
                 </span>
@@ -142,7 +150,7 @@
             </div>
           </div>
         </router-link>
-        <router-link to="/friendsList">
+        <router-link to="/friendList">
           <div class="stat-card">
             <div class="stat-icon">👥</div>
             <div class="stat-info">
@@ -157,9 +165,9 @@
       <section class="notices-section">
         <div class="section-header">
           <h2 class="section-title">공지사항</h2>
-          <router-link to="/noticeList" class="view-all">
-            전체보기 <i class="fas fa-angle-right"></i>
-          </router-link>
+          <a href="/noticeList" class="view-all"
+            >전체보기 <i class="fas fa-angle-right"></i
+          ></a>
         </div>
         <div class="notices-list">
           <div
@@ -179,21 +187,6 @@
           </div>
         </div>
       </section>
-
-      <!-- 테스트 링크 - 개발 중에만 표시 -->
-      <div class="test-links">
-        <h3>테스트 링크</h3>
-        <div class="test-links-grid">
-          <router-link to="/testTeamGame" class="test-link team-test">
-            <i class="fas fa-users"></i>
-            <span>협동전 테스트</span>
-          </router-link>
-          <router-link to="/testIndividualGame" class="test-link individual-test">
-            <i class="fas fa-user"></i>
-            <span>개인전 테스트</span>
-          </router-link>
-        </div>
-      </div>
     </main>
     <!-- 수정: 프로필 메뉴 오버레이 추가 -->
     <transition name="fade">
@@ -225,37 +218,31 @@
 
         <!-- 모바일용 내비게이션 메뉴 추가 -->
         <nav class="mobile-nav">
-          <router-link to="/noticeList" class="menu-item">
+          <a href="#" class="menu-item">
             <i class="fas fa-bullhorn"></i>
             공지사항
-          </router-link>
-          <router-link to="/tempPage" class="menu-item">
+          </a>
+          <a href="#" class="menu-item">
             <i class="fas fa-calendar-alt"></i>
             이벤트
-          </router-link>
-          <router-link to="/tempPage" class="menu-item">
+          </a>
+          <a href="#" class="menu-item">
             <i class="fas fa-chart-bar"></i>
             통계
-          </router-link>
-          <router-link to="/shopMain" class="menu-item">
+          </a>
+          <a href="#" class="menu-item">
             <i class="fas fa-shopping-cart"></i>
             상점
-          </router-link>
-          <router-link to="/myProfile" class="menu-item">
+          </a>
+          <a href="#" class="menu-item">
             <i class="fas fa-user-circle"></i>
             마이페이지
-          </router-link>
+          </a>
           <div class="menu-divider"></div>
           <a href="#" class="menu-item">
             <i class="fas fa-sign-out-alt"></i>
             로그아웃
           </a>
-          
-          <!-- 관리자 페이지 링크 추가 -->
-          <router-link v-if="userProfile.isAdmin" to="/admin" class="menu-item admin-menu-item">
-            <i class="fas fa-user-shield"></i>
-            관리자 페이지
-          </router-link>
         </nav>
       </div>
     </transition>
@@ -268,13 +255,8 @@
 </template>
 
 <script>
-import NavigationBar from '@/components/common/NavigationBar.vue';
-
 export default {
-  name: "MainPage",
-  components: {
-    NavigationBar
-  },
+  name: "KoSpotMain",
   data() {
     return {
       showProfileMenu: false,
@@ -288,7 +270,6 @@ export default {
         name: "김코스팟",
         email: "user@kospot.com",
         avatar: null,
-        isAdmin: true // 관리자 권한 설정 (실제 구현에서는 인증 서비스에서 가져옴)
       },
       banners: [
         {
@@ -419,16 +400,97 @@ export default {
 
 .app-container {
   min-height: 100vh;
+  background-color: #f6f6f6;
+}
+
+/* 메인 네비게이션 - 웹 전용 */
+.main-nav {
+  display: flex;
+  gap: 24px;
+  margin-left: 40px;
+}
+
+@media (max-width: 768px) {
+  .main-nav {
+    display: none; /* 모바일에서 네비게이션 숨김 */
+  }
+  
+  .header-right {
+    margin-left: auto; /* 우측 정렬 유지 */
+  }
+}
+.nav-link {
+  color: #4b5563;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 15px;
+  position: relative;
+  transition: color 0.3s;
+}
+
+.nav-link:hover {
+  color: #2563eb;
+}
+
+.nav-link:hover::after {
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  left: 0;
   width: 100%;
-  background-color: #f5f7fa;
+  height: 2px;
+  background-color: #2563eb;
+  transform: scaleX(1);
+  transition: transform 0.3s;
+}
+
+.icon-button {
+  position: relative;
+  padding: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.notification-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #ef4444;
+  color: white;
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 10px;
+  min-width: 16px;
+  text-align: center;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #e5e7eb;
+  border: 2px solid #dbeafe;
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .main-content {
-  padding-top: 80px; /* 네비게이션바 높이만큼 여백 추가 */
+  padding: 80px 20px 20px;
   max-width: 1200px;
   margin: 0 auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
 }
 
 .stats-container {
@@ -818,105 +880,5 @@ export default {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
-}
-
-.admin-link {
-  color: #6366f1;
-  font-weight: 600;
-}
-
-.admin-menu-item {
-  color: #6366f1 !important;
-  font-weight: 600;
-}
-
-.admin-menu-item i {
-  color: #6366f1;
-}
-
-/* 광고 섹션 스타일 */
-.ad-section {
-  margin: 20px 0;
-  width: 100%;
-}
-
-.ad-container {
-  width: 100%;
-  height: 120px;
-  background-color: #f8f9fa;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.ad-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #e9ecef;
-  color: #6c757d;
-  font-size: 14px;
-  border: 1px dashed #adb5bd;
-}
-
-/* 테스트 링크 스타일 */
-.test-links {
-  margin-top: 2rem;
-  padding: 1rem;
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.test-links h3 {
-  font-size: 1.2rem;
-  color: #334155;
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.test-links-grid {
-  display: flex;
-  gap: 1rem;
-}
-
-.test-link {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem 1rem;
-  background-color: #f8fafc;
-  border-radius: 8px;
-  text-decoration: none;
-  color: #334155;
-  transition: all 0.2s ease;
-  flex: 1;
-}
-
-.test-link i {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.test-link.team-test {
-  background-color: #dbeafe;
-  color: #1d4ed8;
-}
-
-.test-link.individual-test {
-  background-color: #fef3c7;
-  color: #d97706;
-}
-
-.test-link:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 </style>

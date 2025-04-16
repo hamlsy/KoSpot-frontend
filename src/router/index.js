@@ -5,6 +5,8 @@ import MainPage from '@/components/main/MainPage.vue';
 import HomePage from '@/components/main/HomePage.vue';
 import RoadViewModeMain from '@/components/game/roadViewMode/RoadViewModeMain.vue';
 import PhotoModeMain from '@/components/game/photoMode/PhotoModeMain.vue';
+import PhotoModePage from '@/components/game/photoMode/PhotoModePage.vue';
+import PhotoPlayGame from '@/components/game/photoMode/PhotoPlayGame.vue';
 import RoadViewPractice from '@/components/game/roadViewMode/RoadViewPractice.vue';
 import MyInfoPage from '@/components/MyInfoPage.vue';
 import TempPage from '@/components/dummy/TempPage.vue';
@@ -48,6 +50,22 @@ const routes = [
         path: '/photoModeMain',
         name: "PhotoModeMain",
         component: PhotoModeMain
+    },
+    {
+        path: '/photoModePage',
+        name: "PhotoModePage",
+        component: PhotoModePage
+    },
+    {
+        path: '/photoPlayGame',
+        name: "PhotoPlayGame",
+        component: PhotoPlayGame,
+        props: route => ({
+            mode: route.query.mode || 'practice',
+            region: route.query.region || null,
+            theme: route.query.theme || null,
+            totalRounds: Number(route.query.totalRounds) || 5
+        })
     },
     { 
         path:'/roadViewPractice',
