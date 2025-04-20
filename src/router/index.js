@@ -180,6 +180,7 @@ const routes = [
         path: '/myPoints',
         redirect: '/myProfile'
     },
+    
     {
         path: '/team-mode',
         name: 'TeamModeGame',

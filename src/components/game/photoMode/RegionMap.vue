@@ -4,7 +4,6 @@
       <i class="fas" :class="isMapOpen ? 'fa-times' : 'fa-map-marker-alt'"></i>
       {{ isMapOpen ? '지도 닫기' : '지도 열기' }}
     </button>
-    
     <div class="map-wrapper" :class="{ 'mobile-closed': isMobile && !isMapOpen }">
       <div class="map-controls">
         <button class="zoom-button" @click="zoomIn">
@@ -17,315 +16,7 @@
           <i class="fas fa-undo"></i>
         </button>
       </div>
-      
-      <div class="map-container" 
-        @wheel="handleWheel"
-        @mousedown="startPan"
-        @mousemove="pan"
-        @mouseup="endPan"
-        @mouseleave="endPan"
-        @touchstart="startPanTouch"
-        @touchmove="panTouch"
-        @touchend="endPanTouch">
-        <svg 
-          viewBox="0 0 800 1000"
-          class="region-map"
-          :style="{ transform: `scale(${zoomLevel}) translate(${panX}px, ${panY}px)` }"
-        >
-          <!-- 서울 -->
-          <path 
-            id="seoul" 
-            d="M409,226 L428,226 L442,241 L442,262 L409,295 L376,262 L376,241 L390,226 Z" 
-            @click="selectRegion('seoul')"
-            @mouseover="hoverRegion('seoul')"
-            @mouseout="clearHover"
-            :class="{
-              'region': true,
-              'region-selectable': !disabled,
-              'region-selected': selectedRegion === 'seoul',
-              'region-correct': correctRegion === 'seoul',
-              'region-wrong': wrongRegion === 'seoul',
-              'region-hover': hoveredRegion === 'seoul'
-            }"
-          />
-          
-          <!-- 경기도 -->
-          <path 
-            id="gyeonggi" 
-            d="M325,186 L478,186 L478,241 L442,241 L428,226 L409,226 L390,226 L376,241 L376,262 L409,295 L409,325 L360,380 L325,380 L280,335 L280,240 Z" 
-            @click="selectRegion('gyeonggi')"
-            @mouseover="hoverRegion('gyeonggi')"
-            @mouseout="clearHover"
-            :class="{
-              'region': true,
-              'region-selectable': !disabled,
-              'region-selected': selectedRegion === 'gyeonggi',
-              'region-correct': correctRegion === 'gyeonggi',
-              'region-wrong': wrongRegion === 'gyeonggi',
-              'region-hover': hoveredRegion === 'gyeonggi'
-            }"
-          />
-          
-          <!-- 인천 -->
-          <path 
-            id="incheon" 
-            d="M280,240 L280,335 L260,335 L230,295 L230,240 Z" 
-            @click="selectRegion('incheon')"
-            @mouseover="hoverRegion('incheon')"
-            @mouseout="clearHover"
-            :class="{
-              'region': true,
-              'region-selectable': !disabled,
-              'region-selected': selectedRegion === 'incheon',
-              'region-correct': correctRegion === 'incheon',
-              'region-wrong': wrongRegion === 'incheon',
-              'region-hover': hoveredRegion === 'incheon'
-            }"
-          />
-          
-          <!-- 강원도 -->
-          <path 
-            id="gangwon" 
-            d="M478,186 L600,186 L600,335 L535,390 L478,390 L478,350 L420,350 L409,325 L409,295 L442,262 L442,241 L478,241 Z" 
-            @click="selectRegion('gangwon')"
-            @mouseover="hoverRegion('gangwon')"
-            @mouseout="clearHover"
-            :class="{
-              'region': true,
-              'region-selectable': !disabled,
-              'region-selected': selectedRegion === 'gangwon',
-              'region-correct': correctRegion === 'gangwon',
-              'region-wrong': wrongRegion === 'gangwon',
-              'region-hover': hoveredRegion === 'gangwon'
-            }"
-          />
-          
-          <!-- 충청북도 -->
-          <path 
-            id="chungbuk" 
-            d="M420,350 L478,350 L478,390 L535,390 L535,480 L478,535 L420,535 L420,480 L380,440 L360,440 L360,380 L409,325 Z" 
-            @click="selectRegion('chungbuk')"
-            @mouseover="hoverRegion('chungbuk')"
-            @mouseout="clearHover"
-            :class="{
-              'region': true,
-              'region-selectable': !disabled,
-              'region-selected': selectedRegion === 'chungbuk',
-              'region-correct': correctRegion === 'chungbuk',
-              'region-wrong': wrongRegion === 'chungbuk',
-              'region-hover': hoveredRegion === 'chungbuk'
-            }"
-          />
-          
-          <!-- 충청남도 -->
-          <path 
-            id="chungnam" 
-            d="M260,335 L325,335 L325,380 L360,380 L360,440 L380,440 L420,480 L420,535 L360,535 L300,480 L300,400 L260,400 Z" 
-            @click="selectRegion('chungnam')"
-            @mouseover="hoverRegion('chungnam')"
-            @mouseout="clearHover"
-            :class="{
-              'region': true,
-              'region-selectable': !disabled,
-              'region-selected': selectedRegion === 'chungnam',
-              'region-correct': correctRegion === 'chungnam',
-              'region-wrong': wrongRegion === 'chungnam',
-              'region-hover': hoveredRegion === 'chungnam'
-            }"
-          />
-          
-          <!-- 대전 -->
-          <path 
-            id="daejeon" 
-            d="M360,535 L420,535 L420,565 L360,565 Z" 
-            @click="selectRegion('daejeon')"
-            @mouseover="hoverRegion('daejeon')"
-            @mouseout="clearHover"
-            :class="{
-              'region': true,
-              'region-selectable': !disabled,
-              'region-selected': selectedRegion === 'daejeon',
-              'region-correct': correctRegion === 'daejeon',
-              'region-wrong': wrongRegion === 'daejeon',
-              'region-hover': hoveredRegion === 'daejeon'
-            }"
-          />
-          
-          <!-- 경상북도 -->
-          <path 
-            id="gyeongbuk" 
-            d="M535,390 L600,335 L650,335 L650,480 L620,525 L570,525 L570,575 L535,600 L480,600 L480,535 L535,480 Z" 
-            @click="selectRegion('gyeongbuk')"
-            @mouseover="hoverRegion('gyeongbuk')"
-            @mouseout="clearHover"
-            :class="{
-              'region': true,
-              'region-selectable': !disabled,
-              'region-selected': selectedRegion === 'gyeongbuk',
-              'region-correct': correctRegion === 'gyeongbuk',
-              'region-wrong': wrongRegion === 'gyeongbuk',
-              'region-hover': hoveredRegion === 'gyeongbuk'
-            }"
-          />
-          
-          <!-- 대구 -->
-          <path 
-            id="daegu" 
-            d="M480,600 L535,600 L535,640 L480,640 Z" 
-            @click="selectRegion('daegu')"
-            @mouseover="hoverRegion('daegu')"
-            @mouseout="clearHover"
-            :class="{
-              'region': true,
-              'region-selectable': !disabled,
-              'region-selected': selectedRegion === 'daegu',
-              'region-correct': correctRegion === 'daegu',
-              'region-wrong': wrongRegion === 'daegu',
-              'region-hover': hoveredRegion === 'daegu'
-            }"
-          />
-          
-          <!-- 전라북도 -->
-          <path 
-            id="jeonbuk" 
-            d="M300,480 L360,535 L360,565 L420,565 L420,535 L480,535 L480,600 L420,655 L360,655 L300,600 L245,600 L245,550 L300,550 Z" 
-            @click="selectRegion('jeonbuk')"
-            @mouseover="hoverRegion('jeonbuk')"
-            @mouseout="clearHover"
-            :class="{
-              'region': true,
-              'region-selectable': !disabled,
-              'region-selected': selectedRegion === 'jeonbuk',
-              'region-correct': correctRegion === 'jeonbuk',
-              'region-wrong': wrongRegion === 'jeonbuk',
-              'region-hover': hoveredRegion === 'jeonbuk'
-            }"
-          />
-          
-          <!-- 광주 -->
-          <path 
-            id="gwangju" 
-            d="M360,655 L400,655 L400,685 L360,685 Z" 
-            @click="selectRegion('gwangju')"
-            @mouseover="hoverRegion('gwangju')"
-            @mouseout="clearHover"
-            :class="{
-              'region': true,
-              'region-selectable': !disabled,
-              'region-selected': selectedRegion === 'gwangju',
-              'region-correct': correctRegion === 'gwangju',
-              'region-wrong': wrongRegion === 'gwangju',
-              'region-hover': hoveredRegion === 'gwangju'
-            }"
-          />
-          
-          <!-- 전라남도 -->
-          <path 
-            id="jeonnam" 
-            d="M245,550 L245,600 L300,600 L360,655 L360,685 L400,685 L400,655 L420,655 L480,600 L480,640 L535,640 L535,700 L480,740 L360,740 L300,700 L270,740 L180,740 L180,600 Z" 
-            @click="selectRegion('jeonnam')"
-            @mouseover="hoverRegion('jeonnam')"
-            @mouseout="clearHover"
-            :class="{
-              'region': true,
-              'region-selectable': !disabled,
-              'region-selected': selectedRegion === 'jeonnam',
-              'region-correct': correctRegion === 'jeonnam',
-              'region-wrong': wrongRegion === 'jeonnam',
-              'region-hover': hoveredRegion === 'jeonnam'
-            }"
-          />
-          
-          <!-- 경상남도 -->
-          <path 
-            id="gyeongnam" 
-            d="M535,600 L570,575 L570,525 L620,525 L650,525 L650,640 L598,685 L535,700 L535,640 L480,640 L480,600 Z" 
-            @click="selectRegion('gyeongnam')"
-            @mouseover="hoverRegion('gyeongnam')"
-            @mouseout="clearHover"
-            :class="{
-              'region': true,
-              'region-selectable': !disabled,
-              'region-selected': selectedRegion === 'gyeongnam',
-              'region-correct': correctRegion === 'gyeongnam',
-              'region-wrong': wrongRegion === 'gyeongnam',
-              'region-hover': hoveredRegion === 'gyeongnam'
-            }"
-          />
-          
-          <!-- 울산 -->
-          <path 
-            id="ulsan" 
-            d="M650,525 L680,525 L680,600 L650,600 Z" 
-            @click="selectRegion('ulsan')"
-            @mouseover="hoverRegion('ulsan')"
-            @mouseout="clearHover"
-            :class="{
-              'region': true,
-              'region-selectable': !disabled,
-              'region-selected': selectedRegion === 'ulsan',
-              'region-correct': correctRegion === 'ulsan',
-              'region-wrong': wrongRegion === 'ulsan',
-              'region-hover': hoveredRegion === 'ulsan'
-            }"
-          />
-          
-          <!-- 부산 -->
-          <path 
-            id="busan" 
-            d="M650,600 L680,600 L680,640 L650,640 Z" 
-            @click="selectRegion('busan')"
-            @mouseover="hoverRegion('busan')"
-            @mouseout="clearHover"
-            :class="{
-              'region': true,
-              'region-selectable': !disabled,
-              'region-selected': selectedRegion === 'busan',
-              'region-correct': correctRegion === 'busan',
-              'region-wrong': wrongRegion === 'busan',
-              'region-hover': hoveredRegion === 'busan'
-            }"
-          />
-          
-          <!-- 제주도 -->
-          <path 
-            id="jeju" 
-            d="M300,800 L400,800 L400,850 L300,850 Z" 
-            @click="selectRegion('jeju')"
-            @mouseover="hoverRegion('jeju')"
-            @mouseout="clearHover"
-            :class="{
-              'region': true,
-              'region-selectable': !disabled,
-              'region-selected': selectedRegion === 'jeju',
-              'region-correct': correctRegion === 'jeju',
-              'region-wrong': wrongRegion === 'jeju',
-              'region-hover': hoveredRegion === 'jeju'
-            }"
-          />
-          
-          <!-- 지역명 텍스트 -->
-          <g v-if="showRegionNames">
-            <text x="409" y="250" class="region-name" text-anchor="middle">서울</text>
-            <text x="380" y="260" class="region-name" text-anchor="middle">경기</text>
-            <text x="255" y="265" class="region-name" text-anchor="middle">인천</text>
-            <text x="520" y="250" class="region-name" text-anchor="middle">강원</text>
-            <text x="450" y="450" class="region-name" text-anchor="middle">충북</text>
-            <text x="330" y="450" class="region-name" text-anchor="middle">충남</text>
-            <text x="390" y="550" class="region-name" text-anchor="middle">대전</text>
-            <text x="580" y="470" class="region-name" text-anchor="middle">경북</text>
-            <text x="507" y="620" class="region-name" text-anchor="middle">대구</text>
-            <text x="580" y="620" class="region-name" text-anchor="middle">경남</text>
-            <text x="350" y="600" class="region-name" text-anchor="middle">전북</text>
-            <text x="380" y="670" class="region-name" text-anchor="middle">광주</text>
-            <text x="350" y="720" class="region-name" text-anchor="middle">전남</text>
-            <text x="665" y="570" class="region-name" text-anchor="middle">울산</text>
-            <text x="665" y="620" class="region-name" text-anchor="middle">부산</text>
-            <text x="350" y="825" class="region-name" text-anchor="middle">제주</text>
-          </g>
-        </svg>
-      </div>
-      
+      <div id="kakao-map" class="map-container"></div>
       <div v-if="selectedRegion && !disabled" class="spot-button-container">
         <button class="spot-button" @click="submitGuess">
           <i class="fas fa-location-arrow"></i> Spot!
@@ -336,9 +27,12 @@
 </template>
 
 <script>
+import sidoPolygons from '@/assets/map/sido_kakao.json';
+import gyeonggiPolygons from '@/assets/map/gyeonggi.json';
+import gangwonPolygons from '@/assets/map/gangwon.json';
+
 export default {
   name: 'RegionMap',
-  
   props: {
     disabled: {
       type: Boolean,
@@ -361,163 +55,449 @@ export default {
       default: null
     }
   },
-  
   data() {
     return {
       hoveredRegion: null,
-      zoomLevel: 1,
-      panX: 0,
-      panY: 0,
-      isPanning: false,
-      startX: 0,
-      startY: 0,
-      lastX: 0,
-      lastY: 0,
+      zoomLevel: 3,
+      map: null,
+      polygons: [], // 시도별 폴리곤 객체
+      regionPolygons: [], // 카카오맵 폴리곤 객체
+      regionLabels: [], // 지역 이름 라벨
       isMapOpen: false,
-      isMobile: false
+      isMobile: false,
+      defaultCenter: { lat: 36.2, lng: 127.9 }, // 한국 중심 좌표
+      defaultLevel: 13, // 기본 줌 레벨
+      labelVisibleLevel: 10, // 이 레벨 이하(더 확대된 상태)에서만 라벨 표시
+      mergedCities: {
+        '고양시': ['고양시덕양구', '고양시일산동구', '고양시일산서구'],
+        '수원시': ['수원시 권선구', '수원시 영통구', '수원시 장안구', '수원시 팔달구']
+      },
+      regionColors: {
+        '경기도': { fill: '#e9f5e9', stroke: '#a8d8a8' },
+        '강원도': { fill: '#e6f0ff', stroke: '#a3c2e3' }
+      }
     };
   },
-
+  watch: {
+    selectedRegion() {
+      this.updatePolygonStyles();
+    },
+    correctRegion() {
+      this.updatePolygonStyles();
+    },
+    wrongRegion() {
+      this.updatePolygonStyles();
+    }
+  },
+  created() {
+    this.loadPolygons();
+    this.loadGyeonggiPolygons();
+    this.loadGangwonPolygons();
+    this.isMobile = window.innerWidth <= 768;
+  },
   mounted() {
+    this.initMap();
     this.checkScreenSize();
     window.addEventListener('resize', this.checkScreenSize);
   },
-
   beforeDestroy() {
     window.removeEventListener('resize', this.checkScreenSize);
   },
-  
   methods: {
-    selectRegion(region) {
-      if (this.disabled) return;
-      this.$emit('update:selectedRegion', region);
+    initMap() {
+      if (window.kakao && window.kakao.maps) {
+        const container = document.getElementById('kakao-map');
+        const options = {
+          center: new kakao.maps.LatLng(this.defaultCenter.lat, this.defaultCenter.lng),
+          level: this.defaultLevel,
+          draggable: true,
+          scrollwheel: true
+        };
+
+        this.map = new kakao.maps.Map(container, options);
+        
+        // 행정구역 폴리곤 그리기
+        this.drawRegions();
+      } else {
+        // Kakao Maps API가 로드되지 않은 경우 1초 후 재시도
+        setTimeout(() => {
+          this.initMap();
+        }, 1000);
+      }
+    },
+    loadPolygons() {
+      // GeoJSON 데이터 로드
+      this.polygons = sidoPolygons.features.map(f => {
+        const name = f.properties.SIG_KOR_NM || f.properties.CTP_KOR_NM || f.properties.CTP_ENG_NM || '지역';
+        return {
+          name,
+          coordinates: f.geometry.coordinates[0], // 단일 폴리곤만 사용
+          properties: f.properties,
+        };
+      });
+    },
+    loadGyeonggiPolygons() {
+      // 경기도 폴리곤 데이터 로드
+      const gyeonggiFeatures = gyeonggiPolygons.features;
+      
+      // 통합할 도시별로 Feature 그룹화
+      const cityGroups = {};
+      const standaloneFeatures = [];
+      
+      // 각 Feature를 도시별로 분류
+      gyeonggiFeatures.forEach(feature => {
+        const name = feature.properties.SIG_KOR_NM;
+        let shouldMerge = false;
+        let mergedCityName = '';
+        
+        // 통합 대상 도시인지 확인
+        Object.keys(this.mergedCities).forEach(cityName => {
+          if (this.mergedCities[cityName].includes(name)) {
+            shouldMerge = true;
+            mergedCityName = cityName;
+          }
+        });
+        
+        if (shouldMerge) {
+          // 통합 대상이면 해당 도시 그룹에 추가
+          if (!cityGroups[mergedCityName]) {
+            cityGroups[mergedCityName] = [];
+          }
+          cityGroups[mergedCityName].push(feature);
+        } else {
+          // 통합 대상이 아니면 그대로 추가
+          standaloneFeatures.push(feature);
+        }
+      });
+      
+      // 통합 도시 Feature 생성 및 추가
+      Object.keys(cityGroups).forEach(cityName => {
+        const features = cityGroups[cityName];
+        if (features.length > 0) {
+          features.forEach(feature => {
+            // 각 구역을 개별 Feature로 변환하되 이름은 통합 도시명으로 설정
+            this.polygons.push({
+              name: cityName,
+              originalName: feature.properties.SIG_KOR_NM,
+              coordinates: feature.geometry.coordinates[0],
+              properties: {
+                ...feature.properties,
+                SIG_KOR_NM: cityName // 이름 변경
+              },
+              cityGroup: cityName, // 같은 그룹임을 표시
+              region: '경기도' // 지역 구분을 위한 속성 추가
+            });
+          });
+        }
+      });
+      
+      // 독립 Feature 추가
+      standaloneFeatures.forEach(feature => {
+        const name = feature.properties.SIG_KOR_NM;
+        this.polygons.push({
+          name: name,
+          coordinates: feature.geometry.coordinates[0],
+          properties: feature.properties,
+          region: '경기도' // 지역 구분을 위한 속성 추가
+        });
+      });
+      
+      console.log('경기도 지역 데이터 로드 완료:', gyeonggiFeatures.length, '개 지역');
+    },
+    loadGangwonPolygons() {
+      // 강원도 폴리곤 데이터 로드
+      const gangwonFeatures = gangwonPolygons.features;
+      
+      // 강원도는 이미 시/군 단위로 구분되어 있음
+      gangwonFeatures.forEach(feature => {
+        const name = feature.properties.SIG_KOR_NM;
+        
+        // 시/군 단위 지역 추가
+        this.polygons.push({
+          name: name,
+          coordinates: feature.geometry.coordinates[0],
+          properties: feature.properties,
+          region: '강원도' // 지역 구분을 위한 속성 추가
+        });
+      });
+      
+      console.log('강원도 지역 데이터 로드 완료:', gangwonFeatures.length, '개 지역');
+    },
+    drawRegions() {
+      if (!this.map || !this.polygons.length) return;
+      
+      // 기존 폴리곤 제거
+      this.regionPolygons.forEach(p => p.setMap(null));
+      this.regionPolygons = [];
+      
+      // 기존 라벨 제거
+      this.regionLabels.forEach(label => label.setMap(null));
+      this.regionLabels = [];
+      
+      // 도시 그룹별 중심점 계산을 위한 객체
+      const cityGroupPoints = {};
+      
+      // 각 지역별 폴리곤 생성
+      this.polygons.forEach(region => {
+        const path = region.coordinates.map(coord => 
+          new kakao.maps.LatLng(coord[1], coord[0]) // 좌표 순서 변경 (경도, 위도) -> (위도, 경도)
+        );
+        
+        // 지역별 기본 색상 설정
+        const regionName = region.region || '기본';
+        const regionColor = this.regionColors[regionName] || { fill: '#f1f5f9', stroke: '#cbd5e1' };
+        
+        const polygon = new kakao.maps.Polygon({
+          map: this.map,
+          path: path,
+          strokeWeight: 2,
+          strokeColor: regionColor.stroke,
+          strokeOpacity: 0.8,
+          fillColor: regionColor.fill,
+          fillOpacity: 0.7
+        });
+        
+        // 폴리곤 클릭 이벤트
+        kakao.maps.event.addListener(polygon, 'click', () => {
+          if (!this.disabled) {
+            // 도시 그룹이 있으면 그룹명으로, 없으면 지역 이름으로 선택
+            const selectName = region.cityGroup || region.name;
+            this.selectRegion(selectName);
+          }
+        });
+        
+        // 폴리곤 마우스오버 이벤트
+        kakao.maps.event.addListener(polygon, 'mouseover', () => {
+          // 도시 그룹이 있으면 그룹명으로, 없으면 지역 이름으로 호버
+          const hoverName = region.cityGroup || region.name;
+          this.hoverRegion(hoverName);
+        });
+        
+        // 폴리곤 마우스아웃 이벤트
+        kakao.maps.event.addListener(polygon, 'mouseout', () => {
+          this.clearHover();
+        });
+        
+        // 폴리곤과 지역 이름 저장
+        this.regionPolygons.push({
+          polygon,
+          name: region.name,
+          cityGroup: region.cityGroup,
+          region: region.region
+        });
+        
+        // 도시 그룹별 좌표 수집 (라벨 중심점 계산용)
+        if (region.cityGroup) {
+          if (!cityGroupPoints[region.cityGroup]) {
+            cityGroupPoints[region.cityGroup] = [];
+          }
+          // 폴리곤의 모든 좌표를 해당 도시 그룹에 추가
+          path.forEach(point => {
+            cityGroupPoints[region.cityGroup].push(point);
+          });
+        }
+      });
+      
+      // 지역 이름 라벨 생성
+      if (this.showRegionNames) {
+        // 1. 일반 지역 라벨 생성
+        this.polygons.forEach(region => {
+          // 도시 그룹에 속한 지역은 개별 라벨을 생성하지 않음
+          if (region.cityGroup) return;
+          
+          const path = region.coordinates.map(coord => 
+            new kakao.maps.LatLng(coord[1], coord[0])
+          );
+          
+          const center = this.getPolygonCenter(path);
+          
+          const customOverlay = new kakao.maps.CustomOverlay({
+            position: center,
+            content: `<div class="region-label">${region.name}</div>`,
+            xAnchor: 0.5,
+            yAnchor: 0.5,
+            zIndex: 1
+          });
+          
+          // 현재 지도 레벨이 labelVisibleLevel 이하일 때만 라벨 표시
+          if (this.map.getLevel() <= this.labelVisibleLevel) {
+            customOverlay.setMap(this.map);
+          }
+          
+          this.regionLabels.push(customOverlay);
+        });
+        
+        // 2. 도시 그룹 라벨 생성
+        Object.keys(cityGroupPoints).forEach(cityName => {
+          const points = cityGroupPoints[cityName];
+          if (points.length > 0) {
+            // 도시 그룹의 모든 좌표의 중심점 계산
+            const center = this.getPointsCenter(points);
+            
+            const customOverlay = new kakao.maps.CustomOverlay({
+              position: center,
+              content: `<div class="region-label city-group-label">${cityName}</div>`,
+              xAnchor: 0.5,
+              yAnchor: 0.5,
+              zIndex: 2 // 일반 라벨보다 위에 표시
+            });
+            
+            // 현재 지도 레벨이 labelVisibleLevel 이하일 때만 라벨 표시
+            if (this.map.getLevel() <= this.labelVisibleLevel) {
+              customOverlay.setMap(this.map);
+            }
+            
+            this.regionLabels.push(customOverlay);
+          }
+        });
+      }
+      
+      // 지도 줌 레벨 변경 이벤트 리스너 추가
+      kakao.maps.event.addListener(this.map, 'zoom_changed', () => {
+        this.updateLabelsVisibility();
+      });
+      
+      this.updatePolygonStyles();
     },
     
-    hoverRegion(region) {
-      if (this.disabled) return;
-      this.hoveredRegion = region;
+    // 여러 좌표의 중심점 계산
+    getPointsCenter(points) {
+      let lat = 0, lng = 0;
+      points.forEach(point => {
+        lat += point.getLat();
+        lng += point.getLng();
+      });
+      return new kakao.maps.LatLng(lat / points.length, lng / points.length);
     },
     
+    getPolygonCenter(path) {
+      // 폴리곤의 중심점 계산
+      let lat = 0, lng = 0;
+      path.forEach(point => {
+        lat += point.getLat();
+        lng += point.getLng();
+      });
+      return new kakao.maps.LatLng(lat / path.length, lng / path.length);
+    },
+    updatePolygonStyles() {
+      this.regionPolygons.forEach(polygon => {
+        if (polygon.polygon instanceof kakao.maps.Polygon) {
+          const regionName = polygon.name;
+          const cityGroup = polygon.cityGroup;
+          const effectiveName = cityGroup || regionName; // 도시 그룹이 있으면 그룹명 사용
+          const region = polygon.region || '기본';
+          
+          // 지역별 기본 색상 가져오기
+          const regionColor = this.regionColors[region] || { fill: '#f1f5f9', stroke: '#cbd5e1' };
+          
+          // 기본 스타일
+          let strokeColor = regionColor.stroke;
+          let strokeWeight = 2;
+          let fillColor = regionColor.fill;
+          let fillOpacity = 0.7;
+          
+          // 선택된 지역
+          if (this.selectedRegion === effectiveName) {
+            strokeColor = '#3b82f6';
+            strokeWeight = 3;
+            fillColor = '#60a5fa';
+            fillOpacity = 0.7;
+          }
+          
+          // 정답 지역
+          if (this.correctRegion === effectiveName) {
+            strokeColor = '#10b981';
+            strokeWeight = 3;
+            fillColor = '#34d399';
+            fillOpacity = 0.7;
+          }
+          
+          // 오답 지역
+          if (this.wrongRegion === effectiveName) {
+            strokeColor = '#ef4444';
+            strokeWeight = 3;
+            fillColor = '#f87171';
+            fillOpacity = 0.7;
+          }
+          
+          // 호버된 지역
+          if (this.hoveredRegion === effectiveName && !this.selectedRegion && !this.disabled) {
+            strokeColor = '#3b82f6';
+            strokeWeight = 3;
+            fillColor = regionColor.fill; // 지역 색상 유지하면서 약간 밝게
+            fillOpacity = 0.9;
+          }
+          
+          // 비활성화된 경우
+          if (this.disabled) {
+            fillOpacity = 0.5;
+          }
+          
+          // 스타일 적용
+          polygon.polygon.setOptions({
+            strokeColor: strokeColor,
+            strokeWeight: strokeWeight,
+            fillColor: fillColor,
+            fillOpacity: fillOpacity
+          });
+        }
+      });
+    },
+    selectRegion(regionName) {
+      if (this.disabled) return;
+      this.$emit('update:selectedRegion', regionName);
+    },
+    hoverRegion(regionName) {
+      this.hoveredRegion = regionName;
+      this.updatePolygonStyles();
+    },
     clearHover() {
       this.hoveredRegion = null;
+      this.updatePolygonStyles();
     },
-    
     reset() {
       this.$emit('update:selectedRegion', null);
     },
-    
-    getRegionName(regionCode) {
-      const regionNames = {
-        'seoul': '서울',
-        'gyeonggi': '경기도',
-        'incheon': '인천',
-        'gangwon': '강원도',
-        'chungbuk': '충청북도',
-        'chungnam': '충청남도',
-        'daejeon': '대전',
-        'jeonbuk': '전라북도',
-        'gwangju': '광주',
-        'jeonnam': '전라남도',
-        'gyeongbuk': '경상북도',
-        'daegu': '대구',
-        'gyeongnam': '경상남도',
-        'ulsan': '울산',
-        'busan': '부산',
-        'jeju': '제주도'
-      };
-      
-      return regionNames[regionCode] || regionCode;
-    },
-
     submitGuess() {
-      if (!this.selectedRegion || this.disabled) return;
-      this.$emit('submit-guess', this.selectedRegion);
+      this.$emit('submit-guess');
     },
-
-    // 줌 기능
     zoomIn() {
-      if (this.zoomLevel < 2.5) {
-        this.zoomLevel += 0.2;
+      if (this.map) {
+        const level = this.map.getLevel();
+        if (level > 1) {
+          this.map.setLevel(level - 1);
+        }
       }
     },
-
     zoomOut() {
-      if (this.zoomLevel > 0.5) {
-        this.zoomLevel -= 0.2;
+      if (this.map) {
+        const level = this.map.getLevel();
+        if (level < 14) {
+          this.map.setLevel(level + 1);
+        }
       }
     },
-
     resetZoom() {
-      this.zoomLevel = 1;
-      this.panX = 0;
-      this.panY = 0;
-    },
-
-    // 휠로 줌 기능
-    handleWheel(e) {
-      e.preventDefault();
-      if (e.deltaY < 0) {
-        this.zoomIn();
-      } else {
-        this.zoomOut();
+      if (this.map) {
+        this.map.setLevel(this.defaultLevel);
+        this.map.setCenter(new kakao.maps.LatLng(this.defaultCenter.lat, this.defaultCenter.lng));
       }
     },
-
-    // 드래그로 팬 기능
-    startPan(e) {
-      this.isPanning = true;
-      this.startX = e.clientX;
-      this.startY = e.clientY;
-      this.lastX = this.panX;
-      this.lastY = this.panY;
-    },
-
-    pan(e) {
-      if (!this.isPanning) return;
-      const dx = (e.clientX - this.startX) / this.zoomLevel;
-      const dy = (e.clientY - this.startY) / this.zoomLevel;
-      this.panX = this.lastX + dx;
-      this.panY = this.lastY + dy;
-    },
-
-    endPan() {
-      this.isPanning = false;
-    },
-
-    // 터치로 팬 기능
-    startPanTouch(e) {
-      if (e.touches.length === 1) {
-        this.isPanning = true;
-        this.startX = e.touches[0].clientX;
-        this.startY = e.touches[0].clientY;
-        this.lastX = this.panX;
-        this.lastY = this.panY;
-      }
-    },
-
-    panTouch(e) {
-      if (!this.isPanning || e.touches.length !== 1) return;
-      const dx = (e.touches[0].clientX - this.startX) / this.zoomLevel;
-      const dy = (e.touches[0].clientY - this.startY) / this.zoomLevel;
-      this.panX = this.lastX + dx;
-      this.panY = this.lastY + dy;
-      e.preventDefault(); // 스크롤 방지
-    },
-
-    endPanTouch() {
-      this.isPanning = false;
-    },
-
-    // 모바일 옵션
     toggleMap() {
       this.isMapOpen = !this.isMapOpen;
     },
-
     checkScreenSize() {
-      this.isMobile = window.innerWidth < 768;
-      if (!this.isMobile) {
-        this.isMapOpen = true;
-      }
+      this.isMobile = window.innerWidth <= 768;
+    },
+    updateLabelsVisibility() {
+      const currentLevel = this.map.getLevel();
+      this.regionLabels.forEach(label => {
+        if (currentLevel <= this.labelVisibleLevel) {
+          label.setMap(this.map);
+        } else {
+          label.setMap(null);
+        }
+      });
     }
   }
 };
@@ -549,15 +529,6 @@ export default {
   height: 100%;
   overflow: hidden;
   position: relative;
-  touch-action: none; /* 모바일에서 브라우저 기본 동작 방지 */
-}
-
-.region-map {
-  width: 100%;
-  height: 100%;
-  max-height: 80vh;
-  transform-origin: center;
-  transition: transform 0.1s ease;
 }
 
 .map-controls {
@@ -645,62 +616,20 @@ export default {
   background: #2563eb;
 }
 
-.region {
-  fill: #e2e8f0;
-  stroke: #cbd5e1;
-  stroke-width: 2;
-  transition: all 0.2s ease;
-  opacity: 0.9;
-}
-
-.region-selectable {
-  cursor: pointer;
-}
-
-.region-selectable:hover {
-  fill: #93c5fd;
-  opacity: 1;
-}
-
-.region-selected {
-  fill: #3b82f6;
-  stroke: #1d4ed8;
-  stroke-width: 3;
-  opacity: 1;
-}
-
-.region-hover {
-  fill: #93c5fd;
-  stroke: #60a5fa;
-  stroke-width: 2.5;
-  opacity: 1;
-}
-
-.region-correct {
-  fill: #10b981;
-  stroke: #059669;
-  stroke-width: 3;
-  opacity: 1;
-  transform: translateZ(5px);
-  transform-style: preserve-3d;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-}
-
-.region-wrong {
-  fill: #ef4444;
-  stroke: #b91c1c;
-  stroke-width: 3;
-  opacity: 1;
-  transform: translateZ(5px);
-  transform-style: preserve-3d;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-}
-
-.region-name {
-  font-size: 14px;
+.region-label {
+  color: #475569;
+  font-size: 12px;
   font-weight: 600;
-  fill: #475569;
+  background-color: rgba(255, 255, 255, 0.7);
+  padding: 2px 5px;
+  border-radius: 3px;
   pointer-events: none;
+  white-space: nowrap;
+}
+
+.city-group-label {
+  font-size: 14px;
+  font-weight: bold;
 }
 
 .mobile-closed {
@@ -730,23 +659,4 @@ export default {
     z-index: 1001;
   }
 }
-
-@keyframes pulse {
-  0% {
-    filter: drop-shadow(0 0 2px rgba(16, 185, 129, 0.5));
-  }
-  50% {
-    filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.8));
-  }
-  100% {
-    filter: drop-shadow(0 0 2px rgba(16, 185, 129, 0.5));
-  }
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateZ(5px); }
-  25% { transform: translateZ(5px) translateX(-5px); }
-  50% { transform: translateZ(5px) translateX(5px); }
-  75% { transform: translateZ(5px) translateX(-5px); }
-}
-</style> 
+</style>
