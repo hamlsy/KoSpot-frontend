@@ -16,10 +16,13 @@
           <i class="fas fa-undo"></i>
         </button>
       </div>
+      <div v-if="selectedRegion" class="selected-region-display">
+        선택한 지역: <span>{{ selectedRegion }}</span>
+      </div>
       <div id="kakao-map" class="map-container"></div>
       <div v-if="selectedRegion && !disabled" class="spot-button-container">
         <button class="spot-button" @click="submitGuess">
-          <i class="fas fa-location-arrow"></i> Spot!
+          <i class="fas fa-map-marker-alt"></i> Spot!
         </button>
       </div>
     </div>
@@ -30,6 +33,8 @@
 import sidoPolygons from '@/assets/map/sido_kakao.json';
 import gyeonggiPolygons from '@/assets/map/gyeonggi.json';
 import gangwonPolygons from '@/assets/map/gangwon.json';
+import seoulPolygons from '@/assets/map/seoul.json';
+import incheonPolygons from '@/assets/map/incheon.json';
 
 export default {
   name: 'RegionMap',
@@ -63,6 +68,7 @@ export default {
       polygons: [], // 시도별 폴리곤 객체
       regionPolygons: [], // 카카오맵 폴리곤 객체
       regionLabels: [], // 지역 이름 라벨
+      selectedMarker: null, // 선택한 지역 마커
       isMapOpen: false,
       isMobile: false,
       defaultCenter: { lat: 36.2, lng: 127.9 }, // 한국 중심 좌표
@@ -70,17 +76,23 @@ export default {
       labelVisibleLevel: 10, // 이 레벨 이하(더 확대된 상태)에서만 라벨 표시
       mergedCities: {
         '고양시': ['고양시덕양구', '고양시일산동구', '고양시일산서구'],
-        '수원시': ['수원시 권선구', '수원시 영통구', '수원시 장안구', '수원시 팔달구']
+        '수원시': ['수원시 권선구', '수원시 영통구', '수원시 장안구', '수원시 팔달구'],
+        '성남시': ['성남시 분당구', '성남시 수정구', '성남시 중원구'],
+        '안양시': ['안양시 동안구', '안양시 만안구'],
+        '안산시': ['안산시 단원구', '안산시 상록구']
       },
       regionColors: {
         '경기도': { fill: '#e9f5e9', stroke: '#a8d8a8' },
-        '강원도': { fill: '#e6f0ff', stroke: '#a3c2e3' }
+        '강원도': { fill: '#e6f0ff', stroke: '#a3c2e3' },
+        '서울특별시': { fill: '#ffe6e6', stroke: '#e3a3a3' },
+        '인천광역시': { fill: '#fff5e6', stroke: '#e3c2a3' }
       }
     };
   },
   watch: {
     selectedRegion() {
       this.updatePolygonStyles();
+      this.showMarkerAtRegion(this.selectedRegion);
     },
     correctRegion() {
       this.updatePolygonStyles();
@@ -93,6 +105,8 @@ export default {
     this.loadPolygons();
     this.loadGyeonggiPolygons();
     this.loadGangwonPolygons();
+    this.loadSeoulPolygons();
+    this.loadIncheonPolygons();
     this.isMobile = window.innerWidth <= 768;
   },
   mounted() {
@@ -223,11 +237,55 @@ export default {
       
       console.log('강원도 지역 데이터 로드 완료:', gangwonFeatures.length, '개 지역');
     },
+    loadSeoulPolygons() {
+      // 서울특별시 폴리곤 데이터 로드
+      const seoulFeatures = seoulPolygons.features;
+      
+      // 서울특별시의 모든 구를 하나로 통합
+      seoulFeatures.forEach(feature => {
+        // 모든 구를 '서울특별시'라는 하나의 도시로 통합
+        this.polygons.push({
+          name: '서울특별시',
+          originalName: feature.properties.SIG_KOR_NM,
+          coordinates: feature.geometry.coordinates[0],
+          properties: {
+            ...feature.properties,
+            SIG_KOR_NM: '서울특별시' // 이름 변경
+          },
+          cityGroup: '서울특별시', // 같은 그룹임을 표시
+          region: '서울특별시' // 지역 구분을 위한 속성 추가
+        });
+      });
+      
+      console.log('서울특별시 지역 데이터 로드 완료:', seoulFeatures.length, '개 지역을 통합');
+    },
+    loadIncheonPolygons() {
+      // 인천광역시 폴리곤 데이터 로드
+      const incheonFeatures = incheonPolygons.features;
+      
+      // 인천광역시의 모든 구를 하나로 통합
+      incheonFeatures.forEach(feature => {
+        // 모든 구를 '인천광역시'라는 하나의 도시로 통합
+        this.polygons.push({
+          name: '인천광역시',
+          originalName: feature.properties.SIG_KOR_NM,
+          coordinates: feature.geometry.coordinates[0],
+          properties: {
+            ...feature.properties,
+            SIG_KOR_NM: '인천광역시' // 이름 변경
+          },
+          cityGroup: '인천광역시', // 같은 그룹임을 표시
+          region: '인천광역시' // 지역 구분을 위한 속성 추가
+        });
+      });
+      
+      console.log('인천광역시 지역 데이터 로드 완료:', incheonFeatures.length, '개 지역을 통합');
+    },
     drawRegions() {
       if (!this.map || !this.polygons.length) return;
       
       // 기존 폴리곤 제거
-      this.regionPolygons.forEach(p => p.setMap(null));
+      this.regionPolygons.forEach(p => p.polygon.setMap(null));
       this.regionPolygons = [];
       
       // 기존 라벨 제거
@@ -298,6 +356,9 @@ export default {
         }
       });
       
+      // 라벨 위치 충돌 방지를 위한 배열
+      const labelPositions = [];
+      
       // 지역 이름 라벨 생성
       if (this.showRegionNames) {
         // 1. 일반 지역 라벨 생성
@@ -310,9 +371,10 @@ export default {
           );
           
           const center = this.getPolygonCenter(path);
+          const adjustedPosition = this.getAdjustedLabelPosition(center, labelPositions, region.name);
           
           const customOverlay = new kakao.maps.CustomOverlay({
-            position: center,
+            position: adjustedPosition,
             content: `<div class="region-label">${region.name}</div>`,
             xAnchor: 0.5,
             yAnchor: 0.5,
@@ -324,6 +386,12 @@ export default {
             customOverlay.setMap(this.map);
           }
           
+          // 라벨 위치 저장
+          labelPositions.push({
+            position: adjustedPosition,
+            name: region.name
+          });
+          
           this.regionLabels.push(customOverlay);
         });
         
@@ -333,9 +401,10 @@ export default {
           if (points.length > 0) {
             // 도시 그룹의 모든 좌표의 중심점 계산
             const center = this.getPointsCenter(points);
+            const adjustedPosition = this.getAdjustedLabelPosition(center, labelPositions, cityName);
             
             const customOverlay = new kakao.maps.CustomOverlay({
-              position: center,
+              position: adjustedPosition,
               content: `<div class="region-label city-group-label">${cityName}</div>`,
               xAnchor: 0.5,
               yAnchor: 0.5,
@@ -346,6 +415,12 @@ export default {
             if (this.map.getLevel() <= this.labelVisibleLevel) {
               customOverlay.setMap(this.map);
             }
+            
+            // 라벨 위치 저장
+            labelPositions.push({
+              position: adjustedPosition,
+              name: cityName
+            });
             
             this.regionLabels.push(customOverlay);
           }
@@ -444,8 +519,59 @@ export default {
       });
     },
     selectRegion(regionName) {
-      if (this.disabled) return;
       this.$emit('update:selectedRegion', regionName);
+      
+      // 선택한 지역의 중심점에 마커 표시
+      this.showMarkerAtRegion(regionName);
+    },
+    
+    showMarkerAtRegion(regionName) {
+      // 기존 마커가 있으면 제거
+      if (this.selectedMarker) {
+        this.selectedMarker.setMap(null);
+      }
+      
+      // 선택한 지역이 없으면 종료
+      if (!regionName) return;
+      
+      // 선택한 지역의 폴리곤 찾기
+      let center = null;
+      let found = false;
+      
+      // 도시 그룹인 경우
+      const cityGroupPoints = {};
+      
+      // 해당 지역의 모든 폴리곤 좌표 수집
+      this.regionPolygons.forEach(region => {
+        if ((region.cityGroup && region.cityGroup === regionName) || 
+            (!region.cityGroup && region.name === regionName)) {
+          
+          // 폴리곤 경로 가져오기
+          const path = region.polygon.getPath();
+          
+          if (!cityGroupPoints[regionName]) {
+            cityGroupPoints[regionName] = [];
+          }
+          
+          // 모든 좌표 수집
+          for (let i = 0; i < path.length; i++) {
+            cityGroupPoints[regionName].push(path[i]);
+          }
+          
+          found = true;
+        }
+      });
+      
+      if (found && cityGroupPoints[regionName]) {
+        // 수집된 모든 좌표의 중심점 계산
+        center = this.getPointsCenter(cityGroupPoints[regionName]);
+        
+        // 마커 생성
+        this.selectedMarker = new kakao.maps.Marker({
+          position: center,
+          map: this.map
+        });
+      }
     },
     hoverRegion(regionName) {
       this.hoveredRegion = regionName;
@@ -498,6 +624,66 @@ export default {
           label.setMap(null);
         }
       });
+    },
+    getAdjustedLabelPosition(center, existingLabels, labelName) {
+      // const minDistance = 0.015; // 최소 거리 (위도/경도 단위)
+      const maxAttempts = 8; // 최대 시도 횟수
+      const offsetStep = 0.01; // 조정 단계
+      
+      // 원래 위치가 충돌하지 않으면 그대로 반환
+      if (!this.isLabelColliding(center, existingLabels)) {
+        return center;
+      }
+      
+      // 충돌이 발생하면 주변 8방향으로 위치 조정 시도
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        const offset = offsetStep * attempt;
+        
+        // 8방향으로 조정 시도
+        const directions = [
+          { lat: offset, lng: 0 },        // 북
+          { lat: offset, lng: offset },   // 북동
+          { lat: 0, lng: offset },        // 동
+          { lat: -offset, lng: offset },  // 남동
+          { lat: -offset, lng: 0 },       // 남
+          { lat: -offset, lng: -offset }, // 남서
+          { lat: 0, lng: -offset },       // 서
+          { lat: offset, lng: -offset }   // 북서
+        ];
+        
+        for (const dir of directions) {
+          const newPos = new kakao.maps.LatLng(
+            center.getLat() + dir.lat,
+            center.getLng() + dir.lng
+          );
+          
+          if (!this.isLabelColliding(newPos, existingLabels)) {
+            console.log(`라벨 '${labelName}' 위치 조정됨`);
+            return newPos;
+          }
+        }
+      }
+      
+      // 모든 시도 후에도 적절한 위치를 찾지 못하면 원래 위치 반환
+      console.log(`라벨 '${labelName}' 위치 조정 실패`);
+      return center;
+    },
+    isLabelColliding(position, existingLabels) {
+      const minDistance = 0.015; // 최소 거리 (위도/경도 단위)
+      
+      for (const label of existingLabels) {
+        const existingPos = label.position;
+        const distance = Math.sqrt(
+          Math.pow(position.getLat() - existingPos.getLat(), 2) +
+          Math.pow(position.getLng() - existingPos.getLng(), 2)
+        );
+        
+        if (distance < minDistance) {
+          return true; // 충돌 발생
+        }
+      }
+      
+      return false; // 충돌 없음
     }
   }
 };
@@ -522,6 +708,20 @@ export default {
   border-left: 1px solid rgba(0, 0, 0, 0.1);
   box-shadow: -4px 0 15px rgba(0, 0, 0, 0.05);
   background-color: white;
+}
+
+.selected-region-display {
+  padding: 10px;
+  background-color: #f8fafc;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.selected-region-display span {
+  font-weight: 700;
+  color: #3b82f6;
 }
 
 .map-container {
