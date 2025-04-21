@@ -860,6 +860,7 @@ export default {
   font-size: 14px;
   font-weight: 500;
   text-align: center;
+  z-index: 1;
 }
 
 .selected-region-display span {
