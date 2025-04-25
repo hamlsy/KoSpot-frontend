@@ -85,26 +85,21 @@
       </div>
 
       <!-- 휴대폰 프레임 -->
-      <div class="phone-frame" v-if="isMapOpen">
-        <div class="phone-header">
-          <div class="phone-notch"></div>
-        </div>
-        <div class="phone-content">
-          <!-- 맵 게임 컴포넌트가 여기에 표시됨 -->
-          <KakaoMapGame
-            :isOpen="true"
-            :centerLocation="centerLocation"
-            :actualLocation="currentLocation"
-            :showHintCircles="false"
-            :disabled="showResult"
-            :showDistance="false"
-            :showActionButton="false"
-            @close="toggleMap"
-            @check-answer="checkAnswer"
-            ref="phoneMapGame"
-            class="phone-map"
-          />
-          
+      <PhoneFrame 
+        v-if="isMapOpen"
+        :centerLocation="centerLocation"
+        :actualLocation="currentLocation"
+        :showHintCircles="showHints"
+        :disabled="showResult"
+        :showDistance="false"
+        :showActionButton="false"
+        @close="toggleMap"
+        @check-answer="checkAnswer"
+        @spot-answer="checkSpotAnswer"
+        @error="showToastMessage"
+        ref="phoneFrame"
+      >
+        <template v-slot:buttons>
           <!-- 힌트 버튼 (휴대폰 프레임 내부) -->
           <button v-if="!showResult" 
             class="phone-hint-button"
@@ -115,19 +110,8 @@
             <span v-if="hintCount > 0 && !hintAvailable">{{ nextHintTime }}초 후 사용 가능</span>
             <span v-else>힌트 사용 ({{ hintCount }}/3)</span>
           </button>
-          
-          <!-- Spot 버튼 (휴대폰 프레임 내부) -->
-          <button v-if="!showResult" 
-            class="phone-spot-button"
-            @click="checkSpotAnswer"
-          >
-            <i class="fas fa-crosshairs"></i> Spot!
-          </button>
-        </div>
-        <div class="phone-footer">
-          <div class="home-button" @click="toggleMap"></div>
-        </div>
-      </div>
+        </template>
+      </PhoneFrame>
 
       <!-- 지도 화면 (휴대폰 외부에서는 숨김) -->
       <KakaoMapGame
@@ -244,12 +228,14 @@
 <script>
 import RoadViewGame from "@/components/game/common/roadview/RoadViewGame.vue";
 import KakaoMapGame from "@/components/game/common/kakao/KakaoMapGame.vue";
+import PhoneFrame from "@/components/game/common/PhoneFrame.vue";
 
 export default {
   name: "RoadViewPractice",
   components: {
     RoadViewGame,
     KakaoMapGame,
+    PhoneFrame
   },
   props: {
     isRankMode: {
@@ -433,9 +419,9 @@ export default {
       if (this.isMapOpen) {
         // 지도를 열 때 초기화
         this.$nextTick(() => {
-          if (this.hintCircle && this.$refs.phoneMapGame && this.$refs.phoneMapGame.map) {
+          if (this.hintCircle && this.$refs.phoneFrame && this.$refs.phoneFrame.map) {
             // 기존 힌트 원이 있으면 새 지도에 다시 표시
-            this.hintCircle.setMap(this.$refs.phoneMapGame.map);
+            this.hintCircle.setMap(this.$refs.phoneFrame.map);
           }
         });
       } else {
@@ -449,7 +435,7 @@ export default {
       if (!this.hintAvailable || this.hintCount <= 0 || !this.currentLocation) return;
       
       // 맵 컴포넌트가 없는 경우 중단
-      if (!this.$refs.phoneMapGame || !this.$refs.phoneMapGame.map) {
+      if (!this.$refs.phoneFrame || !this.$refs.phoneFrame.map) {
         console.error('지도가 초기화되지 않았습니다.');
         return;
       }
@@ -496,7 +482,7 @@ export default {
         strokeStyle: 'solid',
         fillColor: '#FFC107',
         fillOpacity: 0.3,
-        map: this.$refs.phoneMapGame.map
+        map: this.$refs.phoneFrame.map
       });
       
       // 힌트 반경 줄이기
@@ -707,13 +693,13 @@ export default {
 
     // Spot 버튼 클릭 시 마커 위치 확인
     checkSpotAnswer() {
-      if (!this.$refs.phoneMapGame) {
+      if (!this.$refs.phoneFrame) {
         alert('지도가 준비되지 않았습니다. 다시 시도해주세요.');
         return;
       }
       
       // 현재 마커 위치를 얻기 위해 KakaoMapGame에서 마커 위치 데이터 요청
-      this.$refs.phoneMapGame.getMarkerPosition()
+      this.$refs.phoneFrame.getMarkerPosition()
         .then(markerPosition => {
           if (markerPosition) {
             // 지도 닫기
@@ -969,7 +955,7 @@ export default {
   font-size: 0.95rem;
   font-weight: bold;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(142, 68, 173, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   z-index: 10;
   display: flex;
   align-items: center;
@@ -978,7 +964,7 @@ export default {
 
 .hint-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(142, 68, 173, 0.6);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 /* 게임 소개 화면 */

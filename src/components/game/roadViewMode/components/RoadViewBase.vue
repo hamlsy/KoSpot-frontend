@@ -296,11 +296,11 @@ export default {
       
       if (this.errorCount < this.maxErrorRetry) {
         // 다른 위치 시도
-        this.displayToast("로드뷰를 불러올 수 없습니다. 다른 위치를 시도합니다.");
+        this.showToast("로드뷰를 불러올 수 없습니다. 다른 위치를 시도합니다.");
         this.generateRandomLocation();
       } else {
         // 최대 재시도 횟수 초과
-        this.displayToast("로드뷰를 불러올 수 없습니다. 게임을 다시 시작합니다.");
+        this.showToast("로드뷰를 불러올 수 없습니다. 게임을 다시 시작합니다.");
         setTimeout(() => {
           this.startGame();
         }, 2000);
@@ -320,7 +320,7 @@ export default {
     // Spot 버튼 클릭
     checkSpotAnswer() {
       if (!this.guessedLocation) {
-        this.displayToast("지도에서 위치를 선택해주세요!");
+        this.showToast("지도에서 위치를 선택해주세요!");
         return;
       }
       
@@ -401,7 +401,7 @@ export default {
     },
 
     // 토스트 메시지 표시
-    displayToast(message) {
+    showToast(message) {
       this.toastMessage = message;
       this.showToast = true;
       
