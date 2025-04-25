@@ -16,7 +16,7 @@
           <i class="fas fa-undo"></i>
         </button>
       </div>
-      <div v-if="selectedRegion" class="selected-region-display">
+      <div class="selected-region-display">
         선택한 지역: <span>{{ selectedRegion }}</span>
       </div>
       <div id="kakao-map" class="map-container"></div>
@@ -120,9 +120,11 @@ export default {
     this.initMap();
     this.checkScreenSize();
     window.addEventListener('resize', this.checkScreenSize);
+    window.addEventListener('resize', this.resizeMap);
   },
   beforeDestroy() {
     window.removeEventListener('resize', this.checkScreenSize);
+    window.removeEventListener('resize', this.resizeMap);
   },
   methods: {
     initMap() {
@@ -728,6 +730,8 @@ export default {
       this.$emit('update:selectedRegion', null);
     },
     submitGuess() {
+      // 제출 전에 지도 리사이즈 확인
+      this.resizeMap();
       this.$emit('submit-guess');
     },
     zoomIn() {
@@ -754,6 +758,12 @@ export default {
     },
     toggleMap() {
       this.isMapOpen = !this.isMapOpen;
+      // 지도가 열릴 때 약간의 지연 후 리사이즈 적용
+      if (this.isMapOpen) {
+        setTimeout(() => {
+          this.resizeMap();
+        }, 300); // 트랜지션 완료 후 리사이즈
+      }
     },
     checkScreenSize() {
       this.isMobile = window.innerWidth <= 768;
@@ -827,6 +837,19 @@ export default {
       }
       
       return false; // 충돌 없음
+    },
+    
+    // 지도 크기 변경 시 호출하여 지도를 리사이즈
+    resizeMap() {
+      if (this.map) {
+        // 카카오맵 API의 relayout 메서드 호출
+        this.map.relayout();
+        // 중심점 재설정 (선택사항)
+        const center = new kakao.maps.LatLng(this.defaultCenter.lat, this.defaultCenter.lng);
+        this.map.setCenter(center);
+        
+        console.log('지도 리사이즈 완료');
+      }
     }
   }
 };
@@ -838,19 +861,20 @@ export default {
   height: 100%;
   display: flex;
   justify-content: flex-end;
-}
+  width: 100%; 
+} 
 
 .map-wrapper {
   display: flex;
   flex-direction: column;
   position: relative;
   height: 100%;
-  width: 300px;
-  max-width: 100%;
+  width: 100%;
   transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
   border-left: 1px solid rgba(0, 0, 0, 0.1);
   box-shadow: -4px 0 15px rgba(0, 0, 0, 0.05);
   background-color: white;
+  z-index: 5;
 }
 
 .selected-region-display {
@@ -860,7 +884,7 @@ export default {
   font-size: 14px;
   font-weight: 500;
   text-align: center;
-  z-index: 1;
+  z-index: 5;
 }
 
 .selected-region-display span {
@@ -911,8 +935,11 @@ export default {
   justify-content: center;
   background-color: white;
   border-top: 1px solid rgba(0, 0, 0, 0.1);
-  position: sticky;
+  position: absolute; /* 절대 위치로 변경 */
   bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10; /* 맵보다 위에 표시 */
 }
 
 .spot-button {
@@ -1001,6 +1028,15 @@ export default {
   
   .toggle-map-button {
     z-index: 1001;
+  }
+  
+  /* 모바일에서도 Spot 버튼이 항상 보이도록 */
+  .spot-button-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1002; /* 모바일에서 더 높은 z-index */
   }
 }
 </style>
