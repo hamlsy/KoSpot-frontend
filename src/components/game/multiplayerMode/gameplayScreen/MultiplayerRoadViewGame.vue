@@ -10,27 +10,35 @@
         <div class="room-info">
           <h2 class="room-name">{{ gameStore.state.roomData.name }}</h2>
           <div class="game-mode">
-            {{ gameStore.state.roomData.gameMode }} - {{ gameStore.state.roomData.region }}
+            {{ gameStore.state.roomData.gameMode }} -
+            {{ gameStore.state.roomData.region }}
           </div>
         </div>
       </div>
-      
+
       <div class="header-center">
         <div class="round-info">
           <span class="round-number">
-            라운드 {{ gameStore.state.currentRound }}/{{ gameStore.state.totalRounds }}
+            라운드 {{ gameStore.state.currentRound }}/{{
+              gameStore.state.totalRounds
+            }}
           </span>
           <div class="round-progress">
-            <div 
-              class="progress-bar" 
-              :style="{ width: `${(gameStore.state.currentRound / gameStore.state.totalRounds) * 100}%` }"
+            <div
+              class="progress-bar"
+              :style="{
+                width: `${
+                  (gameStore.state.currentRound / gameStore.state.totalRounds) *
+                  100
+                }%`,
+              }"
             ></div>
           </div>
         </div>
       </div>
-      
+
       <div class="header-right">
-        <game-timer 
+        <game-timer
           :initialTime="gameStore.state.remainingTime"
           :totalTime="120"
           :warning-threshold="30"
@@ -38,49 +46,50 @@
         />
       </div>
     </div>
-    
+
     <!-- 게임 메인 영역 -->
     <div class="game-content">
       <!-- 왼쪽 패널: 플레이어 목록 -->
       <div class="left-panel">
-        <player-list 
-          :players="gameStore.state.players" 
+        <player-list
+          :players="gameStore.state.players"
           :current-user-id="gameStore.state.currentUser.id"
-          :show-scores="gameStore.state.hasSubmittedGuess || gameStore.state.roundEnded"
+          :show-scores="
+            gameStore.state.hasSubmittedGuess || gameStore.state.roundEnded
+          "
         />
       </div>
-      
+
       <!-- 중앙 패널: 게임 화면 -->
       <div class="main-panel">
         <div class="game-view">
           <!-- 실제 로드뷰 컴포넌트 -->
-          <road-view 
+          <road-view
             :position="gameStore.state.currentLocation"
             :show-controls="true"
             :prevent-mouse-events="gameStore.state.roundEnded"
             @load-complete="onViewLoaded"
           />
-          
-          <!-- 지도 토글 버튼 (로드뷰 내부) -->
-          <button 
-            v-if="!isMapOpen" 
-            class="map-toggle"
-            @click="toggleMap"
-          >
-            <i class="fas fa-map-marked-alt"></i>
-            지도 열기
+
+          <!-- 지도 버튼 -->
+          <button class="map-toggle" @click="toggleMap">
+            <i
+              class="fas"
+              :class="isMapOpen ? 'fa-street-view' : 'fa-map-marked-alt'"
+            ></i>
+            {{ isMapOpen ? "로드뷰로 돌아가기" : "지도 열기" }}
           </button>
         </div>
       </div>
-      
+
       <!-- 오른쪽 패널: 채팅 -->
       <div class="right-panel">
-        <chat-window 
+        <chat-window
           v-if="!isTeamMode"
           :messages="gameStore.state.chatMessages"
           @send-message="sendChatMessage"
         />
-        
+
         <!-- 팀 모드일 경우 팀 채팅 표시 -->
         <team-chat
           v-if="isTeamMode && currentUserTeam"
@@ -93,7 +102,7 @@
         />
       </div>
     </div>
-    
+
     <!-- 라운드 결과 모달 -->
     <round-results
       v-if="gameStore.state.showRoundResults && !isTeamMode"
@@ -131,7 +140,7 @@
       @next-round="startNextRound"
       @finish-game="finishGame"
     />
-    
+
     <!-- 게임 결과 모달 -->
     <game-results
       v-if="gameStore.state.showGameResults && !isTeamMode"
@@ -167,62 +176,46 @@
       @vote-submitted="handleVoteSubmission"
       @voting-completed="handleVotingComplete"
     />
-    
+
     <!-- 휴대폰 프레임 -->
-    <div class="phone-frame" v-if="isMapOpen">
-      <div class="phone-header">
-        <div class="phone-notch"></div>
-      </div>
-      <div class="phone-content">
-        <KakaoMapGame
-          :isOpen="true"
-          :centerLocation="mapCenter"
-          :actualLocation="gameStore.state.roundEnded ? gameStore.state.actualLocation : null"
-          :showHintCircles="false"
-          :disabled="gameStore.state.roundEnded"
-          :showDistance="false"
-          :showActionButton="false"
-          @close="toggleMap"
-          @check-answer="submitGuess"
-          ref="phoneMapGame"
-          class="phone-map"
-        />
-        
-        <!-- Spot 버튼 (휴대폰 프레임 내부) -->
-        <button v-if="!gameStore.state.roundEnded" 
-          class="phone-spot-button"
-          @click="submitGuessFromPhoneMap"
-        >
-          <i class="fas fa-crosshairs"></i> Spot!
-        </button>
-      </div>
-      <div class="phone-footer">
-        <div class="home-button" @click="toggleMap"></div>
-      </div>
-    </div>
+    <PhoneFrame
+      v-if="isMapOpen"
+      :centerLocation="mapCenter"
+      :actualLocation="
+        gameStore.state.roundEnded ? gameStore.state.actualLocation : null
+      "
+      :showHintCircles="false"
+      :disabled="gameStore.state.roundEnded"
+      :showDistance="false"
+      :showActionButton="false"
+      @close="toggleMap"
+      @spot-answer="submitGuessFromPhoneMap"
+      @error="showToast"
+      ref="phoneMapGame"
+    />
   </div>
 </template>
 
 <script>
-import GameTimer from '@/components/game/common/shared/GameTimer.vue';
-import PlayerList from './PlayerList.vue';
-import RoadView from '@/components/game/common/roadview/RoadView.vue';
+import GameTimer from "@/components/game/common/shared/GameTimer.vue";
+import PlayerList from "./PlayerList.vue";
+import RoadView from "@/components/game/common/roadview/RoadView.vue";
 // KakaoMap은 RoundResults에서 결과 표시에 사용
 // import KakaoMap from '@/components/game/common/kakao/KakaoMap.vue';
-import ChatWindow from '../lobbyScreen/ChatWindow.vue';
-import RoundResults from './RoundResults.vue';
-import GameResults from './GameResults.vue';
-import TeamChat from './TeamChat.vue';
-import TeamVotingModal from './TeamVotingModal.vue';
-import TeamGameResults from './TeamGameResults.vue';
-import TeamRoundResults from './TeamRoundResults.vue';
-import gameStore from '@/store/gameStore';
-import { getRandomLocation } from '../MultiplayerGameTestData';
-import KakaoMapGame from '@/components/game/common/kakao/KakaoMapGame.vue';
+import ChatWindow from "../lobbyScreen/ChatWindow.vue";
+import RoundResults from "./RoundResults.vue";
+import GameResults from "./GameResults.vue";
+import TeamChat from "./TeamChat.vue";
+import TeamVotingModal from "./TeamVotingModal.vue";
+import TeamGameResults from "./TeamGameResults.vue";
+import TeamRoundResults from "./TeamRoundResults.vue";
+import gameStore from "@/store/gameStore";
+import { getRandomLocation } from "../MultiplayerGameTestData";
+import PhoneFrame from "@/components/game/common/PhoneFrame.vue";
 
 export default {
-  name: 'MultiplayerRoadViewGame',
-  
+  name: "MultiplayerRoadViewGame",
+
   components: {
     GameTimer,
     PlayerList,
@@ -236,20 +229,20 @@ export default {
     TeamVotingModal,
     TeamGameResults,
     TeamRoundResults,
-    KakaoMapGame
+    PhoneFrame,
   },
-  
+
   props: {
     roomId: {
       type: String,
-      required: true
+      required: true,
     },
     isTeamMode: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
-  
+
   data() {
     return {
       gameStore,
@@ -258,144 +251,154 @@ export default {
       isMapExpanded: false,
       mapCenter: { lat: 36.5, lng: 127.5 },
       roundTimer: null,
-      mapPreviewUrl: '',
-      isMapOpen: false
+      mapPreviewUrl: "",
+      isMapOpen: false,
     };
   },
-  
+
   computed: {
     // 팀 모드 관련 계산된 속성
     currentUserTeam() {
       if (!this.isTeamMode || !gameStore.state.currentUser.teamId) return null;
-      
-      return gameStore.state.teams.find(team => team.id === gameStore.state.currentUser.teamId);
-    },
-    
-    teamMembers() {
-      if (!this.isTeamMode || !gameStore.state.currentUser.teamId) return [];
-      
-      return gameStore.state.players.filter(player => 
-        player.teamId === gameStore.state.currentUser.teamId && 
-        player.id !== gameStore.state.currentUser.id
+
+      return gameStore.state.teams.find(
+        (team) => team.id === gameStore.state.currentUser.teamId
       );
     },
-    
+
+    teamMembers() {
+      if (!this.isTeamMode || !gameStore.state.currentUser.teamId) return [];
+
+      return gameStore.state.players.filter(
+        (player) =>
+          player.teamId === gameStore.state.currentUser.teamId &&
+          player.id !== gameStore.state.currentUser.id
+      );
+    },
+
     currentTeamMessages() {
       if (!this.isTeamMode || !gameStore.state.currentUser.teamId) return [];
-      
-      return gameStore.state.teamChatMessages[gameStore.state.currentUser.teamId] || [];
+
+      return (
+        gameStore.state.teamChatMessages[gameStore.state.currentUser.teamId] ||
+        []
+      );
     },
-    
+
     canSubmit() {
       // 이미 제출했거나 라운드가 끝난 경우
-      if (gameStore.state.hasSubmittedGuess || gameStore.state.roundEnded) return false;
-      
+      if (gameStore.state.hasSubmittedGuess || gameStore.state.roundEnded)
+        return false;
+
       // 위치를 선택했는지 확인
       return !!this.guessPosition;
-    }
+    },
   },
-  
+
   created() {
     // 테스트 데이터 로드 및 게임 초기화
     gameStore.loadTestData(this.isTeamMode);
     this.initGame();
   },
-  
+
   mounted() {
     // 로딩 화면 제거
   },
-  
+
   beforeDestroy() {
     this.clearTimer();
   },
-  
+
   methods: {
     initGame() {
       gameStore.initGame();
       this.fetchRoundData();
     },
-    
+
     fetchRoundData() {
       // 테스트 데이터에서 위치 가져오기
       setTimeout(() => {
         const location = getRandomLocation();
-        
-        gameStore.state.currentLocation = { lat: location.lat, lng: location.lng };
+
+        gameStore.state.currentLocation = {
+          lat: location.lat,
+          lng: location.lng,
+        };
         gameStore.state.locationInfo = {
           name: location.name,
           description: location.description,
           image: location.image,
-          fact: location.fact
+          fact: location.fact,
         };
-        
+
         // 타이머 시작
         this.startRoundTimer();
       }, 1500);
     },
-    
+
     startRoundTimer() {
       gameStore.state.remainingTime = 120; // 2분
-      
+
       this.roundTimer = setInterval(() => {
         gameStore.state.remainingTime--;
-        
+
         if (gameStore.state.remainingTime <= 0) {
           this.clearTimer();
           this.endRound();
         }
       }, 1000);
     },
-    
+
     clearTimer() {
       if (this.roundTimer) {
         clearInterval(this.roundTimer);
         this.roundTimer = null;
       }
     },
-    
+
     onViewLoaded() {
       // 로드뷰 로딩 완료 처리
-      console.log('로드뷰 로딩 완료');
+      console.log("로드뷰 로딩 완료");
     },
-    
+
     onGuessPlaced(position) {
       this.guessPosition = position;
     },
-    
+
     toggleMapExpansion() {
       this.isMapExpanded = !this.isMapExpanded;
     },
-    
+
     formatCoords(position) {
-      if (!position) return '';
-      
+      if (!position) return "";
+
       const lat = position.lat.toFixed(4);
       const lng = position.lng.toFixed(4);
       return `${lat}, ${lng}`;
     },
-    
+
     submitGuess() {
       if (!this.canSubmit) return;
-      
+
       if (this.isTeamMode) {
         this.submitTeamGuess();
         return;
       }
-      
+
       gameStore.submitGuess();
-      
+
       // 실제 구현에서는 서버로 제출
       setTimeout(() => {
         this.endRound();
       }, 1000);
     },
-    
+
     submitTeamGuess() {
       if (!this.canSubmit) return;
-      
+
       // 팀 투표 시작
       gameStore.startTeamVoting(gameStore.state.currentUser);
-      
+
       // 시스템 메시지 추가
       gameStore.addTeamChatMessage(
         gameStore.state.currentUser.teamId,
@@ -403,147 +406,140 @@ export default {
         true
       );
     },
-    
+
     handleVoteSubmission(vote) {
       gameStore.submitVote(vote.approved);
-      
+
       // 모든 팀원이 투표했는지 확인
       if (gameStore.state.votingResults.total >= this.teamMembers.length) {
         this.finalizeTeamVoting();
       }
     },
-    
+
     handleVotingComplete(result) {
       this.finalizeTeamVoting(result.approved);
     },
-    
+
     finalizeTeamVoting(approved = null) {
       const isApproved = gameStore.finalizeVoting(approved);
-      
+
       if (isApproved) {
         gameStore.addTeamChatMessage(
           gameStore.state.currentUser.teamId,
-          '팀원들이 위치 제출에 동의했습니다!',
+          "팀원들이 위치 제출에 동의했습니다!",
           true
         );
-        
+
         gameStore.submitGuess();
-        
+
         setTimeout(() => {
           this.endRound();
         }, 1000);
       } else {
         gameStore.addTeamChatMessage(
           gameStore.state.currentUser.teamId,
-          '팀원들이 위치 제출을 거부했습니다. 다시 시도해주세요.',
+          "팀원들이 위치 제출을 거부했습니다. 다시 시도해주세요.",
           true
         );
       }
     },
-    
+
     endRound() {
       this.clearTimer();
-      
+
       // 실제 위치 설정 (테스트용)
       gameStore.state.actualLocation = {
         lat: gameStore.state.currentLocation.lat + (Math.random() * 0.1 - 0.05),
-        lng: gameStore.state.currentLocation.lng + (Math.random() * 0.1 - 0.05)
+        lng: gameStore.state.currentLocation.lng + (Math.random() * 0.1 - 0.05),
       };
-      
+
       gameStore.endRound();
     },
-    
+
     closeRoundResults() {
       gameStore.state.showRoundResults = false;
     },
-    
+
     startNextRound() {
       gameStore.startNextRound();
       this.guessPosition = null;
       this.fetchRoundData();
     },
-    
+
     finishGame() {
       gameStore.finishGame();
     },
-    
+
     restartGame() {
       gameStore.state.showGameResults = false;
       this.initGame();
     },
-    
+
     exitGame() {
-      if (confirm('정말 게임을 나가시겠습니까? 진행 중인 게임은 저장되지 않습니다.')) {
+      if (
+        confirm(
+          "정말 게임을 나가시겠습니까? 진행 중인 게임은 저장되지 않습니다."
+        )
+      ) {
         this.exitToLobby();
       }
     },
-    
+
     exitToLobby() {
       this.clearTimer();
-      this.$router.push('/multiplayerLobby');
+      this.$router.push("/multiplayerLobby");
     },
-    
+
     sendChatMessage(message) {
       if (!message.trim()) return;
       gameStore.addChatMessage(message);
     },
-    
+
     sendTeamMessage(data) {
       const { teamId, message } = data;
-      
+
       if (!teamId || !message.trim()) return;
       gameStore.addTeamChatMessage(teamId, message);
     },
-    
+
     getTeamColor(teamId) {
       const colorMap = {
-        'team1': 'blue',
-        'team2': 'red',
-        'team3': 'green',
-        'team4': 'yellow'
+        team1: "blue",
+        team2: "red",
+        team3: "green",
+        team4: "yellow",
       };
-      
-      return colorMap[teamId] || 'blue';
+
+      return colorMap[teamId] || "blue";
     },
-    
+
     toggleMap() {
       this.isMapOpen = !this.isMapOpen;
     },
-    
-    submitGuessFromPhoneMap() {
-      if (gameStore.state.hasSubmittedGuess || gameStore.state.roundEnded) return;
+
+    submitGuessFromPhoneMap(position) {
+      if (gameStore.state.hasSubmittedGuess || gameStore.state.roundEnded)
+        return;
+
+      // 선택한 위치 설정
+      this.guessPosition = position;
       
-      if (!this.$refs.phoneMapGame) return;
-      
-      this.$refs.phoneMapGame.getMarkerPosition()
-        .then(position => {
-          if (position) {
-            // 선택한 위치 설정
-            this.guessPosition = position;
-            
-            // 휴대폰 지도 닫기
-            this.isMapOpen = false;
-            
-            // 위치 제출 처리
-            if (this.isTeamMode) {
-              this.submitTeamGuess();
-            } else {
-              gameStore.submitGuess();
-              
-              // 실제 구현에서는 서버로 제출
-              setTimeout(() => {
-                this.endRound();
-              }, 1000);
-            }
-          } else {
-            alert('위치를 선택해주세요!');
-          }
-        })
-        .catch(() => {
-          alert('위치를 선택해주세요!');
-        });
-    }
-  }
+      // 지도 닫기
+      this.isMapOpen = false;
+
+      // 위치 제출 처리
+      if (this.isTeamMode) {
+        this.submitTeamGuess();
+      } else {
+        gameStore.submitGuess();
+
+        // 실제 구현에서는 서버로 제출
+        setTimeout(() => {
+          this.endRound();
+        }, 1000);
+      }
+    },
+  },
 };
 </script>
 
@@ -759,7 +755,7 @@ export default {
   .left-panel {
     width: 200px;
   }
-  
+
   .right-panel {
     width: 250px;
   }
@@ -769,17 +765,18 @@ export default {
   .game-content {
     flex-direction: column;
   }
-  
-  .left-panel, .right-panel {
+
+  .left-panel,
+  .right-panel {
     width: 100%;
     height: auto;
   }
-  
+
   .main-panel {
     order: -1;
     height: 50vh;
   }
-  
+
   .map-container.expanded {
     width: 80%;
     height: 80%;
@@ -791,105 +788,17 @@ export default {
     flex-direction: column;
     padding: 0.5rem;
   }
-  
+
   .header-center {
     margin: 0.5rem 0;
     max-width: 100%;
   }
-  
+
   .header-right {
     align-self: flex-end;
   }
 }
 
-/* 휴대폰 프레임 스타일 */
-.phone-frame {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 360px;
-  height: 720px;
-  background-color: #111;
-  border-radius: 40px;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 
-              inset 0 0 10px rgba(255, 255, 255, 0.1),
-              0 0 0 8px #333;
-  z-index: 100;
-}
-
-.phone-header {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 50px;
-  background-color: #000;
-  z-index: 101;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-}
-
-.phone-notch {
-  position: relative;
-  top: 0;
-  width: 150px;
-  height: 30px;
-  background-color: #000;
-  border-radius: 0 0 15px 15px;
-  z-index: 102;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.phone-notch:before {
-  content: '';
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  background-color: #444;
-  border-radius: 50%;
-  left: 40px;
-  top: 10px;
-}
-
-.phone-notch:after {
-  content: '';
-  position: absolute;
-  width: 50px;
-  height: 6px;
-  background-color: #444;
-  border-radius: 3px;
-  right: 40px;
-  top: 11px;
-}
-
-.phone-content {
-  position: absolute;
-  top: 50px;
-  left: 0;
-  right: 0;
-  bottom: 50px;
-  z-index: 101;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.phone-footer {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 50px;
-  background-color: #000;
-  z-index: 101;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
 
 .home-button {
   width: 40px;
@@ -903,7 +812,7 @@ export default {
 }
 
 .home-button:before {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -994,17 +903,17 @@ export default {
     width: 300px;
     height: 600px;
   }
-  
+
   .map-toggle {
     padding: 10px 15px;
     font-size: 0.9rem;
     bottom: 20px;
     right: 20px;
   }
-  
+
   .phone-spot-button {
     padding: 8px 16px;
     font-size: 0.85rem;
   }
 }
-</style> 
+</style>

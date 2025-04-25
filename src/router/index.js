@@ -23,6 +23,7 @@ import MyProfile from '@/components/user/mypage/MyProfile.vue';
 import FriendsList from '@/components/user/mypage/FriendsList.vue';
 import AccountSettings from '@/components/user/mypage/AccountSettings.vue';
 import RoadViewRank from '@/components/game/roadViewMode/RoadViewRank.vue';
+import MultiplayerRoadViewGame from '@/components/game/multiplayerMode/gameplayScreen/MultiplayerRoadViewGame.vue';
 
 
 
@@ -123,7 +124,8 @@ const routes = [
     {
         path: '/game/roadview/:roomId',
         name: "RoadViewGame",
-        component: () => import('@/components/game/multiplayerMode/gameplayScreen/MultiplayerRoadViewGame.vue'),
+        // component: () => import('@/components/game/multiplayerMode/gameplayScreen/MultiplayerRoadViewGame.vue'),
+        component: MultiplayerRoadViewGame,
         props: true
     },
     {
