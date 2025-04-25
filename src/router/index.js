@@ -22,6 +22,8 @@ import InventoryMain from '@/components/user/inventory/InventoryMain.vue';
 import MyProfile from '@/components/user/mypage/MyProfile.vue';
 import FriendsList from '@/components/user/mypage/FriendsList.vue';
 import AccountSettings from '@/components/user/mypage/AccountSettings.vue';
+import RoadViewRank from '@/components/game/roadViewMode/RoadViewRank.vue';
+
 
 
 Vue.use(VueRouter);
@@ -71,6 +73,11 @@ const routes = [
         path:'/roadViewPractice',
         name: "RoadViewPractice",
         component: RoadViewPractice
+    },
+    {
+        path: '/roadviewRank',
+        name: "RoadViewRank",
+        component: RoadViewRank
     },
     {
         path: '/myInfoPage',

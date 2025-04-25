@@ -1,179 +1,289 @@
 <template>
-  <div class="road-view-rank">
-    <div class="rank-header">
-      <div class="rank-info">
-        <h2>랭크 모드</h2>
-        <div class="region-badge">{{ region }}</div>
-      </div>
-      
-      <div class="timer" :class="{'warning': timeRemaining <= 30}">
-        {{ formatTime(timeRemaining) }}
+  <div class="road-view-practice">
+    <!-- 헤더 -->
+    <div class="game-header">
+      <button class="back-btn" @click="exitGame">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <h2 v-if="!gameStarted">{{ selectedRegion.name }} 랭크 모드</h2>
+      <div v-else class="game-status">
+        <!-- 랭크 모드 타이머 -->
+        <div
+          v-if="isRankMode"
+          class="timer"
+          :class="{ warning: timeRemaining <= 30 }"
+        >
+          <i class="fas fa-clock"></i>
+          <span>{{ formatTime(timeRemaining) }}</span>
+        </div>
       </div>
     </div>
-    
-    <!-- 로드뷰 게임 컴포넌트 -->
-    <div class="game-view">
-      <RoadViewGame
-        :initialPosition="currentLocation"
-        :showControls="true"
-        :showCompass="true"
-        @load-complete="onRoadViewLoaded"
-        @load-error="retryLoading"
-      />
-      
-      <div class="map-toggle-container">
-        <button 
-          class="map-toggle" 
+
+    <!-- 메인 게임 영역 -->
+    <div class="game-content">
+      <!-- 로드뷰 화면 -->
+      <div class="road-view-container">
+        <RoadViewGame
+          v-if="currentLocation"
+          :initialPosition="currentLocation"
+          :showControls="false"
+          :showCompass="false"
+          :preventInteraction="false"
+          @load-complete="onRoadViewLoaded"
+          @load-error="onRoadViewError"
+        />
+
+        <!-- 지도 버튼 -->
+        <button
+          class="map-toggle"
           @click="toggleMap"
         >
-          <i class="fas" :class="isMapOpen ? 'fa-street-view' : 'fa-map-marked-alt'"></i>
-          {{ isMapOpen ? '로드뷰로 돌아가기' : '지도 열기' }}
+          <i
+            class="fas"
+            :class="isMapOpen ? 'fa-street-view' : 'fa-map-marked-alt'"
+          ></i>
+          {{ isMapOpen ? "로드뷰로 돌아가기" : "지도 열기" }}
+        </button>
+        
+        <!-- Spot 버튼 (지도 모드에서만 표시) -->
+        <button v-if="isMapOpen && !showResult && false" 
+          class="spot-button"
+          @click="checkSpotAnswer"
+        >
+          <i class="fas fa-crosshairs"></i> Spot!
         </button>
       </div>
-    </div>
-    
-    <!-- 카운트다운 화면 -->
-    <div class="countdown-overlay" v-if="showCountdown">
-      <div class="countdown">{{ countdown }}</div>
-    </div>
-    
-    <!-- 인트로 화면 -->
-    <div class="intro-overlay" v-if="showIntro">
-      <div class="intro-content">
-        <h2>로드뷰 랭크 모드</h2>
-        <div class="region-info">
-          <div class="region-icon">
-            <i class="fas fa-map-marker-alt"></i>
-          </div>
-          <div class="region-name">{{ region }}</div>
+
+      <!-- 휴대폰 프레임 -->
+      <div class="phone-frame" v-if="isMapOpen">
+        <div class="phone-header">
+          <div class="phone-notch"></div>
         </div>
-        
-        <div class="intro-description">
-          <p>랭크 모드에서는 제한 시간 내에 당신의 위치를 맞혀야 합니다.</p>
-          <p>정확도와 속도에 따라 랭크 포인트를 획득할 수 있습니다.</p>
-          <ul class="game-rules">
-            <li><i class="fas fa-clock"></i> 제한시간: 3분</li>
-            <li><i class="fas fa-ban"></i> 힌트 없음</li>
-            <li><i class="fas fa-trophy"></i> 정확도와 속도에 따른 점수</li>
-          </ul>
-        </div>
-        
-        <button class="start-btn" @click="startGame">
-          <i class="fas fa-play"></i> 게임 시작
-        </button>
-      </div>
-    </div>
-    
-    <!-- 결과 화면 -->
-    <div class="result-overlay" v-if="showResult">
-      <div class="result-content">
-        <h2>라운드 결과</h2>
-        
-        <div class="result-stats">
-          <div class="result-stat">
-            <div class="stat-icon">
-              <i class="fas fa-ruler"></i>
-            </div>
-            <div class="stat-value">{{ distance.toFixed(2) }} km</div>
-            <div class="stat-label">떨어진 거리</div>
-          </div>
+        <div class="phone-content">
+          <!-- 맵 게임 컴포넌트가 여기에 표시됨 -->
+          <KakaoMapGame
+            :isOpen="true"
+            :centerLocation="centerLocation"
+            :actualLocation="currentLocation"
+            :showHintCircles="false"
+            :disabled="showResult"
+            :showDistance="false"
+            :showActionButton="false"
+            @close="toggleMap"
+            @check-answer="checkAnswer"
+            ref="phoneMapGame"
+            class="phone-map"
+          />
           
-          <div class="result-stat">
-            <div class="stat-icon">
-              <i class="fas fa-star"></i>
-            </div>
-            <div class="stat-value">{{ score }}</div>
-            <div class="stat-label">점수</div>
-          </div>
-          
-          <div class="result-stat">
-            <div class="stat-icon">
-              <i class="fas fa-clock"></i>
-            </div>
-            <div class="stat-value">{{ formatTime(180 - timeRemaining) }}</div>
-            <div class="stat-label">소요 시간</div>
-          </div>
-        </div>
-        
-        <div class="result-map" ref="resultMapElement"></div>
-        
-        <div class="rank-change">
-          <div class="rank-icon">
-            <i class="fas" :class="rankPointChange >= 0 ? 'fa-arrow-up' : 'fa-arrow-down'"></i>
-          </div>
-          <div class="rank-value" :class="rankPointChange >= 0 ? 'positive' : 'negative'">
-            {{ rankPointChange >= 0 ? '+' : '' }}{{ rankPointChange }} 포인트
-          </div>
-        </div>
-        
-        <div class="rank-total">
-          <div class="rank-label">현재 랭크 포인트:</div>
-          <div class="rank-current">{{ currentRankPoints }}</div>
-        </div>
-        
-        <div class="result-buttons">
-          <button class="play-again" @click="restartGame">
-            <i class="fas fa-redo"></i> 다시 플레이
-          </button>
-          <button class="exit-game" @click="exitGame">
-            <i class="fas fa-sign-out-alt"></i> 종료
+          <!-- Spot 버튼 (휴대폰 프레임 내부) -->
+          <button v-if="!showResult" 
+            class="phone-spot-button"
+            @click="checkSpotAnswer"
+          >
+            <i class="fas fa-crosshairs"></i> Spot!
           </button>
         </div>
+        <div class="phone-footer">
+          <div class="home-button" @click="toggleMap"></div>
+        </div>
+      </div>
+
+      <!-- 지도 화면 (휴대폰 외부에서는 숨김) -->
+      <KakaoMapGame
+        v-if="isMapOpen && false"
+        :isOpen="isMapOpen"
+        :centerLocation="centerLocation"
+        :actualLocation="currentLocation"
+        :showHintCircles="showHints"
+        :disabled="showResult"
+        @close="toggleMap"
+        @check-answer="checkAnswer"
+        ref="mapGame"
+        class="kakao-map-container"
+      />
+
+      <!-- 인트로 화면 -->
+      <div v-if="showIntro" class="intro-overlay">
+        <div class="intro-content">
+          <h2>{{ selectedRegion.name }} 랭크 모드</h2>
+          <p>현재 보이는 로드뷰의 위치를 지도에서 찾아보세요.</p>
+          <p>
+            지도를 열고 위치를 클릭한 후 "위치 선택" 버튼을 눌러 정답을
+            확인하세요.
+          </p>
+          <button class="start-btn" @click="startGame">시작하기</button>
+        </div>
+      </div>
+
+      <!-- 카운트다운 화면 -->
+      <div v-if="showCountdown" class="countdown-overlay">
+        <div class="countdown">{{ countdown }}</div>
+      </div>
+
+      <!-- 결과 화면 -->
+      <div v-if="showResult" class="result-overlay">
+        <div class="result-content">
+          <h2>결과</h2>
+
+          <!-- 결과 정보 -->
+          <div class="result-info">
+            <div class="info-item">
+              <div class="info-icon"><i class="fas fa-ruler"></i></div>
+              <div class="info-value">{{ distance.toFixed(2) }} km</div>
+              <div class="info-label"> 떨어진 거리</div>
+            </div>
+
+            <div class="info-item">
+              <div class="info-icon"><i class="fas fa-star"></i></div>
+              <div class="info-value">{{ score }}</div>
+              <div class="info-label"> 점수</div>
+            </div>
+
+            <div class="info-item" v-if="isRankMode">
+              <div class="info-icon"><i class="fas fa-clock"></i></div>
+              <div class="info-value">
+                {{ formatTime(180 - timeRemaining) }}
+              </div>
+              <div class="info-label">소요 시간</div>
+            </div>
+          </div>
+
+          <!-- 결과 지도 -->
+          <div class="result-map" ref="resultMapElement"></div>
+
+          <!-- 랭크 점수 변화 (랭크 모드만) -->
+          <div v-if="isRankMode" class="rank-change">
+            <div class="rank-icon">
+              <i
+                class="fas"
+                :class="rankPointChange >= 0 ? 'fa-arrow-up' : 'fa-arrow-down'"
+              ></i>
+            </div>
+            <div
+              class="rank-value"
+              :class="rankPointChange >= 0 ? 'positive' : 'negative'"
+            >
+              {{ rankPointChange >= 0 ? "+" : "" }}{{ rankPointChange }} 포인트
+            </div>
+            <div class="rank-current">
+              현재 랭크 포인트: {{ currentRankPoints }}
+            </div>
+          </div>
+
+          <!-- 결과 버튼 -->
+          <div class="result-buttons">
+            <button class="restart-btn" @click="nextRound">다시하기</button>
+            <button class="exit-btn" @click="exitGame">종료하기</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 종료 확인 모달 -->
+      <div v-if="showExitConfirmation" class="modal-overlay">
+        <div class="modal-content">
+          <h3>게임 종료</h3>
+          <p>정말 게임을 종료하시겠습니까?</p>
+          <div class="modal-buttons">
+            <button class="cancel-btn" @click="showExitConfirmation = false">
+              취소
+            </button>
+            <button class="confirm-btn" @click="confirmExit">확인</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 로드뷰 토스트 메시지 -->
+      <div class="toast-message" v-if="showToast">
+        {{ toastMessage }}
       </div>
     </div>
-    
-    <!-- 맵 컴포넌트 -->
-    <KakaoMapGame
-      :isOpen="isMapOpen"
-      :centerLocation="centerLocation"
-      :actualLocation="currentLocation"
-      :disabled="timeRemaining <= 0"
-      :actionButtonText="'위치 선택'"
-      @close="toggleMap"
-      @check-answer="checkAnswer"
-    />
   </div>
 </template>
 
 <script>
-import RoadViewGame from '@/components/shared/RoadViewGame.vue';
-import KakaoMapGame from '@/components/shared/KakaoMapGame.vue';
+import RoadViewGame from "@/components/game/common/roadview/RoadViewGame.vue";
+import KakaoMapGame from "@/components/game/common/kakao/KakaoMapGame.vue";
 
 export default {
-  name: 'RoadViewRank',
+  name: "RoadViewPractice",
   components: {
     RoadViewGame,
-    KakaoMapGame
+    KakaoMapGame,
   },
   props: {
+    isRankMode: {
+      type: Boolean,
+      default: false,
+    },
     region: {
       type: String,
-      default: '서울'
-    }
+      default: "서울",
+    },
   },
   data() {
     return {
-      // 게임 상태 관련
+      // 게임 화면 관련
       isMapOpen: false,
       showExitConfirmation: false,
+      showHints: false,
       showResult: false,
+      showToast: false,
+      toastMessage: '',
+      toastTimeout: null,
+
+      // 게임 상태 관련
+      isFirstRun: true,
+      isLoading: true,
+      currentLocation: null,
+      guessedLocation: null,
+      errorCount: 0, // 로드뷰 로드 오류 카운트
+      maxErrorRetry: 3, // 최대 재시도 횟수
+
+      // 게임 점수 관련
+      distance: null,
+      score: 0,
+      elapsedTime: 0,
+
+      // 지도 관련
+      mapInitialized: false,
+      centerLocation: {
+        lat: 37.55,
+        lng: 126.97
+      },
+
+      // 지역 데이터
+      regions: [
+        { id: "seoul", name: "서울", centerLat: 37.5665, centerLng: 126.978 },
+        { id: "busan", name: "부산", centerLat: 35.1796, centerLng: 129.0756 },
+        { id: "jeju", name: "제주", centerLat: 33.4996, centerLng: 126.5312 },
+        {
+          id: "gangwon",
+          name: "강원",
+          centerLat: 37.8228,
+          centerLng: 128.1555,
+        },
+        {
+          id: "gyeonggi",
+          name: "경기",
+          centerLat: 37.4138,
+          centerLng: 127.5183,
+        },
+      ],
+      selectedRegion: {
+        name: '서울',
+        bounds: {
+          sw: { lat: 37.41, lng: 126.79 },
+          ne: { lat: 37.70, lng: 127.17 }
+        }
+      },
+
+      // 로드뷰 게임 상태
       showIntro: true,
       showCountdown: false,
       gameStarted: false,
       countdown: 3,
-      isLoading: true,
-      
-      // 위치 정보
-      currentLocation: null,
-      centerLocation: {
-        lat: 36.480401,
-        lng: 127.574667, // 한국 중심점
-      },
-      
-      // 게임 결과 관련
-      distance: 0,
-      score: 0,
-      
+      countdownTimer: null,
+
       // 랭크 모드 관련
       timeRemaining: 180, // 3분(초 단위)
       timerInterval: null,
@@ -182,157 +292,202 @@ export default {
     };
   },
   mounted() {
-    // 첫 게임 위치 데이터 요청
+    // 지역 설정
+    this.selectedRegion =
+      this.regions.find((r) => r.id === this.region.toLowerCase()) ||
+      this.regions[0];
+
+    // 게임 위치 데이터 요청
     this.fetchGameLocationData();
   },
   beforeDestroy() {
-    // 타이머 정리
-    if (this.timerInterval) {
-      clearInterval(this.timerInterval);
-    }
+    this.clearAllTimers();
   },
   methods: {
-    // 게임 위치 데이터 가져오기 (백엔드 연동 부분)
-    fetchGameLocationData() {
-      // 실제 구현에서는 axios를 사용하여 백엔드에서 데이터 가져오기
-      // 데모용: 랜덤 위치 생성
-      this.currentLocation = this.getRandomCoordinate();
-      this.isLoading = false;
-    },
-    
-    // 랜덤 좌표 생성 (데모용)
-    getRandomCoordinate() {
-      // 대한민국 영역 제한
-      const KOREA_BOUNDS = {
-        MIN_LAT: 33.0, // 제주도 남단
-        MAX_LAT: 38.0, // 강원도 북단
-        MIN_LNG: 125.0, // 서해 서단
-        MAX_LNG: 132.0, // 독도 동단
-      };
-
-      // 랜덤 좌표 생성
-      const randomLat =
-        Math.random() * (KOREA_BOUNDS.MAX_LAT - KOREA_BOUNDS.MIN_LAT) +
-        KOREA_BOUNDS.MIN_LAT;
-      const randomLng =
-        Math.random() * (KOREA_BOUNDS.MAX_LNG - KOREA_BOUNDS.MIN_LNG) +
-        KOREA_BOUNDS.MIN_LNG;
-
-      return {
-        lat: parseFloat(randomLat.toFixed(6)),
-        lng: parseFloat(randomLng.toFixed(6)),
-      };
-    },
-    
     // 게임 시작
     startGame() {
       this.showIntro = false;
       this.showCountdown = true;
-
-      const countdownInterval = setInterval(() => {
+      
+      // 카운트다운 시작
+      this.countdownTimer = setInterval(() => {
         this.countdown--;
         if (this.countdown === 0) {
-          clearInterval(countdownInterval);
+          clearInterval(this.countdownTimer);
           this.showCountdown = false;
           this.gameStarted = true;
-          this.startTimer();
+          
+          // 게임 타이머 시작
+          this.startGameTimer();
         }
       }, 1000);
     },
-    
-    // 타이머 시작
+
+    // 게임 상태 초기화
+    resetGame() {
+      // 타이머 정리
+      this.clearTimer();
+      
+      // 상태 초기화
+      this.showResult = false;
+      this.isMapOpen = false;
+      this.guessedLocation = null;
+      this.distance = null;
+      this.score = 0;
+      this.elapsedTime = 0;
+      
+      // 게임 위치 데이터 요청
+      this.fetchGameLocationData();
+    },
+
+    // 모든 타이머 정리
+    clearAllTimers() {
+      // 타이머 정리
+      this.clearTimer();
+    },
+
+    // 지도 토글
+    toggleMap() {
+      // 상태 변경
+      this.isMapOpen = !this.isMapOpen;
+    },
+
+    // 랭크 모드 타이머 시작
     startTimer() {
+      if (this.timerInterval) {
+        clearInterval(this.timerInterval);
+      }
+
       this.timerInterval = setInterval(() => {
         if (this.timeRemaining > 0) {
           this.timeRemaining--;
-          
-          // 시간이 다 되면 자동으로 결과 화면 표시
+
+          // 시간이 다 되면 자동으로 결과 표시
           if (this.timeRemaining === 0) {
             this.timeUp();
           }
         }
       }, 1000);
     },
-    
+
     // 시간 초과 처리
     timeUp() {
-      clearInterval(this.timerInterval);
-      
-      // 자동으로 랜덤 위치에 마커 배치 (가장 먼 곳에 배치)
+      // 타이머 중지
+      if (this.timerInterval) {
+        clearInterval(this.timerInterval);
+      }
+
+      // 가장 먼 위치로 마커 자동 설정
       const farthestPosition = {
-        lat: this.currentLocation.lat > 35.5 ? 33.5 : 38.0,
-        lng: this.currentLocation.lng > 128.5 ? 126.0 : 131.0
-      };
-      
-      this.checkAnswer(farthestPosition);
-    },
-    
-    // 지도 토글
-    toggleMap() {
-      this.isMapOpen = !this.isMapOpen;
-    },
-    
-    // 로드뷰 로드 이벤트 핸들러
-    onRoadViewLoaded(data) {
-      console.log("로드뷰 로드 완료", data);
-    },
-    
-    // 재시도
-    retryLoading() {
-      this.fetchGameLocationData();
-    },
-    
-    // 결과 확인
-    checkAnswer(markerPosition) {
-      if (!markerPosition) return;
-      
-      const correctPosition = {
-        lat: this.currentLocation.lat,
-        lng: this.currentLocation.lng
+        lat: this.currentLocation.lat > 36 ? 33.5 : 38.0,
+        lng: this.currentLocation.lng > 128 ? 126.0 : 131.0,
       };
 
-      // 게임 결과 표시
-      this.showResult = true;
+      this.checkAnswer(farthestPosition);
+    },
+
+    // 시간 형식 변환 (초를 MM:SS 형식으로)
+    formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins.toString().padStart(2, "0")}:${secs
+        .toString()
+        .padStart(2, "0")}`;
+    },
+
+    // 게임 위치 데이터 가져오기 (백엔드 연동 부분)
+    fetchGameLocationData() {
+      // 실제 구현에서는 axios를 사용하여 백엔드에서 데이터 가져오기
+      this.isLoading = true;
+
+      // 선택된 지역의 센터 위치로 중앙 설정
+      this.centerLocation = {
+        lat: this.selectedRegion.centerLat,
+        lng: this.selectedRegion.centerLng,
+      };
+
+      // 더미 데이터: 로드뷰가 있는 것으로 확인된 좌표들 (서울, 부산 등 주요 도시)
+      const knownLocations = [
+        { lat: 37.566826, lng: 126.978656 }, // 서울시청
+        { lat: 37.551229, lng: 126.988205 }, // 남산타워
+        { lat: 37.570975, lng: 126.976999 }, // 광화문
+        { lat: 37.512809, lng: 127.058984 }, // 삼성역
+        { lat: 35.179682, lng: 129.075087 }, // 부산 해운대
+        { lat: 35.158831, lng: 129.160007 }, // 부산 광안리
+        { lat: 35.101460, lng: 129.032364 }, // 부산 서면
+        { lat: 37.456769, lng: 126.705528 }, // 인천 송도
+        { lat: 33.249293, lng: 126.560693 }, // 제주 올레길
+        { lat: 33.450700, lng: 126.570667 }  // 제주 시내
+      ];
+
+      // 지역에 맞는 위치 선택
+      let filteredLocations = knownLocations;
+      if (this.selectedRegion.id === 'seoul') {
+        filteredLocations = knownLocations.slice(0, 4);
+      } else if (this.selectedRegion.id === 'busan') {
+        filteredLocations = knownLocations.slice(4, 7);
+      } else if (this.selectedRegion.id === 'jeju') {
+        filteredLocations = knownLocations.slice(8, 10);
+      }
+
+      // 필터링된 위치에서 랜덤으로 선택
+      const randomIndex = Math.floor(Math.random() * filteredLocations.length);
+      this.currentLocation = filteredLocations[randomIndex];
+      console.log('선택된 로드뷰 위치:', this.currentLocation);
       
-      // 거리 계산 (Haversine 공식)
-      this.distance = this.calculateDistance(
-        markerPosition.lat, markerPosition.lng,
-        correctPosition.lat, correctPosition.lng
+      this.isLoading = false;
+    },
+
+    // 게임 결과 확인
+    checkAnswer(position) {
+      if (this.showResult) return;
+      
+      // 타이머 정리
+      this.clearTimer();
+      
+      // 거리 계산
+      const distance = this.calculateDistance(
+        position.lat, position.lng,
+        this.currentLocation.lat, this.currentLocation.lng
       );
       
-      // 점수 계산
-      this.score = Math.max(100 - Math.floor(this.distance * 2), 0);
+      // 점수 계산 (최대 100점)
+      const score = Math.max(0, Math.floor(100 - Math.sqrt(distance) * 10));
       
-      // 점수와 남은 시간에 따라 랭크 포인트 변화 계산
-      this.rankPointChange = Math.floor(this.score / 10) + Math.floor(this.timeRemaining / 10) - 5;
-      this.currentRankPoints += this.rankPointChange;
+      // 게임 결과 저장
+      this.distance = distance;
+      this.score = score;
+      this.guessedLocation = position;
       
-      // 타이머 중지
-      clearInterval(this.timerInterval);
+      // 결과 화면 표시
+      this.showResult = true;
       
       // 결과 지도 초기화
       this.$nextTick(() => {
-        this.initResultMap(markerPosition, correctPosition);
+        this.initResultMap(position);
       });
     },
     
     // 결과 지도 초기화
-    initResultMap(guessPosition, actualPosition) {
-      const resultMapContainer = this.$refs.resultMapElement;
-      if (!resultMapContainer || !window.kakao || !window.kakao.maps) return;
+    initResultMap(guessPosition) {
+      if (!window.kakao || !window.kakao.maps) return;
       
-      const map = new kakao.maps.Map(resultMapContainer, {
+      const resultMapContainer = this.$refs.resultMapElement;
+      if (!resultMapContainer) return;
+      
+      const resultMap = new kakao.maps.Map(resultMapContainer, {
         center: new kakao.maps.LatLng(
-          (guessPosition.lat + actualPosition.lat) / 2,
-          (guessPosition.lng + actualPosition.lng) / 2
+          (guessPosition.lat + this.currentLocation.lat) / 2,
+          (guessPosition.lng + this.currentLocation.lng) / 2
         ),
-        level: 13
+        level: 8
       });
       
       // 사용자 마커
       new kakao.maps.Marker({
         position: new kakao.maps.LatLng(guessPosition.lat, guessPosition.lng),
-        map: map
+        map: resultMap,
+        imageSrc: "@/assets/currentLocation.png",
       });
       
       // 실제 위치 마커
@@ -342,8 +497,11 @@ export default {
       const markerImage = new kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
       
       new kakao.maps.Marker({
-        position: new kakao.maps.LatLng(actualPosition.lat, actualPosition.lng),
-        map: map,
+        position: new kakao.maps.LatLng(
+          this.currentLocation.lat,
+          this.currentLocation.lng
+        ),
+        map: resultMap,
         image: markerImage
       });
       
@@ -351,7 +509,10 @@ export default {
       const polyline = new kakao.maps.Polyline({
         path: [
           new kakao.maps.LatLng(guessPosition.lat, guessPosition.lng),
-          new kakao.maps.LatLng(actualPosition.lat, actualPosition.lng)
+          new kakao.maps.LatLng(
+            this.currentLocation.lat,
+            this.currentLocation.lng
+          )
         ],
         strokeWeight: 3,
         strokeColor: "#5B9DFF",
@@ -359,15 +520,131 @@ export default {
         strokeStyle: "solid"
       });
       
-      polyline.setMap(map);
+      polyline.setMap(resultMap);
       
       // 지도 범위 재설정
       const bounds = new kakao.maps.LatLngBounds();
       bounds.extend(new kakao.maps.LatLng(guessPosition.lat, guessPosition.lng));
-      bounds.extend(new kakao.maps.LatLng(actualPosition.lat, actualPosition.lng));
-      map.setBounds(bounds);
+      bounds.extend(new kakao.maps.LatLng(
+        this.currentLocation.lat,
+        this.currentLocation.lng
+      ));
+      resultMap.setBounds(bounds);
+    },
+
+    // Spot 버튼 클릭 시 마커 위치 확인
+    checkSpotAnswer() {
+      if (!this.$refs.phoneMapGame) {
+        alert('지도가 준비되지 않았습니다. 다시 시도해주세요.');
+        return;
+      }
+      
+      // 현재 마커 위치를 얻기 위해 KakaoMapGame에서 마커 위치 데이터 요청
+      this.$refs.phoneMapGame.getMarkerPosition()
+        .then(markerPosition => {
+          if (markerPosition) {
+            // 지도 닫기
+            this.isMapOpen = false;
+            
+            // 결과 확인
+            this.$nextTick(() => {
+              this.checkAnswer(markerPosition);
+            });
+          } else {
+            alert('위치를 선택해주세요!');
+          }
+        })
+        .catch(() => {
+          alert('위치를 선택해주세요!');
+        });
+    },
+
+    // 랭크 모드 타이머 시작
+    startGameTimer() {
+      this.elapsedTime = 0;
+      
+      if (this.gameTimer) {
+        clearInterval(this.gameTimer);
+      }
+      
+      this.gameTimer = setInterval(() => {
+        this.elapsedTime++;
+      }, 1000);
     },
     
+    // 타이머 정리
+    clearTimer() {
+      if (this.countdownTimer) {
+        clearInterval(this.countdownTimer);
+        this.countdownTimer = null;
+      }
+      
+      if (this.gameTimer) {
+        clearInterval(this.gameTimer);
+        this.gameTimer = null;
+      }
+    },
+
+    // 다음 라운드 시작
+    nextRound() {
+      this.resetGame();
+      this.showIntro = true;  // 인트로 화면 다시 표시
+      this.countdown = 3;  // 카운트다운 초기화
+      this.gameStarted = false;  // 게임 상태 초기화
+    },
+
+    // 게임 종료
+    exitGame() {
+      // 타이머 정리
+      this.clearTimer();
+      this.$router.push('/roadViewMode');
+    },
+
+    // 게임 종료 확인
+    confirmExit() {
+      this.$router.push("/roadViewModeMain");
+    },
+
+    // 지역 선택 변경
+    changeRegion(region) {
+      this.selectedRegion = region;
+      this.resetGame();
+      this.fetchGameLocationData();
+    },
+
+    // 로드뷰 로드 완료 이벤트 핸들러
+    onRoadViewLoaded(data) {
+      console.log("로드뷰 로드 완료", data);
+      this.errorCount = 0; // 에러 카운트 초기화
+    },
+
+    // 로드뷰 로드 오류 이벤트 핸들러
+    onRoadViewError() {
+      console.error("로드뷰 로드 오류, 새 위치 시도");
+      this.errorCount++;
+      if (this.errorCount > this.maxErrorRetry) {
+        this.showToastMessage("로드뷰를 찾을 수 없어 지도 모드로 전환합니다.");
+        this.isMapOpen = true;
+      } else {
+        this.showToastMessage(`로드뷰 로드 실패 (${this.errorCount}/${this.maxErrorRetry}), 새 위치를 시도합니다...`);
+        this.fetchGameLocationData();
+      }
+    },
+
+    // 토스트 메시지 표시
+    showToastMessage(message) {
+      if (this.toastTimeout) {
+        clearTimeout(this.toastTimeout);
+      }
+      
+      this.toastMessage = message;
+      this.showToast = true;
+      
+      this.toastTimeout = setTimeout(() => {
+        this.showToast = false;
+      }, 3000);
+    },
+
     // 거리 계산 (Haversine 공식)
     calculateDistance(lat1, lon1, lat2, lon2) {
       const R = 6371; // 지구 반경 (km)
@@ -375,142 +652,144 @@ export default {
       const dLon = this.deg2rad(lon2 - lon1);
       const a =
         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        Math.cos(this.deg2rad(lat1)) *
+          Math.cos(this.deg2rad(lat2)) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       return R * c; // 킬로미터 단위
     },
-    
+
     // 각도를 라디안으로 변환
     deg2rad(deg) {
       return deg * (Math.PI / 180);
     },
-    
-    // 시간 형식 변환 (초를 MM:SS 형식으로)
-    formatTime(seconds) {
-      const mins = Math.floor(seconds / 60);
-      const secs = seconds % 60;
-      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    },
-    
-    // 게임 재시작
-    restartGame() {
-      // 기본 상태 초기화
-      this.isMapOpen = false;
-      this.showResult = false;
-      this.showIntro = true;
-      this.countdown = 3;
-      this.gameStarted = false;
-      this.isLoading = true;
-      this.timeRemaining = 180;
-      
-      // 새 게임 위치 데이터 요청
-      this.fetchGameLocationData();
-    },
-    
-    // 게임 종료
-    exitGame() {
-      this.$router.push("/roadViewModeMain");
-    }
-  }
+  },
 };
 </script>
 
 <style scoped>
-.road-view-rank {
+.road-view-practice {
+  position: relative;
   width: 100%;
   height: 100vh;
-  position: relative;
-  background-color: #f5f7fa;
+  background-color: #f5f5f5;
   overflow: hidden;
 }
 
-.rank-header {
+/* 헤더 스타일 */
+.game-header {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  padding: 15px 20px;
+  z-index: 20;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  z-index: 5;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 12px 16px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  backdrop-filter: blur(5px);
 }
 
-.rank-info {
+.back-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-
-.rank-info h2 {
-  margin: 0;
-  font-size: 1.3rem;
-  color: #333;
-}
-
-.region-badge {
-  background: #3498db;
-  color: white;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.timer {
-  font-weight: 700;
-  font-size: 1.5rem;
-  color: #333;
-  background: white;
-  padding: 5px 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.timer.warning {
-  color: white;
-  background: #e74c3c;
-  animation: pulse 1s infinite;
-}
-
-.game-view {
-  width: 100%;
-  height: 100%;
-}
-
-.map-toggle-container {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  z-index: 5;
-}
-
-.map-toggle {
-  background: linear-gradient(135deg, #3498db, #2980b9);
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
+  justify-content: center;
   transition: all 0.2s ease;
+}
+
+.back-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.game-status {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* 타이머 스타일 */
+.timer {
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  font-size: 1.2rem;
+  font-weight: bold;
+  padding: 6px 12px;
+  background-color: rgba(0, 0, 0, 0.4);
+  border-radius: 20px;
+  transition: background-color 0.3s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.map-toggle:hover {
+.timer-warning {
+  background-color: rgba(255, 50, 50, 0.8);
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* 게임 소개 화면 */
+.intro-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 20;
+}
+
+.intro-content {
+  background-color: white;
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  max-width: 500px;
+  width: 90%;
+}
+
+.start-btn {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border-radius: 25px;
+  margin-top: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+}
+
+.start-btn:hover {
   transform: translateY(-3px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
-}
-
-.map-toggle:active {
-  transform: translateY(-1px);
+  box-shadow: 0 6px 15px rgba(52, 152, 219, 0.6);
 }
 
 /* 카운트다운 화면 */
@@ -520,130 +799,182 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.8);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 20;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 15;
 }
 
 .countdown {
-  font-size: 10rem;
-  font-weight: 900;
+  font-size: 12rem;
+  font-weight: bold;
   color: white;
-  animation: countdownAnim 1s infinite;
+  text-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  animation: countdownScale 1s infinite;
 }
 
-/* 인트로 화면 */
-.intro-overlay {
+@keyframes countdownScale {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 로딩 화면 */
+.loading-overlay {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #3a7bd5, #3a6073);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 20;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 10;
 }
 
-.intro-content {
-  background: white;
-  padding: 30px;
-  border-radius: 15px;
-  text-align: center;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  width: 90%;
-  max-width: 600px;
-}
-
-.intro-content h2 {
-  margin: 0 0 20px 0;
-  font-size: 2rem;
-  color: #333;
-}
-
-.region-info {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.region-icon {
-  width: 40px;
-  height: 40px;
-  background: #3498db;
+.loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 6px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1.2rem;
+  border-top-color: white;
+  animation: spin 1s infinite linear;
 }
 
-.region-name {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #333;
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
-.intro-description {
-  margin-bottom: 25px;
-  color: #555;
-}
-
-.intro-description p {
-  margin: 0 0 15px 0;
-  line-height: 1.5;
-}
-
-.game-rules {
-  text-align: left;
-  width: fit-content;
-  margin: 20px auto;
-  padding-left: 10px;
-}
-
-.game-rules li {
-  margin-bottom: 10px;
-  list-style-type: none;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.game-rules li i {
-  color: #3498db;
-  width: 20px;
+.load-error {
+  background-color: white;
+  padding: 25px;
+  border-radius: 12px;
   text-align: center;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
-.start-btn {
+.load-error button {
   background: linear-gradient(135deg, #3498db, #2980b9);
   color: white;
   border: none;
-  padding: 15px 30px;
+  padding: 10px 20px;
   border-radius: 8px;
-  font-size: 1.1rem;
-  font-weight: 600;
+  margin-top: 15px;
+  font-weight: bold;
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.load-error button:hover {
+  transform: translateY(-2px);
+}
+
+/* 게임 컨테이너 */
+.game-content {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* 로드뷰 컨테이너 */
+.road-view-container {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* Spot 버튼 스타일 */
+.spot-button {
+  position: fixed;
+  bottom: 150px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #27ae60, #2ecc71);
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 30px;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(46, 204, 113, 0.4);
+  transition: all 0.3s ease;
+  z-index: 20;
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 0 auto;
+  gap: 8px;
 }
 
-.start-btn:hover {
+.spot-button:hover {
+  transform: translateX(-50%) translateY(-3px);
+  box-shadow: 0 6px 15px rgba(46, 204, 113, 0.6);
+}
+
+.spot-button:active {
+  transform: translateX(-50%) translateY(-1px);
+}
+
+.spot-button i {
+  font-size: 1.1rem;
+}
+
+/* 지도 토글 컨테이너 */
+.map-toggle-container {
+  position: absolute;
+  bottom: 30px;
+  right: 30px;
+  z-index: 10;
+}
+
+.map-toggle {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.map-toggle:hover {
   transform: translateY(-3px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
 }
 
-.start-btn:active {
+.map-toggle:active {
   transform: translateY(-1px);
+}
+
+.map-toggle i {
+  font-size: 1.1rem;
 }
 
 /* 결과 화면 */
@@ -653,89 +984,95 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.8);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 20;
+  background-color: rgba(0, 0, 0, 0.8);
+  z-index: 25;
+  backdrop-filter: blur(5px);
 }
 
 .result-content {
-  background: white;
-  padding: 30px;
-  border-radius: 15px;
-  width: 90%;
+  background-color: white;
+  padding: 35px;
+  border-radius: 20px;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+  text-align: center;
   max-width: 600px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  overflow-y: auto;
+  width: 90%;
   max-height: 90vh;
+  overflow-y: auto;
+  animation: popIn 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+@keyframes popIn {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .result-content h2 {
-  margin: 0 0 20px 0;
+  margin-top: 0;
+  color: #333;
   font-size: 1.8rem;
-  color: #333;
-  text-align: center;
 }
 
-.result-stats {
+.result-info {
+  margin: 25px 0;
+}
+
+.info-item {
   display: flex;
-  gap: 15px;
-  margin-bottom: 25px;
-  justify-content: center;
+  flex-direction: row;
+  align-items: center;
 }
 
-.result-stat {
-  flex: 1;
-  background: #f8f9fa;
-  padding: 15px;
-  border-radius: 10px;
-  text-align: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.stat-icon {
-  font-size: 1.5rem;
-  color: #3498db;
-  margin-bottom: 10px;
-}
-
-.stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #333;
+.info-icon {
+  font-size: 1.2rem;
   margin-bottom: 5px;
 }
 
-.stat-label {
+.info-value {
+  font-size: 1.7rem;
+  font-weight: bold;
+  color: #2ecc71;
+}
+
+.info-label {
+  color: #7f8c8d;
   font-size: 0.9rem;
-  color: #666;
 }
 
 .result-map {
   width: 100%;
-  height: 250px;
-  margin-bottom: 25px;
-  border-radius: 10px;
+  height: 300px;
+  margin: 25px 0;
+  border-radius: 15px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .rank-change {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 15px;
+  margin: 20px 0;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 15px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
 }
 
 .rank-icon {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
+  margin-bottom: 5px;
 }
 
 .rank-value {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.3rem;
+  font-weight: bold;
 }
 
 .rank-value.positive {
@@ -746,108 +1083,377 @@ export default {
   color: #e74c3c;
 }
 
-.rank-total {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 25px;
-}
-
-.rank-label {
-  font-size: 1.1rem;
-  color: #666;
-}
-
 .rank-current {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #333;
+  color: #7f8c8d;
+  font-size: 0.9rem;
 }
 
 .result-buttons {
   display: flex;
-  gap: 15px;
-}
-
-.play-again, .exit-game {
-  flex: 1;
-  padding: 12px;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
   justify-content: center;
-  gap: 8px;
-  border: none;
+  gap: 20px;
+  margin-top: 25px;
 }
 
-.play-again {
+.restart-btn,
+.exit-btn {
+  padding: 12px 25px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.restart-btn {
   background: linear-gradient(135deg, #3498db, #2980b9);
   color: white;
 }
 
-.exit-game {
-  background: #f1f2f6;
+.restart-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(52, 152, 219, 0.4);
+}
+
+.result-buttons .exit-btn {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: white;
+}
+
+.result-buttons .exit-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(231, 76, 60, 0.4);
+}
+
+/* 모달 */
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 30;
+  backdrop-filter: blur(5px);
+}
+
+.modal-content {
+  background-color: white;
+  padding: 30px;
+  border-radius: 15px;
+  text-align: center;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+  animation: popIn 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.modal-content h3 {
+  margin-top: 0;
   color: #333;
 }
 
-.play-again:hover, .exit-game:hover {
+.modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+.modal-buttons button {
+  padding: 10px 25px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.modal-buttons button:first-child {
+  background-color: #ecf0f1;
+  color: #333;
+}
+
+.modal-buttons button:first-child:hover {
+  background-color: #bdc3c7;
+}
+
+.modal-buttons button:last-child {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: white;
+}
+
+.modal-buttons button:last-child:hover {
   transform: translateY(-3px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 15px rgba(231, 76, 60, 0.4);
 }
 
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.7; }
-  100% { opacity: 1; }
-}
-
-@keyframes countdownAnim {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
-}
-
+/* 반응형 디자인 */
 @media (max-width: 768px) {
-  .result-content {
-    padding: 20px;
-  }
-  
-  .result-stats {
-    flex-direction: column;
-  }
-  
   .countdown {
-    font-size: 6rem;
+    font-size: 8rem;
   }
-  
+
+  .phone-frame {
+    width: 340px;
+    height: 640px;
+  }
+
+  .result-map {
+    height: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .game-header {
+    padding: 10px;
+  }
+
+  .game-status {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+  }
+
+  .countdown {
+    font-size: 5rem;
+  }
+
   .intro-content {
-    padding: 20px;
+    padding: 25px;
   }
-  
-  .start-btn {
-    padding: 12px 25px;
+
+  .phone-frame {
+    width: 300px;
+    height: 600px;
   }
-  
-  .rank-header {
-    padding: 10px 15px;
+
+  .result-map {
+    height: 200px;
   }
-  
-  .timer {
-    font-size: 1.2rem;
+
+  .result-content {
+    padding: 25px;
   }
-  
+
+  .result-buttons {
+    flex-direction: column;
+    gap: 15px;
+  }
+
   .map-toggle-container {
-    bottom: 15px;
-    right: 15px;
+    bottom: 20px;
+    right: 20px;
   }
-  
+
   .map-toggle {
     padding: 10px 15px;
     font-size: 0.9rem;
+    bottom: 20px;
+    right: 20px;
+  }
+
+  .phone-spot-button {
+    padding: 8px 16px;
+    font-size: 0.85rem;
   }
 }
-</style> 
+
+/* 로드뷰 토스트 메시지 */
+.toast-message {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 10px;
+  z-index: 35;
+  max-width: 80%;
+  text-align: center;
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* 지도 화면 스타일 */
+.kakao-map-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 휴대폰 프레임 스타일 */
+.phone-frame {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 360px;
+  height: 720px;
+  background-color: #111;
+  border-radius: 40px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 
+              inset 0 0 10px rgba(255, 255, 255, 0.1),
+              0 0 0 8px #333;
+  z-index: 15;
+}
+
+.phone-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50px;
+  background-color: #000;
+  z-index: 16;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.phone-notch {
+  position: relative;
+  top: 0;
+  width: 150px;
+  height: 30px;
+  background-color: #000;
+  border-radius: 0 0 15px 15px;
+  z-index: 17;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.phone-notch:before {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background-color: #444;
+  border-radius: 50%;
+  left: 40px;
+  top: 10px;
+}
+
+.phone-notch:after {
+  content: '';
+  position: absolute;
+  width: 50px;
+  height: 6px;
+  background-color: #444;
+  border-radius: 3px;
+  right: 40px;
+  top: 11px;
+}
+
+.phone-content {
+  position: absolute;
+  top: 50px;
+  left: 0;
+  right: 0;
+  bottom: 50px;
+  z-index: 15;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.phone-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50px;
+  background-color: #000;
+  z-index: 16;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.home-button {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #333, #222);
+  border-radius: 50%;
+  border: 2px solid #444;
+  cursor: pointer;
+  position: relative;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.home-button:before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 15px;
+  height: 15px;
+  border: 2px solid #666;
+  border-radius: 3px;
+}
+
+.home-button:active {
+  transform: scale(0.95);
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8);
+}
+
+.phone-map {
+  width: 100%;
+  height: 100%;
+  z-index: 15;
+}
+
+/* 휴대폰 내부 Spot 버튼 */
+.phone-spot-button {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #27ae60, #2ecc71);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(46, 204, 113, 0.4);
+  transition: all 0.3s ease;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.phone-spot-button:hover {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 6px 12px rgba(46, 204, 113, 0.6);
+}
+
+.phone-spot-button:active {
+  transform: translateX(-50%) translateY(-1px);
+}
+
+.phone-spot-button i {
+  font-size: 0.9rem;
+}
+
+</style>
