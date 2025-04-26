@@ -126,52 +126,35 @@ export default {
         this.rooms = [
           {
             id: 'room1',
-            name: '초보 환영! 같이 게임해요',
-            host: '로드마스터',
+            name: '방 제목 A',
+            host: 'host A',
             players: 2,
             maxPlayers: 4,
             mode: '로드뷰',
             status: 'waiting',
-            region: '전국',
-            createdAt: new Date().toISOString()
           },
           {
             id: 'room2',
-            name: '숙련자만! 경상도 지역 배틀',
-            host: '포토킹',
+            name: '방 제목 B',
+            host: 'host B',
             players: 3,
             maxPlayers: 4,
             mode: '포토',
             status: 'waiting',
-            region: '경상도',
-            createdAt: new Date().toISOString()
           },
           {
             id: 'room3',
-            name: '서울 지역만 대회 연습',
-            host: '김서울',
+            name: '방 제목 C',
+            host: 'host c',
             players: 1,
             maxPlayers: 2,
             mode: '로드뷰',
             status: 'waiting',
-            region: '서울',
-            createdAt: new Date().toISOString()
-          },
-          {
-            id: 'room4',
-            name: '부산 로컬들의 모임',
-            host: '부산바다',
-            players: 2,
-            maxPlayers: 6,
-            mode: '포토',
-            status: 'waiting',
-            region: '부산',
-            createdAt: new Date().toISOString()
           },
           {
             id: 'room5',
             name: '게임 진행 중 - 3라운드',
-            host: '지리마스터',
+            host: 'host F',
             players: 4,
             maxPlayers: 8,
             mode: '로드뷰',
@@ -179,20 +162,17 @@ export default {
             region: '전국',
             currentRound: 3,
             totalRounds: 5,
-            createdAt: new Date().toISOString()
           },
           {
             id: 'room6',
             name: '포토모드 5라운드 진행중',
-            host: '사진킹',
+            host: 'host D',
             players: 6,
             maxPlayers: 6,
             mode: '포토',
             status: 'playing',
-            region: '제주도',
             currentRound: 5,
             totalRounds: 8,
-            createdAt: new Date(Date.now() - 3600000).toISOString()
           }
         ];
         

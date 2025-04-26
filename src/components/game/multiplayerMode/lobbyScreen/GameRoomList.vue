@@ -59,16 +59,8 @@
           
           <div class="room-details">
             <div class="detail-item">
-              <i class="fas fa-map-marker-alt"></i>
-              <span>{{ room.region }}</span>
-            </div>
-            <div class="detail-item">
               <i class="fas fa-users"></i>
               <span>{{ room.players }}/{{ room.maxPlayers }}명</span>
-            </div>
-            <div class="detail-item">
-              <i class="fas fa-clock"></i>
-              <span>{{ formatTimeAgo(room.createdAt) }}</span>
             </div>
             <div class="detail-item" v-if="room.isPrivate">
               <i class="fas fa-lock"></i>

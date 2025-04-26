@@ -50,17 +50,6 @@
           <i class="fas fa-play"></i>
           게임 시작
         </button>
-        
-        <!-- 호스트가 아닌 경우 준비 버튼 -->
-        <button 
-          v-else 
-          class="ready-button"
-          :class="{ 'ready-on': isReady }"
-          @click="toggleReady"
-        >
-          <i :class="isReady ? 'fas fa-check-circle' : 'far fa-check-circle'"></i>
-          {{ isReady ? '준비 완료' : '준비하기' }}
-        </button>
 
         <!-- 비밀방 표시 -->
         <div v-if="roomData.isPrivate" class="room-privacy-badge">
@@ -114,6 +103,7 @@
                     'is-current': player.id === currentUser.id,
                     [`team-${team.id}-player`]: true
                   }"
+                  @click="showPlayerDetails(player)"
                 >
                   <!-- 채팅 말풍선 -->
                   <div class="chat-bubble" v-if="playerMessages[player.id]" :class="{ 'active': playerMessages[player.id].show }">
@@ -130,17 +120,29 @@
                     <div class="player-name">{{ player.nickname }}</div>
                     <div class="player-level">Lv. {{ player.level }}</div>
                   </div>
+                  <div class="player-ranks">
+                    <div class="rank-badge roadview">
+                      <i class="fas fa-street-view"></i>
+                      <span class="rank-icon" :class="getRankClass(player.roadviewRank)">
+                        <i :class="getRankIcon(player.roadviewRank)"></i>
+                      </span>
+                      <span class="rank-level">{{ convertToRoman(getRankLevel(player.roadviewRank)) }}</span>
+                    </div>
+                    <div class="rank-badge photo">
+                      <i class="fas fa-camera"></i>
+                      <span class="rank-icon" :class="getRankClass(player.photoRank)">
+                        <i :class="getRankIcon(player.photoRank)"></i>
+                      </span>
+                      <span class="rank-level">{{ convertToRoman(getRankLevel(player.photoRank)) }}</span>
+                    </div>
+                  </div>
                   <div class="player-actions">
-                    <!-- 준비 완료 상태 표시 -->
-                    <span class="status-badge ready" v-if="player.isReady && !player.isHost">
-                      <i class="fas fa-check"></i> 준비완료
-                    </span>
                     
                     <!-- 호스트만 볼 수 있는 강퇴 버튼 -->
                     <button 
                       v-if="isHost && player.id !== currentUser.id" 
                       class="kick-button"
-                      @click="confirmKickPlayer(player)"
+                      @click.stop="confirmKickPlayer(player)"
                       title="강퇴하기"
                     >
                       <i class="fas fa-times"></i>
@@ -175,6 +177,7 @@
                 'is-host': player.isHost, 
                 'is-current': player.id === currentUser.id
               }"
+              @click="showPlayerDetails(player)"
             >
               <!-- 채팅 말풍선 -->
               <div class="chat-bubble" v-if="playerMessages[player.id]" :class="{ 'active': playerMessages[player.id].show }">
@@ -197,28 +200,26 @@
               <div class="player-ranks">
                 <div class="rank-badge roadview">
                   <i class="fas fa-street-view"></i>
-                  <span class="rank-tier" :class="getRankClass(player.roadviewRank)">
-                    {{ formatRank(player.roadviewRank) }}
+                  <span class="rank-icon" :class="getRankClass(player.roadviewRank)">
+                    <i :class="getRankIcon(player.roadviewRank)"></i>
                   </span>
+                  <span class="rank-level">{{ convertToRoman(getRankLevel(player.roadviewRank)) }}</span>
                 </div>
                 <div class="rank-badge photo">
                   <i class="fas fa-camera"></i>
-                  <span class="rank-tier" :class="getRankClass(player.photoRank)">
-                    {{ formatRank(player.photoRank) }}
+                  <span class="rank-icon" :class="getRankClass(player.photoRank)">
+                    <i :class="getRankIcon(player.photoRank)"></i>
                   </span>
+                  <span class="rank-level">{{ convertToRoman(getRankLevel(player.photoRank)) }}</span>
                 </div>
               </div>
               <div class="player-actions">
-                <!-- 준비 완료 상태 표시 -->
-                <span class="status-badge ready" v-if="player.isReady && !player.isHost">
-                  <i class="fas fa-check"></i> 준비완료
-                </span>
                 
                 <!-- 호스트만 볼 수 있는 강퇴 버튼 -->
                 <button 
                   v-if="isHost && player.id !== currentUser.id" 
                   class="kick-button"
-                  @click="confirmKickPlayer(player)"
+                  @click.stop="confirmKickPlayer(player)"
                   title="강퇴하기"
                 >
                   <i class="fas fa-times"></i>
@@ -265,6 +266,80 @@
         <div class="kick-modal-actions">
           <button class="cancel-kick-button" @click="cancelKickPlayer">취소</button>
           <button class="confirm-kick-button" @click="kickPlayerConfirmed">강퇴하기</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 플레이어 상세 정보 모달 -->
+    <div class="player-details-modal" v-if="showPlayerDetailsModal" @click.self="closePlayerDetails">
+      <div class="player-modal-content">
+        <button class="close-modal-button" @click="closePlayerDetails">
+          <i class="fas fa-times"></i>
+        </button>
+        
+        <div class="player-details-header">
+          <div class="player-details-avatar">
+            <img :src="selectedPlayer.profileImage || '/assets/default-avatar.png'" :alt="selectedPlayer.nickname">
+            <div class="host-badge large" v-if="selectedPlayer.isHost">
+              <i class="fas fa-crown"></i>
+            </div>
+          </div>
+          <div class="player-details-info">
+            <h3 class="player-details-name">{{ selectedPlayer.nickname }}</h3>
+            <div class="player-details-level">레벨 {{ selectedPlayer.level }}</div>
+          </div>
+        </div>
+        
+        <div class="player-details-stats">
+          <div class="stats-section">
+            <h4 class="stats-title">
+              <i class="fas fa-trophy"></i> 랭크 정보
+            </h4>
+            <div class="rank-details">
+              <div class="rank-detail-item">
+                <div class="rank-detail-label">
+                  <i class="fas fa-street-view"></i> 로드뷰
+                </div>
+                <div class="rank-detail-value" :class="getRankClass(selectedPlayer.roadviewRank)">
+                  <span class="rank-icon-detail" :class="getRankClass(selectedPlayer.roadviewRank)">
+                    <i :class="getRankIcon(selectedPlayer.roadviewRank)"></i>
+                  </span>
+                  <span class="rank-name">{{ getRankName(selectedPlayer.roadviewRank) }}</span>
+                  <span class="rank-level-detail">{{ convertToRoman(getRankLevel(selectedPlayer.roadviewRank)) }}</span>
+                </div>
+              </div>
+              <div class="rank-detail-item">
+                <div class="rank-detail-label">
+                  <i class="fas fa-camera"></i> 포토
+                </div>
+                <div class="rank-detail-value" :class="getRankClass(selectedPlayer.photoRank)">
+                  <span class="rank-icon-detail" :class="getRankClass(selectedPlayer.photoRank)">
+                    <i :class="getRankIcon(selectedPlayer.photoRank)"></i>
+                  </span>
+                  <span class="rank-name">{{ getRankName(selectedPlayer.photoRank) }}</span>
+                  <span class="rank-level-detail">{{ convertToRoman(getRankLevel(selectedPlayer.photoRank)) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="stats-section">
+            <h4 class="stats-title">
+              <i class="fas fa-gamepad"></i> 게임 통계
+            </h4>
+            <div class="game-stats">
+              <div class="stat-item">
+                <div class="stat-label">멀티플레이</div>
+                <div class="stat-value">{{ selectedPlayer.multiplayCount || 0 }}판</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="player-details-actions">
+          <button class="invite-friend-button">
+            <i class="fas fa-user-plus"></i> 친구 초대
+          </button>
         </div>
       </div>
     </div>
@@ -385,7 +460,11 @@ export default {
         { id: 'diamond', name: '다이아', color: '#B9F2FF' },
         { id: 'master', name: '마스터', color: '#9370DB' },
         { id: 'admin', name: '관리자', color: '#FF5675' }
-      ]
+      ],
+      
+      // 플레이어 상세 정보 모달
+      showPlayerDetailsModal: false,
+      selectedPlayer: null
     };
   },
   
@@ -429,11 +508,6 @@ export default {
       const currentUser = this.players.find(player => player.id === this.currentUser.id);
       return currentUser ? currentUser.teamId : null;
     }
-  },
-  
-  created() {
-    // 초기 설정 값 복사
-    this.resetEditSettings();
   },
   
   methods: {
@@ -714,6 +788,81 @@ export default {
       
       const tier = rankString.split('-')[0];
       return `rank-${tier}`;
+    },
+    
+    getRankIcon(rankString) {
+      if (!rankString || !rankString.includes('-')) return '';
+      
+      const tier = rankString.split('-')[0];
+      switch (tier) {
+        case 'bronze':
+          return 'fas fa-medal';
+        case 'silver':
+          return 'fas fa-trophy';
+        case 'gold':
+          return 'fas fa-crown';
+        case 'platinum':
+          return 'fas fa-diamond';
+        case 'diamond':
+          return 'fas fa-gem';
+        case 'master':
+          return 'fas fa-star';
+        case 'admin':
+          return 'fas fa-user-cog';
+        default:
+          return '';
+      }
+    },
+    
+    getRankLevel(rankString) {
+      if (!rankString || !rankString.includes('-')) return '';
+      
+      const level = rankString.split('-')[1];
+      return level;
+    },
+    
+    convertToRoman(num) {
+      const romanNumerals = {
+        1: 'I',
+        2: 'II',
+        3: 'III',
+        4: 'IV',
+        5: 'V',
+        6: 'VI',
+        7: 'VII',
+        8: 'VIII',
+        9: 'IX',
+        10: 'X'
+      };
+      
+      return romanNumerals[num] || num;
+    },
+    
+    getRankName(rankString) {
+      if (!rankString || !rankString.includes('-')) return 'N/A';
+      
+      const tier = rankString.split('-')[0];
+      const rankNames = {
+        'bronze': '브론즈',
+        'silver': '실버',
+        'gold': '골드',
+        'platinum': '플래티넘',
+        'diamond': '다이아몬드',
+        'master': '마스터',
+        'admin': '관리자'
+      };
+      
+      return rankNames[tier] || tier;
+    },
+    
+    showPlayerDetails(player) {
+      this.selectedPlayer = player;
+      this.showPlayerDetailsModal = true;
+    },
+    
+    closePlayerDetails() {
+      this.showPlayerDetailsModal = false;
+      this.selectedPlayer = null;
     }
   },
   
@@ -1006,7 +1155,7 @@ export default {
   gap: 0.5rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .team-selection-button:hover {
@@ -1116,13 +1265,14 @@ export default {
 .player-card {
   display: flex;
   align-items: center;
-  padding: 1rem;
+  padding: 0.8rem;
   background-color: #f8fafc;
   border-radius: 12px;
   transition: all 0.2s ease;
   border-left: 4px solid transparent;
   position: relative;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  cursor: pointer;
 }
 
 .player-card:hover {
@@ -1283,12 +1433,6 @@ export default {
   font-weight: 600;
 }
 
-.status-badge.ready {
-  background-color: #d1fae5;
-  color: #059669;
-  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.1);
-}
-
 .kick-button {
   background: none;
   border: none;
@@ -1344,26 +1488,6 @@ export default {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
   cursor: not-allowed;
   opacity: 0.8;
-}
-
-.ready-button {
-  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
-  color: #475569;
-}
-
-.ready-button:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-}
-
-.ready-button.ready-on {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
-}
-
-.ready-button.ready-on:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
 }
 
 /* 카운트다운 오버레이 스타일 */
@@ -1492,212 +1616,6 @@ export default {
   transform: translateY(0);
 }
 
-/* 반응형 스타일 */
-@media (max-width: 1024px) {
-  .room-content {
-    flex-direction: column;
-  }
-  
-  .left-panel {
-    max-width: 100%;
-  }
-  
-  .right-panel {
-    min-height: 300px;
-  }
-  
-  .players-grid {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  }
-  
-  /* 헤더 조정 */
-  .header-right {
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 0.5rem;
-  }
-  
-  .settings-button,
-  .start-game-button,
-  .ready-button {
-    font-size: 0.85rem;
-    padding: 0.5rem 1rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .game-room-waiting {
-    overflow: hidden;
-  }
-  
-  .room-content {
-    height: calc(100vh - 130px);
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 1rem;
-  }
-  
-  .room-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-    padding: 1rem;
-  }
-  
-  .header-right {
-    align-self: flex-end;
-  }
-  
-  .teams-container {
-    grid-template-columns: 1fr;
-  }
-  
-  .players-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .player-card {
-    padding: 0.8rem;
-  }
-  
-  .player-avatar {
-    width: 40px;
-    height: 40px;
-    margin-right: 0.8rem;
-  }
-  
-  .player-ranks {
-    flex-direction: row;
-    margin-right: 0;
-  }
-  
-  .team-icon {
-    width: 36px;
-    height: 36px;
-  }
-  
-  .section-title {
-    font-size: 1.1rem;
-  }
-}
-
-.players-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 1.2rem;
-}
-
-/* 플레이어 카드 기본 스타일 */
-.player-card {
-  display: flex;
-  align-items: center;
-  padding: 1rem;
-  background-color: #f8fafc;
-  border-radius: 12px;
-  transition: all 0.2s ease;
-  border-left: 4px solid transparent;
-  position: relative;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-}
-
-.player-card:hover {
-  background-color: #f1f5f9;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-/* 플레이어 정보 스타일 */
-.player-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  flex: 1.5;
-}
-
-.player-stats {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-}
-
-.player-level, .multiplayer-stats {
-  font-size: 0.8rem;
-  color: #64748b;
-}
-
-/* 랭크 표시 스타일 */
-.player-ranks {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  flex: 1;
-  margin-right: 0.5rem;
-}
-
-.rank-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.3rem 0.6rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.rank-badge.roadview {
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(30, 58, 138, 0.15) 100%);
-  color: #2563eb;
-  border: 1px solid rgba(37, 99, 235, 0.2);
-}
-
-.rank-badge.photo {
-  background: linear-gradient(135deg, rgba(22, 163, 74, 0.15) 0%, rgba(20, 83, 45, 0.15) 100%);
-  color: #16a34a;
-  border: 1px solid rgba(22, 163, 74, 0.2);
-}
-
-/* 티어별 랭크 색상 */
-.rank-tier {
-  font-weight: 700;
-}
-
-.rank-bronze {
-  color: #CD7F32;
-  text-shadow: 0 0 1px rgba(205, 127, 50, 0.4);
-}
-
-.rank-silver {
-  color: #6b7280;
-  text-shadow: 0 0 1px rgba(192, 192, 192, 0.4);
-}
-
-.rank-gold {
-  color: #b45309;
-  text-shadow: 0 0 1px rgba(255, 215, 0, 0.5);
-}
-
-.rank-platinum {
-  color: #0891b2;
-  text-shadow: 0 0 1px rgba(0, 206, 209, 0.5);
-}
-
-.rank-diamond {
-  color: #1e40af;
-  text-shadow: 0 0 1px rgba(185, 242, 255, 0.5);
-}
-
-.rank-master {
-  color: #7e22ce;
-  text-shadow: 0 0 1px rgba(147, 112, 219, 0.5);
-}
-
-.rank-admin {
-  color: #be123c;
-  text-shadow: 0 0 2px rgba(255, 86, 117, 0.5);
-  font-style: italic;
-}
-
 /* 강퇴 확인 모달 스타일 */
 .kick-confirmation-modal {
   position: fixed;
@@ -1791,4 +1709,494 @@ export default {
     transform: translateY(0);
   }
 }
-</style> 
+
+/* 플레이어 상세 정보 모달 스타일 */
+.player-details-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 3000;
+  backdrop-filter: blur(5px);
+}
+
+.player-modal-content {
+  background-color: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  width: 90%;
+  max-width: 450px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: modalAppear 0.3s ease-out;
+  position: relative;
+}
+
+.close-modal-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 1.2rem;
+  z-index: 10;
+}
+
+.close-modal-button:hover {
+  color: #334155;
+}
+
+.player-details-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.player-details-avatar {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-right: 1rem;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+  border: 3px solid white;
+}
+
+.player-details-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.host-badge.large {
+  position: absolute;
+  bottom: -5px;
+  right: -5px;
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(251, 191, 36, 0.3);
+  border: 2px solid white;
+}
+
+.host-badge.large i {
+  font-size: 0.8rem;
+  color: white;
+}
+
+.player-details-info {
+  flex: 1;
+}
+
+.player-details-name {
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #334155;
+  margin-bottom: 0.5rem;
+}
+
+.player-details-level {
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.player-details-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.stats-section {
+  background-color: #f8fafc;
+  border-radius: 12px;
+  padding: 0.8rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.stats-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 0.8rem;
+}
+
+.rank-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.rank-detail-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rank-detail-label {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.rank-detail-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.rank-icon-detail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  color: white;
+}
+
+.rank-name {
+  font-weight: 600;
+}
+
+.rank-level-detail {
+  font-weight: 700;
+}
+
+.rank-bronze .rank-icon-detail {
+  background-color: #CD7F32;
+}
+
+.rank-silver .rank-icon-detail {
+  background-color: #C0C0C0;
+}
+
+.rank-gold .rank-icon-detail {
+  background-color: #FFD700;
+}
+
+.rank-platinum .rank-icon-detail {
+  background-color: #00CED1;
+}
+
+.rank-diamond .rank-icon-detail {
+  background-color: #B9F2FF;
+}
+
+.rank-master .rank-icon-detail {
+  background-color: #9370DB;
+}
+
+.rank-admin .rank-icon-detail {
+  background-color: #FF5675;
+}
+
+.rank-bronze {
+  color: #CD7F32;
+}
+
+.rank-silver {
+  color: #6b7280;
+}
+
+.rank-gold {
+  color: #b45309;
+}
+
+.rank-platinum {
+  color: #0891b2;
+}
+
+.rank-diamond {
+  color: #1e40af;
+}
+
+.rank-master {
+  color: #7e22ce;
+}
+
+.rank-admin {
+  color: #be123c;
+}
+
+.game-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.stat-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.player-details-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.invite-friend-button {
+  padding: 0.6rem 1.2rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.invite-friend-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+}
+
+/* 반응형 스타일 */
+@media (max-width: 1024px) {
+  .room-content {
+    flex-direction: column;
+  }
+  
+  .left-panel {
+    max-width: 100%;
+  }
+  
+  .right-panel {
+    min-height: 300px;
+  }
+  
+  .players-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+  
+  /* 헤더 조정 */
+  .header-right {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+  
+  .settings-button,
+  .start-game-button,
+  .ready-button {
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .game-room-waiting {
+    overflow: hidden;
+  }
+  
+  .room-content {
+    height: calc(100vh - 130px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 1rem;
+  }
+  
+  .room-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .header-right {
+    align-self: flex-end;
+  }
+  
+  .teams-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .players-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  .player-card {
+    padding: 0.8rem;
+  }
+  
+  .player-avatar {
+    width: 40px;
+    height: 40px;
+    margin-right: 0.8rem;
+  }
+  
+  .player-ranks {
+    flex-direction: row;
+    margin-right: 0;
+  }
+  
+  .team-icon {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .section-title {
+    font-size: 1.1rem;
+  }
+}
+
+.players-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+/* 플레이어 카드 기본 스타일 */
+.player-card {
+  display: flex;
+  align-items: center;
+  padding: 0.8rem;
+  background-color: #f8fafc;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  border-left: 4px solid transparent;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  cursor: pointer;
+}
+
+.player-card:hover {
+  background-color: #f1f5f9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* 플레이어 정보 스타일 */
+.player-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1.5;
+}
+
+.player-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.player-level, .multiplayer-stats {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+/* 랭크 표시 스타일 */
+.player-ranks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  margin-right: 0.5rem;
+}
+
+.rank-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.rank-badge.roadview {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(30, 58, 138, 0.15) 100%);
+  color: #2563eb;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+}
+
+.rank-badge.photo {
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.15) 0%, rgba(20, 83, 45, 0.15) 100%);
+  color: #16a34a;
+  border: 1px solid rgba(22, 163, 74, 0.2);
+}
+
+/* 티어별 랭크 색상 */
+.rank-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 0.7rem;
+}
+
+.rank-level {
+  font-weight: 700;
+  font-size: 0.7rem;
+}
+
+.rank-bronze {
+  background-color: #CD7F32;
+  color: white;
+}
+
+.rank-silver {
+  background-color: #C0C0C0;
+  color: white;
+}
+
+.rank-gold {
+  background-color: #FFD700;
+  color: white;
+}
+
+.rank-platinum {
+  background-color: #00CED1;
+  color: white;
+}
+
+.rank-diamond {
+  background-color: #B9F2FF;
+  color: white;
+}
+
+.rank-master {
+  background-color: #9370DB;
+  color: white;
+}
+
+.rank-admin {
+  background-color: #FF5675;
+  color: white;
+}
+</style>
