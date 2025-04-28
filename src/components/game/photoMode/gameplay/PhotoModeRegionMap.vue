@@ -62,6 +62,7 @@ export default {
       default: null
     }
   },
+  emits: ['update:selectedRegion', 'submit-guess'],
   data() {
     return {
       hoveredRegion: null,
