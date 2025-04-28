@@ -140,8 +140,9 @@ export default {
             this.$emit('error', '위치를 선택해주세요!');
           }
         })
-        .catch((error) => {
+        .catch(() => {
           this.$emit('error', '위치를 선택해주세요!');
+          
         });
     }
   }

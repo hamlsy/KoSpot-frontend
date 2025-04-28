@@ -61,7 +61,7 @@
 </template>
 
 <script>
-import RegionMap from './RegionMap.vue';
+import RegionMap from '@/components/game/photoMode/gameplay/PhotoModeRegionMap.vue';
 
 export default {
   name: 'RoundResult',

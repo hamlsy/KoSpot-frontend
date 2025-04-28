@@ -58,9 +58,9 @@
 </template>
 
 <script>
-import GameRoomList from './GameRoomList.vue';
-import ChatWindow from './ChatWindow.vue';
-import CreateRoomModal from './CreateRoomModal.vue';
+import GameRoomList from './room/MultiplayerRoomList.vue';
+import ChatWindow from './chat/MultiplayerLobbyChatWindow.vue';
+import CreateRoomModal from './room/MultiplayerCreateRoomModal.vue';
 
 export default {
   name: "MultiplayerLobby",
@@ -525,4 +525,4 @@ export default {
     padding: 70px 15px 15px;
   }
 }
-</style> 
+</style>

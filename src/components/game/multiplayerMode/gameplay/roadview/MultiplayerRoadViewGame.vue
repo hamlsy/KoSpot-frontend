@@ -198,20 +198,18 @@
 
 <script>
 import GameTimer from "@/components/game/common/shared/GameTimer.vue";
-import PlayerList from "./PlayerList.vue";
+import PlayerList from "@/components/game/multiplayerMode/gameplay/MultiplayerPlayerList.vue";
 import RoadView from "@/components/game/common/roadview/RoadView.vue";
-// KakaoMap은 RoundResults에서 결과 표시에 사용
-// import KakaoMap from '@/components/game/common/kakao/KakaoMap.vue';
-import ChatWindow from "../lobbyScreen/ChatWindow.vue";
-import RoundResults from "./RoundResults.vue";
-import GameResults from "./GameResults.vue";
-import TeamChat from "./TeamChat.vue";
-import TeamVotingModal from "./TeamVotingModal.vue";
-import TeamGameResults from "./TeamGameResults.vue";
-import TeamRoundResults from "./TeamRoundResults.vue";
-import gameStore from "@/store/gameStore";
-import { getRandomLocation } from "../MultiplayerGameTestData";
+import ChatWindow from "@/components/game/multiplayerMode/lobby/chat/MultiplayerLobbyChatWindow.vue";
+import RoundResults from "@/components/game/multiplayerMode/gameplay/results/MultiplayerRoundResults.vue";
+import GameResults from "@/components/game/multiplayerMode/gameplay/results/MultiplayerGameResults.vue";
+import TeamChat from "@/components/game/multiplayerMode/gameplay/chat/MultiplayerTeamChat.vue";
+import TeamVotingModal from "@/components/game/multiplayerMode/gameplay/results/MultiplayerTeamVotingModal.vue";
+import TeamGameResults from "@/components/game/multiplayerMode/gameplay/results/MultiplayerTeamGameResults.vue";
+import TeamRoundResults from "@/components/game/multiplayerMode/gameplay/results/MultiplayerTeamRoundResults.vue";
 import PhoneFrame from "@/components/game/common/PhoneFrame.vue";
+import gameStore from "@/store/gameStore";
+import { getRandomLocation } from "@/components/game/multiplayerMode/MultiplayerGameTestData";
 
 export default {
   name: "MultiplayerRoadViewGame",
@@ -220,8 +218,6 @@ export default {
     GameTimer,
     PlayerList,
     RoadView,
-    // RoundResults에서 결과화면에 사용하는 컴포넌트
-    // KakaoMap,
     ChatWindow,
     RoundResults,
     GameResults,

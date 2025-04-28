@@ -140,11 +140,11 @@
 </template>
 
 <script>
-import ProgressTimer from './ProgressTimer.vue';
-import PhotoDisplay from './PhotoDisplay.vue';
-import RegionMap from './RegionMap.vue';
-import RoundResult from './RoundResult.vue';
-import GameResult from './GameResult.vue';
+import ProgressTimer from '@/components/game/photoMode/timer/PhotoModeProgressTimer.vue';
+import PhotoDisplay from '@/components/game/common/photo/PhotoView.vue';
+import RegionMap from './PhotoModeRegionMap.vue';
+import RoundResult from '@/components/game/photoMode/results/PhotoModeRoundResult.vue';
+import GameResult from '@/components/game/photoMode/results/PhotoModeGameResult.vue';
 
 export default {
   name: 'PhotoPlayGame',
@@ -900,4 +900,4 @@ export default {
     font-size: 0.9rem;
   }
 }
-</style> 
+</style>
