@@ -92,17 +92,11 @@
           :show-region-names="!isRankMode"
           :correct-region="correctRegion"
           :wrong-region="wrongRegion"
-          :selectedRegion="selectedRegion"
+          :selectedRegion.sync="selectedRegion"
           @submit-guess="submitGuess"
           ref="regionMap"
         />
       </div>
-      
-      <!-- 모바일에서 지도 토글 버튼 -->
-      <button v-if="isMobile" class="map-toggle-button" @click="toggleMap">
-        <i class="fas" :class="isMapOpen ? 'fa-times' : 'fa-map-marker-alt'"></i>
-        {{ isMapOpen ? '지도 닫기' : '지도 열기' }}
-      </button>
     </div>
     
     <!-- 하단 상태 바 -->
@@ -147,6 +141,12 @@
         </div>
       </div>
     </div>
+    
+    <!-- 모바일에서 지도 토글 버튼 -->
+    <button class="toggle-map-button" @click="toggleMap">
+      <i class="fas" :class="isMapOpen ? 'fa-times' : 'fa-map-marker-alt'"></i>
+      {{ isMapOpen ? '지도 닫기' : '지도 열기' }}
+    </button>
   </div>
 </template>
 
@@ -653,17 +653,24 @@ export default {
       return photos;
     },
     
-    // 지도 토글 버튼 관련 메소드
-    toggleMap() {
-      this.isMapOpen = !this.isMapOpen;
-    },
-    
     checkMobile() {
       const userAgent = navigator.userAgent;
       const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
       
       if (mobileRegex.test(userAgent)) {
         this.isMobile = true;
+      }
+    },
+    
+    // 지도 토글 버튼 관련 메서드
+    toggleMap() {
+      this.isMapOpen = !this.isMapOpen;
+      
+      // 지도가 열릴 때 약간의 지연 후 리사이즈 적용
+      if (this.isMapOpen && this.$refs.regionMap) {
+        setTimeout(() => {
+          this.$refs.regionMap.resizeMap();
+        }, 300); // 트랜지션 완료 후 리사이즈
       }
     }
   }
@@ -784,6 +791,7 @@ export default {
   flex: 1;
   padding: 20px;
   overflow: hidden;
+  position: relative;
 }
 
 .photo-section {
@@ -803,10 +811,6 @@ export default {
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.map-section.map-open {
-  transform: translateX(0);
 }
 
 /* 게임 푸터 스타일 */
@@ -904,6 +908,33 @@ export default {
   background-color: #d32f2f;
 }
 
+/* 지도 토글 버튼 */
+.toggle-map-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 10px 16px;
+  border-radius: 24px;
+  border: none;
+  background: #3b82f6;
+  color: white;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  z-index: 101;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: none; /* 기본적으로 숨김 */
+}
+
+.toggle-map-button:hover {
+  transform: translateY(-2px);
+  background: #2563eb;
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
 /* 반응형 스타일 */
 @media (max-width: 1024px) {
   .game-content {
@@ -930,19 +961,28 @@ export default {
     margin-top: 8px;
   }
   
+  /* 모바일에서 지도 토글 버튼 표시 */
+  .toggle-map-button {
+    display: flex;
+  }
+  
   /* 모바일에서 지도가 버튼으로 표시될 때 사진 영역 확장 */
   .game-content {
     position: relative;
+    flex-direction: column;
+    padding: 10px;
   }
   
   .photo-section {
     flex: 1;
     width: 100%;
+    margin-right: 0;
     margin-bottom: 0;
+    height: calc(100vh - 160px); /* 헤더와 푸터를 제외한 높이 */
   }
   
   .map-section {
-    position: absolute;
+    position: fixed;
     top: 0;
     right: 0;
     bottom: 0;
@@ -953,32 +993,8 @@ export default {
     transition: transform 0.3s ease;
   }
   
-  .map-toggle-button {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    padding: 8px 16px;
-    background-color: #e0e0e0;
-    color: #333;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-  }
-  
-  .map-toggle-button:hover {
-    background-color: #d5d5d5;
-  }
-}
-
-/* 태블릿 및 모바일에서 사진 그리드 최적화 */
-@media (max-width: 480px) {
-  .game-content {
-    padding: 10px;
-  }
-  
-  .photo-section {
-    border-radius: 4px;
+  .map-section.map-open {
+    transform: translateX(0);
   }
 }
 </style>

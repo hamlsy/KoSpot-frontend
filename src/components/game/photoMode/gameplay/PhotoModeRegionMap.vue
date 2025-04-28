@@ -1,9 +1,5 @@
 <template>
   <div class="region-map-container" :class="{ 'disabled': disabled, 'map-open': isMapOpen }">
-    <button v-if="isMobile" class="toggle-map-button" @click="toggleMap">
-      <i class="fas" :class="isMapOpen ? 'fa-times' : 'fa-map-marker-alt'"></i>
-      {{ isMapOpen ? '지도 닫기' : '지도 열기' }}
-    </button>
     <div class="map-wrapper" :class="{ 'mobile-closed': isMobile && !isMapOpen }">
       <div class="map-controls">
         <button class="zoom-button" @click="zoomIn">
