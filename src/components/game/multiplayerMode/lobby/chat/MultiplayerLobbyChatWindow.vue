@@ -64,7 +64,7 @@
 
 <script>
 export default {
-  name: "ChatWindow",
+  name: "MultiplayerLobbyChatWindow",
   
   props: {
     messages: {

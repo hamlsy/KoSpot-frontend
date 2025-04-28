@@ -347,11 +347,11 @@
 </template>
 
 <script>
-import RoomSettingsModal from './RoomSettingsModal.vue';
-import ChatModal from './ChatModal.vue';
+import RoomSettingsModal from '../../room/settings/MultiplayerRoomSettingsModal.vue';
+import ChatModal from '../../room/chat/MultiplayerRoomChat.vue';
 
 export default {
-  name: 'GameRoomWaiting',
+  name: 'MultiplayerRoomWaiting',
   
   components: {
     RoomSettingsModal,

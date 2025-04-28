@@ -300,7 +300,7 @@ export default {
     },
     
     // 기본 팀인지 확인 (삭제 불가)
-    isDefaultTeam(team) {
+    isDefaultTeam() {
       // 예: 처음 두 팀은 기본 팀으로 설정하여 삭제 불가능하게 할 수 있음
       return this.teams.length <= 2;
     },

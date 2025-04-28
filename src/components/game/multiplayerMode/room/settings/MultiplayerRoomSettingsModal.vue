@@ -96,7 +96,7 @@
 
 <script>
 export default {
-  name: 'RoomSettingsModal',
+  name: 'MultiplayerRoomSettingsModal',
   
   props: {
     show: {

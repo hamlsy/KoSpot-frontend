@@ -28,10 +28,10 @@
 </template>
 
 <script>
-import ChatWindow from '../lobbyScreen/ChatWindow.vue';
+import ChatWindow from '../../lobby/chat/MultiplayerLobbyChatWindow.vue';
 
 export default {
-  name: 'ChatModal',
+  name: 'MultiplayerRoomChat',
   
   components: {
     ChatWindow
