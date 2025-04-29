@@ -27,12 +27,35 @@
 
 <script>
 import sidoPolygons from '@/assets/map/sido_kakao.json';
-import gyeonggiPolygons from '@/assets/map/gyeonggi.json';
-import gangwonPolygons from '@/assets/map/gangwon.json';
+
+//수도권
 import seoulPolygons from '@/assets/map/seoul.json';
+import gyeonggiPolygons from '@/assets/map/gyeonggi.json';
 import incheonPolygons from '@/assets/map/incheon.json';
+
+//충청
 import chungnamPolygons from '@/assets/map/chungnam.json';
 import chungbukPolygons from '@/assets/map/chungbuk.json';
+import daejeonPolygons from '@/assets/map/daejeon.json';
+import sejongPolygons from '@/assets/map/sejong.json';
+
+//전라
+import jeonnamPolygons from '@/assets/map/jeonnam.json';
+import jeonbukPolygons from '@/assets/map/jeonbuk.json';
+import gwangjuPolygons from '@/assets/map/gwangju.json';
+
+//강원
+import gangwonPolygons from '@/assets/map/gangwon.json';
+
+//경상
+import daeguPolygons from '@/assets/map/daegu.json';
+import busanPolygons from '@/assets/map/busan.json';
+import ulsanPolygons from '@/assets/map/ulsan.json';
+import gyeongnamPolygons from '@/assets/map/gyeongnam.json';
+import gyeongbukPolygons from '@/assets/map/gyeongbuk.json';
+
+//제주
+import jejuPolygons from '@/assets/map/jeju.json';
 
 export default {
   name: 'RegionMap',
@@ -82,12 +105,113 @@ export default {
         '천안시': ['천안시동남구', '천안시서북구']
       },
       regionColors: {
-        '경기도': { fill: '#e9f5e9', stroke: '#a8d8a8' },
+        
         '강원도': { fill: '#e6f0ff', stroke: '#a3c2e3' },
+        //수도권
         '서울특별시': { fill: '#ffe6e6', stroke: '#e3a3a3' },
         '인천광역시': { fill: '#fff5e6', stroke: '#e3c2a3' },
+        '경기도': { fill: '#e9f5e9', stroke: '#a8d8a8' },
+
+        //충청
         '충청남도': { fill: '#e6ffea', stroke: '#a3e3b0' },
-        '충청북도': { fill: '#f0ffe6', stroke: '#c2e3a3' }
+        '충청북도': { fill: '#f0ffe6', stroke: '#c2e3a3' },
+        '세종특별자치시': { fill: '#e6ffea', stroke: '#a3e3b0' },
+        '대전광역시': { fill: '#e6ffea', stroke:  '#a3e3b0'},
+
+        //경상
+        '경상남도': { fill: '#e6f0ff', stroke: '#a3c2e3' },
+        '경상북도': { fill: '#e6f0ff', stroke: '#a3c2e3' },
+        '울산광역시': { fill: '#e6f0ff', stroke: '#a3c2e3' },
+        '부산광역시': { fill: '#e6f0ff', stroke: '#a3c2e3' },
+        '대구광역시': { fill: '#e6f0ff', stroke: '#a3c2e3' },
+
+        //전라
+        '전라북도': { fill: '#e6f0ff', stroke: '#a3c2e3' },
+        '전라남도': { fill: '#e6f0ff', stroke: '#a3c2e3' },
+        '광주광역시': { fill: '#e6f0ff', stroke: '#a3c2e3' },
+
+        //제주
+        '제주특별시': { fill: '#fff5e6', stroke: '#e3c2a3' },
+
+        
+      },
+      regionSettings: {
+        '서울특별시': { 
+          shouldMerge: true, 
+          mergedName: '서울특별시',
+          region: '서울특별시'
+        },
+        '부산광역시': { 
+          shouldMerge: true, 
+          mergedName: '부산광역시',
+          region: '부산광역시'
+        },
+        '대구광역시': { 
+          shouldMerge: true, 
+          mergedName: '대구광역시',
+          region: '대구광역시'
+        },
+        '인천광역시': { 
+          shouldMerge: true, 
+          mergedName: '인천광역시',
+          region: '인천광역시'
+        },
+        '광주광역시': { 
+          shouldMerge: true, 
+          mergedName: '광주광역시',
+          region: '광주광역시'
+        },
+        '대전광역시': { 
+          shouldMerge: true, 
+          mergedName: '대전광역시',
+          region: '대전광역시'
+        },
+        '울산광역시': { 
+          shouldMerge: true, 
+          mergedName: '울산광역시',
+          region: '울산광역시'
+        },
+        '세종특별자치시': { 
+          shouldMerge: false, 
+          region: '세종특별자치시'
+        },
+        '경기도': { 
+          shouldMerge: 'special', // 특별 처리 필요
+          region: '경기도'
+        },
+        '강원도': { 
+          shouldMerge: false, 
+          region: '강원도'
+        },
+        '충청북도': { 
+          shouldMerge: false, 
+          region: '충청북도'
+        },
+        '충청남도': { 
+          shouldMerge: false, 
+          region: '충청남도'
+        },
+        '전라북도': { 
+          shouldMerge: false, 
+          region: '전라북도'
+        },
+        '전라남도': { 
+          shouldMerge: false, 
+          region: '전라남도'
+        },
+        '경상북도': { 
+          shouldMerge: false, 
+          region: '경상북도'
+        },
+        '경상남도': { 
+          shouldMerge: false, 
+          region: '경상남도'
+        },
+        '제주특별자치도': { 
+          shouldMerge: true, 
+          mergedName: '제주특별자치도',
+          region: '제주특별자치도'
+        }
       }
     };
   },
@@ -105,12 +229,35 @@ export default {
   },
   created() {
     this.loadPolygons();
+
+    //수도권
     this.loadGyeonggiPolygons();
-    this.loadGangwonPolygons();
     this.loadSeoulPolygons();
     this.loadIncheonPolygons();
+
+    //충청
     this.loadChungnamPolygons();
     this.loadChungbukPolygons();
+    this.loadDaejeonPolygons();
+    this.loadSejongPolygons();
+    
+    //전라
+    this.loadJeonnamPolygons();
+    this.loadJeonbukPolygons();
+    this.loadGwangjuPolygons();
+    
+    //강원
+    this.loadGangwonPolygons();
+    
+    //경상
+    this.loadGyeongnamPolygons();
+    this.loadGyeongbukPolygons();
+    this.loadUlsanPolygons();
+    this.loadDaeguPolygons();
+    this.loadBusanPolygons();
+
+    //제주
+    this.loadJejuPolygons();
     this.isMobile = window.innerWidth <= 768;
   },
   mounted() {
@@ -156,16 +303,65 @@ export default {
         };
       });
     },
-    loadGyeonggiPolygons() {
-      // 경기도 폴리곤 데이터 로드
-      const gyeonggiFeatures = gyeonggiPolygons.features;
+    loadRegionPolygons(polygonData, regionName) {
+      console.log(`${regionName} 폴리곤 데이터 로드 시작`);
+      const features = polygonData.features;
+      const regionSetting = this.regionSettings[regionName];
       
+      if (!regionSetting) {
+        console.error(`${regionName}에 대한 지역 설정이 없습니다.`);
+        return;
+      }
+      
+      // 경기도는 특별 처리
+      if (regionSetting.shouldMerge === 'special') {
+        this.loadGyeonggiPolygonsSpecial(features, regionName);
+        return;
+      }
+      
+      if (regionSetting.shouldMerge) {
+        // 모든 구/군을 하나의 지역으로 통합
+        const mergedName = regionSetting.mergedName;
+        
+        features.forEach(feature => {
+          this.polygons.push({
+            name: mergedName,
+            originalName: feature.properties.SIG_KOR_NM,
+            coordinates: feature.geometry.coordinates[0],
+            properties: {
+              ...feature.properties,
+              SIG_KOR_NM: mergedName // 이름 변경
+            },
+            cityGroup: mergedName, // 같은 그룹임을 표시
+            region: regionSetting.region // 지역 구분을 위한 속성 추가
+          });
+        });
+        
+        console.log(`${regionName} 지역 데이터 로드 완료: ${features.length}개 지역을 ${mergedName}으로 통합`);
+      } else {
+        // 통합하지 않고 개별 시/군 단위로 추가
+        features.forEach(feature => {
+          const name = feature.properties.SIG_KOR_NM;
+          
+          this.polygons.push({
+            name: name,
+            coordinates: feature.geometry.coordinates[0],
+            properties: feature.properties,
+            region: regionSetting.region // 지역 구분을 위한 속성 추가
+          });
+        });
+        
+        console.log(`${regionName} 지역 데이터 로드 완료: ${features.length}개 지역`);
+      }
+    },
+    
+    loadGyeonggiPolygonsSpecial(features, regionName) {
       // 통합할 도시별로 Feature 그룹화
       const cityGroups = {};
       const standaloneFeatures = [];
       
       // 각 Feature를 도시별로 분류
-      gyeonggiFeatures.forEach(feature => {
+      features.forEach(feature => {
         const name = feature.properties.SIG_KOR_NM;
         let shouldMerge = false;
         let mergedCityName = '';
@@ -222,207 +418,70 @@ export default {
         });
       });
       
-      console.log('경기도 지역 데이터 로드 완료:', gyeonggiFeatures.length, '개 지역');
+      console.log(`${regionName} 지역 데이터 로드 완료: ${features.length}개 지역`);
     },
+    
+    loadGyeonggiPolygons() {
+      this.loadRegionPolygons(gyeonggiPolygons, '경기도');
+    },
+    
     loadGangwonPolygons() {
-      // 강원도 폴리곤 데이터 로드
-      const gangwonFeatures = gangwonPolygons.features;
-      
-      // 강원도는 이미 시/군 단위로 구분되어 있음
-      gangwonFeatures.forEach(feature => {
-        const name = feature.properties.SIG_KOR_NM;
-        
-        // 시/군 단위 지역 추가
-        this.polygons.push({
-          name: name,
-          coordinates: feature.geometry.coordinates[0],
-          properties: feature.properties,
-          region: '강원도' // 지역 구분을 위한 속성 추가
-        });
-      });
-      
-      console.log('강원도 지역 데이터 로드 완료:', gangwonFeatures.length, '개 지역');
+      this.loadRegionPolygons(gangwonPolygons, '강원도');
     },
+    
     loadSeoulPolygons() {
-      // 서울특별시 폴리곤 데이터 로드
-      const seoulFeatures = seoulPolygons.features;
-      
-      // 서울특별시의 모든 구를 하나로 통합
-      seoulFeatures.forEach(feature => {
-        // 모든 구를 '서울특별시'라는 하나의 도시로 통합
-        this.polygons.push({
-          name: '서울특별시',
-          originalName: feature.properties.SIG_KOR_NM,
-          coordinates: feature.geometry.coordinates[0],
-          properties: {
-            ...feature.properties,
-            SIG_KOR_NM: '서울특별시' // 이름 변경
-          },
-          cityGroup: '서울특별시', // 같은 그룹임을 표시
-          region: '서울특별시' // 지역 구분을 위한 속성 추가
-        });
-      });
-      
-      console.log('서울특별시 지역 데이터 로드 완료:', seoulFeatures.length, '개 지역을 통합');
+      this.loadRegionPolygons(seoulPolygons, '서울특별시');
     },
+    
     loadIncheonPolygons() {
-      // 인천광역시 폴리곤 데이터 로드
-      const incheonFeatures = incheonPolygons.features;
-      
-      // 인천광역시의 모든 구를 하나로 통합
-      incheonFeatures.forEach(feature => {
-        // 모든 구를 '인천광역시'라는 하나의 도시로 통합
-        this.polygons.push({
-          name: '인천광역시',
-          originalName: feature.properties.SIG_KOR_NM,
-          coordinates: feature.geometry.coordinates[0],
-          properties: {
-            ...feature.properties,
-            SIG_KOR_NM: '인천광역시' // 이름 변경
-          },
-          cityGroup: '인천광역시', // 같은 그룹임을 표시
-          region: '인천광역시' // 지역 구분을 위한 속성 추가
-        });
-      });
-      
-      console.log('인천광역시 지역 데이터 로드 완료:', incheonFeatures.length, '개 지역을 통합');
+      this.loadRegionPolygons(incheonPolygons, '인천광역시');
     },
+    
     loadChungnamPolygons() {
-      // 충청남도 폴리곤 데이터 로드
-      const chungnamFeatures = chungnamPolygons.features;
-      
-      // 통합할 도시별로 Feature 그룹화
-      const cityGroups = {};
-      const standaloneFeatures = [];
-      
-      // 각 Feature를 도시별로 분류
-      chungnamFeatures.forEach(feature => {
-        const name = feature.properties.SIG_KOR_NM;
-        let shouldMerge = false;
-        let mergedCityName = '';
-        
-        // 통합 대상 도시인지 확인
-        Object.keys(this.mergedCities).forEach(cityName => {
-          if (this.mergedCities[cityName].includes(name)) {
-            shouldMerge = true;
-            mergedCityName = cityName;
-          }
-        });
-        
-        if (shouldMerge) {
-          // 통합 대상이면 해당 도시 그룹에 추가
-          if (!cityGroups[mergedCityName]) {
-            cityGroups[mergedCityName] = [];
-          }
-          cityGroups[mergedCityName].push(feature);
-        } else {
-          // 통합 대상이 아니면 그대로 추가
-          standaloneFeatures.push(feature);
-        }
-      });
-      
-      // 통합 도시 Feature 생성 및 추가
-      Object.keys(cityGroups).forEach(cityName => {
-        const features = cityGroups[cityName];
-        if (features.length > 0) {
-          features.forEach(feature => {
-            // 각 구역을 개별 Feature로 변환하되 이름은 통합 도시명으로 설정
-            this.polygons.push({
-              name: cityName,
-              originalName: feature.properties.SIG_KOR_NM,
-              coordinates: feature.geometry.coordinates[0],
-              properties: {
-                ...feature.properties,
-                SIG_KOR_NM: cityName // 이름 변경
-              },
-              cityGroup: cityName, // 같은 그룹임을 표시
-              region: '충청남도' // 지역 구분을 위한 속성 추가
-            });
-          });
-        }
-      });
-      
-      // 독립 Feature 추가
-      standaloneFeatures.forEach(feature => {
-        const name = feature.properties.SIG_KOR_NM;
-        this.polygons.push({
-          name: name,
-          coordinates: feature.geometry.coordinates[0],
-          properties: feature.properties,
-          region: '충청남도' // 지역 구분을 위한 속성 추가
-        });
-      });
-      
-      console.log('충청남도 지역 데이터 로드 완료:', chungnamFeatures.length, '개 지역');
+      this.loadRegionPolygons(chungnamPolygons, '충청남도');
     },
+    
     loadChungbukPolygons() {
-      // 충청북도 폴리곤 데이터 로드
-      const chungbukFeatures = chungbukPolygons.features;
-      
-      // 통합할 도시별로 Feature 그룹화
-      const cityGroups = {};
-      const standaloneFeatures = [];
-      
-      // 각 Feature를 도시별로 분류
-      chungbukFeatures.forEach(feature => {
-        const name = feature.properties.SIG_KOR_NM;
-        let shouldMerge = false;
-        let mergedCityName = '';
-        
-        // 통합 대상 도시인지 확인
-        Object.keys(this.mergedCities).forEach(cityName => {
-          if (this.mergedCities[cityName].includes(name)) {
-            shouldMerge = true;
-            mergedCityName = cityName;
-          }
-        });
-        
-        if (shouldMerge) {
-          // 통합 대상이면 해당 도시 그룹에 추가
-          if (!cityGroups[mergedCityName]) {
-            cityGroups[mergedCityName] = [];
-          }
-          cityGroups[mergedCityName].push(feature);
-        } else {
-          // 통합 대상이 아니면 그대로 추가
-          standaloneFeatures.push(feature);
-        }
-      });
-      
-      // 통합 도시 Feature 생성 및 추가
-      Object.keys(cityGroups).forEach(cityName => {
-        const features = cityGroups[cityName];
-        if (features.length > 0) {
-          features.forEach(feature => {
-            // 각 구역을 개별 Feature로 변환하되 이름은 통합 도시명으로 설정
-            this.polygons.push({
-              name: cityName,
-              originalName: feature.properties.SIG_KOR_NM,
-              coordinates: feature.geometry.coordinates[0],
-              properties: {
-                ...feature.properties,
-                SIG_KOR_NM: cityName // 이름 변경
-              },
-              cityGroup: cityName, // 같은 그룹임을 표시
-              region: '충청북도' // 지역 구분을 위한 속성 추가
-            });
-          });
-        }
-      });
-      
-      // 독립 Feature 추가
-      standaloneFeatures.forEach(feature => {
-        const name = feature.properties.SIG_KOR_NM;
-        this.polygons.push({
-          name: name,
-          coordinates: feature.geometry.coordinates[0],
-          properties: feature.properties,
-          region: '충청북도' // 지역 구분을 위한 속성 추가
-        });
-      });
-      
-      console.log('충청북도 지역 데이터 로드 완료:', chungbukFeatures.length, '개 지역');
+      this.loadRegionPolygons(chungbukPolygons, '충청북도');
     },
+    
+    loadJeonnamPolygons() {
+      this.loadRegionPolygons(jeonnamPolygons, '전라남도');
+    },
+    
+    loadJeonbukPolygons() {
+      this.loadRegionPolygons(jeonbukPolygons, '전라북도');
+    },
+    
+    loadDaeguPolygons() {
+      this.loadRegionPolygons(daeguPolygons, '대구광역시');
+    },
+    loadBusanPolygons() {
+      this.loadRegionPolygons(busanPolygons, '부산광역시');
+    },
+    loadUlsanPolygons() {
+      this.loadRegionPolygons(ulsanPolygons, '울산광역시');
+    },
+    loadGyeongnamPolygons() {
+      this.loadRegionPolygons(gyeongnamPolygons, '경상남도');
+    },
+    loadGyeongbukPolygons() {
+      this.loadRegionPolygons(gyeongbukPolygons, '경상북도');
+    },
+    loadJejuPolygons() {
+      this.loadRegionPolygons(jejuPolygons, '제주특별시');
+    },
+    loadSejongPolygons() {
+      this.loadRegionPolygons(sejongPolygons, '세종특별시');
+    },
+    loadDaejeonPolygons() {
+      this.loadRegionPolygons(daejeonPolygons, '대전광역시');
+    },
+    loadGwangjuPolygons() {
+      this.loadRegionPolygons(gwangjuPolygons, '광주광역시');
+    },
+
+
     drawRegions() {
       if (!this.map || !this.polygons.length) return;
       
