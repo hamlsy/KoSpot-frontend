@@ -57,12 +57,13 @@
         />
         
         <photo-mode-hint-display 
-          :visible="showHint" 
+          :visible="showHint || showHintNotification" 
           :hint="currentHint"
+          :is-notification="showHintNotification"
         />
         
         <photo-mode-next-round-button 
-          :visible="(showCorrectAnimation || showTimeoutAnimation) && !showRoundResult" 
+          :visible="(showCorrectAnimation || showTimeoutAnimation || (isPracticeMode && roundCompleted)) && !showRoundResult" 
           :is-last-round="currentRound >= totalRounds"
           @next-round="nextRound"
         />
@@ -198,21 +199,71 @@ export default {
       // 게임 설정
       totalRounds: 5,
       currentRound: 0,
-      roundTimeLimit: 60, // 초 단위
+      roundTimeLimit: 30, // 기본 30초
       timerActive: false,
       
       // 게임 상태
       isGameStarted: false,
-      isRoundActive: false,
+      roundStarted: false,
+      roundCompleted: false,
       isLoading: true,
       mapDisabled: false,
       
       // 사진 관련 데이터
-      allPhotos: [],
+      allPhotos: [
+        {
+          id: 1,
+          photoUrl: 'https://via.placeholder.com/800x600?text=Photo+1',
+          locationName: '서울 남산타워',
+          locationDescription: '서울 중구에 위치한 남산서울타워는 대한민국을 대표하는 랜드마크입니다.',
+          region: 'Seoul',
+          fact: '남산서울타워는 1969년에 착공하여 1975년에 완공되었습니다.'
+        },
+        {
+          id: 2,
+          photoUrl: 'https://via.placeholder.com/800x600?text=Photo+2',
+          locationName: '경복궁',
+          locationDescription: '서울 종로구에 위치한 경복궁은 조선시대 정궁(正宮)입니다.',
+          region: 'Seoul',
+          fact: '경복궁은 1395년 태조 이성계에 의해 창건되었습니다.'
+        },
+        {
+          id: 3,
+          photoUrl: 'https://via.placeholder.com/800x600?text=Photo+3',
+          locationName: '해운대 해수욕장',
+          locationDescription: '부산 해운대구에 위치한 해운대 해수욕장은 대한민국에서 가장 유명한 해변 중 하나입니다.',
+          region: 'Busan',
+          fact: '해운대 해수욕장의 모래는 화강암이 풍화되어 만들어진 것으로 알려져 있습니다.'
+        },
+        {
+          id: 4,
+          photoUrl: 'https://via.placeholder.com/800x600?text=Photo+4',
+          locationName: '제주 성산일출봉',
+          locationDescription: '제주도 동쪽 끝에 위치한 성산일출봉은 유네스코 세계자연유산으로 등재되었습니다.',
+          region: 'Jeju',
+          fact: '성산일출봉은 약 5,000년 전 수중 화산 폭발로 형성되었습니다.'
+        },
+        {
+          id: 5,
+          photoUrl: 'https://via.placeholder.com/800x600?text=Photo+5',
+          locationName: '수원화성',
+          locationDescription: '경기도 수원시에 위치한 수원화성은 정조대왕이 건설한 계획도시의 성곽입니다.',
+          region: 'Gyeonggi',
+          fact: '수원화성은 1796년에 완공되었으며, 유네스코 세계문화유산으로 등재되었습니다.'
+        },
+        {
+          id: 6,
+          photoUrl: 'https://via.placeholder.com/800x600?text=Photo+6',
+          locationName: '인천 송도 센트럴파크',
+          locationDescription: '인천 연수구 송도국제도시에 위치한 센트럴파크는 도심 속 자연공원입니다.',
+          region: 'Incheon',
+          fact: '송도 센트럴파크는 대한민국 최초의 해수공원으로, 바닷물을 끌어와 운하를 만들었습니다.'
+        }
+      ],
+      gamePhotos: [],
       currentPhotos: [],
       currentPhoto: null,
       photoLoadCount: 0,
-      photosPerRound: 1, // 라운드당 사진 수 (난이도에 따라 조정)
       
       // 지역 선택 관련
       selectedRegion: null,
@@ -225,7 +276,6 @@ export default {
       correctCount: 0,
       wrongCount: 0,
       totalTimeTaken: 0,
-      remainingTime: 0,
       
       // 애니메이션 상태
       showIncorrectAnimation: false,
@@ -234,16 +284,19 @@ export default {
       
       // 힌트 시스템
       showHint: false,
+      showHintNotification: false,
       currentHint: '',
       hintLevel: 0,
       hintTimeThresholds: [30, 15], // 남은 시간이 30초, 15초일 때 힌트 표시
       
-      // 모달 상태
+      // 결과 표시
       showRoundResult: false,
       showGameResult: false,
+      
+      // 모달 상태
       showExitConfirmation: false,
       
-      // 랭크 관련 (랭크 모드일 경우)
+      // 랭크 정보
       rank: null,
       rankPercentile: null,
       rankPointChange: null,
@@ -253,13 +306,24 @@ export default {
       
       // 지도 토글 버튼 관련
       isMapOpen: false,
-      isMobile: false
+      isMobile: false,
+      
+      // 힌트 타이머
+      hintNotificationTimer: null,
+      hintTimer: null,
+      
+      // 라운드당 사진 수
+      photosPerRound: 1
     };
   },
   
   computed: {
     isRankMode() {
       return this.mode === 'ranked';
+    },
+    
+    isPracticeMode() {
+      return this.mode === 'practice';
     },
     
     gameMode() {
@@ -285,27 +349,11 @@ export default {
   },
   
   watch: {
-    difficulty: {
-      immediate: true,
-      handler(newVal) {
-        // 난이도에 따라 라운드당 사진 수 조정
-        switch (newVal) {
-          case 'easy':
-            this.photosPerRound = 1;
-            this.roundTimeLimit = 60;
-            break;
-          case 'normal':
-            this.photosPerRound = 2;
-            this.roundTimeLimit = 45;
-            break;
-          case 'hard':
-            this.photosPerRound = 4;
-            this.roundTimeLimit = 30;
-            break;
-          default:
-            this.photosPerRound = 1;
-            this.roundTimeLimit = 60;
-        }
+    visible(newVal) {
+      if (newVal) {
+        this.startCountdown();
+      } else {
+        this.stopCountdown();
       }
     }
   },
@@ -318,11 +366,22 @@ export default {
   methods: {
     // 게임 준비 및 초기화
     prepareGame() {
-      this.isLoading = true;
+      // 게임 모드에 따른 설정
+      if (this.isRankMode) {
+        this.totalRounds = 10;
+      } else if (this.isPracticeMode) {
+        this.totalRounds = 5;
+      } else {
+        this.totalRounds = 5;
+      }
       
-      // 실제 구현에서는 API에서 사진 데이터를 가져옴
-      // 현재는 테스트 데이터 사용
-      this.allPhotos = this.getTestPhotos();
+      // 게임 데이터 초기화
+      this.currentRound = 0;
+      this.score = 0;
+      this.correctCount = 0;
+      this.wrongCount = 0;
+      this.totalTimeTaken = 0;
+      this.completedRounds = [];
       
       // 사진 데이터 셔플
       this.shufflePhotos();
@@ -332,53 +391,74 @@ export default {
     },
     
     shufflePhotos() {
-      // Fisher-Yates 셔플 알고리즘
-      for (let i = this.allPhotos.length - 1; i > 0; i--) {
+      // 사진 데이터 셔플 (Fisher-Yates 알고리즘)
+      const shuffled = [...this.allPhotos];
+      for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [this.allPhotos[i], this.allPhotos[j]] = [this.allPhotos[j], this.allPhotos[i]];
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
+      this.gamePhotos = shuffled;
     },
     
     startGame() {
       this.isGameStarted = true;
-      this.currentRound = 0;
-      this.score = 0;
-      this.correctCount = 0;
-      this.wrongCount = 0;
-      this.totalTimeTaken = 0;
-      this.completedRounds = [];
+      this.roundStarted = false;
+      this.roundCompleted = false;
+      this.timerActive = false;
       
       // 첫 라운드 시작
       this.startNextRound();
     },
     
     startNextRound() {
-      this.currentRound++;
-      this.isRoundActive = true;
+      // 라운드 상태 초기화
+      this.roundStarted = true;
+      this.roundCompleted = false;
       this.mapDisabled = false;
       this.selectedRegion = null;
       this.correctRegion = null;
       this.wrongRegion = null;
-      this.showIncorrectAnimation = false;
-      this.showCorrectAnimation = false;
-      this.showTimeoutAnimation = false;
+      this.showHint = false;
+      this.showHintNotification = false;
       this.photoLoadCount = 0;
+      this.isLoading = true;
       
-      // 현재 라운드에 표시할 사진 선택
+      // 애니메이션 상태 초기화
+      this.showCorrectAnimation = false;
+      this.showIncorrectAnimation = false;
+      this.showTimeoutAnimation = false;
+      
+      // 현재 라운드 증가
+      this.currentRound++;
+      
+      // 현재 라운드 사진 설정 (여러 장 가능)
       const startIndex = (this.currentRound - 1) * this.photosPerRound;
-      this.currentPhotos = this.allPhotos.slice(startIndex, startIndex + this.photosPerRound);
+      const endIndex = startIndex + this.photosPerRound;
+      const roundPhotos = this.gamePhotos.slice(startIndex, endIndex);
+      
+      // 현재 라운드의 사진들 설정
+      this.currentPhotos = roundPhotos.map(photo => photo.photoUrl);
       
       // 현재 라운드의 주요 사진 (정답 판정에 사용)
-      this.currentPhoto = this.currentPhotos[0];
+      this.currentPhoto = roundPhotos[0];
       
-      // 타이머 시작
+      // 힌트 타이머 설정
+      this.setupHintTimers();
+      
+      // 타이머 초기화 및 시작
       this.$nextTick(() => {
         if (this.$refs.timer) {
-          this.$refs.timer.startTimer();
-          this.timerActive = true;
-          this.remainingTime = this.roundTimeLimit;
+          this.$refs.timer.resetTimer();
+          this.timerActive = true; // 타이머 즉시 시작
         }
       });
+      
+      // 지도 리셋
+      if (this.$refs.regionMap) {
+        this.$refs.regionMap.reset();
+      }
+      
+      console.log(`라운드 ${this.currentRound} 시작`);
     },
     
     handlePhotoLoaded() {
@@ -419,93 +499,73 @@ export default {
       }
     },
     
-    handleTimeUp() {
-      if (this.isRoundActive) {
-        this.timerActive = false;
-        this.isRoundActive = false;
-        this.mapDisabled = true;
-        
-        // 시간 초과 시 오답 처리
-        this.wrongCount++;
-        this.wrongRegion = this.selectedRegion || null;
-        this.correctRegion = this.currentPhoto.region;
-        
-        // 정답 표시 (초록색 테두리와 설명)
-        this.showTimeoutAnimation = true;
-        
-        // 라운드 결과 저장
-        this.saveRoundResult(false, 0);
-        
-        // 연습 모드가 아닌 경우에만 라운드 결과 모달 표시
-        if (this.mode !== 'practice') {
-          this.showRoundResult = true;
-        } else {
-          // 연습 모드에서는 잠시 후 다음 라운드로 자동 진행
-          setTimeout(() => {
-            this.showTimeoutAnimation = false;
-            if (this.currentRound >= this.totalRounds) {
-              this.finishGame();
-            } else {
-              this.startNextRound();
-            }
-          }, 3000);
-        }
-      }
-    },
-    
     submitGuess(region) {
-      if (!this.isRoundActive) return;
+      if (!this.roundStarted || this.mapDisabled) return;
       
-      // 선택한 지역 저장
-      this.selectedRegion = region;
+      console.log(`제출한 지역: ${region}`);
       
       // 정답 확인
       const isCorrect = region === this.currentPhoto.region;
       
       if (isCorrect) {
         // 정답인 경우
+        // 타이머 중지
         this.timerActive = false;
-        this.isRoundActive = false;
         this.mapDisabled = true;
+        this.roundCompleted = true;
+        
+        // 남은 시간 기록
+        const timeSpent = this.roundTimeLimit - (this.$refs.timer ? this.$refs.timer.remainingTime : 0);
+        this.totalTimeTaken += timeSpent;
         
         this.correctRegion = region;
-        this.wrongRegion = null;
+        this.showCorrectAnimation = true;
         this.correctCount++;
         
-        // 남은 시간에 따라 점수 계산
-        const timeBonus = Math.floor(this.remainingTime * 2);
-        this.lastRoundScore = 100 + timeBonus;
-        this.score += this.lastRoundScore;
+        // 점수 계산 (남은 시간에 따라 보너스)
+        const timeBonus = Math.floor(this.$refs.timer ? this.$refs.timer.remainingTime / 2 : 0);
+        const roundScore = 100 + timeBonus;
+        this.score += roundScore;
+        this.lastRoundScore = roundScore;
         
-        // 소요 시간 기록
-        this.totalTimeTaken += (this.roundTimeLimit - this.remainingTime);
-        
-        // 정답 애니메이션 표시
-        this.showCorrectAnimation = true;
-        
-        // 연습 모드가 아닌 경우에만 라운드 결과 모달 표시
-        if (this.mode !== 'practice') {
-          this.showRoundResult = true;
-        }
-        // 자동으로 다음 라운드로 넘어가는 로직은 PhotoModeNextRoundButton에서 처리
+        console.log(`정답! 점수: ${roundScore} (기본 100 + 시간 보너스 ${timeBonus})`);
         
         // 라운드 결과 저장
-        this.saveRoundResult(true, this.lastRoundScore);
+        this.saveRoundResult(true, roundScore);
       } else {
         // 오답인 경우 - 라운드가 끝나지 않음
         this.wrongRegion = region;
-        this.wrongCount++;
-        
-        // 오답 애니메이션 표시
         this.showIncorrectAnimation = true;
+        
+        // 잠시 후 오답 표시 제거
         setTimeout(() => {
           this.showIncorrectAnimation = false;
-          this.wrongRegion = null; // 오답 표시 제거
+          this.wrongRegion = null;
         }, 1000);
-        
-        // 계속 진행 (타이머 유지, 맵 활성화 유지)
-        // 라운드 결과는 저장하지 않음 (맞았을 때만 저장)
       }
+    },
+    
+    handleTimeUp() {
+      console.log('시간 초과!');
+      
+      // 시간 초과 처리
+      this.timerActive = false;
+      this.mapDisabled = true;
+      this.roundCompleted = true;
+      
+      // 시간 초과 애니메이션 표시
+      this.showTimeoutAnimation = true;
+      
+      // 정답 지역 표시
+      this.correctRegion = this.currentPhoto.region;
+      
+      // 정답 지역에 마커 표시
+      if (this.$refs.regionMap) {
+        this.$refs.regionMap.showMarkerAtRegion(this.correctRegion);
+      }
+      
+      // 라운드 결과 저장
+      this.saveRoundResult(false, 0);
     },
     
     saveRoundResult(isCorrect, score) {
@@ -513,7 +573,7 @@ export default {
         round: this.currentRound,
         isCorrect,
         score,
-        timeTaken: this.roundTimeLimit - this.remainingTime,
+        timeTaken: this.roundTimeLimit - (this.$refs.timer ? this.$refs.timer.remainingTime : 0),
         locationName: this.currentPhoto.locationName,
         region: this.currentPhoto.region,
         photoUrl: this.currentPhoto.photoUrl
@@ -586,7 +646,7 @@ export default {
     
     cancelExit() {
       this.showExitConfirmation = false;
-      if (this.isRoundActive) {
+      if (this.roundStarted) {
         this.timerActive = true;
       }
     },
@@ -620,39 +680,6 @@ export default {
       return regionMap[regionCode] || regionCode;
     },
     
-    // 테스트용 사진 데이터 생성
-    getTestPhotos() {
-      const regions = [
-        'seoul', 'busan', 'daegu', 'incheon', 'gwangju', 
-        'daejeon', 'ulsan', 'sejong', 'gyeonggi', 'gangwon', 
-        'chungbuk', 'chungnam', 'jeonbuk', 'jeonnam', 
-        'gyeongbuk', 'gyeongnam', 'jeju'
-      ];
-      
-      const photos = [];
-      
-      // 각 지역별로 여러 장소 사진 생성
-      regions.forEach(region => {
-        const regionName = this.getRegionName(region);
-        
-        for (let i = 1; i <= 3; i++) {
-          const locationNumber = Math.floor(Math.random() * 100) + 1;
-          const locationName = `${regionName} 명소 ${locationNumber}`;
-          
-          photos.push({
-            id: `${region}-${i}`,
-            region: region,
-            locationName: locationName,
-            locationDescription: `${regionName}의 아름다운 명소입니다. 많은 관광객이 찾는 인기 장소입니다.`,
-            photoUrl: `https://picsum.photos/800/600?random=${region}-${i}`,
-            fact: `${locationName}에 대한 재미있는 사실: 이 장소는 매년 수백만 명의 관광객이 방문합니다.`
-          });
-        }
-      });
-      
-      return photos;
-    },
-    
     checkMobile() {
       const userAgent = navigator.userAgent;
       const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
@@ -672,7 +699,70 @@ export default {
           this.$refs.regionMap.resizeMap();
         }, 300); // 트랜지션 완료 후 리사이즈
       }
+    },
+    
+    setupHintTimers() {
+      // 이전 타이머 정리
+      if (this.hintNotificationTimer) {
+        clearTimeout(this.hintNotificationTimer);
+      }
+      if (this.hintTimer) {
+        clearTimeout(this.hintTimer);
+      }
+      
+      // 힌트 표시 시간 설정 (난이도에 따라 다름)
+      const hintDelay = this.roundTimeLimit * 0.3; // 30% 시점에 힌트 표시
+      
+      // 힌트 알림 표시 (힌트 표시 5초 전)
+      this.hintNotificationTimer = setTimeout(() => {
+        this.showHintNotification = true;
+        this.currentHint = `${Math.floor(hintDelay - 5)}초 후에 힌트가 표시됩니다!`;
+      }, (hintDelay - 5) * 1000);
+      
+      // 힌트 표시
+      this.hintTimer = setTimeout(() => {
+        this.showHintNotification = false;
+        this.showHint = true;
+        this.currentHint = this.getInitialConsonants(this.currentPhoto.locationName);
+      }, hintDelay * 1000);
+    },
+    
+    getInitialConsonants(text) {
+      if (!text) return '';
+      
+      const consonants = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+      let result = '';
+      
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const code = char.charCodeAt(0);
+        
+        // 한글 유니코드 범위 (0xAC00 ~ 0xD7A3)
+        if (code >= 0xAC00 && code <= 0xD7A3) {
+          // 초성 추출 ((글자 - 0xAC00) / 28 / 21)
+          const consonantIndex = Math.floor((code - 0xAC00) / 28 / 21);
+          result += consonants[consonantIndex];
+        } else {
+          // 한글이 아닌 경우 그대로 추가
+          result += char;
+        }
+      }
+      
+      return `힌트: ${result}`;
     }
+  },
+  
+  beforeDestroy() {
+    // 타이머 정리
+    if (this.hintNotificationTimer) {
+      clearTimeout(this.hintNotificationTimer);
+    }
+    if (this.hintTimer) {
+      clearTimeout(this.hintTimer);
+    }
+    
+    // 이벤트 리스너 정리
+    window.removeEventListener('resize', this.checkMobile);
   }
 };
 </script>

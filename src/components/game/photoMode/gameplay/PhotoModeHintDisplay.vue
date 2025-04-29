@@ -1,7 +1,7 @@
 <template>
   <div class="hint-container" v-if="visible">
     <div class="hint-badge">
-      <i class="fas fa-lightbulb"></i> 힌트
+      <i class="fas fa-lightbulb"></i> {{ isNotification ? '알림' : '힌트' }}
     </div>
     <div class="hint-content">
       {{ hint }}
@@ -21,6 +21,10 @@ export default {
     hint: {
       type: String,
       default: ''
+    },
+    isNotification: {
+      type: Boolean,
+      default: false
     }
   }
 };
