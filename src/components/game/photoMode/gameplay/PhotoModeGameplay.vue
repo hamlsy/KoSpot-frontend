@@ -29,7 +29,10 @@
           </div>
         </div>
       </div>
-      
+    </div>
+    
+    <!-- 게임 메인 콘텐츠 -->
+    <div class="game-content">
       <div class="header-right">
         <progress-timer
           :initial-time="roundTimeLimit"
@@ -41,10 +44,6 @@
           ref="timer"
         />
       </div>
-    </div>
-    
-    <!-- 게임 메인 콘텐츠 -->
-    <div class="game-content">
       <!-- 사진 영역 - 왼쪽에 배치 -->
       <div class="photo-section">
         <photo-mode-photo-grid 
@@ -213,7 +212,7 @@ export default {
       allPhotos: [
         {
           id: 1,
-          photoUrl: 'https://via.placeholder.com/800x600?text=Photo+1',
+          photoUrl: 'https://i.ibb.co/FxDnDfS/seoul-namsan.jpg',
           locationName: '서울 남산타워',
           locationDescription: '서울 중구에 위치한 남산서울타워는 대한민국을 대표하는 랜드마크입니다.',
           region: 'Seoul',
@@ -221,7 +220,7 @@ export default {
         },
         {
           id: 2,
-          photoUrl: 'https://via.placeholder.com/800x600?text=Photo+2',
+          photoUrl: 'https://i.ibb.co/HdKgL3t/gyeongbokgung.jpg',
           locationName: '경복궁',
           locationDescription: '서울 종로구에 위치한 경복궁은 조선시대 정궁(正宮)입니다.',
           region: 'Seoul',
@@ -229,7 +228,7 @@ export default {
         },
         {
           id: 3,
-          photoUrl: 'https://via.placeholder.com/800x600?text=Photo+3',
+          photoUrl: 'https://i.ibb.co/Jt8JQv5/haeundae.jpg',
           locationName: '해운대 해수욕장',
           locationDescription: '부산 해운대구에 위치한 해운대 해수욕장은 대한민국에서 가장 유명한 해변 중 하나입니다.',
           region: 'Busan',
@@ -237,7 +236,7 @@ export default {
         },
         {
           id: 4,
-          photoUrl: 'https://via.placeholder.com/800x600?text=Photo+4',
+          photoUrl: 'https://i.ibb.co/YTYdMVk/seongsan.jpg',
           locationName: '제주 성산일출봉',
           locationDescription: '제주도 동쪽 끝에 위치한 성산일출봉은 유네스코 세계자연유산으로 등재되었습니다.',
           region: 'Jeju',
@@ -245,7 +244,7 @@ export default {
         },
         {
           id: 5,
-          photoUrl: 'https://via.placeholder.com/800x600?text=Photo+5',
+          photoUrl: 'https://i.ibb.co/4Ym9Hnq/suwon.jpg',
           locationName: '수원화성',
           locationDescription: '경기도 수원시에 위치한 수원화성은 정조대왕이 건설한 계획도시의 성곽입니다.',
           region: 'Gyeonggi',
@@ -253,11 +252,43 @@ export default {
         },
         {
           id: 6,
-          photoUrl: 'https://via.placeholder.com/800x600?text=Photo+6',
+          photoUrl: 'https://i.ibb.co/4KgmHyC/songdo.jpg',
           locationName: '인천 송도 센트럴파크',
           locationDescription: '인천 연수구 송도국제도시에 위치한 센트럴파크는 도심 속 자연공원입니다.',
           region: 'Incheon',
           fact: '송도 센트럴파크는 대한민국 최초의 해수공원으로, 바닷물을 끌어와 운하를 만들었습니다.'
+        },
+        {
+          id: 7,
+          photoUrl: 'https://i.ibb.co/Jj1Qy9S/gangneung.jpg',
+          locationName: '강릉 경포대',
+          locationDescription: '강원도 강릉시에 위치한 경포대는 아름다운 경포호수와 동해를 함께 볼 수 있는 명소입니다.',
+          region: 'Gangwon',
+          fact: '경포대는 신라시대부터 관동팔경 중 하나로 꼽혀왔습니다.'
+        },
+        {
+          id: 8,
+          photoUrl: 'https://i.ibb.co/xLwCpVf/andong.jpg',
+          locationName: '안동 하회마을',
+          locationDescription: '경상북도 안동시에 위치한 하회마을은 조선시대 양반 마을의 모습을 간직한 전통 마을입니다.',
+          region: 'Gyeongbuk',
+          fact: '하회마을은 1999년 영국 엘리자베스 2세 여왕이 방문하기도 했습니다.'
+        },
+        {
+          id: 9,
+          photoUrl: 'https://i.ibb.co/0MXVQ4L/jeonju.jpg',
+          locationName: '전주 한옥마을',
+          locationDescription: '전라북도 전주시에 위치한 한옥마을은 약 700여 채의 한옥이 밀집된 전통 마을입니다.',
+          region: 'Jeonbuk',
+          fact: '전주 한옥마을은 매년 1,000만 명 이상의 관광객이 방문하는 인기 관광지입니다.'
+        },
+        {
+          id: 10,
+          photoUrl: 'https://i.ibb.co/6wM8Jky/bulguksa.jpg',
+          locationName: '경주 불국사',
+          locationDescription: '경상북도 경주시에 위치한 불국사는 신라시대 창건된 사찰로 유네스코 세계문화유산입니다.',
+          region: 'Gyeongbuk',
+          fact: '불국사의 석가탑(다보탑)은 국보 제20호로 지정되어 있습니다.'
         }
       ],
       gamePhotos: [],
@@ -285,7 +316,7 @@ export default {
       // 힌트 시스템
       showHint: false,
       showHintNotification: false,
-      currentHint: '',
+      currentHint: "10초 뒤 힌트가 표시됩니다!",
       hintLevel: 0,
       hintTimeThresholds: [30, 15], // 남은 시간이 30초, 15초일 때 힌트 표시
       
@@ -504,8 +535,8 @@ export default {
       
       console.log(`제출한 지역: ${region}`);
       
-      // 정답 확인
-      const isCorrect = region === this.currentPhoto.region;
+      // 정답 확인 (대소문자 구분 없이 비교)
+      const isCorrect = region.toLowerCase() === this.currentPhoto.region.toLowerCase();
       
       if (isCorrect) {
         // 정답인 경우
@@ -656,25 +687,24 @@ export default {
     },
     
     getRegionName(regionCode) {
-      // 지역 코드에 해당하는 지역명 반환
       const regionMap = {
-        'seoul': '서울',
-        'busan': '부산',
-        'daegu': '대구',
-        'incheon': '인천',
-        'gwangju': '광주',
-        'daejeon': '대전',
-        'ulsan': '울산',
-        'sejong': '세종',
-        'gyeonggi': '경기',
-        'gangwon': '강원',
-        'chungbuk': '충북',
-        'chungnam': '충남',
-        'jeonbuk': '전북',
-        'jeonnam': '전남',
-        'gyeongbuk': '경북',
-        'gyeongnam': '경남',
-        'jeju': '제주'
+        'Seoul': '서울특별시',
+        'Busan': '부산광역시',
+        'Daegu': '대구광역시',
+        'Incheon': '인천광역시',
+        'Gwangju': '광주광역시',
+        'Daejeon': '대전광역시',
+        'Ulsan': '울산광역시',
+        'Sejong': '세종특별자치시',
+        'Gyeonggi': '경기도',
+        'Gangwon': '강원도',
+        'Chungbuk': '충청북도',
+        'Chungnam': '충청남도',
+        'Jeonbuk': '전라북도',
+        'Jeonnam': '전라남도',
+        'Gyeongbuk': '경상북도',
+        'Gyeongnam': '경상남도',
+        'Jeju': '제주특별자치도'
       };
       
       return regionMap[regionCode] || regionCode;
@@ -714,16 +744,19 @@ export default {
       const hintDelay = this.roundTimeLimit * 0.3; // 30% 시점에 힌트 표시
       
       // 힌트 알림 표시 (힌트 표시 5초 전)
-      this.hintNotificationTimer = setTimeout(() => {
-        this.showHintNotification = true;
-        this.currentHint = `${Math.floor(hintDelay - 5)}초 후에 힌트가 표시됩니다!`;
-      }, (hintDelay - 5) * 1000);
+      // this.hintNotificationTimer = setTimeout(() => {
+      //   this.showHintNotification = true;
+      //   this.currentHint = `${Math.floor(hintDelay - 5)}초 후에 힌트가 표시됩니다!`;
+      // }, (hintDelay - 5) * 1000);
       
       // 힌트 표시
       this.hintTimer = setTimeout(() => {
         this.showHintNotification = false;
         this.showHint = true;
-        this.currentHint = this.getInitialConsonants(this.currentPhoto.locationName);
+        
+        // 정답 지역의 한글 이름 가져오기
+        const regionName = this.getRegionName(this.currentPhoto.region);
+        this.currentHint = this.getInitialConsonants(regionName);
       }, hintDelay * 1000);
     },
     

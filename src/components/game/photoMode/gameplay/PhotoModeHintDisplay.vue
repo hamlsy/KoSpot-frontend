@@ -1,5 +1,5 @@
 <template>
-  <div class="hint-container" v-if="visible">
+  <div class="hint-container">
     <div class="hint-badge">
       <i class="fas fa-lightbulb"></i> {{ isNotification ? '알림' : '힌트' }}
     </div>

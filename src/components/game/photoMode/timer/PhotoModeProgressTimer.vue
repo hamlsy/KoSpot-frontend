@@ -143,6 +143,7 @@ export default {
   left: 0;
   right: 0;
   z-index: 10;
+  
 }
 
 .timer-bar {
@@ -153,21 +154,26 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
+  
 }
 
 .progress-bar-left, .progress-bar-right {
   height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  background: linear-gradient(90deg, #3b82f6);
   position: absolute;
   top: 0;
   transition: width 1s linear;
 }
 
 .progress-bar-left {
+  border-top-left-radius: 40px;
+  border-bottom-left-radius: 40px;
   right: 50%;
 }
 
 .progress-bar-right {
+  border-top-right-radius: 40px;
+  border-bottom-right-radius: 40px;
   left: 50%;
 }
 
@@ -189,12 +195,12 @@ export default {
 
 .progress-timer.warning .progress-bar-left,
 .progress-timer.warning .progress-bar-right {
-  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+  background: linear-gradient(90deg, #f59e0b);
 }
 
 .progress-timer.danger .progress-bar-left,
 .progress-timer.danger .progress-bar-right {
-  background: linear-gradient(90deg, #ef4444, #f87171);
+  background: linear-gradient(90deg, #ef4444);
   animation: pulse 1s infinite;
 }
 

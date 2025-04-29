@@ -9,7 +9,7 @@
         {{ correctRegion }}
       </div>
       <photo-display 
-        :photo-url="photo.photoUrl" 
+        :photo-url="photo" 
         :show-zoom-controls="true"
         @loaded="$emit('photo-loaded')"
       />
