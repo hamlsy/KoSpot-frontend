@@ -86,9 +86,11 @@
       </div>
 
       <!-- 카운트다운 화면 -->
-      <div v-if="showCountdown" class="countdown-overlay">
-        <div class="countdown">{{ countdown }}</div>
-      </div>
+      <CountdownOverlay 
+        :show="showCountdown" 
+        :initial-count="3" 
+        @countdown-complete="onCountdownComplete" 
+      />
 
       <!-- 결과 화면 -->
       <div v-if="showResult" class="result-overlay">
@@ -184,12 +186,14 @@
 <script>
 import RoadViewGame from "@/components/game/common/roadview/RoadViewGame.vue";
 import PhoneFrame from "@/components/game/common/PhoneFrame.vue";
+import CountdownOverlay from "@/components/game/common/CountdownOverlay.vue";
 
 export default {
   name: "RoadViewRank",
   components: {
     RoadViewGame,
-    PhoneFrame
+    PhoneFrame,
+    CountdownOverlay
   },
   props: {
     isRankMode: {
@@ -230,8 +234,6 @@ export default {
       // 인트로 및 카운트다운 관련
       showIntro: true,
       showCountdown: false,
-      countdown: 3,
-      countdownTimer: null,
       gameStarted: false,
 
       // 힌트 관련
@@ -279,20 +281,6 @@ export default {
     startCountdown() {
       this.showIntro = false;
       this.showCountdown = true;
-      this.countdown = 3;
-      
-      this.countdownTimer = setInterval(() => {
-        this.countdown--;
-        
-        if (this.countdown <= 0) {
-          clearInterval(this.countdownTimer);
-          this.showCountdown = false;
-          this.gameStarted = true;
-          this.isGameStarted = true;
-          this.remainingTime = 180; // 3분
-          this.startTimer();
-        }
-      }, 1000);
     },
 
     // 게임 상태 초기화
@@ -314,11 +302,6 @@ export default {
 
     // 모든 타이머 정리
     clearAllTimers() {
-      if (this.countdownTimer) {
-        clearInterval(this.countdownTimer);
-        this.countdownTimer = null;
-      }
-      
       if (this.gameTimer) {
         clearInterval(this.gameTimer);
         this.gameTimer = null;
@@ -615,7 +598,6 @@ export default {
     nextRound() {
       this.resetGame();
       this.showIntro = true;  // 인트로 화면 다시 표시
-      this.countdown = 3;  // 카운트다운 초기화
       this.gameStarted = false;  // 게임 상태 초기화
       this.isGameStarted = false;
       this.remainingTime = 180;
@@ -686,12 +668,14 @@ export default {
       return deg * (Math.PI / 180);
     },
     
-    // 시간 포맷팅 (mm:ss)
-    // formatTime(seconds) {
-    //   const minutes = Math.floor(seconds / 60);
-    //   const remainingSeconds = seconds % 60;
-    //   return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
-    // },
+    // 카운트다운 완료 이벤트 핸들러
+    onCountdownComplete() {
+      this.showCountdown = false;
+      this.gameStarted = true;
+      this.isGameStarted = true;
+      this.remainingTime = 180; // 3분
+      this.startTimer();
+    }
   },
 }
 </script>
@@ -1023,8 +1007,6 @@ export default {
 .result-container {
   background-color: white;
   border-radius: 20px;
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
-  text-align: center;
   width: 90%;
   max-width: 550px;
   height: auto;
@@ -1057,6 +1039,22 @@ export default {
   margin: 0;
   font-size: 1.5rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.close-button {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.close-button:hover {
+  background-color: rgba(255, 255, 255, 0.4);
 }
 
 .result-content {
@@ -1118,20 +1116,6 @@ export default {
 .points-decrease .points-change {
   display: inline-block;
   animation: bounceDown 1s ease;
-}
-
-@keyframes bounceUp {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-15px); }
-  70% { transform: translateY(-5px); }
-  100% { transform: translateY(0); }
-}
-
-@keyframes bounceDown {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(15px); }
-  70% { transform: translateY(5px); }
-  100% { transform: translateY(0); }
 }
 
 .points-change {
@@ -1268,6 +1252,32 @@ export default {
   .result-map-container {
     height: 150px;
   }
+
+  .result-content {
+    padding: 25px;
+  }
+
+  .result-buttons {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .map-toggle-container {
+    bottom: 20px;
+    right: 20px;
+  }
+
+  .map-toggle {
+    padding: 10px 15px;
+    font-size: 0.9rem;
+    bottom: 20px;
+    right: 20px;
+  }
+
+  .phone-spot-button {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+  }
 }
 
 /* 로드뷰 토스트 메시지 */
@@ -1347,6 +1357,7 @@ export default {
   border-radius: 15px;
   width: 90%;
   max-width: 600px;
+  height: auto;
   max-height: 80vh;
   overflow-y: auto;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -1356,7 +1367,7 @@ export default {
 
 .result-header {
   padding: 15px 20px;
-  background-color: #3498db;
+  background: linear-gradient(135deg, #3498db, #2980b9);
   color: white;
   border-radius: 15px 15px 0 0;
   display: flex;
@@ -1367,6 +1378,7 @@ export default {
 .result-header h2 {
   margin: 0;
   font-size: 1.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .close-button {
@@ -1390,6 +1402,7 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  overflow-y: auto;
 }
 
 .result-score-section {

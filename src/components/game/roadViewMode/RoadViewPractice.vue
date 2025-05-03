@@ -141,9 +141,11 @@
       </div>
 
       <!-- 카운트다운 화면 -->
-      <div v-if="showCountdown" class="countdown-overlay">
-        <div class="countdown">{{ countdown }}</div>
-      </div>
+      <CountdownOverlay 
+        :show="showCountdown" 
+        :initial-count="3" 
+        @countdown-complete="onCountdownComplete" 
+      />
 
       <!-- 결과 화면 -->
       <div v-if="showResult" class="result-overlay">
@@ -229,13 +231,15 @@
 import RoadViewGame from "@/components/game/common/roadview/RoadViewGame.vue";
 import KakaoMapGame from "@/components/game/common/kakao/KakaoMapGame.vue";
 import PhoneFrame from "@/components/game/common/PhoneFrame.vue";
+import CountdownOverlay from "@/components/game/common/CountdownOverlay.vue";
 
 export default {
   name: "RoadViewPractice",
   components: {
     RoadViewGame,
     KakaoMapGame,
-    PhoneFrame
+    PhoneFrame,
+    CountdownOverlay
   },
   props: {
     isRankMode: {
@@ -252,7 +256,6 @@ export default {
       // 게임 화면 관련
       isMapOpen: false,
       showExitConfirmation: false,
-      showHints: false,
       showResult: false,
       showToast: false,
       toastMessage: '',
@@ -308,8 +311,6 @@ export default {
       showIntro: true,
       showCountdown: false,
       gameStarted: false,
-      countdown: 3,
-      countdownTimer: null,
 
       // 힌트 관련
       hintsLeft: 3,
@@ -344,36 +345,6 @@ export default {
     startGame() {
       this.showIntro = false;
       this.showCountdown = true;
-      
-      // 카운트다운 시작
-      this.countdownTimer = setInterval(() => {
-        this.countdown--;
-        if (this.countdown === 0) {
-          clearInterval(this.countdownTimer);
-          this.showCountdown = false;
-          this.gameStarted = true;
-          
-          // 게임 타이머 시작
-          this.startGameTimer();
-          
-          // 힌트 타이머 시작 (첫 힌트는 30초 후에 사용 가능)
-          this.nextHintTime = 30;
-          this.hintAvailable = false;
-          
-          if (this.hintTimer) {
-            clearInterval(this.hintTimer);
-          }
-          
-          this.hintTimer = setInterval(() => {
-            if (this.nextHintTime > 0) {
-              this.nextHintTime--;
-            } else {
-              this.hintAvailable = true;
-              clearInterval(this.hintTimer);
-            }
-          }, 1000);
-        }
-      }, 1000);
     },
 
     // 게임 상태 초기화
@@ -753,7 +724,6 @@ export default {
     nextRound() {
       this.resetGame();
       this.showIntro = true;  // 인트로 화면 다시 표시
-      this.countdown = 3;  // 카운트다운 초기화
       this.gameStarted = false;  // 게임 상태 초기화
     },
 
@@ -827,6 +797,32 @@ export default {
     // 각도를 라디안으로 변환
     deg2rad(deg) {
       return deg * (Math.PI / 180);
+    },
+    
+    // 카운트다운 완료 이벤트 핸들러
+    onCountdownComplete() {
+      this.showCountdown = false;
+      this.gameStarted = true;
+      
+      // 게임 타이머 시작
+      this.startGameTimer();
+      
+      // 힌트 타이머 시작 (첫 힌트는 30초 후에 사용 가능)
+      this.nextHintTime = 30;
+      this.hintAvailable = false;
+      
+      if (this.hintTimer) {
+        clearInterval(this.hintTimer);
+      }
+      
+      this.hintTimer = setInterval(() => {
+        if (this.nextHintTime > 0) {
+          this.nextHintTime--;
+        } else {
+          this.hintAvailable = true;
+          clearInterval(this.hintTimer);
+        }
+      }, 1000);
     },
   },
 };
@@ -965,6 +961,14 @@ export default {
 .hint-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.hint-btn:active {
+  transform: translateY(-1px);
+}
+
+.hint-btn i {
+  font-size: 1.1rem;
 }
 
 /* 게임 소개 화면 */

@@ -7,7 +7,7 @@ import RoadViewModeMain from '@/components/game/roadViewMode/RoadViewModeMain.vu
 import PhotoModeMain from '@/components/game/photoMode/PhotoModeMain.vue';
 import PhotoModePage from '@/components/game/photoMode/PhotoModeMainPage.vue';
 import PhotoPlayGame from '@/components/game/photoMode/gameplay/PhotoModeGameplay.vue';
-import RoadViewPractice from '@/components/game/roadViewMode/components/RoadViewPractice.vue';
+import RoadViewPractice from '@/components/game/roadViewMode/RoadViewPractice.vue';
 import MyInfoPage from '@/components/MyInfoPage.vue';
 import TempPage from '@/components/dummy/TempPage.vue';
 import TestMapPage from '@/components/dummy/TestMapPage.vue';
@@ -22,7 +22,7 @@ import InventoryMain from '@/components/user/inventory/InventoryMain.vue';
 import MyProfile from '@/components/user/mypage/MyProfile.vue';
 import FriendsList from '@/components/user/mypage/FriendsList.vue';
 import AccountSettings from '@/components/user/mypage/AccountSettings.vue';
-import RoadViewRank from '@/components/game/roadViewMode/components/RoadViewRank.vue';
+import RoadViewRank from '@/components/game/roadViewMode/RoadViewRank.vue';
 import MultiplayerRoadViewGame from '@/components/game/multiplayerMode/gameplay/roadview/MultiplayerRoadViewGame.vue';
 
 Vue.use(VueRouter);
@@ -56,7 +56,7 @@ const routes = [
         component: RoadViewPractice
     },
     {
-        path: '/roadviewRank',
+        path: '/roadViewRank',
         name: "RoadViewRank",
         component: RoadViewRank
     },
