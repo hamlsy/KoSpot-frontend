@@ -23,7 +23,6 @@ import FriendsList from '@/components/user/mypage/FriendsList.vue';
 import AccountSettings from '@/components/user/mypage/AccountSettings.vue';
 import RoadViewRank from '@/components/game/roadViewMode/RoadViewRank.vue';
 import MultiplayerRoadViewGame from '@/components/game/multiplayerMode/gameplay/roadview/MultiplayerRoadViewGame.vue';
-import MainPage2 from '@/components/main/MainPage.vue';
 
 Vue.use(VueRouter);
 
@@ -172,11 +171,6 @@ const routes = [
         path: '/admin/users',
         name: "UserManagement",
         component: UserManagement
-    },
-    {
-        path: '/mainPage2',
-        name: "MainPage2",
-        component: MainPage2
     },
     
     // Test/Development routes

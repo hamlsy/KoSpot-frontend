@@ -7,8 +7,7 @@
           <i class="fas fa-arrow-left"></i>
         </button>
         <div class="header-left">
-          <h1 class="logo">KoSpot</h1>
-          <span class="badge">Beta</span>
+          <app-logo class="home-link" to="/mainPage" />
         </div>
         <div class="header-right">
           <h3>멀티플레이어 로비</h3>
@@ -61,6 +60,7 @@
 import GameRoomList from './room/MultiplayerRoomList.vue';
 import ChatWindow from './chat/MultiplayerLobbyChatWindow.vue';
 import CreateRoomModal from './room/MultiplayerCreateRoomModal.vue';
+import AppLogo from '@/components/common/AppLogo.vue'; // AppLogo 컴포넌트 추가
 
 export default {
   name: "MultiplayerLobby",
@@ -68,7 +68,8 @@ export default {
   components: {
     GameRoomList,
     ChatWindow,
-    CreateRoomModal
+    CreateRoomModal,
+    AppLogo // AppLogo 컴포넌트 등록
   },
   
   data() {
@@ -352,26 +353,7 @@ export default {
   align-items: center;
 }
 
-.logo {
-  margin: 0;
-  font-size: 1.8rem;
-  font-weight: bold;
-  background: linear-gradient(135deg, #2c3e50 0%, #4ca1af 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.badge {
-  background: #e74c3c;
-  color: white;
-  padding: 0.1rem 0.4rem;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  margin-left: 0.5rem;
-  text-transform: uppercase;
-  font-weight: 700;
-}
-
+/* 로고 스타일 */
 .header-right {
   margin-left: auto;
 }
@@ -511,10 +493,6 @@ export default {
 @media (max-width: 640px) {
   .header-content {
     padding: 0.8rem 1rem;
-  }
-  
-  .logo {
-    font-size: 1.5rem;
   }
   
   .header-right h3 {

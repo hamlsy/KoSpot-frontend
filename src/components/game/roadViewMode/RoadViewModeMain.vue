@@ -6,10 +6,7 @@
         <button class="back-button" @click="$router.push('/mainPage')">
           <i class="fas fa-arrow-left"></i>
         </button>
-        <div class="header-left">
-          <h1 class="logo">KoSpot</h1>
-          <span class="badge">Beta</span>
-        </div>
+        <app-logo class="home-link" to="/mainPage" />
         <div class="header-right">
           <h3>로드뷰 모드</h3>
         </div>
@@ -177,9 +174,13 @@
 </template>
 
 <script>
+import AppLogo from '@/components/common/AppLogo.vue';
+
 export default {
   name: "RoadViewGame",
-
+  components: {
+    AppLogo
+  },
   data() {
     return {
       selectedGameMode: null,
