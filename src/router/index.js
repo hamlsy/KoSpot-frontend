@@ -8,7 +8,6 @@ import PhotoModeMain from '@/components/game/photoMode/PhotoModeMain.vue';
 import PhotoModePage from '@/components/game/photoMode/PhotoModeMainPage.vue';
 import PhotoPlayGame from '@/components/game/photoMode/gameplay/PhotoModeGameplay.vue';
 import RoadViewPractice from '@/components/game/roadViewMode/RoadViewPractice.vue';
-import MyInfoPage from '@/components/MyInfoPage.vue';
 import TempPage from '@/components/dummy/TempPage.vue';
 import TestMapPage from '@/components/dummy/TestMapPage.vue';
 import CoordData from '@/components/dummy/coordData.vue';
@@ -24,6 +23,7 @@ import FriendsList from '@/components/user/mypage/FriendsList.vue';
 import AccountSettings from '@/components/user/mypage/AccountSettings.vue';
 import RoadViewRank from '@/components/game/roadViewMode/RoadViewRank.vue';
 import MultiplayerRoadViewGame from '@/components/game/multiplayerMode/gameplay/roadview/MultiplayerRoadViewGame.vue';
+import MainPage2 from '@/components/main/MainPage.vue';
 
 Vue.use(VueRouter);
 
@@ -129,11 +129,6 @@ const routes = [
     
     // User routes
     {
-        path: '/myInfoPage',
-        name: "MyInfoPage",
-        component: MyInfoPage
-    },
-    {
         path: '/shopMain',
         name: "ShopMain",
         component: ShopMain
@@ -177,6 +172,11 @@ const routes = [
         path: '/admin/users',
         name: "UserManagement",
         component: UserManagement
+    },
+    {
+        path: '/mainPage2',
+        name: "MainPage2",
+        component: MainPage2
     },
     
     // Test/Development routes
