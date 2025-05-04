@@ -771,7 +771,8 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: whitesmoke;
+ 
   z-index: 20;
 }
 
@@ -804,42 +805,6 @@ export default {
   box-shadow: 0 6px 15px rgba(52, 152, 219, 0.6);
 }
 
-/* 카운트다운 화면 */
-.countdown-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: rgba(0, 0, 0, 0.6);
-  z-index: 15;
-}
-
-.countdown {
-  font-size: 12rem;
-  font-weight: bold;
-  color: white;
-  text-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-  animation: countdownScale 1s infinite;
-}
-
-@keyframes countdownScale {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.2);
-    opacity: 0.8;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
 
 /* 로딩 화면 */
 .loading-overlay {

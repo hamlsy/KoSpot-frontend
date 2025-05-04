@@ -56,11 +56,7 @@
           <div
             v-for="stat in stats"
             :key="stat.label"
-            class="stat-card"
-            :class="{ 'stat-card-hover': hoverStat === stat.label }"
-            @mouseenter="hoverStat = stat.label"
-            @mouseleave="hoverStat = null"
-          >
+            class="stat-card">
             <div class="stat-header">
               <i :class="stat.icon"></i>
               <span>{{ stat.label }}</span>
@@ -164,11 +160,14 @@
       </div>
     </transition>
     <!-- Theme Mode Popup -->
-    <theme-mode-popup
-      :show="showThemeModePopup"
-      @close="closeThemeModePopup"
-      @start-game="startThemeGame"
-    />
+    <transition name="popup-slide">
+      <theme-mode-popup
+        v-if="showThemeModePopup"
+        :show="showThemeModePopup"
+        @close="closeThemeModePopup"
+        @start-game="startThemeGame"
+      />
+    </transition>
 
     <!-- Loading Overlay -->
     <div v-if="isLoading" class="loading-overlay">
@@ -380,6 +379,10 @@ export default {
     closeThemeModePopup() {
       this.showThemeModePopup = false;
     },
+    closeGameModePopup() {
+      this.selectedGameMode = null;
+      this.selectedRegion = null;
+    },
     startThemeGame(gameData) {
       this.isLoading = true;
       console.log("Starting theme game with:", gameData);
@@ -411,8 +414,7 @@ export default {
 @import url("@/assets/styles/common/header.css");
 @import url("@/assets/styles/common/footer.css");
 @import url("@/assets/styles/common/slide-menu/slide-menu.css");
-@import url("@/assets/styles/common/header.css");
-@import url("@/assets/styles/common/footer.css");
-@import url("@/assets/styles/common/slide-menu/slide-menu.css");
 @import url("@/assets/styles/game/roadView/roadview-main.css");
+
+
 </style>

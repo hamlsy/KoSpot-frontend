@@ -54,9 +54,6 @@
             v-for="stat in stats"
             :key="stat.label"
             class="stat-card"
-            :class="{ 'stat-card-hover': hoverStat === stat.label }"
-            @mouseenter="hoverStat = stat.label"
-            @mouseleave="hoverStat = null"
           >
             <div class="stat-header">
               <i :class="stat.icon"></i>
@@ -403,8 +400,14 @@ export default {
 @import url("@/assets/styles/common/header.css");
 @import url("@/assets/styles/common/footer.css");
 @import url("@/assets/styles/common/slide-menu/slide-menu.css");
-@import url("@/assets/styles/common/header.css");
-@import url("@/assets/styles/common/footer.css");
-@import url("@/assets/styles/common/slide-menu/slide-menu.css");
 @import url("@/assets/styles/game/photoMode/photomode-main.css");
+
+/* Popup Animation */
+.popup-slide-enter-active {
+  transition: opacity 0.25s ease;
+}
+
+.popup-slide-enter-from {
+  opacity: 0;
+}
 </style>

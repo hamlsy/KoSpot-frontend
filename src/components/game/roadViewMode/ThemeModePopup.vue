@@ -1,5 +1,5 @@
 <template>
-  <div class="theme-mode-popup" v-if="show">
+  <div class="theme-mode-popup" v-if="show" @click.self="closePopup">
     <div class="popup-content">
       <div class="popup-header">
         <h2>테마 게임</h2>

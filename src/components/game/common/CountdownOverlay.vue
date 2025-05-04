@@ -1,7 +1,9 @@
 <template>
-  <div v-if="show" class="countdown-overlay">
-    <div class="countdown">{{ countdown }}</div>
-  </div>
+  <transition name="fade">
+    <div v-if="show" class="countdown-overlay">
+      <div class="countdown">{{ countdown }}</div>
+    </div>
+  </transition>
 </template>
 
 <script>
@@ -71,7 +73,7 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: whitesmoke;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -79,10 +81,18 @@ export default {
 
 }
 
+.fade-leave-active {
+  transition: opacity 0.8s;
+}
+
+.fade-leave-to {
+  opacity: 0;
+}
+
 .countdown {
   font-size: 7rem;
   font-weight: bold;
-  color: white;
+  color: black;
 }
 
 /* 반응형 디자인 */

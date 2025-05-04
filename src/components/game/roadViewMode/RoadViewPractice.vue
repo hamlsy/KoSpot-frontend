@@ -59,21 +59,6 @@
           ></i>
           {{ isMapOpen ? "로드뷰로 돌아가기" : "지도 열기" }}
         </button>
-
-        <!-- 힌트 버튼 -->
-        <button
-          v-if="
-            !isRankMode &&
-            !showResult &&
-            hintAvailable &&
-            hintsLeft > 0
-          "
-          class="hint-btn"
-          @click="useHint"
-        >
-          <i class="fas fa-lightbulb"></i>
-          힌트 사용 ({{ hintsLeft }}/3)
-        </button>
         
         <!-- Spot 버튼 (지도 모드에서만 표시) -->
         <button v-if="isMapOpen && !showResult && false" 
@@ -281,6 +266,9 @@ export default {
         lng: 126.97
       },
 
+      //힌트
+      showHints: true,
+
       // 지역 데이터
       regions: [
         { id: "seoul", name: "서울", centerLat: 37.5665, centerLng: 126.978 },
@@ -405,9 +393,24 @@ export default {
     useHint() {
       if (!this.hintAvailable || this.hintCount <= 0 || !this.currentLocation) return;
       
+      // 지도가 열려있지 않으면 먼저 지도를 열기
+      if (!this.isMapOpen) {
+        this.isMapOpen = true;
+        
+        // 지도가 초기화될 때까지 기다린 후 힌트 적용
+        setTimeout(() => {
+          this.applyHint();
+        }, 500);
+      } else {
+        this.applyHint();
+      }
+    },
+    
+    // 힌트 적용 (지도에 원 표시)
+    applyHint() {
       // 맵 컴포넌트가 없는 경우 중단
       if (!this.$refs.phoneFrame || !this.$refs.phoneFrame.map) {
-        console.error('지도가 초기화되지 않았습니다.');
+        this.showToastMessage('지도를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
         return;
       }
       
@@ -421,42 +424,29 @@ export default {
         this.hintCircle = null;
       }
       
-      // 랜덤한 위치에 힌트 원 생성
-      const randomOffsetLat = (Math.random() * 2 - 1) * (this.hintRadius * 0.5) / 111000; // 위도 1도는 약 111km
-      const randomOffsetLng = (Math.random() * 2 - 1) * (this.hintRadius * 0.5) / (111000 * Math.cos(this.currentLocation.lat * Math.PI / 180));
-      
-      // 랜덤 중심점 설정 (정답 좌표가 원 안에 포함되도록)
-      const circleCenterLat = this.currentLocation.lat + randomOffsetLat;
-      const circleCenterLng = this.currentLocation.lng + randomOffsetLng;
-      
-      const circleCenter = new kakao.maps.LatLng(
-        circleCenterLat,
-        circleCenterLng
+      // 힌트 원 생성
+      const map = this.$refs.phoneFrame.map;
+      const position = new kakao.maps.LatLng(
+        this.currentLocation.lat,
+        this.currentLocation.lng
       );
       
-      // 정답 위치까지의 거리 계산
-      const distanceToAnswer = this.calculateDistance(
-        circleCenterLat, circleCenterLng,
-        this.currentLocation.lat, this.currentLocation.lng
-      ) * 1000; // km -> m 변환
-      
-      // 정답 좌표가 포함되는 원 반경 설정 (거리보다 크게)
-      const finalRadius = Math.max(this.hintRadius, distanceToAnswer * 1.2);
-      
-      // 힌트 원 생성
       this.hintCircle = new kakao.maps.Circle({
-        center: circleCenter,
-        radius: finalRadius, // 미터 단위
+        center: position,
+        radius: this.hintRadius,
         strokeWeight: 2,
-        strokeColor: '#FF9800',
+        strokeColor: '#FF0000',
         strokeOpacity: 0.8,
-        strokeStyle: 'solid',
-        fillColor: '#FFC107',
-        fillOpacity: 0.3,
-        map: this.$refs.phoneFrame.map
+        strokeStyle: 'dashed',
+        fillColor: '#FF0000',
+        fillOpacity: 0.2,
+        map: map
       });
       
-      // 힌트 반경 줄이기
+      // 힌트 원의 중심으로 지도 이동 (힌트 원이 보이도록)
+      map.setCenter(position);
+      
+      // 힌트 반경 조정 (힌트를 사용할 때마다 원이 작아짐)
       if (this.hintCount === 2) {
         this.hintRadius = 80000; // 두 번째 힌트는 80km
       } else if (this.hintCount === 1) {
@@ -480,6 +470,9 @@ export default {
           clearInterval(this.hintTimer);
         }
       }, 1000);
+      
+      // 힌트 사용 메시지 표시
+      this.showToastMessage(`힌트를 사용했습니다. (남은 힌트: ${this.hintCount}/3)`);
     },
 
     // 랭크 모드 타이머 시작
@@ -981,7 +974,7 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: whitesmoke;
   z-index: 20;
 }
 
@@ -1012,43 +1005,6 @@ export default {
 .start-btn:hover {
   transform: translateY(-3px);
   box-shadow: 0 6px 15px rgba(52, 152, 219, 0.6);
-}
-
-/* 카운트다운 화면 */
-.countdown-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: rgba(0, 0, 0, 0.6);
-  z-index: 15;
-}
-
-.countdown {
-  font-size: 12rem;
-  font-weight: bold;
-  color: white;
-  text-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-  animation: countdownScale 1s infinite;
-}
-
-@keyframes countdownScale {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.2);
-    opacity: 0.8;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
 }
 
 /* 로딩 화면 */
@@ -1181,7 +1137,7 @@ export default {
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
   z-index: 10;
 }
