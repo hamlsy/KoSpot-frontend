@@ -28,8 +28,13 @@
             v-for="mode in gameModes"
             :key="mode.id"
             class="game-mode-card"
+            :class="{ 
+              'mode-card-hover': hoverMode === mode.id,
+              'practice-mode': mode.id === 'practice',
+              'rank-mode': mode.id === 'rank',
+              'theme-mode': mode.id === 'theme'
+            }"
             @click="openGameModePopup(mode)"
-            :class="{ 'mode-card-hover': hoverMode === mode.id }"
             @mouseenter="hoverMode = mode.id"
             @mouseleave="hoverMode = null"
           >

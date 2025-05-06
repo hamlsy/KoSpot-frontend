@@ -30,8 +30,13 @@
             v-for="mode in gameModes"
             :key="mode.id"
             class="game-mode-card"
+            :class="{ 
+              'mode-card-hover': hoverMode === mode.id,
+              'practice-mode': mode.id === 'practice',
+              'rank-mode': mode.id === 'rank',
+              'theme-mode': mode.id === 'theme'
+            }"
             @click="openGameModePopup(mode)"
-            :class="{ 'mode-card-hover': hoverMode === mode.id }"
             @mouseenter="hoverMode = mode.id"
             @mouseleave="hoverMode = null"
           >
@@ -415,6 +420,4 @@ export default {
 @import url("@/assets/styles/common/footer.css");
 @import url("@/assets/styles/common/slide-menu/slide-menu.css");
 @import url("@/assets/styles/game/roadView/roadview-main.css");
-
-
 </style>

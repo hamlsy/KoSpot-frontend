@@ -124,18 +124,32 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
 
 .mode-card-hover {
-  transform: translateY(-8px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
 }
 
-.mode-card-hover::before {
-  opacity: 1;
+.game-mode-card.practice-mode.mode-card-hover {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.15) 0%, rgba(34, 197, 94, 0.08) 100%);
+}
+
+.game-mode-card.rank-mode.mode-card-hover {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(29, 78, 216, 0.08) 100%);
+}
+
+.game-mode-card.theme-mode.mode-card-hover {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.08) 100%);
+}
+
+.game-mode-icon,
+.game-mode-details,
+.game-mode-arrow {
+  position: relative;
+  z-index: 1;
 }
 
 .game-mode-icon {
@@ -163,10 +177,6 @@
   background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
-}
-
-.mode-card-hover .game-mode-icon::after {
-  opacity: 1;
 }
 
 .practice-color {
@@ -207,11 +217,6 @@
   font-size: 1.2rem;
   transition: transform 0.3s ease;
   margin-left: 0.5rem;
-}
-
-.mode-card-hover .game-mode-arrow {
-  transform: translateX(3px);
-  color: #64748b;
 }
 
 .ad-space {
@@ -255,11 +260,6 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-/* 
-.stat-card-hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
-} */
 
 .stat-header {
   display: flex;
@@ -299,10 +299,6 @@
 
 .record-item.with-border {
   border-bottom: 1px solid #f1f5f9;
-}
-
-.record-item-hover {
-  background: #f8fafc;
 }
 
 .record-info {
@@ -501,34 +497,9 @@
   overflow: hidden;
 }
 
-.start-game-button::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.start-game-button:hover:not(:disabled)::after {
-  opacity: 1;
-}
-
-.start-game-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(74, 222, 128, 0.3);
-}
-
 .start-game-button.rank-color {
   background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
   box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
-}
-
-.start-game-button.rank-color:hover:not(:disabled) {
-  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
 }
 
 .start-game-button:disabled {
@@ -537,6 +508,21 @@
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+.popup-slide-enter-active,
+.popup-slide-leave-active {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.popup-slide-enter-from {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.popup-slide-leave-to {
+  opacity: 0;
+  transform: translateY(30px);
 }
 
 /* 로딩 오버레이 */
@@ -586,22 +572,6 @@
   color: #334155;
   font-size: 1.2rem;
   font-weight: 500;
-}
-
-/* 애니메이션 */
-.popup-slide-enter-active,
-.popup-slide-leave-active {
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.popup-slide-enter-from {
-  opacity: 0;
-  transform: translateY(30px);
-}
-
-.popup-slide-leave-to {
-  opacity: 0;
-  transform: translateY(30px);
 }
 
 /* 반응형 스타일 */
