@@ -1,33 +1,40 @@
 <template>
-  <div class="user-card">
+  <div class="user-card" @click="isLoggedIn ? goToProfile() : null" :class="{ 'clickable': isLoggedIn }">
     <!-- 로그인된 경우 사용자 정보 표시 -->
     <div v-if="isLoggedIn" class="user-profile">
-      <div class="user-avatar">
-        <img :src="userProfile.avatar || '/default-avatar.png'" alt="프로필 이미지">
-      </div>
-      <div class="user-info">
-        <h3>{{ userProfile.nickname }}</h3>
-        <p>{{ userProfile.level }} 레벨</p>
-        <div class="user-stats">
-          <div class="user-stat">
-            <span class="stat-value">{{ userProfile.rankPoints }}</span>
-            <span class="stat-label">랭크 포인트</span>
-          </div>
-          <div class="user-stat">
-            <span class="stat-value">{{ userProfile.playCount }}</span>
-            <span class="stat-label">플레이 횟수</span>
-          </div>
+      <div class="profile-header">
+        <div class="user-avatar">
+          <img :src="userProfile.marker || '/assets/markers/default-marker.png'" alt="마커 이미지">
         </div>
-        <button class="profile-button" @click="goToProfile">
-          프로필 보기
+        <div class="user-name-level">
+          <h3>{{ userProfile.nickname }}</h3>
+          <p>Lv.{{ userProfile.level }}</p>
+        </div>
+        <button class="logout-button" @click.stop="logout">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>로그아웃</span>
         </button>
+      </div>
+      <div class="user-stats">
+        <div class="user-stat">
+          <span class="stat-value">{{ userProfile.photoRating }}</span>
+          <span class="stat-label">포토</span>
+        </div>
+        <div class="user-stat">
+          <span class="stat-value">{{ userProfile.roadRating }}</span>
+          <span class="stat-label">로드뷰</span>
+        </div>
+        <div class="user-stat">
+          <span class="stat-value">{{ userProfile.playCount }}</span>
+          <span class="stat-label">플레이</span>
+        </div>
       </div>
     </div>
 
     <!-- 로그인되지 않은 경우 로그인 버튼 표시 -->
     <div v-else class="login-section">
       <h3>로그인하고 게임을 즐겨보세요!</h3>
-      <p>로그인하면 랭킹 등록, 기록 저장 등 다양한 기능을 이용할 수 있습니다.</p>
+      <p>랭킹 등록, 기록 저장 등 다양한 기능</p>
       <button class="login-button" @click="goToLogin">
         로그인하러 가기
       </button>
@@ -41,16 +48,17 @@ export default {
   props: {
     isLoggedIn: {
       type: Boolean,
-      default: false
+      default: true
     },
     userProfile: {
       type: Object,
       default: () => ({
         nickname: "게스트",
         level: 1,
-        rankPoints: 0,
+        photoRating: 0,
+        roadRating: 0,
         playCount: 0,
-        avatar: null
+        marker: "/assets/markers/default-marker.png"
       })
     }
   },
@@ -62,7 +70,10 @@ export default {
       this.$emit('social-login', provider);
     },
     goToLogin() {
-      this.$emit('navigate', 'homePage');
+      this.$emit('navigate', 'loginPage');
+    },
+    logout() {
+      this.$emit('logout');
     }
   }
 };
@@ -73,85 +84,123 @@ export default {
   background-color: #fff;
   border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  padding: 20px;
+  padding: 16px;
   height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  max-height: 180px;
 }
 
-.user-profile {
+.clickable {
+  cursor: pointer;
+}
+
+.clickable:hover {
+  background-color: #f8fafc;
+}
+
+.profile-header {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  text-align: center;
+  margin-bottom: 12px;
+  position: relative;
 }
 
 .user-avatar {
-  width: 80px;
-  height: 80px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   overflow: hidden;
-  margin-bottom: 15px;
-  border: 3px solid #4cd964;
+  background: linear-gradient(135deg, #f0f9ff, #e6f7ff);
+  border: 2px solid #4cd964;
+  flex-shrink: 0;
 }
 
 .user-avatar img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
-.user-info h3 {
-  font-size: 1.3rem;
+.user-name-level {
+  margin-left: 12px;
+  text-align: left;
+  flex-grow: 1;
+}
+
+.user-name-level h3 {
+  font-size: 1rem;
   font-weight: 600;
-  margin: 0 0 5px 0;
-  color: #333;
+  margin: 0 0 2px 0;
+  color: #000;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
 }
 
-.user-info p {
-  color: #666;
-  margin: 0 0 15px 0;
+.user-name-level p {
+  color: #000;
+  margin: 0;
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.logout-button {
+  background: transparent;
+  color: #000;
+  border: none;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: absolute;
+  right: 0;
+  top: 0;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+}
+
+.logout-button i {
+  margin-right: 4px;
+}
+
+.logout-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
 }
 
 .user-stats {
   display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-bottom: 20px;
+  justify-content: space-between;
+  margin-top: 8px;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border-radius: 12px;
+  padding: 10px;
 }
 
 .user-stat {
   display: flex;
   flex-direction: column;
   align-items: center;
+  flex: 1;
 }
 
 .stat-value {
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 600;
-  color: #333;
+  color: #000;
 }
 
 .stat-label {
-  font-size: 0.8rem;
-  color: #666;
-}
-
-.profile-button {
-  background: linear-gradient(135deg, #4cd964, #34c759);
-  color: white;
-  border: none;
-  border-radius: 20px;
-  padding: 8px 20px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.profile-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(76, 217, 100, 0.3);
+  font-size: 0.7rem;
+  color: #000;
+  opacity: 0.7;
+  margin-top: 2px;
 }
 
 .login-section {
@@ -159,19 +208,21 @@ export default {
   flex-direction: column;
   align-items: center;
   text-align: center;
+  padding: 8px;
 }
 
 .login-section h3 {
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 600;
-  margin: 0 0 10px 0;
-  color: #333;
+  margin: 0 0 6px 0;
+  color: #000;
 }
 
 .login-section p {
-  color: #666;
+  color: #000;
   margin: 0 0 10px 0;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
+  opacity: 0.7;
 }
 
 .login-button {
@@ -179,14 +230,14 @@ export default {
   color: white;
   border: none;
   border-radius: 12px;
-  padding: 12px 24px;
+  padding: 8px 16px;
   font-weight: 500;
-  font-size: 16px;
+  font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 6px rgba(99, 102, 241, 0.15);
   width: 100%;
-  margin-top: 16px;
+  margin-top: 8px;
   position: relative;
   overflow: hidden;
 }
@@ -201,25 +252,23 @@ export default {
   box-shadow: 0 2px 4px rgba(99, 102, 241, 0.1);
 }
 
-.login-button::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.login-button:hover::after {
-  opacity: 1;
-}
-
 @media (max-width: 768px) {
-  .user-stats {
-    gap: 15px;
+  .user-avatar {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .user-name-level h3 {
+    font-size: 0.9rem;
+    max-width: 100px;
+  }
+  
+  .stat-value {
+    font-size: 0.9rem;
+  }
+  
+  .stat-label {
+    font-size: 0.65rem;
   }
 }
 </style>

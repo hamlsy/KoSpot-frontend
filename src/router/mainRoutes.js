@@ -1,10 +1,10 @@
 import MainPage from '@/components/main/MainPage.vue';
-import HomePage from '@/components/main/HomePage.vue';
+import LoginPage from '@/components/main/LoginPage.vue';
 
 const mainRoutes = [
     {
         path:'/',
-        redirect: "/homePage",
+        redirect: "/loginPage",
     },
     {
         path:'/mainPage',
@@ -12,9 +12,9 @@ const mainRoutes = [
         component: MainPage
     },
     {
-        path: '/homePage',
-        name: "HomePage",
-        component: HomePage
+        path: '/loginPage',
+        name: "loginPage",
+        component: LoginPage
     }
 ];
 

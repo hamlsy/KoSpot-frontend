@@ -250,10 +250,11 @@ export default {
       },
 
       stats: [
-        { icon: "fas fa-medal", label: "최고 점수", value: "4,850점" },
-        { icon: "fas fa-clock", label: "총 플레이 수", value: "500 판" },
-        { icon: "fas fa-users", label: "전체 랭킹", value: "상위 15%" },
         { icon: "fas fa-trophy", label: "내 랭크", value: "Bronze 3" },
+        { icon: "fas fa-trophy", label: "내 레이팅 점수", value: "3200" },
+        { icon: "fas fa-clock", label: "총 플레이 수", value: "500 판" },
+        { icon: "fas fa-medal", label: "최고 점수", value: "4,850점" },
+        { icon: "fas fa-users", label: "전체 랭킹", value: "상위 15%" },
       ],
 
       recentRecords: [

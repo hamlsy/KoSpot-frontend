@@ -65,7 +65,7 @@
             </div>
           </div>
           <!-- 로그인/사용자 정보 카드 -->
-          <div class="mode-card user-card">
+          <div class="user-card">
             <UserLoginCard
               :is-logged-in="isLoggedIn"
               :user-profile="userProfile"
@@ -537,6 +537,7 @@ export default {
   border: 1px solid #eeeeee;
   /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04); */
 }
+
 
 .mode-card:hover {
   transform: translateY(-4px);
