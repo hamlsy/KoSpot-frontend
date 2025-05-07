@@ -64,7 +64,15 @@
               </div>
             </div>
           </div>
-
+          <!-- 로그인/사용자 정보 카드 -->
+          <div class="mode-card user-card">
+            <UserLoginCard
+              :is-logged-in="isLoggedIn"
+              :user-profile="userProfile"
+              @navigate="navigateTo"
+              @social-login="socialLogin"
+            />
+          </div>
           <div class="mode-card photo" @click="navigateTo('photoModeMain')">
             <div class="mode-background"></div>
             <div class="mode-icon">
@@ -107,16 +115,6 @@
                 </span>
               </div>
             </div>
-            
-          </div>
-          <!-- 로그인/사용자 정보 카드 -->
-          <div class="mode-card user-card">
-            <UserLoginCard
-              :is-logged-in="isLoggedIn"
-              :user-profile="userProfile"
-              @navigate="navigateTo"
-              @social-login="socialLogin"
-            />
           </div>
         </div>
       </section>

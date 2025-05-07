@@ -92,8 +92,7 @@ onMounted(() => {
 }
 
 .logo-section {
-  margin-top: 4rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
 .map-animation {
@@ -314,6 +313,7 @@ onMounted(() => {
 
   .logo-section {
     margin-top: 3rem;
+    margin-bottom: 4rem;
   }
 
   .map-animation {
