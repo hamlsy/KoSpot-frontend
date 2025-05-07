@@ -1,5 +1,5 @@
 <template>
-  <div class="hint-container">
+  <div class="hint-container" v-if="visible">
     <div class="hint-badge">
       <i class="fas fa-lightbulb"></i> {{ isNotification ? '알림' : '힌트' }}
     </div>
@@ -39,6 +39,12 @@ export default {
   border-left: 4px solid #f59e0b;
   animation: fadeIn 0.3s ease-out;
   margin-bottom: 1rem;
+  position: relative;
+  z-index: 20; /* 높은 z-index로 항상 위에 표시 */
+  width: calc(100% - 2rem); /* 양쪽 여백 고려 */
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .hint-badge {

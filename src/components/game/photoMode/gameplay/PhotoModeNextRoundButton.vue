@@ -1,40 +1,49 @@
 <template>
   <div class="next-round-button-container" v-if="visible">
-    <div class="countdown-bar">
-      <div class="countdown-progress" :style="{ width: `${countdownProgress}%` }"></div>
+    <div class="countdown-bar" v-if="isRankMode">
+      <div
+        class="countdown-progress"
+        :style="{ width: `${countdownProgress}%` }"
+      ></div>
     </div>
     <button class="next-round-button" @click="goToNextRound">
       <span v-if="isLastRound">결과 보기</span>
       <span v-else>다음 라운드</span>
-      <i :class="isLastRound ? 'fas fa-flag-checkered' : 'fas fa-arrow-right'"></i>
+      <i
+        :class="isLastRound ? 'fas fa-flag-checkered' : 'fas fa-arrow-right'"
+      ></i>
     </button>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'PhotoModeNextRoundButton',
-  
+  name: "PhotoModeNextRoundButton",
+
   props: {
     visible: {
       type: Boolean,
-      default: false
+      default: false,
     },
     isLastRound: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
+    isRankMode: {
+      type: Boolean,
+      default: false,
+    },
   },
-  
+
   data() {
     return {
       countdownDuration: 15000, // 15초
       countdownStart: 0,
       countdownProgress: 100,
-      countdownInterval: null
+      countdownInterval: null,
     };
   },
-  
+
   watch: {
     visible(newVal) {
       if (newVal) {
@@ -42,42 +51,45 @@ export default {
       } else {
         this.stopCountdown();
       }
-    }
+    },
   },
-  
+
   methods: {
     startCountdown() {
-      this.stopCountdown(); // 기존 카운트다운 중지
-      this.countdownStart = Date.now();
-      this.countdownProgress = 100;
-      
-      this.countdownInterval = setInterval(() => {
-        const elapsed = Date.now() - this.countdownStart;
-        this.countdownProgress = 100 - (elapsed / this.countdownDuration * 100);
-        
-        if (this.countdownProgress <= 0) {
-          this.stopCountdown();
-          this.goToNextRound();
-        }
-      }, 50);
+      if (this.isRankMode) {
+        this.stopCountdown(); // 기존 카운트다운 중지
+        this.countdownStart = Date.now();
+        this.countdownProgress = 100;
+
+        this.countdownInterval = setInterval(() => {
+          const elapsed = Date.now() - this.countdownStart;
+          this.countdownProgress =
+            100 - (elapsed / this.countdownDuration) * 100;
+
+          if (this.countdownProgress <= 0) {
+            this.stopCountdown();
+            this.goToNextRound();
+          }
+        }, 50);
+      }
     },
-    
+
     stopCountdown() {
       if (this.countdownInterval) {
         clearInterval(this.countdownInterval);
         this.countdownInterval = null;
       }
     },
-    
+
     goToNextRound() {
       this.stopCountdown();
-      this.$emit('next-round');
-    }
+      this.$emit("next-round");
+    },
   },
-  
+
   beforeDestroy() {
     this.stopCountdown();
-  }
+  },
 };
 </script>
 

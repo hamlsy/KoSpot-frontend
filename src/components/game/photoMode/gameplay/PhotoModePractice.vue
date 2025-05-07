@@ -29,6 +29,10 @@
           </div>
         </div>
       </div>
+      <!-- 정답 지역 표시 -->
+      <div v-if="(showCorrectAnimation || showTimeoutAnimation || roundCompleted) && correctRegion" class="correct-region-display">
+        <span>정답 지역: {{ getRegionName(correctRegion) }}</span>
+      </div>
     </div>
     
     <!-- 게임 메인 콘텐츠 -->
@@ -45,7 +49,11 @@
         />
       </div>
       <!-- 사진 영역 - 왼쪽에 배치 -->
-      <div class="photo-section">
+      <div class="photo-section" :class="{
+        'correct-highlight': showCorrectAnimation,
+        'incorrect-highlight': showIncorrectAnimation,
+        'timeout-highlight': showTimeoutAnimation
+      }">
         <photo-mode-photo-grid 
           :photos="currentPhotos" 
           :show-incorrect-animation="showIncorrectAnimation"
@@ -64,6 +72,7 @@
         <photo-mode-next-round-button 
           :visible="(showCorrectAnimation || showTimeoutAnimation || (isPracticeMode && roundCompleted)) && !showRoundResult" 
           :is-last-round="currentRound >= totalRounds"
+          :isRankMode= false
           @next-round="nextRound"
         />
         
@@ -200,6 +209,7 @@ export default {
       currentRound: 0,
       roundTimeLimit: 30, // 기본 30초
       timerActive: false,
+      photosPerRound: 4, // 기본값, 실제로는 getPhotosForRound 메서드에서 동적으로 계산됨
       
       // 게임 상태
       isGameStarted: false,
@@ -212,83 +222,75 @@ export default {
       allPhotos: [
         {
           id: 1,
-          photoUrl: 'https://i.ibb.co/FxDnDfS/seoul-namsan.jpg',
-          locationName: '서울 남산타워',
-          locationDescription: '서울 중구에 위치한 남산서울타워는 대한민국을 대표하는 랜드마크입니다.',
+          photoUrl: require('@/assets/photo/seoul/seoul_63building.jpg'),
+          locationName: '서울 63빌딩',
+          locationDescription: '서울 영등포구에 위치한 63빌딩은 한때 대한민국에서 가장 높은 건물이었습니다.',
           region: 'Seoul',
-          fact: '남산서울타워는 1969년에 착공하여 1975년에 완공되었습니다.'
+          fact: '63빌딩은 63개 층으로 이루어져 있으며, 1985년에 완공되었습니다.'
         },
         {
           id: 2,
-          photoUrl: 'https://i.ibb.co/HdKgL3t/gyeongbokgung.jpg',
-          locationName: '경복궁',
-          locationDescription: '서울 종로구에 위치한 경복궁은 조선시대 정궁(正宮)입니다.',
+          photoUrl: require('@/assets/photo/seoul/seoul_cheonggyecheon.jpg'),
+          locationName: '청계천',
+          locationDescription: '서울 중구와 종로구를 흐르는 청계천은 도심 속 생태하천으로 복원되었습니다.',
           region: 'Seoul',
-          fact: '경복궁은 1395년 태조 이성계에 의해 창건되었습니다.'
+          fact: '청계천은 2003년부터 2005년까지 복원 공사가 진행되었으며, 현재는 서울의 대표적인 관광지입니다.'
         },
         {
           id: 3,
-          photoUrl: 'https://i.ibb.co/Jt8JQv5/haeundae.jpg',
-          locationName: '해운대 해수욕장',
-          locationDescription: '부산 해운대구에 위치한 해운대 해수욕장은 대한민국에서 가장 유명한 해변 중 하나입니다.',
-          region: 'Busan',
-          fact: '해운대 해수욕장의 모래는 화강암이 풍화되어 만들어진 것으로 알려져 있습니다.'
+          photoUrl: require('@/assets/photo/seoul/seoul_cheonggyecheon1.jpg'),
+          locationName: '청계천 광장',
+          locationDescription: '서울 중구에 위치한 청계광장은 청계천의 시작점으로 다양한 문화행사가 열리는 공간입니다.',
+          region: 'Seoul',
+          fact: '청계광장에는 높이 4.3m의 분수대인 스프링이 설치되어 있습니다.'
         },
         {
           id: 4,
-          photoUrl: 'https://i.ibb.co/YTYdMVk/seongsan.jpg',
-          locationName: '제주 성산일출봉',
-          locationDescription: '제주도 동쪽 끝에 위치한 성산일출봉은 유네스코 세계자연유산으로 등재되었습니다.',
-          region: 'Jeju',
-          fact: '성산일출봉은 약 5,000년 전 수중 화산 폭발로 형성되었습니다.'
+          photoUrl: require('@/assets/photo/seoul/seoul_olympicPark.jpg'),
+          locationName: '올림픽 공원',
+          locationDescription: '서울 송파구에 위치한 올림픽공원은 1988년 서울올림픽을 위해 조성된 대규모 공원입니다.',
+          region: 'Seoul',
+          fact: '올림픽공원 내에는 몽촌토성이라는 백제시대 유적이 있습니다.'
         },
         {
           id: 5,
-          photoUrl: 'https://i.ibb.co/4Ym9Hnq/suwon.jpg',
-          locationName: '수원화성',
-          locationDescription: '경기도 수원시에 위치한 수원화성은 정조대왕이 건설한 계획도시의 성곽입니다.',
-          region: 'Gyeonggi',
-          fact: '수원화성은 1796년에 완공되었으며, 유네스코 세계문화유산으로 등재되었습니다.'
+          photoUrl: require('@/assets/photo/seoul/seoul_seoulCityHall.jpg'),
+          locationName: '서울시청',
+          locationDescription: '서울 중구에 위치한 서울시청은 독특한 곡선형 건축물로 유명합니다.',
+          region: 'Seoul',
+          fact: '현재의 서울시청 신청사는 2012년에 완공되었으며, 옛 청사는 서울도서관으로 활용되고 있습니다.'
         },
         {
           id: 6,
-          photoUrl: 'https://i.ibb.co/4KgmHyC/songdo.jpg',
-          locationName: '인천 송도 센트럴파크',
-          locationDescription: '인천 연수구 송도국제도시에 위치한 센트럴파크는 도심 속 자연공원입니다.',
-          region: 'Incheon',
-          fact: '송도 센트럴파크는 대한민국 최초의 해수공원으로, 바닷물을 끌어와 운하를 만들었습니다.'
+          photoUrl: require('@/assets/photo/seoul/seoul_yeouidoPark.jpg'),
+          locationName: '여의도 공원',
+          locationDescription: '서울 영등포구 여의도에 위치한 여의도공원은 도심 속 녹지공간입니다.',
+          region: 'Seoul',
+          fact: '여의도공원은 과거 비행장으로 사용되었던 부지를 공원으로 조성한 것입니다.'
         },
         {
           id: 7,
-          photoUrl: 'https://i.ibb.co/Jj1Qy9S/gangneung.jpg',
-          locationName: '강릉 경포대',
-          locationDescription: '강원도 강릉시에 위치한 경포대는 아름다운 경포호수와 동해를 함께 볼 수 있는 명소입니다.',
-          region: 'Gangwon',
-          fact: '경포대는 신라시대부터 관동팔경 중 하나로 꼽혀왔습니다.'
+          photoUrl: require('@/assets/photo/seoul/seoul_yeouidoPark1.jpg'),
+          locationName: '여의도 한강공원',
+          locationDescription: '서울 영등포구 여의도에 위치한 한강공원은 시민들의 휴식공간입니다.',
+          region: 'Seoul',
+          fact: '여의도 한강공원은 서울의 한강공원 중 가장 인기 있는 곳 중 하나입니다.'
         },
         {
           id: 8,
-          photoUrl: 'https://i.ibb.co/xLwCpVf/andong.jpg',
-          locationName: '안동 하회마을',
-          locationDescription: '경상북도 안동시에 위치한 하회마을은 조선시대 양반 마을의 모습을 간직한 전통 마을입니다.',
-          region: 'Gyeongbuk',
-          fact: '하회마을은 1999년 영국 엘리자베스 2세 여왕이 방문하기도 했습니다.'
+          photoUrl: require('@/assets/banner/Seoul-Dongdaemun-Gate.jpg'),
+          locationName: '동대문',
+          locationDescription: '서울 중구와 종로구 경계에 위치한 동대문은 조선시대 한양도성의 동쪽 성문입니다.',
+          region: 'Seoul',
+          fact: '동대문의 정식 명칭은 흥인지문으로, 국보 제1호입니다.'
         },
         {
           id: 9,
-          photoUrl: 'https://i.ibb.co/0MXVQ4L/jeonju.jpg',
-          locationName: '전주 한옥마을',
-          locationDescription: '전라북도 전주시에 위치한 한옥마을은 약 700여 채의 한옥이 밀집된 전통 마을입니다.',
-          region: 'Jeonbuk',
-          fact: '전주 한옥마을은 매년 1,000만 명 이상의 관광객이 방문하는 인기 관광지입니다.'
-        },
-        {
-          id: 10,
-          photoUrl: 'https://i.ibb.co/6wM8Jky/bulguksa.jpg',
-          locationName: '경주 불국사',
-          locationDescription: '경상북도 경주시에 위치한 불국사는 신라시대 창건된 사찰로 유네스코 세계문화유산입니다.',
-          region: 'Gyeongbuk',
-          fact: '불국사의 석가탑(다보탑)은 국보 제20호로 지정되어 있습니다.'
+          photoUrl: require('@/assets/banner/Seoul-temp1.jpg'),
+          locationName: '서울 남산',
+          locationDescription: '서울 중구와 용산구에 걸쳐 있는 남산은 서울의 중심에 위치한 산입니다.',
+          region: 'Seoul',
+          fact: '남산에는 서울을 대표하는 랜드마크인 N서울타워가 있습니다.'
         }
       ],
       gamePhotos: [],
@@ -342,9 +344,6 @@ export default {
       // 힌트 타이머
       hintNotificationTimer: null,
       hintTimer: null,
-      
-      // 라운드당 사진 수
-      photosPerRound: 1
     };
   },
   
@@ -441,6 +440,20 @@ export default {
       this.startNextRound();
     },
     
+    // 라운드별 사진 개수 계산 메서드
+    getPhotosForRound(roundNumber) {
+      // 라운드가 진행될수록 사진 개수 감소 (최대 4개, 최소 1개)
+      // 1라운드: 4개, 2라운드: 3개, 3라운드: 3개, 4라운드: 2개, 5라운드: 1개
+      const maxPhotos = 4;
+      const totalRounds = this.totalRounds;
+      
+      // 라운드 진행에 따라 사진 개수 감소 계산
+      const photosCount = Math.max(1, Math.ceil(maxPhotos - ((roundNumber - 1) / (totalRounds - 1)) * (maxPhotos - 1)));
+      
+      console.log(`라운드 ${roundNumber}: 사진 ${photosCount}개 표시`);
+      return photosCount;
+    },
+    
     startNextRound() {
       // 라운드 상태 초기화
       this.roundStarted = true;
@@ -462,10 +475,18 @@ export default {
       // 현재 라운드 증가
       this.currentRound++;
       
-      // 현재 라운드 사진 설정 (여러 장 가능)
-      const startIndex = (this.currentRound - 1) * this.photosPerRound;
-      const endIndex = startIndex + this.photosPerRound;
-      const roundPhotos = this.gamePhotos.slice(startIndex, endIndex);
+      // 현재 라운드에 표시할 사진 개수 계산
+      const photosCount = this.getPhotosForRound(this.currentRound);
+      
+      // 현재 라운드 사진 설정 (라운드별 다른 개수)
+      const availablePhotos = [...this.gamePhotos]; // 복사본 생성
+      const roundPhotos = [];
+      
+      // 랜덤하게 사진 선택
+      for (let i = 0; i < photosCount && availablePhotos.length > 0; i++) {
+        const randomIndex = Math.floor(Math.random() * availablePhotos.length);
+        roundPhotos.push(availablePhotos.splice(randomIndex, 1)[0]);
+      }
       
       // 현재 라운드의 사진들 설정
       this.currentPhotos = roundPhotos.map(photo => photo.photoUrl);
@@ -489,7 +510,7 @@ export default {
         this.$refs.regionMap.reset();
       }
       
-      console.log(`라운드 ${this.currentRound} 시작`);
+      console.log(`라운드 ${this.currentRound} 시작: ${photosCount}개 사진 표시`);
     },
     
     handlePhotoLoaded() {
@@ -533,9 +554,21 @@ export default {
     submitGuess(region) {
       if (!this.roundStarted || this.mapDisabled) return;
       
+      // 지역이 정의되지 않은 경우 선택된 지역 사용
+      if (!region && this.selectedRegion) {
+        region = this.selectedRegion;
+      }
+      
+      // 여전히 지역이 없는 경우 실행 취소
+      if (!region) {
+        console.log('선택된 지역이 없습니다.');
+        return;
+      }
+      
       console.log(`제출한 지역: ${region}`);
       
       // 정답 확인 (대소문자 구분 없이 비교)
+      console.log(region.toLowerCase(), this.currentPhoto.region.toLowerCase())
       const isCorrect = region.toLowerCase() === this.currentPhoto.region.toLowerCase();
       
       if (isCorrect) {
@@ -816,7 +849,27 @@ export default {
   padding: 10px 20px;
   background-color: #ffffff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.correct-region-display {
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+  padding: 10px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
   z-index: 10;
+  animation: fadeIn 0.3s ease-out;
+  border-left: 4px solid #4caf50;
+  min-width: 200px;
+  text-align: center;
+}
+
+.correct-region-display span {
+  font-weight: 600;
+  color: #000;
+  font-size: 1rem;
+  letter-spacing: 0.5px;
 }
 
 .header-left {
@@ -927,6 +980,35 @@ export default {
   border-radius: 8px;
   background-color: #fff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.photo-section.correct-highlight {
+  box-shadow: 0 0 0 3px #4caf50, 0 4px 12px rgba(76, 175, 80, 0.4);
+  background-color: rgba(76, 175, 80, 0.05);
+}
+
+.photo-section.incorrect-highlight {
+  box-shadow: 0 0 0 3px #f44336, 0 4px 12px rgba(244, 67, 54, 0.4);
+  background-color: rgba(244, 67, 54, 0.05);
+}
+
+.photo-section.timeout-highlight {
+  box-shadow: 0 0 0 3px #ff9800, 0 4px 12px rgba(255, 152, 0, 0.4);
+  background-color: rgba(255, 152, 0, 0.05);
+}
+
+.correct-region-display {
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 10px;
+  background-color: #4caf50;
+  color: white;
+  font-weight: bold;
+  text-align: center;
+  z-index: 1;
+  font-size: 15px;
 }
 
 .map-section {
@@ -1059,6 +1141,7 @@ export default {
 }
 
 /* 반응형 스타일 */
+
 @media (max-width: 1024px) {
   .game-content {
     flex-direction: column;
@@ -1068,9 +1151,7 @@ export default {
     margin-right: 0;
     margin-bottom: 20px;
   }
-}
-
-@media (max-width: 768px) {
+  
   .header-center {
     display: none;
   }

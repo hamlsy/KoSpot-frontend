@@ -13,7 +13,7 @@
         </button>
       </div>
       <div class="selected-region-display">
-        선택한 지역: <span>{{ selectedRegion }}</span>
+        선택한 지역: <span>{{ getRegionDisplayName(selectedRegion) }}</span>
       </div>
       <div id="kakao-map" class="map-container"></div>
       <div v-if="selectedRegion && !disabled" class="spot-button-container">
@@ -97,139 +97,139 @@ export default {
       defaultLevel: 13, // 기본 줌 레벨
       labelVisibleLevel: 10, // 이 레벨 이하(더 확대된 상태)에서만 라벨 표시
       mergedCities: {
-        // 경기도
-        '고양시': ['고양시 덕양구', '고양시 일산동구', '고양시 일산서구'],
-        '수원시': ['수원시 장안구', '수원시 권선구', '수원시 팔달구', '수원시 영통구'],
-        '성남시': ['성남시 수정구', '성남시 중원구', '성남시 분당구'],
-        '안산시': ['안산시 상록구', '안산시 단원구'],
-        '안양시': ['안양시 만안구', '안양시 동안구'],
-        '용인시': ['용인시 처인구', '용인시 기흥구', '용인시 수지구'],
-        '부천시': ['부천시 원미구', '부천시 소사구', '부천시 오정구'],
+        // Gyeonggi
+        'Goyang': ['고양시 덕양구', '고양시 일산동구', '고양시 일산서구'],
+        'Suwon': ['수원시 장안구', '수원시 권선구', '수원시 팔달구', '수원시 영통구'],
+        'Seongnam': ['성남시 수정구', '성남시 중원구', '성남시 분당구'],
+        'Ansan': ['안산시 상록구', '안산시 단원구'],
+        'Anyang': ['안양시 만안구', '안양시 동안구'],
+        'Yongin': ['용인시 처인구', '용인시 기흥구', '용인시 수지구'],
+        'Bucheon': ['부천시 원미구', '부천시 소사구', '부천시 오정구'],
         
-        // 충청남도
-        '천안시': ['천안시 동남구', '천안시 서북구'],
+        // Chungnam
+        'Cheonan': ['천안시 동남구', '천안시 서북구'],
         
-        // 전라북도
-        '전주시': ['전주시 완산구', '전주시 덕진구'],
+        // Jeonbuk
+        'Jeonju': ['전주시 완산구', '전주시 덕진구'],
         
-        // 전라남도
-        '여수시': ['여수시'],
-        '신안군': ['신안군'],
+        // Jeonnam
+        'Yeosu': ['여수시'],
+        'Sinan': ['신안군'],
         
-        // 경상북도
-        '포항시': ['포항시 남구', '포항시 북구'],
-        '구미시': ['구미시'],
+        // Gyeongbuk
+        'Pohang': ['포항시 남구', '포항시 북구'],
+        'Gumi': ['구미시'],
         
-        // 경상남도
-        '창원시': ['창원시 의창구', '창원시 성산구', '창원시 마산합포구', '창원시 마산회원구', '창원시 진해구']
+        // Gyeongnam
+        'Changwon': ['창원시 의창구', '창원시 성산구', '창원시 마산합포구', '창원시 마산회원구', '창원시 진해구']
       },
       regionColors: {
         //수도권 (파란 계열)
-        '서울특별시': { fill: '#e6f0ff', stroke: '#a3c2e3' },
-        '인천광역시': { fill: '#d9e6ff', stroke: '#94b3d4' },
-        '경기도': { fill: '#ccdcff', stroke: '#85a4c5' },
+        'Seoul': { fill: '#e6f0ff', stroke: '#a3c2e3' },
+        'Incheon': { fill: '#d9e6ff', stroke: '#94b3d4' },
+        'Gyeonggi': { fill: '#ccdcff', stroke: '#85a4c5' },
 
         //충청 (초록 계열)
-        '충청남도': { fill: '#e6ffea', stroke: '#a3e3b0' },
-        '충청북도': { fill: '#d9ffde', stroke: '#94d4a1' },
-        '세종특별자치시': { fill: '#ccffcc', stroke: '#85c592' },
-        '대전광역시': { fill: '#bfffbf', stroke: '#76b683' },
+        'Chungnam': { fill: '#e6ffea', stroke: '#a3e3b0' },
+        'Chungbuk': { fill: '#d9ffde', stroke: '#94d4a1' },
+        'Sejong': { fill: '#ccffcc', stroke: '#85c592' },
+        'Daejeon': { fill: '#bfffbf', stroke: '#76b683' },
 
         //경상 (노랑 계열)
-        '경상남도': { fill: '#fffde6', stroke: '#e3e1a3' },
-        '경상북도': { fill: '#fff9d9', stroke: '#d4d094' },
-        '울산광역시': { fill: '#fff5cc', stroke: '#c5c185' },
-        '부산광역시': { fill: '#fff1bf', stroke: '#b6b276' },
-        '대구광역시': { fill: '#ffedb2', stroke: '#a7a367' },
+        'Gyeongnam': { fill: '#fffde6', stroke: '#e3e1a3' },
+        'Gyeongbuk': { fill: '#fff9d9', stroke: '#d4d094' },
+        'Ulsan': { fill: '#fff5cc', stroke: '#c5c185' },
+        'Busan': { fill: '#fff1bf', stroke: '#b6b276' },
+        'Daegu': { fill: '#ffedb2', stroke: '#a7a367' },
 
         //전라 (보라 계열)
-        '전라북도': { fill: '#f5e6ff', stroke: '#c2a3e3' },
-        '전라남도': { fill: '#edd9ff', stroke: '#b394d4' },
-        '광주광역시': { fill: '#e6ccff', stroke: '#a485c5' },
+        'Jeonbuk': { fill: '#f5e6ff', stroke: '#c2a3e3' },
+        'Jeonnam': { fill: '#edd9ff', stroke: '#b394d4' },
+        'Gwangju': { fill: '#e6ccff', stroke: '#a485c5' },
 
         //강원 (회색 계열)
-        '강원도': { fill: '#f2f2f2', stroke: '#c9c9c9' },
+        'Gangwon': { fill: '#f2f2f2', stroke: '#c9c9c9' },
 
         //제주 (주황 계열)
-        '제주특별자치도': { fill: '#fff0e6', stroke: '#e3c2a3' }
+        'Jeju': { fill: '#fff0e6', stroke: '#e3c2a3' }
       },
       regionSettings: {
-        '서울특별시': { 
+        'Seoul': { 
           shouldMerge: true, 
-          mergedName: '서울특별시',
-          region: '서울특별시'
+          mergedName: 'Seoul',
+          region: 'Seoul'
         },
-        '부산광역시': { 
+        'Busan': { 
           shouldMerge: true, 
-          mergedName: '부산광역시',
-          region: '부산광역시'
+          mergedName: 'Busan',
+          region: 'Busan'
         },
-        '대구광역시': { 
+        'Daegu': { 
           shouldMerge: true, 
-          mergedName: '대구광역시',
-          region: '대구광역시'
+          mergedName: 'Daegu',
+          region: 'Daegu'
         },
-        '인천광역시': { 
+        'Incheon': { 
           shouldMerge: true, 
-          mergedName: '인천광역시',
-          region: '인천광역시'
+          mergedName: 'Incheon',
+          region: 'Incheon'
         },
-        '광주광역시': { 
+        'Gwangju': { 
           shouldMerge: true, 
-          mergedName: '광주광역시',
-          region: '광주광역시'
+          mergedName: 'Gwangju',
+          region: 'Gwangju'
         },
-        '대전광역시': { 
+        'Daejeon': { 
           shouldMerge: true, 
-          mergedName: '대전광역시',
-          region: '대전광역시'
+          mergedName: 'Daejeon',
+          region: 'Daejeon'
         },
-        '울산광역시': { 
+        'Ulsan': { 
           shouldMerge: true, 
-          mergedName: '울산광역시',
-          region: '울산광역시'
+          mergedName: 'Ulsan',
+          region: 'Ulsan'
         },
-        '세종특별자치시': { 
+        'Sejong': { 
           shouldMerge: true,
-          mergedName: '세종특별자치시',
-          region: '세종특별자치시'
+          mergedName: 'Sejong',
+          region: 'Sejong'
         },
-        '경기도': { 
+        'Gyeonggi': { 
           shouldMerge: 'special', // 특별 처리 필요
-          region: '경기도'
+          region: 'Gyeonggi'
         },
-        '강원도': { 
+        'Gangwon': { 
           shouldMerge: false, 
-          region: '강원도'
+          region: 'Gangwon'
         },
-        '충청북도': { 
+        'Chungbuk': { 
           shouldMerge: false, 
-          region: '충청북도'
+          region: 'Chungbuk'
         },
-        '충청남도': { 
+        'Chungnam': { 
           shouldMerge: 'special', // 천안시 통합 필요
-          region: '충청남도'
+          region: 'Chungnam'
         },
-        '전라북도': { 
+        'Jeonbuk': { 
           shouldMerge: 'special', // 전주시 통합 필요
-          region: '전라북도'
+          region: 'Jeonbuk'
         },
-        '전라남도': { 
+        'Jeonnam': { 
           shouldMerge: 'special', // 여수시, 신안군 문제 해결 필요
-          region: '전라남도'
+          region: 'Jeonnam'
         },
-        '경상북도': { 
+        'Gyeongbuk': { 
           shouldMerge: 'special', // 포항시 통합 필요
-          region: '경상북도'
+          region: 'Gyeongbuk'
         },
-        '경상남도': { 
+        'Gyeongnam': { 
           shouldMerge: 'special', // 창원시 통합 필요
-          region: '경상남도'
+          region: 'Gyeongnam'
         },
-        '제주특별자치도': { 
+        'Jeju': { 
           shouldMerge: true, 
-          mergedName: '제주특별자치도',
-          region: '제주특별자치도'
+          mergedName: 'Jeju',
+          region: 'Jeju'
         }
       }
     };
@@ -334,11 +334,11 @@ export default {
       
       // 특별 처리가 필요한 지역들
       if (regionSetting.shouldMerge === 'special') {
-        if (regionName === '경기도') {
+        if (regionName === 'Gyeonggi') {
           this.loadGyeonggiPolygonsSpecial(features, regionName);
-        } else if (regionName === '충청남도' || regionName === '전라북도' || 
-                  regionName === '전라남도' || regionName === '경상북도' || 
-                  regionName === '경상남도') {
+        } else if (regionName === 'Chungnam' || regionName === 'Jeonbuk' || 
+                  regionName === 'Jeonnam' || regionName === 'Gyeongbuk' || 
+                  regionName === 'Gyeongnam') {
           this.loadSpecialRegionPolygons(features, regionName);
         }
         return;
@@ -423,7 +423,7 @@ export default {
       }
     },
     
-    // 특별 지역 처리 메서드 (충청남도, 전라북도, 전라남도, 경상북도, 경상남도)
+    // 특별 지역 처리 메서드 (Chungnam, Jeonbuk, Jeonnam, Gyeongbuk, Gyeongnam)
     loadSpecialRegionPolygons(features, regionName) {
       // 통합할 도시별로 Feature 그룹화
       const cityGroups = {};
@@ -581,7 +581,7 @@ export default {
                     SIG_KOR_NM: cityName // 이름 변경
                   },
                   cityGroup: cityName, // 같은 그룹임을 표시
-                  region: '경기도' // 지역 구분을 위한 속성 추가
+                  region: 'Gyeonggi' // 지역 구분을 위한 속성 추가
                 });
               });
             } else {
@@ -595,7 +595,7 @@ export default {
                   SIG_KOR_NM: cityName // 이름 변경
                 },
                 cityGroup: cityName, // 같은 그룹임을 표시
-                region: '경기도' // 지역 구분을 위한 속성 추가
+                region: 'Gyeonggi' // 지역 구분을 위한 속성 추가
               });
             }
           });
@@ -613,7 +613,7 @@ export default {
               name: name,
               coordinates: coordSet[0], // MultiPolygon의 첫 번째 좌표 세트 사용
               properties: feature.properties,
-              region: '경기도' // 지역 구분을 위한 속성 추가
+              region: 'Gyeonggi' // 지역 구분을 위한 속성 추가
             });
           });
         } else {
@@ -622,7 +622,7 @@ export default {
             name: name,
             coordinates: feature.geometry.coordinates[0],
             properties: feature.properties,
-            region: '경기도' // 지역 구분을 위한 속성 추가
+            region: 'Gyeonggi' // 지역 구분을 위한 속성 추가
           });
         }
       });
@@ -631,63 +631,63 @@ export default {
     },
     
     loadGyeonggiPolygons() {
-      this.loadRegionPolygons(gyeonggiPolygons, '경기도');
+      this.loadRegionPolygons(gyeonggiPolygons, 'Gyeonggi');
     },
     
     loadGangwonPolygons() {
-      this.loadRegionPolygons(gangwonPolygons, '강원도');
+      this.loadRegionPolygons(gangwonPolygons, 'Gangwon');
     },
     
     loadSeoulPolygons() {
-      this.loadRegionPolygons(seoulPolygons, '서울특별시');
+      this.loadRegionPolygons(seoulPolygons, 'Seoul');
     },
     
     loadIncheonPolygons() {
-      this.loadRegionPolygons(incheonPolygons, '인천광역시');
+      this.loadRegionPolygons(incheonPolygons, 'Incheon');
     },
     
     loadChungnamPolygons() {
-      this.loadRegionPolygons(chungnamPolygons, '충청남도');
+      this.loadRegionPolygons(chungnamPolygons, 'Chungnam');
     },
     
     loadChungbukPolygons() {
-      this.loadRegionPolygons(chungbukPolygons, '충청북도');
+      this.loadRegionPolygons(chungbukPolygons, 'Chungbuk');
     },
     
     loadJeonnamPolygons() {
-      this.loadRegionPolygons(jeonnamPolygons, '전라남도');
+      this.loadRegionPolygons(jeonnamPolygons, 'Jeonnam');
     },
     
     loadJeonbukPolygons() {
-      this.loadRegionPolygons(jeonbukPolygons, '전라북도');
+      this.loadRegionPolygons(jeonbukPolygons, 'Jeonbuk');
     },
     
     loadDaeguPolygons() {
-      this.loadRegionPolygons(daeguPolygons, '대구광역시');
+      this.loadRegionPolygons(daeguPolygons, 'Daegu');
     },
     loadBusanPolygons() {
-      this.loadRegionPolygons(busanPolygons, '부산광역시');
+      this.loadRegionPolygons(busanPolygons, 'Busan');
     },
     loadUlsanPolygons() {
-      this.loadRegionPolygons(ulsanPolygons, '울산광역시');
+      this.loadRegionPolygons(ulsanPolygons, 'Ulsan');
     },
     loadGyeongnamPolygons() {
-      this.loadRegionPolygons(gyeongnamPolygons, '경상남도');
+      this.loadRegionPolygons(gyeongnamPolygons, 'Gyeongnam');
     },
     loadGyeongbukPolygons() {
-      this.loadRegionPolygons(gyeongbukPolygons, '경상북도');
+      this.loadRegionPolygons(gyeongbukPolygons, 'Gyeongbuk');
     },
     loadJejuPolygons() {
-      this.loadRegionPolygons(jejuPolygons, '제주특별자치도');
+      this.loadRegionPolygons(jejuPolygons, 'Jeju');
     },
     loadSejongPolygons() {
-      this.loadRegionPolygons(sejongPolygons, '세종특별자치시');
+      this.loadRegionPolygons(sejongPolygons, 'Sejong');
     },
     loadDaejeonPolygons() {
-      this.loadRegionPolygons(daejeonPolygons, '대전광역시');
+      this.loadRegionPolygons(daejeonPolygons, 'Daejeon');
     },
     loadGwangjuPolygons() {
-      this.loadRegionPolygons(gwangjuPolygons, '광주광역시');
+      this.loadRegionPolygons(gwangjuPolygons, 'Gwangju');
     },
 
 
@@ -995,10 +995,11 @@ export default {
       this.$emit('update:selectedRegion', null);
     },
     submitGuess() {
-      // 제출 전에 지도 리사이즈 확인
-      this.resizeMap();
-      this.$emit('submit-guess');
-    },
+    // 제출 전에 지도 리사이즈 확인
+    this.resizeMap();
+    // selectedRegion을 인자로 전달
+    this.$emit('submit-guess', this.selectedRegion);
+  },
     zoomIn() {
       if (this.map) {
         const level = this.map.getLevel();
@@ -1023,13 +1024,41 @@ export default {
     },
     toggleMap() {
       this.isMapOpen = !this.isMapOpen;
-      // 지도가 열릴 때 약간의 지연 후 리사이즈 적용
+      
+      // 지도가 열릴 때 리사이즈 처리
       if (this.isMapOpen) {
-        setTimeout(() => {
+        this.$nextTick(() => {
           this.resizeMap();
-        }, 300); // 트랜지션 완료 후 리사이즈
+        });
       }
     },
+  
+  // 영문 지역 코드를 한글 지역명으로 변환하는 메서드
+  getRegionDisplayName(regionCode) {
+    if (!regionCode) return '';
+    
+    const regionMap = {
+      'Seoul': '서울특별시',
+      'Busan': '부산광역시',
+      'Daegu': '대구광역시',
+      'Incheon': '인천광역시',
+      'Gwangju': '광주광역시',
+      'Daejeon': '대전광역시',
+      'Ulsan': '울산광역시',
+      'Sejong': '세종특별자치시',
+      'Gyeonggi': '경기도',
+      'Gangwon': '강원도',
+      'Chungbuk': '충청북도',
+      'Chungnam': '충청남도',
+      'Jeonbuk': '전라북도',
+      'Jeonnam': '전라남도',
+      'Gyeongbuk': '경상북도',
+      'Gyeongnam': '경상남도',
+      'Jeju': '제주특별자치도'
+    };
+    
+    return regionMap[regionCode] || regionCode;
+  },
     checkScreenSize() {
       this.isMobile = window.innerWidth <= 768;
     },

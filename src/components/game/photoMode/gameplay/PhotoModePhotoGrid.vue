@@ -5,9 +5,6 @@
     'timeout-highlight': showTimeoutAnimation
   }]">
     <div v-for="(photo, index) in photos" :key="index" class="photo-item">
-      <div class="region-overlay" v-if="(showCorrectAnimation || showTimeoutAnimation) && correctRegion">
-        {{ correctRegion }}
-      </div>
       <photo-display 
         :photo-url="photo" 
         :show-zoom-controls="true"
@@ -75,19 +72,6 @@ export default {
   transition: all 0.3s ease;
 }
 
-.region-overlay {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background-color: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-weight: bold;
-  z-index: 10;
-  font-size: 1.1rem;
-}
-
 .photo-description {
   position: absolute;
   bottom: 0;
@@ -137,17 +121,11 @@ export default {
   animation: shake 0.6s ease-in-out;
 }
 
-.incorrect-shake .photo-item {
-  border: 3px solid #ef4444;
-}
-
-.correct-highlight .photo-item {
-  border: 3px solid #10b981;
+.correct-highlight .photo-item { 
   transition: border-color 0.3s ease;
 }
 
 .timeout-highlight .photo-item {
-  border: 3px solid #f59e0b;
   transition: border-color 0.3s ease;
 }
 

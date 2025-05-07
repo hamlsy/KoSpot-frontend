@@ -55,15 +55,10 @@
           @photo-loaded="handlePhotoLoaded"
         />
         
-        <photo-mode-hint-display 
-          :visible="showHint || showHintNotification" 
-          :hint="currentHint"
-          :is-notification="showHintNotification"
-        />
-        
         <photo-mode-next-round-button 
           :visible="(showCorrectAnimation || showTimeoutAnimation || (isPracticeMode && roundCompleted)) && !showRoundResult" 
           :is-last-round="currentRound >= totalRounds"
+          :isRankMode= true
           @next-round="nextRound"
         />
         
@@ -156,7 +151,6 @@ import RegionMap from './PhotoModeRegionMap.vue';
 import RoundResult from '@/components/game/photoMode/results/PhotoModeRoundResult.vue';
 import GameResult from '@/components/game/photoMode/results/PhotoModeGameResult.vue';
 import PhotoModePhotoGrid from './PhotoModePhotoGrid.vue';
-import PhotoModeHintDisplay from './PhotoModeHintDisplay.vue';
 import PhotoModeNextRoundButton from './PhotoModeNextRoundButton.vue';
 
 export default {
@@ -168,7 +162,6 @@ export default {
     RoundResult,
     GameResult,
     PhotoModePhotoGrid,
-    PhotoModeHintDisplay,
     PhotoModeNextRoundButton
   },
   

@@ -23,6 +23,11 @@
           </div>
           
           <div v-if="showMap" class="map-result">
+            <div class="region-info">
+              <span v-if="correctRegion" class="correct-region-label">
+                정답 지역: {{ getRegionName(correctRegion) }}
+              </span>
+            </div>
             <div class="region-map-container">
               <region-map 
                 :disabled="true"
@@ -132,6 +137,30 @@ export default {
     
     finishGame() {
       this.$emit('finish-game');
+    },
+    
+    getRegionName(regionCode) {
+      const regionMap = {
+        'Seoul': '서울특별시',
+        'Busan': '부산광역시',
+        'Daegu': '대구광역시',
+        'Incheon': '인천광역시',
+        'Gwangju': '광주광역시',
+        'Daejeon': '대전광역시',
+        'Ulsan': '울산광역시',
+        'Sejong': '세종특별자치시',
+        'Gyeonggi': '경기도',
+        'Gangwon': '강원도',
+        'Chungbuk': '충청북도',
+        'Chungnam': '충청남도',
+        'Jeonbuk': '전라북도',
+        'Jeonnam': '전라남도',
+        'Gyeongbuk': '경상북도',
+        'Gyeongnam': '경상남도',
+        'Jeju': '제주특별자치도'
+      };
+      
+      return regionMap[regionCode] || regionCode;
     }
   }
 };
@@ -276,12 +305,28 @@ export default {
 }
 
 .map-result {
-  height: 300px;
+  height: 330px;
   margin-bottom: 1.5rem;
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid #e2e8f0;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+.region-info {
+  padding: 10px;
+  background-color: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  font-weight: bold;
+  display: flex;
+  justify-content: center;
+}
+
+.correct-region-label {
+  color: #10b981;
+  font-size: 16px;
 }
 
 .region-map-container {
