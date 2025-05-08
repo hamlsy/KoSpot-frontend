@@ -10,22 +10,30 @@
 
       <div class="popup-body">
         <!-- 왼쪽: 테마 리스트 -->
-        <div class="theme-list-container" style="background-color: #f8fafc;">
+        <div class="theme-list-container" style="background-color: #f8fafc">
           <h3 class="section-title">테마 선택</h3>
           <div class="theme-list">
-            <div 
-              v-for="theme in themes" 
+            <div
+              v-for="theme in themes"
               :key="theme.id"
               class="theme-item"
-              :class="{ 'selected': selectedTheme === theme.id }"
+              :class="{ selected: selectedTheme === theme.id }"
               @click="selectTheme(theme.id)"
             >
-              <div class="theme-image-container" style="border-radius: 12px;">
-                <img :src="theme.image" :alt="theme.name" class="theme-image" style="display: block;">
+              <div class="theme-image-container" style="border-radius: 12px">
+                <img
+                  :src="theme.image"
+                  :alt="theme.name"
+                  class="theme-image"
+                  style="display: block"
+                />
                 <div class="theme-overlay">
                   <h4>{{ theme.name }}</h4>
                 </div>
-                <div class="theme-completion-indicator" v-if="theme.completedLocations === theme.totalLocations">
+                <div
+                  class="theme-completion-indicator"
+                  v-if="theme.completedLocations === theme.totalLocations"
+                >
                   <i class="fas fa-check-circle"></i>
                 </div>
               </div>
@@ -34,21 +42,39 @@
         </div>
 
         <!-- 오른쪽: 테마 상세 정보 -->
-        <div class="theme-detail-container" v-if="selectedThemeData" style="background-color: #ffffff;">
-          <div class="theme-detail-header" :style="{ backgroundImage: `url(${selectedThemeData.image})` }">
+        <div
+          class="theme-detail-container"
+          v-if="selectedThemeData"
+          style="background-color: #ffffff"
+        >
+          <div class="theme-detail-header">
+            <div
+              class="theme-detail-header-bg"
+              :style="{ backgroundImage: `url(${selectedThemeData.image})` }"
+            ></div>
             <div class="theme-detail-header-overlay">
               <h3>{{ selectedThemeData.name }}</h3>
               <div class="theme-progress">
                 <div class="progress-text">
-                  <span class="progress-value">{{ selectedThemeData.completedLocations }}</span>
+                  <span class="progress-value">{{
+                    selectedThemeData.completedLocations
+                  }}</span>
                   <span class="progress-separator">/</span>
-                  <span class="progress-total">{{ selectedThemeData.totalLocations }}</span>
+                  <span class="progress-total">{{
+                    selectedThemeData.totalLocations
+                  }}</span>
                   <span class="progress-label">지역 완료</span>
                 </div>
                 <div class="progress-bar">
-                  <div 
-                    class="progress-fill" 
-                    :style="{width: `${(selectedThemeData.completedLocations / selectedThemeData.totalLocations) * 100}%`}"
+                  <div
+                    class="progress-fill"
+                    :style="{
+                      width: `${
+                        (selectedThemeData.completedLocations /
+                          selectedThemeData.totalLocations) *
+                        100
+                      }%`,
+                    }"
                   ></div>
                 </div>
               </div>
@@ -62,15 +88,21 @@
           <div class="theme-locations">
             <h4 class="locations-title">플레이한 지역</h4>
             <div class="locations-grid">
-              <div 
-                v-for="location in selectedThemeData.locations" 
+              <div
+                v-for="location in selectedThemeData.locations"
                 :key="location.id"
                 class="location-item"
-                :class="{ 'unlocked': location.unlocked }"
+                :class="{ unlocked: location.unlocked }"
               >
                 <div class="location-icon">
-                  <i class="fas fa-check-circle" v-if="location.unlocked && location.achievement"></i>
-                  <i class="fas fa-map-marker-alt" v-else-if="location.unlocked"></i>
+                  <i
+                    class="fas fa-check-circle"
+                    v-if="location.unlocked && location.achievement"
+                  ></i>
+                  <i
+                    class="fas fa-map-marker-alt"
+                    v-else-if="location.unlocked"
+                  ></i>
                   <i class="fas fa-question" v-else></i>
                 </div>
                 <div class="location-info">
@@ -81,7 +113,10 @@
                   <div class="location-score" v-if="location.unlocked">
                     <span>최고점수: {{ location.highScore || 0 }}점</span>
                   </div>
-                  <div class="location-achievement" v-if="location.unlocked && location.achievement">
+                  <div
+                    class="location-achievement"
+                    v-if="location.unlocked && location.achievement"
+                  >
                     <span class="achievement-badge">업적 달성</span>
                   </div>
                 </div>
@@ -92,20 +127,35 @@
           <div class="theme-achievements">
             <h4 class="achievements-title">테마 업적</h4>
             <div class="achievements-list">
-              <div class="achievement-item" :class="{ 'achieved': isAllLocationsCompleted }">
+              <div
+                class="achievement-item"
+                :class="{ achieved: isAllLocationsCompleted }"
+              >
                 <div class="achievement-icon">
                   <i class="fas fa-trophy"></i>
                 </div>
                 <div class="achievement-info">
                   <h5>전체 지역 완료</h5>
-                  <p>모든 지역을 플레이하고 {{ selectedThemeData.completedLocations }}/{{ selectedThemeData.totalLocations }} 지역 해금</p>
+                  <p>
+                    모든 지역을 플레이하고
+                    {{ selectedThemeData.completedLocations }}/{{
+                      selectedThemeData.totalLocations
+                    }}
+                    지역 해금
+                  </p>
                 </div>
                 <div class="achievement-status">
-                  <i class="fas fa-check-circle" v-if="isAllLocationsCompleted"></i>
+                  <i
+                    class="fas fa-check-circle"
+                    v-if="isAllLocationsCompleted"
+                  ></i>
                   <i class="fas fa-times-circle" v-else></i>
                 </div>
               </div>
-              <div class="achievement-item" :class="{ 'achieved': hasHighScoreAchievement }">
+              <div
+                class="achievement-item"
+                :class="{ achieved: hasHighScoreAchievement }"
+              >
                 <div class="achievement-icon">
                   <i class="fas fa-star"></i>
                 </div>
@@ -114,7 +164,10 @@
                   <p>모든 지역에서 일정 점수(800점) 이상 획득</p>
                 </div>
                 <div class="achievement-status">
-                  <i class="fas fa-check-circle" v-if="hasHighScoreAchievement"></i>
+                  <i
+                    class="fas fa-check-circle"
+                    v-if="hasHighScoreAchievement"
+                  ></i>
                   <i class="fas fa-times-circle" v-else></i>
                 </div>
               </div>
@@ -125,7 +178,12 @@
             class="start-game-button theme-color"
             @click="startGame"
             :disabled="!isGameStartReady"
-            style="height: 60px; display: flex; align-items: center; justify-content: center;"
+            style="
+              height: 60px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            "
           >
             게임 시작
           </button>
@@ -149,168 +207,196 @@ export default {
   props: {
     show: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   data() {
     return {
       selectedTheme: null,
       themes: [
+        // K-드라마 촬영지 테마
         {
-          id: "tourist",
-          name: "관광 명소",
-          icon: "fas fa-landmark",
-          image: "https://images.unsplash.com/photo-1601621915196-2ad9b3b3c249?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
-          description: "한국의 유명 관광 명소들을 탐험하세요. 경복궁부터 해운대까지, 대한민국의 아름다운 명소들을 방문하고 점수를 획득하세요.",
-          completedLocations: 10,
-          totalLocations: 10,
+          id: "kdrama",
+          name: "인기 K-드라마 촬영지",
+          icon: "fas fa-video",
+          image:
+            "https://images.unsplash.com/photo-1564507004663-b6dfb3c824d5?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
+          description:
+            "전국 각지에 있는 인기 드라마 촬영지를 탐험하세요. 서울부터 제주까지, 감동적인 장면이 촬영된 실제 장소들을 방문하고 점수를 획득하세요.",
+          completedLocations: 1,
+          totalLocations: 7,
           locations: [
-            { id: 1, name: "경복궁", unlocked: true, highScore: 950, achievement: true },
-            { id: 2, name: "남산타워", unlocked: true, highScore: 920, achievement: true },
-            { id: 3, name: "해운대", unlocked: true, highScore: 880, achievement: true },
-            { id: 4, name: "제주 성산일출봉", unlocked: true, highScore: 900, achievement: true },
-            { id: 5, name: "불국사", unlocked: true, highScore: 850, achievement: true },
-            { id: 6, name: "한라산", unlocked: true, highScore: 830, achievement: true },
-            { id: 7, name: "설악산", unlocked: true, highScore: 810, achievement: true },
-            { id: 8, name: "광화문", unlocked: true, highScore: 890, achievement: true },
-            { id: 9, name: "독도", unlocked: true, highScore: 940, achievement: true },
-            { id: 10, name: "63빌딩", unlocked: true, highScore: 870, achievement: true }
+            {
+              id: 1,
+              name: "서울 보신각",
+              unlocked: true,
+              highScore: 920,
+              achievement: true,
+            },
+            { id: 2, name: "양양 갯마을", unlocked: false },
+            { id: 3, name: "포항 구룡포", unlocked: false },
+            { id: 4, name: "군산 경암동", unlocked: false },
+            { id: 5, name: "전주 한옥마을", unlocked: false },
+            { id: 6, name: "제주 월정리", unlocked: false },
+            { id: 7, name: "춘천 남이섬", unlocked: false },
           ],
-          rewardIcon: "fas fa-medal",
-          rewardName: "관광 달인 배지",
-          rewardDescription: "모든 관광 명소를 완료하면 프로필에 특별한 관광 달인 배지가 추가됩니다."
+          rewardIcon: "fas fa-star",
+          rewardName: "K-드라마 팬 배지",
+          rewardDescription:
+            "모든 드라마 촬영지를 완료하면 특별한 K-드라마 팬 배지가 추가됩니다.",
         },
+
+        // 인스타그램 핫플레이스 테마
         {
-          id: "city",
-          name: "도시 풍경",
-          icon: "fas fa-city",
-          image: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
-          description: "한국의 다양한 도시 풍경을 탐험하세요. 서울의 번화가부터 부산의 해안가까지, 다양한 도시 풍경을 경험하세요.",
-          completedLocations: 2,
-          totalLocations: 8,
-          locations: [
-            { id: 1, name: "강남역", unlocked: true, highScore: 900, achievement: true },
-            { id: 2, name: "부산 서면", unlocked: true, highScore: 800, achievement: false },
-            { id: 3, name: "대구 동성로", unlocked: false },
-            { id: 4, name: "광주 충장로", unlocked: false },
-            { id: 5, name: "대전 으능정이거리", unlocked: false },
-            { id: 6, name: "인천 송도", unlocked: false },
-            { id: 7, name: "울산 삼산동", unlocked: false },
-            { id: 8, name: "제주 신제주", unlocked: false }
-          ],
-          rewardIcon: "fas fa-building",
-          rewardName: "도시 탐험가 칭호",
-          rewardDescription: "모든 도시 지역을 완료하면 '도시 탐험가' 칭호를 획득할 수 있습니다."
-        },
-        {
-          id: "nature",
-          name: "자연 경관",
-          icon: "fas fa-mountain",
-          image: "https://images.unsplash.com/photo-1545193544-312983719627?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
-          description: "한국의 아름다운 자연 경관을 탐험하세요. 산, 강, 바다 등 다양한 자연 환경에서 게임을 즐기세요.",
-          completedLocations: 0,
-          totalLocations: 8,
-          locations: [
-            { id: 1, name: "지리산", unlocked: false },
-            { id: 2, name: "설악산", unlocked: false },
-            { id: 3, name: "한라산", unlocked: false },
-            { id: 4, name: "태안해안", unlocked: false },
-            { id: 5, name: "속초 해변", unlocked: false },
-            { id: 6, name: "남한강", unlocked: false },
-            { id: 7, name: "우포늪", unlocked: false },
-            { id: 8, name: "순천만", unlocked: false }
-          ],
-          rewardIcon: "fas fa-leaf",
-          rewardName: "자연 친화 마커",
-          rewardDescription: "모든 자연 경관을 완료하면 특별한 자연 친화적 마커를 획득할 수 있습니다."
-        },
-        {
-          id: "food",
-          name: "음식 문화",
-          icon: "fas fa-utensils",
-          image: "https://images.unsplash.com/photo-1590301157890-4810ed352733?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
-          description: "한국의 다양한 음식 문화를 탐험하세요. 전통 시장부터 현대적인 레스토랑까지, 맛있는 음식들이 있는 장소를 찾아보세요.",
+          id: "insta",
+          name: "인스타그램 핫플레이스",
+          icon: "fas fa-camera",
+          image:
+            "https://images.unsplash.com/photo-1581345628965-9a5d438b4f4b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
+          description:
+            "전국의 SNS에서 인기 있는 장소들을 탐험하세요. 인스타그램에서 핫한 장소들을 방문하고 점수를 획득하세요.",
           completedLocations: 0,
           totalLocations: 7,
           locations: [
-            { id: 1, name: "광장시장", unlocked: false },
-            { id: 2, name: "전주 한옥마을", unlocked: false },
-            { id: 3, name: "안동 구시장", unlocked: false },
-            { id: 4, name: "부산 자갈치시장", unlocked: false },
-            { id: 5, name: "제주 동문시장", unlocked: false },
-            { id: 6, name: "대구 서문시장", unlocked: false },
-            { id: 7, name: "포항 죽도시장", unlocked: false }
+            { id: 1, name: "서울 성수동", unlocked: false },
+            { id: 2, name: "부산 감천문화마을", unlocked: false },
+            { id: 3, name: "전주 경기전", unlocked: false },
+            { id: 4, name: "강릉 안목해변", unlocked: false },
+            { id: 5, name: "제주 애월해안도로", unlocked: false },
+            { id: 6, name: "통영 동피랑", unlocked: false },
+            { id: 7, name: "여수 밤바다", unlocked: false },
           ],
-          rewardIcon: "fas fa-hamburger",
-          rewardName: "미식가 칭호",
-          rewardDescription: "모든 음식 명소를 완료하면 '미식가' 칭호를 획득할 수 있습니다."
+          rewardIcon: "fas fa-heart",
+          rewardName: "인플루언서 칭호",
+          rewardDescription:
+            "모든 인스타 핫플레이스를 완료하면 '인플루언서' 칭호를 획득할 수 있습니다.",
         },
+
+        // K-POP 뮤직비디오 촬영지 테마
         {
-          id: "history",
-          name: "역사 유적",
-          icon: "fas fa-monument",
-          image: "https://images.unsplash.com/photo-1548115184-bc6544d06a58?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
-          description: "한국의 역사적 장소들을 탐험하세요. 고궁, 사찰, 성곽 등 역사적 의미가 있는 장소들을 방문하고 점수를 획득하세요.",
-          completedLocations: 1,
-          totalLocations: 9,
+          id: "kpop",
+          name: "한국 음악의 발자취",
+          icon: "fas fa-music",
+          image:
+            "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
+          description:
+            "K-POP 뮤직비디오 촬영지와 음악 관련 명소들을 탐험하세요. 아이돌 그룹의 뮤직비디오가 촬영된 장소들을 방문하고 점수를 획득하세요.",
+          completedLocations: 0,
+          totalLocations: 7,
           locations: [
-            { id: 1, name: "창덕궁", unlocked: true, highScore: 900, achievement: true },
-            { id: 2, name: "불국사", unlocked: false },
-            { id: 3, name: "수원화성", unlocked: false },
-            { id: 4, name: "강화도 고인돌", unlocked: false },
-            { id: 5, name: "경주 불국사", unlocked: false },
-            { id: 6, name: "공주 무령왕릉", unlocked: false },
-            { id: 7, name: "하회마을", unlocked: false },
-            { id: 8, name: "안동 도산서원", unlocked: false },
-            { id: 9, name: "고창 고인돌", unlocked: false }
+            { id: 1, name: "서울 홍대", unlocked: false },
+            { id: 2, name: "부산 해운대", unlocked: false },
+            { id: 3, name: "인천 송도", unlocked: false },
+            { id: 4, name: "대전 유성구", unlocked: false },
+            { id: 5, name: "광주 음악거리", unlocked: false },
+            { id: 6, name: "제주 성산일출봉", unlocked: false },
+            { id: 7, name: "경주 동궁과 월지", unlocked: false },
           ],
-          rewardIcon: "fas fa-scroll",
-          rewardName: "역사학자 배지",
-          rewardDescription: "모든 역사 유적을 완료하면 역사학자 배지를 획득할 수 있습니다."
-        }
-      ]
+          rewardIcon: "fas fa-headphones",
+          rewardName: "K-POP 팬 마커",
+          rewardDescription:
+            "모든 음악 관련 장소를 완료하면 특별한 K-POP 팬 마커를 획득할 수 있습니다.",
+        },
+
+        // 전국 야시장 투어 테마
+        {
+          id: "nightmarket",
+          name: "전국 야시장 투어",
+          icon: "fas fa-store",
+          image:
+            "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
+          description:
+            "전국의 유명 야시장과 먹거리 골목을 탐험하세요. 다양한 지역의 특색 있는 시장과 맛집을 방문하고 점수를 획득하세요.",
+          completedLocations: 0,
+          totalLocations: 7,
+          locations: [
+            { id: 1, name: "서울 광장시장", unlocked: false },
+            { id: 2, name: "부산 부평깡통시장", unlocked: false },
+            { id: 3, name: "대구 서문시장", unlocked: false },
+            { id: 4, name: "전주 남부시장", unlocked: false },
+            { id: 5, name: "포항 죽도시장", unlocked: false },
+            { id: 6, name: "제주 동문시장", unlocked: false },
+            { id: 7, name: "수원 지동시장", unlocked: false },
+          ],
+          rewardIcon: "fas fa-utensils",
+          rewardName: "야식 마니아 배지",
+          rewardDescription:
+            "모든 야시장을 완료하면 특별한 야식 마니아 배지가 추가됩니다.",
+        },
+
+        // 한국 게임 속 실제 배경 테마
+        {
+          id: "gamescene",
+          name: "한국 게임 속 실제 배경",
+          icon: "fas fa-gamepad",
+          image:
+            "https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
+          description:
+            "인기 한국 게임의 실제 모델이 된 장소들을 탐험하세요. 유명 게임의 배경이 된 실제 장소들을 방문하고 점수를 획득하세요.",
+          completedLocations: 7,
+          totalLocations: 7,
+          locations: [
+            { id: 1, name: "서울 강남역", unlocked: false },
+            { id: 2, name: "부산 해운대", unlocked: false },
+            { id: 3, name: "인천 송도", unlocked: false },
+            { id: 4, name: "대전 유성구", unlocked: false },
+            { id: 5, name: "대구 동성로", unlocked: false },
+            { id: 6, name: "광주 충장로", unlocked: false },
+            { id: 7, name: "울산 태화강", unlocked: false },
+          ],
+          rewardIcon: "fas fa-trophy",
+          rewardName: "게이머 칭호",
+          rewardDescription:
+            "모든 게임 배경 장소를 완료하면 '프로 게이머' 칭호를 획득할 수 있습니다.",
+        },
+      ],
     };
   },
   computed: {
     selectedThemeData() {
       if (!this.selectedTheme) return null;
-      return this.themes.find(theme => theme.id === this.selectedTheme);
+      return this.themes.find((theme) => theme.id === this.selectedTheme);
     },
     isGameStartReady() {
       return this.selectedTheme !== null;
     },
     isAllLocationsCompleted() {
-      return this.selectedThemeData.completedLocations === this.selectedThemeData.totalLocations;
+      return (
+        this.selectedThemeData.completedLocations ===
+        this.selectedThemeData.totalLocations
+      );
     },
     hasHighScoreAchievement() {
-      return this.selectedThemeData.locations.every(location => location.highScore >= 800);
-    }
+      return this.selectedThemeData.locations.every(
+        (location) => location.highScore >= 800
+      );
+    },
   },
-  
+
   methods: {
     selectTheme(themeId) {
       this.selectedTheme = themeId;
     },
     closePopup() {
-      this.$emit('close');
+      this.$emit("close");
       this.selectedTheme = null;
     },
     startGame() {
       if (!this.isGameStartReady) return;
-      
-      this.$emit('start-game', {
-        mode: 'theme',
-        theme: this.selectedTheme
+
+      this.$emit("start-game", {
+        mode: "theme",
+        theme: this.selectedTheme,
       });
-    }
+    },
   },
   watch: {
     show(newVal) {
       if (!newVal) {
         this.selectedTheme = null;
       }
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -475,7 +561,12 @@ export default {
   left: 0;
   right: 0;
   padding: 1rem;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.5) 50%, rgba(0, 0, 0, 0) 100%);
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.8) 0%,
+    rgba(0, 0, 0, 0.5) 50%,
+    rgba(0, 0, 0, 0) 100%
+  );
   color: white;
   text-align: center;
 }
@@ -515,8 +606,29 @@ export default {
   position: relative;
 }
 
+.theme-detail-header-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  filter: blur(0.8px);
+  opacity: 0.8;
+  z-index: 0;
+}
+
+
 .theme-detail-header-overlay {
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.5) 50%, rgba(0, 0, 0, 0) 100%);
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.6) 0%,
+    rgba(0, 0, 0, 0.4) 50%,
+    rgba(0, 0, 0, 0) 100%
+  );
   padding: 1rem;
   border-radius: 12px;
 }
@@ -552,12 +664,12 @@ export default {
 .progress-total {
   font-size: 1.2rem;
   font-weight: 600;
-  color: #334155;
+  color: white;
 }
 
 .progress-label {
   margin-left: 0.5rem;
-  color: #64748b;
+  color: white;
   font-size: 0.9rem;
 }
 
@@ -779,13 +891,17 @@ export default {
 }
 
 .start-game-button::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -839,11 +955,11 @@ export default {
   .locations-grid {
     grid-template-columns: repeat(1, 1fr);
   }
-  
+
   .popup-body {
     flex-direction: column;
   }
-  
+
   .theme-list-container {
     width: 100%;
     border-right: none;
@@ -851,8 +967,9 @@ export default {
     padding: 1rem;
     max-height: 300px;
   }
-  
-  .theme-detail-container, .theme-detail-placeholder {
+
+  .theme-detail-container,
+  .theme-detail-placeholder {
     width: 100%;
     padding: 1rem;
   }
@@ -862,19 +979,19 @@ export default {
   .popup-header {
     padding: 1rem;
   }
-  
+
   .popup-header h2 {
     font-size: 1.4rem;
   }
-  
+
   .theme-image-container {
     height: 120px;
   }
-  
+
   .theme-overlay h4 {
     font-size: 1rem;
   }
-  
+
   .theme-detail-header h3 {
     font-size: 1.3rem;
   }
