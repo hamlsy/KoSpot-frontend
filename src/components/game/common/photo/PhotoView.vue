@@ -21,30 +21,6 @@
         <span>사진 로딩 중...</span>
       </div>
     </div>
-
-    <div class="controls">
-      <button 
-        class="zoom-button" 
-        @click="zoomIn"
-        :disabled="zoomLevel >= maxZoomLevel || preventInteraction"
-      >
-        <i class="fas fa-search-plus"></i>
-      </button>
-      <button 
-        class="zoom-button" 
-        @click="zoomOut"
-        :disabled="zoomLevel <= minZoomLevel || preventInteraction"
-      >
-        <i class="fas fa-search-minus"></i>
-      </button>
-      <button 
-        class="fullscreen-button" 
-        @click="toggleFullscreen"
-        :disabled="preventInteraction"
-      >
-        <i :class="isFullscreen ? 'fas fa-compress' : 'fas fa-expand'"></i>
-      </button>
-    </div>
   </div>
 </template>
 

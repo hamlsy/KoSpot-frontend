@@ -24,7 +24,7 @@
             </div>
           </div>
         </div>
-      
+
         <!-- Banner Navigation Dots -->
         <div class="banner-dots">
           <button
@@ -64,11 +64,16 @@
               </div>
             </div>
           </div>
-
-          <div 
-            class="mode-card photo"
-            @click="navigateTo('photoModeMain')"
-          >
+          <!-- 로그인/사용자 정보 카드 -->
+          <div class="user-card">
+            <UserLoginCard
+              :is-logged-in="isLoggedIn"
+              :user-profile="userProfile"
+              @navigate="navigateTo"
+              @social-login="socialLogin"
+            />
+          </div>
+          <div class="mode-card photo" @click="navigateTo('photoModeMain')">
             <div class="mode-background"></div>
             <div class="mode-icon">
               <i class="fas fa-camera"></i>
@@ -87,7 +92,7 @@
               </div>
             </div>
           </div>
-          
+
           <div
             class="mode-card multiplayer"
             @click="navigateTo('multiplayerLobby')"
@@ -188,7 +193,10 @@
             <i class="fas fa-users"></i>
             <span>협동전 테스트</span>
           </router-link>
-          <router-link to="/testIndividualGame" class="test-link individual-test">
+          <router-link
+            to="/testIndividualGame"
+            class="test-link individual-test"
+          >
             <i class="fas fa-user"></i>
             <span>개인전 테스트</span>
           </router-link>
@@ -250,9 +258,13 @@
             <i class="fas fa-sign-out-alt"></i>
             로그아웃
           </a>
-          
+
           <!-- 관리자 페이지 링크 추가 -->
-          <router-link v-if="userProfile.isAdmin" to="/admin" class="menu-item admin-menu-item">
+          <router-link
+            v-if="userProfile.isAdmin"
+            to="/admin"
+            class="menu-item admin-menu-item"
+          >
             <i class="fas fa-user-shield"></i>
             관리자 페이지
           </router-link>
@@ -268,12 +280,14 @@
 </template>
 
 <script>
-import NavigationBar from '@/components/common/NavigationBar.vue';
+import NavigationBar from "@/components/common/NavigationBar.vue";
+import UserLoginCard from "@/components/main/UserLoginCard.vue";
 
 export default {
   name: "MainPage",
   components: {
-    NavigationBar
+    NavigationBar,
+    UserLoginCard,
   },
   data() {
     return {
@@ -288,7 +302,11 @@ export default {
         name: "김코스팟",
         email: "user@kospot.com",
         avatar: null,
-        isAdmin: true // 관리자 권한 설정 (실제 구현에서는 인증 서비스에서 가져옴)
+        isAdmin: true, // 관리자 권한 설정 (실제 구현에서는 인증 서비스에서 가져옴)
+        nickname: "테스트유저",
+        level: 5,
+        rankPoints: 1250,
+        playCount: 42,
       },
       banners: [
         {
@@ -519,6 +537,7 @@ export default {
   border: 1px solid #eeeeee;
   /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04); */
 }
+
 
 .mode-card:hover {
   transform: translateY(-4px);

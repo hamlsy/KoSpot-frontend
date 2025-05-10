@@ -2,35 +2,6 @@
   <div class="kakao-map-game" :class="{ 'map-open': isOpen }">
     <div id="map-container" ref="mapContainer"></div>
     
-    <div class="map-controls">
-      <button v-if="showCloseButton" class="close-map" @click="closeMap">
-        <i class="fas fa-times"></i>
-      </button>
-      
-      <div class="zoom-controls">
-        <button class="zoom-btn zoom-in" @click="zoomIn" title="확대">
-          <i class="fas fa-plus"></i>
-        </button>
-        <button class="zoom-btn zoom-out" @click="zoomOut" title="축소">
-          <i class="fas fa-minus"></i>
-        </button>
-        <button class="zoom-btn zoom-reset" @click="resetZoom" title="초기화">
-          <i class="fas fa-crosshairs"></i>
-        </button>
-      </div>
-    </div>
-    
-    <div v-if="showHintCircles && !disabled" class="hint-toggle">
-      <button 
-        class="hint-btn" 
-        :class="{ 'active': showHints }" 
-        @click="toggleHints"
-      >
-        <i class="fas fa-lightbulb"></i>
-        힌트 {{ showHints ? '숨기기' : '보기' }}
-      </button>
-    </div>
-    
     <div v-if="!disabled && showDistance" class="distance-info" v-show="distance !== null">
       <span class="distance-value">{{ formattedDistance }}</span>
       <span class="distance-label">현재 거리</span>

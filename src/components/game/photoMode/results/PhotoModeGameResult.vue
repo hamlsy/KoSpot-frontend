@@ -162,7 +162,7 @@ export default {
     goToMain() {
       this.$emit('go-to-main');
     },
-    
+
     formatTime(seconds) {
       if (!seconds && seconds !== 0) return '-';
       

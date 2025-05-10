@@ -1,7 +1,8 @@
 <template>
   <div class="progress-timer" :class="{ 'warning': isWarning, 'danger': isDanger }">
     <div class="timer-bar">
-      <div class="progress-bar" :style="{ width: `${progressPercentage}%` }"></div>
+      <div class="progress-bar-left" :style="{ width: `${progressPercentage / 2}%` }"></div>
+      <div class="progress-bar-right" :style="{ width: `${progressPercentage / 2}%` }"></div>
     </div>
     <div class="timer-display">
       <i class="fas fa-clock"></i>
@@ -137,30 +138,49 @@ export default {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 300px;
-  background-color: #f1f5f9;
-  border-radius: 12px;
-  padding: 0.75rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  
 }
 
 .timer-bar {
   height: 8px;
   background-color: #e2e8f0;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 0.5rem;
+  width: 100%;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
 }
 
-.progress-bar {
+.progress-bar-left, .progress-bar-right {
   height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #60a5fa);
-  border-radius: 4px;
+  background: linear-gradient(90deg, #3b82f6);
+  position: absolute;
+  top: 0;
   transition: width 1s linear;
 }
 
+.progress-bar-left {
+  border-top-left-radius: 40px;
+  border-bottom-left-radius: 40px;
+  right: 50%;
+}
+
+.progress-bar-right {
+  border-top-right-radius: 40px;
+  border-bottom-right-radius: 40px;
+  left: 50%;
+}
+
 .timer-display {
+  position: absolute;
+  top: 12px;
+  right: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -168,14 +188,19 @@ export default {
   font-weight: 600;
   font-size: 1.1rem;
   color: #1e293b;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
-.progress-timer.warning .progress-bar {
-  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+.progress-timer.warning .progress-bar-left,
+.progress-timer.warning .progress-bar-right {
+  background: linear-gradient(90deg, #f59e0b);
 }
 
-.progress-timer.danger .progress-bar {
-  background: linear-gradient(90deg, #ef4444, #f87171);
+.progress-timer.danger .progress-bar-left,
+.progress-timer.danger .progress-bar-right {
+  background: linear-gradient(90deg, #ef4444);
   animation: pulse 1s infinite;
 }
 
@@ -210,17 +235,14 @@ export default {
 }
 
 @media (max-width: 768px) {
-  .progress-timer {
-    padding: 0.5rem;
-    max-width: 200px;
-  }
-  
   .timer-bar {
     height: 6px;
   }
   
   .timer-display {
-    font-size: 1rem;
+    font-size: 0.9rem;
+    top: 8px;
+    right: 8px;
   }
 }
-</style> 
+</style>

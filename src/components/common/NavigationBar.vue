@@ -2,10 +2,7 @@
   <header class="header">
     <div class="header-content">
       <div class="header-left">
-        <router-link to="/mainPage" class="home-link">
-          <h1 class="logo">KoSpot</h1>
-          <span class="badge">Beta</span>
-        </router-link>
+        <app-logo class="home-link" to="/mainPage" />
       </div>
 
       <!-- 네비게이션 추가 - 웹 전용 -->
@@ -101,9 +98,15 @@
   </header>
 </template>
 
+
 <script>
+import AppLogo from '@/components/common/AppLogo.vue'; 
+
 export default {
   name: 'NavigationBar',
+  components: {
+    AppLogo
+  },
   data() {
     return {
       showProfileMenu: false,
