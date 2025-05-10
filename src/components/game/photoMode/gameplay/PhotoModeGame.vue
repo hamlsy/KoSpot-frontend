@@ -11,7 +11,7 @@
           <h2>{{ gameMode }} 게임</h2>
           <div class="game-details">
             <span class="region-badge">
-              <i class="fas fa-map-marker-alt"></i>
+              <i class="fas fa-camera"></i>
               {{ regionLabel }}
             </span>
           </div>
@@ -101,31 +101,11 @@
           :visible="
             (showCorrectAnimation ||
               showTimeoutAnimation ||
-              (isPracticeMode && roundCompleted)) &&
-            !showRoundResult
+              (isPracticeMode && roundCompleted))
           "
           :is-last-round="currentRound >= totalRounds"
           :isRankMode="isRankMode"
           @next-round="nextRound"
-        />
-
-        <round-result
-          :visible="showRoundResult"
-          :is-correct="isLastGuessCorrect"
-          :score="lastRoundScore"
-          :current-round="currentRound"
-          :total-rounds="totalRounds"
-          :location-name="currentPhoto ? currentPhoto.locationName : ''"
-          :location-description="
-            currentPhoto ? currentPhoto.locationDescription : ''
-          "
-          :photo-url="currentPhoto ? currentPhoto.photoUrl : ''"
-          :fact="currentPhoto ? currentPhoto.fact : ''"
-          :correct-region="correctRegion"
-          :wrong-region="wrongRegion"
-          @close="closeRoundResult"
-          @next-round="nextRound"
-          @finish-game="finishGame"
         />
       </div>
 
@@ -202,7 +182,6 @@
   <script>
 import ProgressTimer from "@/components/game/photoMode/timer/PhotoModeProgressTimer.vue";
 import RegionMap from "./PhotoModeRegionMap.vue";
-import RoundResult from "@/components/game/photoMode/results/PhotoModeRoundResult.vue";
 import GameResult from "@/components/game/photoMode/results/PhotoModeGameResult.vue";
 import PhotoModePhotoGrid from "./PhotoModePhotoGrid.vue";
 import PhotoModeHintDisplay from "./PhotoModeHintDisplay.vue";
@@ -216,7 +195,6 @@ export default {
   components: {
     ProgressTimer,
     RegionMap,
-    RoundResult,
     GameResult,
     PhotoModePhotoGrid,
     PhotoModeHintDisplay,
@@ -381,7 +359,6 @@ export default {
       hintTimeThresholds: [30, 15], // 남은 시간이 30초, 15초일 때 힌트 표시
 
       // 결과 표시
-      showRoundResult: false,
       showGameResult: false,
 
       // 모달 상태
@@ -483,13 +460,13 @@ export default {
       if (this.isRankMode) {
         this.totalRounds = 10;
         this.gameTitle = "랭크 게임";
-        this.gameContent = "포토 모드 랭크 게임";
+        this.gameContent = "포토 모드";
         this.gameDescription =
           "사진을 보고 해당 지역을 맞춰보세요. 랭크 모드에서는 점수가 기록되며 랭킹에 반영됩니다.";
       } else if (this.isPracticeMode) {
         this.totalRounds = 5;
         this.gameTitle = "연습 게임";
-        this.gameContent = "포토 모드 연습 게임";
+        this.gameContent = "포토 모드";
         this.gameDescription =
           "사진을 보고 해당 지역을 맞춰보세요. 연습 모드에서는 힌트를 사용할 수 있습니다.";
       } else {
@@ -546,7 +523,7 @@ export default {
       this.correctRegion = null;
       this.wrongRegion = null;
       this.showHint = false;
-      this.showHintNotification = true;
+      this.showHintNotification = false;
       this.photoLoadCount = 0;
       this.isLoading = true;
 
@@ -669,7 +646,6 @@ export default {
       // 랭크 모드에서는 정답 후 자동으로 다음 라운드 결과 표시
       if (this.isRankMode) {
         setTimeout(() => {
-          this.showRoundResult = true;
         }, 2000);
       }
     },
@@ -735,7 +711,6 @@ export default {
       // 랭크 모드에서는 시간이 지나면 자동으로 다음 라운드 결과 표시
       if (this.isRankMode) {
         setTimeout(() => {
-          this.showRoundResult = true;
         }, 2000);
       }
     },
@@ -755,7 +730,6 @@ export default {
     },
 
     closeRoundResult() {
-      this.showRoundResult = false;
 
       // 마지막 라운드였으면 게임 결과 표시
       if (this.currentRound >= this.totalRounds) {
