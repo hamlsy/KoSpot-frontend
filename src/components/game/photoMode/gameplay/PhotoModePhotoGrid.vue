@@ -122,11 +122,11 @@ export default {
 }
 
 .correct-highlight .photo-item { 
-  transition: border-color 0.3s ease;
+  transition: background-color 0.3s ease;
 }
 
 .timeout-highlight .photo-item {
-  transition: border-color 0.3s ease;
+  transition: background-color 0.3s ease;
 }
 
 @keyframes shake {

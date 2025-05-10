@@ -1,6 +1,6 @@
 import PhotoModeMain from '@/components/game/photoMode/PhotoModeMain.vue';
-import PhotoModePractice from '@/components/game/photoMode/gameplay/PhotoModePractice.vue';
-import PhotoModeRank from '@/components/game/photoMode/gameplay/PhotoModeRank.vue';
+import PhotoModePractice from '@/components/game/photoMode/views/PhotoModePractice.vue';
+import PhotoModeRank from '@/components/game/photoMode/views/PhotoModeRank.vue';
 
 const photoModeRoutes = [
     {
@@ -19,7 +19,7 @@ const photoModeRoutes = [
             totalRounds: Number(route.query.totalRounds) || 5
         })
     },
-    // Add PhotoModeRank route when component is ready
+    
     {
         path: '/photoModeRank',
         name: "PhotoModeRank",
