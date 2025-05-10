@@ -49,19 +49,17 @@
         />
 
         <!-- 지도 버튼 -->
-        <button
-          class="map-toggle"
-          @click="toggleMap"
-        >
+        <button class="map-toggle" @click="toggleMap">
           <i
             class="fas"
             :class="isMapOpen ? 'fa-street-view' : 'fa-map-marked-alt'"
           ></i>
           {{ isMapOpen ? "로드뷰로 돌아가기" : "지도 열기" }}
         </button>
-        
+
         <!-- Spot 버튼 (지도 모드에서만 표시) -->
-        <button v-if="isMapOpen && !showResult && false" 
+        <button
+          v-if="isMapOpen && !showResult && false"
           class="spot-button"
           @click="checkSpotAnswer"
         >
@@ -70,7 +68,7 @@
       </div>
 
       <!-- 휴대폰 프레임 -->
-      <PhoneFrame 
+      <PhoneFrame
         v-if="isMapOpen"
         :centerLocation="centerLocation"
         :actualLocation="currentLocation"
@@ -86,13 +84,16 @@
       >
         <template v-slot:buttons>
           <!-- 힌트 버튼 (휴대폰 프레임 내부) -->
-          <button v-if="!showResult" 
+          <button
+            v-if="!showResult"
             class="phone-hint-button"
             @click="useHint"
             :disabled="!hintAvailable || hintCount <= 0"
           >
-            <i class="fas fa-lightbulb"></i> 
-            <span v-if="hintCount > 0 && !hintAvailable">{{ nextHintTime }}초 후 사용 가능</span>
+            <i class="fas fa-lightbulb"></i>
+            <span v-if="hintCount > 0 && !hintAvailable"
+              >{{ nextHintTime }}초 후 사용 가능</span
+            >
             <span v-else>힌트 사용 ({{ hintCount }}/3)</span>
           </button>
         </template>
@@ -113,23 +114,19 @@
       />
 
       <!-- 인트로 화면 -->
-      <div v-if="showIntro" class="intro-overlay">
-        <div class="intro-content">
-          <h2>{{ selectedRegion.name }} 연습 모드</h2>
-          <p>현재 보이는 로드뷰의 위치를 지도에서 찾아보세요.</p>
-          <p>
-            지도를 열고 위치를 클릭한 후 "위치 선택" 버튼을 눌러 정답을
-            확인하세요.
-          </p>
-          <button class="start-btn" @click="startGame">시작하기</button>
-        </div>
-      </div>
+      <IntroOverlay
+        :showIntro="showIntro"
+        :gameTitle="gameTitle"
+        :gameContent="gameContent"
+        :gameDescription="gameDescription"
+        @end-intro="endIntro"
+      />
 
       <!-- 카운트다운 화면 -->
-      <CountdownOverlay 
-        :show="showCountdown" 
-        :initial-count="3" 
-        @countdown-complete="onCountdownComplete" 
+      <CountdownOverlay
+        :show="showCountdown"
+        :initial-count="3"
+        @countdown-complete="onCountdownComplete"
       />
 
       <!-- 결과 화면 -->
@@ -142,13 +139,13 @@
             <div class="info-item">
               <div class="info-icon"><i class="fas fa-ruler"></i></div>
               <div class="info-value">{{ distance.toFixed(2) }} km</div>
-              <div class="info-label"> 떨어진 거리</div>
+              <div class="info-label">떨어진 거리</div>
             </div>
 
             <div class="info-item">
               <div class="info-icon"><i class="fas fa-star"></i></div>
               <div class="info-value">{{ score }}</div>
-              <div class="info-label"> 점수</div>
+              <div class="info-label">점수</div>
             </div>
 
             <div class="info-item" v-if="isRankMode">
@@ -217,6 +214,7 @@ import RoadViewGame from "@/components/game/common/roadview/RoadViewGame.vue";
 import KakaoMapGame from "@/components/game/common/kakao/KakaoMapGame.vue";
 import PhoneFrame from "@/components/game/common/PhoneFrame.vue";
 import CountdownOverlay from "@/components/game/common/CountdownOverlay.vue";
+import IntroOverlay from "@/components/game/common/intro/IntroOverlay.vue";
 
 export default {
   name: "RoadViewPractice",
@@ -224,7 +222,8 @@ export default {
     RoadViewGame,
     KakaoMapGame,
     PhoneFrame,
-    CountdownOverlay
+    CountdownOverlay,
+    IntroOverlay,
   },
   props: {
     isRankMode: {
@@ -238,12 +237,17 @@ export default {
   },
   data() {
     return {
+      //인트로 관련
+      gameTitle: "로드뷰 연습게임",
+      gameContent: "현재 보이는 로드뷰의 위치를 지도에서 찾아보세요.",
+      gameDescription: '지도를 열고 위치를 클릭한 후 "위치 선택" 버튼을 눌러 정답을 확인하세요.',
+
       // 게임 화면 관련
       isMapOpen: false,
       showExitConfirmation: false,
       showResult: false,
       showToast: false,
-      toastMessage: '',
+      toastMessage: "",
       toastTimeout: null,
 
       // 게임 상태 관련
@@ -263,7 +267,7 @@ export default {
       mapInitialized: false,
       centerLocation: {
         lat: 37.55,
-        lng: 126.97
+        lng: 126.97,
       },
 
       //힌트
@@ -288,11 +292,11 @@ export default {
         },
       ],
       selectedRegion: {
-        name: '서울',
+        name: "서울",
         bounds: {
           sw: { lat: 37.41, lng: 126.79 },
-          ne: { lat: 37.70, lng: 127.17 }
-        }
+          ne: { lat: 37.7, lng: 127.17 },
+        },
       },
 
       // 로드뷰 게임 상태
@@ -330,7 +334,7 @@ export default {
   },
   methods: {
     // 게임 시작
-    startGame() {
+    endIntro() {
       this.showIntro = false;
       this.showCountdown = true;
     },
@@ -339,7 +343,7 @@ export default {
     resetGame() {
       // 타이머 정리
       this.clearTimer();
-      
+
       // 상태 초기화
       this.showResult = false;
       this.isMapOpen = false;
@@ -347,19 +351,19 @@ export default {
       this.distance = null;
       this.score = 0;
       this.elapsedTime = 0;
-      
+
       // 힌트 상태 초기화
       this.hintCount = 3;
       this.hintRadius = 120000;
       this.hintAvailable = false;
       this.nextHintTime = 30;
-      
+
       // 힌트 원 제거
       if (this.hintCircle) {
         this.hintCircle.setMap(null);
         this.hintCircle = null;
       }
-      
+
       // 게임 위치 데이터 요청
       this.fetchGameLocationData();
     },
@@ -374,11 +378,15 @@ export default {
     toggleMap() {
       // 상태 변경
       this.isMapOpen = !this.isMapOpen;
-      
+
       if (this.isMapOpen) {
         // 지도를 열 때 초기화
         this.$nextTick(() => {
-          if (this.hintCircle && this.$refs.phoneFrame && this.$refs.phoneFrame.map) {
+          if (
+            this.hintCircle &&
+            this.$refs.phoneFrame &&
+            this.$refs.phoneFrame.map
+          ) {
             // 기존 힌트 원이 있으면 새 지도에 다시 표시
             this.hintCircle.setMap(this.$refs.phoneFrame.map);
           }
@@ -391,12 +399,13 @@ export default {
 
     // 힌트 사용
     useHint() {
-      if (!this.hintAvailable || this.hintCount <= 0 || !this.currentLocation) return;
-      
+      if (!this.hintAvailable || this.hintCount <= 0 || !this.currentLocation)
+        return;
+
       // 지도가 열려있지 않으면 먼저 지도를 열기
       if (!this.isMapOpen) {
         this.isMapOpen = true;
-        
+
         // 지도가 초기화될 때까지 기다린 후 힌트 적용
         setTimeout(() => {
           this.applyHint();
@@ -405,63 +414,65 @@ export default {
         this.applyHint();
       }
     },
-    
+
     // 힌트 적용 (지도에 원 표시)
     applyHint() {
       // 맵 컴포넌트가 없는 경우 중단
       if (!this.$refs.phoneFrame || !this.$refs.phoneFrame.map) {
-        this.showToastMessage('지도를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+        this.showToastMessage(
+          "지도를 불러오는 중입니다. 잠시 후 다시 시도해주세요."
+        );
         return;
       }
-      
+
       // 힌트 사용 횟수 감소
       this.hintCount--;
       this.hintsLeft = this.hintCount; // hintsLeft와 동기화
-      
+
       // 기존 힌트 원 제거
       if (this.hintCircle) {
         this.hintCircle.setMap(null);
         this.hintCircle = null;
       }
-      
+
       // 힌트 원 생성
       const map = this.$refs.phoneFrame.map;
       const position = new kakao.maps.LatLng(
         this.currentLocation.lat,
         this.currentLocation.lng
       );
-      
+
       this.hintCircle = new kakao.maps.Circle({
         center: position,
         radius: this.hintRadius,
         strokeWeight: 2,
-        strokeColor: '#FF0000',
+        strokeColor: "#FF0000",
         strokeOpacity: 0.8,
-        strokeStyle: 'dashed',
-        fillColor: '#FF0000',
+        strokeStyle: "dashed",
+        fillColor: "#FF0000",
         fillOpacity: 0.2,
-        map: map
+        map: map,
       });
-      
+
       // 힌트 원의 중심으로 지도 이동 (힌트 원이 보이도록)
       map.setCenter(position);
-      
+
       // 힌트 반경 조정 (힌트를 사용할 때마다 원이 작아짐)
       if (this.hintCount === 2) {
         this.hintRadius = 80000; // 두 번째 힌트는 80km
       } else if (this.hintCount === 1) {
         this.hintRadius = 30000; // 세 번째 힌트는 30km
       }
-      
+
       // 다음 힌트 사용 가능 시간 설정 (1분 후)
       this.hintAvailable = false;
       this.nextHintTime = 60;
-      
+
       // 힌트 타이머 재설정
       if (this.hintTimer) {
         clearInterval(this.hintTimer);
       }
-      
+
       this.hintTimer = setInterval(() => {
         if (this.nextHintTime > 0) {
           this.nextHintTime--;
@@ -470,9 +481,11 @@ export default {
           clearInterval(this.hintTimer);
         }
       }, 1000);
-      
+
       // 힌트 사용 메시지 표시
-      this.showToastMessage(`힌트를 사용했습니다. (남은 힌트: ${this.hintCount}/3)`);
+      this.showToastMessage(
+        `힌트를 사용했습니다. (남은 힌트: ${this.hintCount}/3)`
+      );
     },
 
     // 랭크 모드 타이머 시작
@@ -537,97 +550,104 @@ export default {
         { lat: 37.512809, lng: 127.058984 }, // 삼성역
         { lat: 35.179682, lng: 129.075087 }, // 부산 해운대
         { lat: 35.158831, lng: 129.160007 }, // 부산 광안리
-        { lat: 35.101460, lng: 129.032364 }, // 부산 서면
+        { lat: 35.10146, lng: 129.032364 }, // 부산 서면
         { lat: 37.456769, lng: 126.705528 }, // 인천 송도
         { lat: 33.249293, lng: 126.560693 }, // 제주 올레길
-        { lat: 33.450700, lng: 126.570667 }  // 제주 시내
+        { lat: 33.4507, lng: 126.570667 }, // 제주 시내
       ];
 
       // 지역에 맞는 위치 선택
       let filteredLocations = knownLocations;
-      if (this.selectedRegion.id === 'seoul') {
+      if (this.selectedRegion.id === "seoul") {
         filteredLocations = knownLocations.slice(0, 4);
-      } else if (this.selectedRegion.id === 'busan') {
+      } else if (this.selectedRegion.id === "busan") {
         filteredLocations = knownLocations.slice(4, 7);
-      } else if (this.selectedRegion.id === 'jeju') {
+      } else if (this.selectedRegion.id === "jeju") {
         filteredLocations = knownLocations.slice(8, 10);
       }
 
       // 필터링된 위치에서 랜덤으로 선택
       const randomIndex = Math.floor(Math.random() * filteredLocations.length);
       this.currentLocation = filteredLocations[randomIndex];
-      console.log('선택된 로드뷰 위치:', this.currentLocation);
-      
+      console.log("선택된 로드뷰 위치:", this.currentLocation);
+
       this.isLoading = false;
     },
 
     // 게임 결과 확인
     checkAnswer(position) {
       if (this.showResult) return;
-      
+
       // 타이머 정리
       this.clearTimer();
-      
+
       // 거리 계산
       const distance = this.calculateDistance(
-        position.lat, position.lng,
-        this.currentLocation.lat, this.currentLocation.lng
+        position.lat,
+        position.lng,
+        this.currentLocation.lat,
+        this.currentLocation.lng
       );
-      
+
       // 점수 계산 (최대 100점)
       const score = Math.max(0, Math.floor(100 - Math.sqrt(distance) * 10));
-      
+
       // 게임 결과 저장
       this.distance = distance;
       this.score = score;
       this.guessedLocation = position;
-      
+
       // 결과 화면 표시
       this.showResult = true;
-      
+
       // 결과 지도 초기화
       this.$nextTick(() => {
         this.initResultMap(position);
       });
     },
-    
+
     // 결과 지도 초기화
     initResultMap(guessPosition) {
       if (!window.kakao || !window.kakao.maps) return;
-      
+
       const resultMapContainer = this.$refs.resultMapElement;
       if (!resultMapContainer) return;
-      
+
       const resultMap = new kakao.maps.Map(resultMapContainer, {
         center: new kakao.maps.LatLng(
           (guessPosition.lat + this.currentLocation.lat) / 2,
           (guessPosition.lng + this.currentLocation.lng) / 2
         ),
-        level: 8
+        level: 8,
       });
-      
+
       // 사용자 마커
       new kakao.maps.Marker({
         position: new kakao.maps.LatLng(guessPosition.lat, guessPosition.lng),
         map: resultMap,
         imageSrc: "@/assets/currentLocation.png",
       });
-      
+
       // 실제 위치 마커
-      const imageSrc = "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
+      const imageSrc =
+        "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
       const imageSize = new kakao.maps.Size(24, 35);
-      const imageOption = {offset: new kakao.maps.Point(12, 35)};
-      const markerImage = new kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
-      
+      const imageOption = { offset: new kakao.maps.Point(12, 35) };
+      const markerImage = new kakao.maps.MarkerImage(
+        imageSrc,
+        imageSize,
+        imageOption
+      );
+
       new kakao.maps.Marker({
         position: new kakao.maps.LatLng(
           this.currentLocation.lat,
           this.currentLocation.lng
         ),
         map: resultMap,
-        image: markerImage
+        image: markerImage,
       });
-      
+
       // 선 그리기
       const polyline = new kakao.maps.Polyline({
         path: [
@@ -635,78 +655,83 @@ export default {
           new kakao.maps.LatLng(
             this.currentLocation.lat,
             this.currentLocation.lng
-          )
+          ),
         ],
         strokeWeight: 3,
         strokeColor: "#5B9DFF",
         strokeOpacity: 0.7,
-        strokeStyle: "solid"
+        strokeStyle: "solid",
       });
-      
+
       polyline.setMap(resultMap);
-      
+
       // 지도 범위 재설정
       const bounds = new kakao.maps.LatLngBounds();
-      bounds.extend(new kakao.maps.LatLng(guessPosition.lat, guessPosition.lng));
-      bounds.extend(new kakao.maps.LatLng(
-        this.currentLocation.lat,
-        this.currentLocation.lng
-      ));
+      bounds.extend(
+        new kakao.maps.LatLng(guessPosition.lat, guessPosition.lng)
+      );
+      bounds.extend(
+        new kakao.maps.LatLng(
+          this.currentLocation.lat,
+          this.currentLocation.lng
+        )
+      );
       resultMap.setBounds(bounds);
     },
 
     // Spot 버튼 클릭 시 마커 위치 확인
     checkSpotAnswer() {
       if (!this.$refs.phoneFrame) {
-        alert('지도가 준비되지 않았습니다. 다시 시도해주세요.');
+        alert("지도가 준비되지 않았습니다. 다시 시도해주세요.");
         return;
       }
-      
+
       // 현재 마커 위치를 얻기 위해 KakaoMapGame에서 마커 위치 데이터 요청
-      this.$refs.phoneFrame.getMarkerPosition()
-        .then(markerPosition => {
+      this.$refs.phoneFrame
+        .getMarkerPosition()
+        .then((markerPosition) => {
           if (markerPosition) {
             // 지도 닫기
             this.isMapOpen = false;
-            
+
             // 결과 확인
             this.$nextTick(() => {
               this.checkAnswer(markerPosition);
             });
           } else {
-            alert('위치를 선택해주세요!');
+            alert("위치를 선택해주세요!");
           }
         })
         .catch(() => {
-          alert('위치를 선택해주세요!');
+          alert("위치를 선택해주세요!");
         });
     },
 
     // 랭크 모드 타이머 시작
     startGameTimer() {
       this.elapsedTime = 0;
-      
+
       if (this.gameTimer) {
         clearInterval(this.gameTimer);
       }
-      
+
       this.gameTimer = setInterval(() => {
         this.elapsedTime++;
       }, 1000);
     },
-    
+
     // 타이머 정리
     clearTimer() {
       if (this.countdownTimer) {
         clearInterval(this.countdownTimer);
         this.countdownTimer = null;
       }
-      
+
       if (this.gameTimer) {
         clearInterval(this.gameTimer);
         this.gameTimer = null;
       }
-      
+
       if (this.hintTimer) {
         clearInterval(this.hintTimer);
         this.hintTimer = null;
@@ -716,15 +741,15 @@ export default {
     // 다음 라운드 시작
     nextRound() {
       this.resetGame();
-      this.showIntro = true;  // 인트로 화면 다시 표시
-      this.gameStarted = false;  // 게임 상태 초기화
+      this.showIntro = true; // 인트로 화면 다시 표시
+      this.gameStarted = false; // 게임 상태 초기화
     },
 
     // 게임 종료
     exitGame() {
       // 타이머 정리
       this.clearTimer();
-      this.$router.push('/roadViewMode');
+      this.$router.push("/roadViewMode");
     },
 
     // 게임 종료 확인
@@ -753,7 +778,9 @@ export default {
         this.showToastMessage("로드뷰를 찾을 수 없어 지도 모드로 전환합니다.");
         this.isMapOpen = true;
       } else {
-        this.showToastMessage(`로드뷰 로드 실패 (${this.errorCount}/${this.maxErrorRetry}), 새 위치를 시도합니다...`);
+        this.showToastMessage(
+          `로드뷰 로드 실패 (${this.errorCount}/${this.maxErrorRetry}), 새 위치를 시도합니다...`
+        );
         this.fetchGameLocationData();
       }
     },
@@ -763,10 +790,10 @@ export default {
       if (this.toastTimeout) {
         clearTimeout(this.toastTimeout);
       }
-      
+
       this.toastMessage = message;
       this.showToast = true;
-      
+
       this.toastTimeout = setTimeout(() => {
         this.showToast = false;
       }, 3000);
@@ -791,23 +818,23 @@ export default {
     deg2rad(deg) {
       return deg * (Math.PI / 180);
     },
-    
+
     // 카운트다운 완료 이벤트 핸들러
     onCountdownComplete() {
       this.showCountdown = false;
       this.gameStarted = true;
-      
+
       // 게임 타이머 시작
       this.startGameTimer();
-      
+
       // 힌트 타이머 시작 (첫 힌트는 30초 후에 사용 가능)
       this.nextHintTime = 30;
       this.hintAvailable = false;
-      
+
       if (this.hintTimer) {
         clearInterval(this.hintTimer);
       }
-      
+
       this.hintTimer = setInterval(() => {
         if (this.nextHintTime > 0) {
           this.nextHintTime--;
@@ -986,25 +1013,6 @@ export default {
   text-align: center;
   max-width: 500px;
   width: 90%;
-}
-
-.start-btn {
-  background: linear-gradient(135deg, #3498db, #2980b9);
-  color: white;
-  border: none;
-  padding: 12px 30px;
-  font-size: 1.1rem;
-  font-weight: bold;
-  border-radius: 25px;
-  margin-top: 25px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
-}
-
-.start-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 15px rgba(52, 152, 219, 0.6);
 }
 
 /* 로딩 화면 */
@@ -1494,9 +1502,8 @@ export default {
   background-color: #111;
   border-radius: 40px;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 
-              inset 0 0 10px rgba(255, 255, 255, 0.1),
-              0 0 0 8px #333;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5),
+    inset 0 0 10px rgba(255, 255, 255, 0.1), 0 0 0 8px #333;
   z-index: 15;
 }
 
@@ -1527,7 +1534,7 @@ export default {
 }
 
 .phone-notch:before {
-  content: '';
+  content: "";
   position: absolute;
   width: 8px;
   height: 8px;
@@ -1538,7 +1545,7 @@ export default {
 }
 
 .phone-notch:after {
-  content: '';
+  content: "";
   position: absolute;
   width: 50px;
   height: 6px;
@@ -1584,7 +1591,7 @@ export default {
 }
 
 .home-button:before {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 50%;

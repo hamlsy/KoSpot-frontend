@@ -164,7 +164,7 @@ export default {
     PhotoModePhotoGrid,
     PhotoModeNextRoundButton
   },
-  
+   
   props: {
     mode: {
       type: String,

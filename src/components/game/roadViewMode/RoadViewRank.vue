@@ -5,7 +5,7 @@
       <button class="back-btn" @click="exitGame">
         <i class="fas fa-arrow-left"></i>
       </button>
-      <h2 v-if="!gameStarted"> 랭크 모드</h2>
+      <h2 v-if="!gameStarted">랭크 모드</h2>
       <div v-else class="game-status">
         <!-- 랭크 모드 타이머 -->
         <div
@@ -42,10 +42,7 @@
         />
 
         <!-- 지도 버튼 -->
-        <button
-          class="map-toggle"
-          @click="toggleMap"
-        >
+        <button class="map-toggle" @click="toggleMap">
           <i
             class="fas"
             :class="isMapOpen ? 'fa-street-view' : 'fa-map-marked-alt'"
@@ -55,7 +52,7 @@
       </div>
 
       <!-- 휴대폰 프레임 -->
-      <PhoneFrame 
+      <PhoneFrame
         v-if="isMapOpen"
         :centerLocation="centerLocation"
         :actualLocation="currentLocation"
@@ -71,25 +68,20 @@
       />
 
       <!-- 인트로 화면 -->
-      <div v-if="showIntro" class="intro-overlay">
-        <div class="intro-content">
-          <h2>랭크 모드</h2>
-          <p>현재 보이는 로드뷰의 위치를 지도에서 찾아보세요.</p>
-          <p>
-            지도를 열고 위치를 클릭한 후 "위치 선택" 버튼을 눌러 정답을
-            확인하세요.
-          </p>
-          <button class="start-btn" @click="startCountdown">
-            시작하기
-          </button>
-        </div>
-      </div>
+      <IntroOverlay
+        :showIntro="showIntro"
+        :gameTitle="gameTitle"
+        :gameContent="gameContent"
+        :gameDescription="gameDescription"
+        @end-intro="endIntro"
+      />
+
 
       <!-- 카운트다운 화면 -->
-      <CountdownOverlay 
-        :show="showCountdown" 
-        :initial-count="3" 
-        @countdown-complete="onCountdownComplete" 
+      <CountdownOverlay
+        :show="showCountdown"
+        :initial-count="3"
+        @countdown-complete="onCountdownComplete"
       />
 
       <!-- 결과 화면 -->
@@ -98,58 +90,80 @@
           <div class="result-header">
             <h2>라운드 결과</h2>
           </div>
-          
+
           <div class="result-content">
             <div class="result-score-section">
               <div class="score-display">
                 <div class="score-label">점수</div>
                 <div class="score-value">{{ score }}</div>
               </div>
-              
+
               <div class="distance-display">
                 <div class="distance-label">거리</div>
                 <div class="distance-value">{{ formatDistance(distance) }}</div>
               </div>
-              
+
               <div class="rank-points-display">
                 <div class="rank-points-label">랭크 포인트</div>
-                <div class="rank-points-value" :class="{ 'points-increase': rankPointChange > 0, 'points-decrease': rankPointChange < 0 }">
+                <div
+                  class="rank-points-value"
+                  :class="{
+                    'points-increase': rankPointChange > 0,
+                    'points-decrease': rankPointChange < 0,
+                  }"
+                >
                   <span class="current-points">{{ currentRankPoints }}</span>
                   <span v-if="rankPointChange !== 0" class="points-change">
-                    {{ rankPointChange > 0 ? '+' : '' }}{{ rankPointChange }}
+                    {{ rankPointChange > 0 ? "+" : "" }}{{ rankPointChange }}
                   </span>
                 </div>
               </div>
             </div>
-            
+
             <div class="result-map-section">
               <div class="result-map-container">
                 <!-- 여기에 결과 지도 표시 -->
                 <div class="result-map"></div>
               </div>
-              
+
               <div class="location-info">
                 <div class="actual-location">
-                  <strong>실제 위치:</strong> {{ currentLocation ? currentLocation.address : '알 수 없음' }}
+                  <strong>실제 위치:</strong>
+                  {{ currentLocation ? currentLocation.address : "알 수 없음" }}
                   <div class="coordinates">
-                    <i class="fas fa-map-marker-alt"></i> 
-                    {{ currentLocation ? `${currentLocation.lat.toFixed(6)}, ${currentLocation.lng.toFixed(6)}` : '' }}
+                    <i class="fas fa-map-marker-alt"></i>
+                    {{
+                      currentLocation
+                        ? `${currentLocation.lat.toFixed(
+                            6
+                          )}, ${currentLocation.lng.toFixed(6)}`
+                        : ""
+                    }}
                   </div>
                   <div class="location-description">
                     {{ getLocationDescription() }}
                   </div>
                 </div>
                 <div class="guessed-location">
-                  <strong>선택한 위치:</strong> {{ guessedLocation ? guessedLocation.address : '선택하지 않음' }}
+                  <strong>선택한 위치:</strong>
+                  {{
+                    guessedLocation ? guessedLocation.address : "선택하지 않음"
+                  }}
                   <div class="coordinates" v-if="guessedLocation">
-                    <i class="fas fa-map-marker-alt"></i> 
-                    {{ guessedLocation ? `${guessedLocation.lat.toFixed(6)}, ${guessedLocation.lng.toFixed(6)}` : '' }}
+                    <i class="fas fa-map-marker-alt"></i>
+                    {{
+                      guessedLocation
+                        ? `${guessedLocation.lat.toFixed(
+                            6
+                          )}, ${guessedLocation.lng.toFixed(6)}`
+                        : ""
+                    }}
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          
+
           <div class="result-actions">
             <button class="btn-restart" @click="resetGame">
               <i class="fas fa-redo"></i> 다시하기
@@ -187,13 +201,15 @@
 import RoadViewGame from "@/components/game/common/roadview/RoadViewGame.vue";
 import PhoneFrame from "@/components/game/common/PhoneFrame.vue";
 import CountdownOverlay from "@/components/game/common/CountdownOverlay.vue";
+import IntroOverlay from "../common/intro/IntroOverlay.vue";
 
 export default {
   name: "RoadViewRank",
   components: {
     RoadViewGame,
     PhoneFrame,
-    CountdownOverlay
+    CountdownOverlay,
+    IntroOverlay,
   },
   props: {
     isRankMode: {
@@ -203,12 +219,18 @@ export default {
   },
   data() {
     return {
+      //인트로 관리
+      gameTitle: "랭크 모드",
+      gameContent: "현재 보이는 로드뷰의 위치를 지도에서 찾아보세요.",
+      gameDescription:
+        '지도를 열고 위치를 클릭한 후 "Spot!" 버튼을 눌러 정답을 확인하세요.',
+
       // 게임 화면 관련
       isMapOpen: false,
       showExitConfirmation: false,
       showResult: false,
       showToast: false,
-      toastMessage: '',
+      toastMessage: "",
       toastTimeout: null,
 
       // 게임 상태 관련
@@ -228,7 +250,7 @@ export default {
       mapInitialized: false,
       centerLocation: {
         lat: 37.5665,
-        lng: 126.978
+        lng: 126.978,
       },
 
       // 인트로 및 카운트다운 관련
@@ -242,7 +264,7 @@ export default {
       // 게임 타이머 관련
       gameTimer: null,
       gameTime: 0,
-      
+
       // 랭크 관련
       timerInterval: null,
       currentRankPoints: 1000, // 예시 값
@@ -252,16 +274,16 @@ export default {
       isGameStarted: false,
       remainingTime: 180, // 3분 (초 단위)
       locationDescriptions: {
-        '서울': '대한민국의 수도이자 최대 도시로, 현대적인 건물과 고궁이 공존하는 곳입니다.',
-        '부산': '대한민국 제2의 도시이자 최대 항구도시로, 해운대와 광안리 해변으로 유명합니다.',
-        '제주': '한국의 대표적인 관광지로, 아름다운 자연경관과 독특한 문화를 가진 섬입니다.',
-        '강원': '산과 바다가 어우러진 지역으로, 스키장과 해변 등 사계절 관광지로 유명합니다.',
-        '경기': '서울을 둘러싸고 있는 지역으로, 수원화성과 같은 역사적 명소가 많습니다.',
-        '인천': '대한민국의 주요 항구도시이자 국제공항이 위치한 곳으로, 송도 국제도시가 있습니다.',
-        '대전': '대한민국의 중앙에 위치한 과학도시로, 대덕연구단지가 유명합니다.',
-        '광주': '호남지역의 중심도시로, 예술과 민주화 운동의 역사가 깊은 곳입니다.',
-        '대구': '경북의 중심도시로, 섬유산업과 약령시장으로 유명합니다.',
-        '울산': '대한민국의 공업도시로, 현대자동차와 조선소가 위치해 있습니다.'
+        서울: "대한민국의 수도이자 최대 도시로, 현대적인 건물과 고궁이 공존하는 곳입니다.",
+        부산: "대한민국 제2의 도시이자 최대 항구도시로, 해운대와 광안리 해변으로 유명합니다.",
+        제주: "한국의 대표적인 관광지로, 아름다운 자연경관과 독특한 문화를 가진 섬입니다.",
+        강원: "산과 바다가 어우러진 지역으로, 스키장과 해변 등 사계절 관광지로 유명합니다.",
+        경기: "서울을 둘러싸고 있는 지역으로, 수원화성과 같은 역사적 명소가 많습니다.",
+        인천: "대한민국의 주요 항구도시이자 국제공항이 위치한 곳으로, 송도 국제도시가 있습니다.",
+        대전: "대한민국의 중앙에 위치한 과학도시로, 대덕연구단지가 유명합니다.",
+        광주: "호남지역의 중심도시로, 예술과 민주화 운동의 역사가 깊은 곳입니다.",
+        대구: "경북의 중심도시로, 섬유산업과 약령시장으로 유명합니다.",
+        울산: "대한민국의 공업도시로, 현대자동차와 조선소가 위치해 있습니다.",
       },
     };
   },
@@ -272,13 +294,13 @@ export default {
   beforeDestroy() {
     // 컴포넌트 소멸 시 타이머 정리
     this.clearAllTimers();
-    
+
     // 기존 정리 코드
     this.cleanupGame();
   },
   methods: {
-    // 카운트다운 시작
-    startCountdown() {
+    // 인트로 끝 및 카운트다운 시작
+    endIntro() {
       this.showIntro = false;
       this.showCountdown = true;
     },
@@ -287,7 +309,7 @@ export default {
     resetGame() {
       // 타이머 정리
       this.clearAllTimers();
-      
+
       // 상태 초기화
       this.showResult = false;
       this.isMapOpen = false;
@@ -295,7 +317,7 @@ export default {
       this.distance = null;
       this.score = 0;
       this.elapsedTime = 0;
-      
+
       // 게임 위치 데이터 요청
       this.fetchGameLocationData();
     },
@@ -306,7 +328,7 @@ export default {
         clearInterval(this.gameTimer);
         this.gameTimer = null;
       }
-      
+
       if (this.timerInterval) {
         clearInterval(this.timerInterval);
         this.timerInterval = null;
@@ -340,13 +362,13 @@ export default {
     // 시간 초과 처리
     timeUp() {
       if (this.showResult) return; // 이미 결과 화면이 표시된 경우 중복 실행 방지
-      
+
       if (this.isMapOpen) {
         // 지도가 열려있는 경우 현재 마커 위치로 제출
         this.checkSpotAnswer();
       } else {
         // 지도가 닫혀있는 경우 결과 화면 표시
-        this.showToastMessage('시간이 종료되었습니다!');
+        this.showToastMessage("시간이 종료되었습니다!");
         this.showResultScreen(null);
       }
     },
@@ -362,8 +384,8 @@ export default {
 
     // 거리 포맷팅 (km 또는 m)
     formatDistance(distance) {
-      if (distance === null || distance === undefined) return '알 수 없음';
-      
+      if (distance === null || distance === undefined) return "알 수 없음";
+
       if (distance < 1) {
         // 1km 미만은 m 단위로 표시
         return `${Math.round(distance * 1000)} m`;
@@ -386,10 +408,10 @@ export default {
         { lat: 37.512809, lng: 127.058984 }, // 삼성역
         { lat: 35.179682, lng: 129.075087 }, // 부산 해운대
         { lat: 35.158831, lng: 129.160007 }, // 부산 광안리
-        { lat: 35.101460, lng: 129.032364 }, // 부산 서면
+        { lat: 35.10146, lng: 129.032364 }, // 부산 서면
         { lat: 37.456769, lng: 126.705528 }, // 인천 송도
         { lat: 33.249293, lng: 126.560693 }, // 제주 올레길
-        { lat: 33.450700, lng: 126.570667 }  // 제주 시내
+        { lat: 33.4507, lng: 126.570667 }, // 제주 시내
       ];
 
       // 지역에 맞는 위치 선택
@@ -398,8 +420,8 @@ export default {
       // 필터링된 위치에서 랜덤으로 선택
       const randomIndex = Math.floor(Math.random() * filteredLocations.length);
       this.currentLocation = filteredLocations[randomIndex];
-      console.log('선택된 로드뷰 위치:', this.currentLocation);
-      
+      console.log("선택된 로드뷰 위치:", this.currentLocation);
+
       this.isLoading = false;
     },
 
@@ -407,19 +429,19 @@ export default {
     showResultScreen(guessedLocation) {
       // 타이머 정지
       this.clearAllTimers();
-      
+
       this.guessedLocation = guessedLocation;
       this.showResult = true;
-      
+
       // 랭크 포인트 변화 계산 (더미 데이터)
       this.calculateRankPointChange();
-      
+
       // 결과 화면이 표시된 후 결과 지도 초기화
       this.$nextTick(() => {
         this.initResultMap();
       });
     },
-    
+
     // 랭크 포인트 변화 계산 (더미 데이터)
     calculateRankPointChange() {
       // 점수에 따라 랭크 포인트 변화 계산
@@ -436,169 +458,189 @@ export default {
       } else {
         this.rankPointChange = -25;
       }
-      
+
       // 현재 랭크 포인트 업데이트
       this.currentRankPoints += this.rankPointChange;
-      
+
       // 최소값 보정
       if (this.currentRankPoints < 0) {
         this.currentRankPoints = 0;
       }
     },
-    
+
     // 위치 설명 가져오기 (더미 데이터)
     getLocationDescription() {
-      if (!this.currentLocation || !this.currentLocation.address) return '정보가 없습니다.';
-      
+      if (!this.currentLocation || !this.currentLocation.address)
+        return "정보가 없습니다.";
+
       // 주소에서 지역명 추출 (예: '서울특별시' -> '서울')
-      const addressParts = this.currentLocation.address.split(' ');
-      let region = '';
-      
+      const addressParts = this.currentLocation.address.split(" ");
+      let region = "";
+
       if (addressParts.length > 0) {
         const firstPart = addressParts[0];
-        if (firstPart.includes('서울')) region = '서울';
-        else if (firstPart.includes('부산')) region = '부산';
-        else if (firstPart.includes('제주')) region = '제주';
-        else if (firstPart.includes('강원')) region = '강원';
-        else if (firstPart.includes('경기')) region = '경기';
-        else if (firstPart.includes('인천')) region = '인천';
-        else if (firstPart.includes('대전')) region = '대전';
-        else if (firstPart.includes('광주')) region = '광주';
-        else if (firstPart.includes('대구')) region = '대구';
-        else if (firstPart.includes('울산')) region = '울산';
+        if (firstPart.includes("서울")) region = "서울";
+        else if (firstPart.includes("부산")) region = "부산";
+        else if (firstPart.includes("제주")) region = "제주";
+        else if (firstPart.includes("강원")) region = "강원";
+        else if (firstPart.includes("경기")) region = "경기";
+        else if (firstPart.includes("인천")) region = "인천";
+        else if (firstPart.includes("대전")) region = "대전";
+        else if (firstPart.includes("광주")) region = "광주";
+        else if (firstPart.includes("대구")) region = "대구";
+        else if (firstPart.includes("울산")) region = "울산";
       }
-      
-      return this.locationDescriptions[region] || '한국의 아름다운 지역입니다.';
+
+      return this.locationDescriptions[region] || "한국의 아름다운 지역입니다.";
     },
 
     // 결과 지도 초기화
     initResultMap() {
       if (!this.currentLocation || !window.kakao || !window.kakao.maps) {
-        console.error('지도 API가 로드되지 않았거나 위치 정보가 없습니다.');
+        console.error("지도 API가 로드되지 않았거나 위치 정보가 없습니다.");
         return;
       }
-      
+
       // 결과 지도 요소 가져오기
-      const mapElement = document.querySelector('.result-map');
+      const mapElement = document.querySelector(".result-map");
       if (!mapElement) {
-        console.error('결과 지도 요소를 찾을 수 없습니다.');
+        console.error("결과 지도 요소를 찾을 수 없습니다.");
         return;
       }
-      
+
       // 지도 생성
       const resultMap = new window.kakao.maps.Map(mapElement, {
         center: new window.kakao.maps.LatLng(
-          this.currentLocation.lat, 
+          this.currentLocation.lat,
           this.currentLocation.lng
         ),
-        level: 5
+        level: 5,
       });
-      
+
       // 실제 위치 마커 (빨간색)
       new window.kakao.maps.Marker({
         position: new window.kakao.maps.LatLng(
-          this.currentLocation.lat, 
+          this.currentLocation.lat,
           this.currentLocation.lng
         ),
-        map: resultMap
+        map: resultMap,
       });
-      
+
       // 사용자가 선택한 위치 마커 (파란색)
       if (this.guessedLocation) {
         new window.kakao.maps.Marker({
           position: new window.kakao.maps.LatLng(
-            this.guessedLocation.lat, 
+            this.guessedLocation.lat,
             this.guessedLocation.lng
           ),
-          map: resultMap
+          map: resultMap,
         });
-        
+
         // 두 지점을 모두 포함하는 지도 영역 설정
         const bounds = new window.kakao.maps.LatLngBounds();
-        bounds.extend(new window.kakao.maps.LatLng(this.currentLocation.lat, this.currentLocation.lng));
-        bounds.extend(new window.kakao.maps.LatLng(this.guessedLocation.lat, this.guessedLocation.lng));
+        bounds.extend(
+          new window.kakao.maps.LatLng(
+            this.currentLocation.lat,
+            this.currentLocation.lng
+          )
+        );
+        bounds.extend(
+          new window.kakao.maps.LatLng(
+            this.guessedLocation.lat,
+            this.guessedLocation.lng
+          )
+        );
         resultMap.setBounds(bounds);
-        
+
         // 두 지점을 연결하는 선 그리기
         const linePath = [
-          new window.kakao.maps.LatLng(this.currentLocation.lat, this.currentLocation.lng),
-          new window.kakao.maps.LatLng(this.guessedLocation.lat, this.guessedLocation.lng)
+          new window.kakao.maps.LatLng(
+            this.currentLocation.lat,
+            this.currentLocation.lng
+          ),
+          new window.kakao.maps.LatLng(
+            this.guessedLocation.lat,
+            this.guessedLocation.lng
+          ),
         ];
-        
+
         const polyline = new window.kakao.maps.Polyline({
           path: linePath,
           strokeWeight: 3,
-          strokeColor: '#FF0000',
+          strokeColor: "#FF0000",
           strokeOpacity: 0.7,
-          strokeStyle: 'solid'
+          strokeStyle: "solid",
         });
-        
+
         polyline.setMap(resultMap);
       }
     },
-    
+
     // 결과 화면 닫기
     closeResult() {
       this.showResult = false;
     },
-    
+
     // Spot 버튼 클릭 시 마커 위치 확인
     checkSpotAnswer() {
       if (!this.$refs.phoneFrame) {
-        alert('지도가 준비되지 않았습니다. 다시 시도해주세요.');
+        alert("지도가 준비되지 않았습니다. 다시 시도해주세요.");
         return;
       }
-      
+
       // 현재 마커 위치를 얻기 위해 KakaoMapGame에서 마커 위치 데이터 요청
-      this.$refs.phoneFrame.getMarkerPosition()
-        .then(markerPosition => {
+      this.$refs.phoneFrame
+        .getMarkerPosition()
+        .then((markerPosition) => {
           if (markerPosition) {
             // 지도 닫기
             this.isMapOpen = false;
-            
+
             // 결과 확인
             this.$nextTick(() => {
               this.checkAnswer(markerPosition);
             });
           } else {
-            alert('위치를 선택해주세요!');
+            alert("위치를 선택해주세요!");
           }
         })
         .catch(() => {
-          alert('위치를 선택해주세요!');
+          alert("위치를 선택해주세요!");
         });
     },
 
     // 게임 결과 확인
     checkAnswer(position) {
       if (this.showResult) return;
-      
+
       // 타이머 정리
       this.clearAllTimers();
-      
+
       // 거리 계산
       const distance = this.calculateDistance(
-        position.lat, position.lng,
-        this.currentLocation.lat, this.currentLocation.lng
+        position.lat,
+        position.lng,
+        this.currentLocation.lat,
+        this.currentLocation.lng
       );
-      
+
       // 점수 계산 (최대 100점)
       const score = Math.max(0, Math.floor(100 - Math.sqrt(distance) * 10));
-      
+
       // 게임 결과 저장
       this.distance = distance;
       this.score = score;
       this.guessedLocation = position;
-      
+
       // 결과 화면 표시
       this.showResultScreen(position);
     },
-    
+
     // 다음 라운드 시작
     nextRound() {
       this.resetGame();
-      this.showIntro = true;  // 인트로 화면 다시 표시
-      this.gameStarted = false;  // 게임 상태 초기화
+      this.showIntro = true; // 인트로 화면 다시 표시
+      this.gameStarted = false; // 게임 상태 초기화
       this.isGameStarted = false;
       this.remainingTime = 180;
     },
@@ -607,7 +649,7 @@ export default {
     exitGame() {
       // 타이머 정리
       this.clearAllTimers();
-      this.$router.push('/roadViewMode');
+      this.$router.push("/roadViewMode");
     },
 
     // 게임 종료 확인
@@ -629,7 +671,9 @@ export default {
         this.showToastMessage("로드뷰를 찾을 수 없어 지도 모드로 전환합니다.");
         this.isMapOpen = true;
       } else {
-        this.showToastMessage(`로드뷰 로드 실패 (${this.errorCount}/${this.maxErrorRetry}), 새 위치를 시도합니다...`);
+        this.showToastMessage(
+          `로드뷰 로드 실패 (${this.errorCount}/${this.maxErrorRetry}), 새 위치를 시도합니다...`
+        );
         this.fetchGameLocationData();
       }
     },
@@ -639,10 +683,10 @@ export default {
       if (this.toastTimeout) {
         clearTimeout(this.toastTimeout);
       }
-      
+
       this.toastMessage = message;
       this.showToast = true;
-      
+
       this.toastTimeout = setTimeout(() => {
         this.showToast = false;
       }, 3000);
@@ -667,7 +711,7 @@ export default {
     deg2rad(deg) {
       return deg * (Math.PI / 180);
     },
-    
+
     // 카운트다운 완료 이벤트 핸들러
     onCountdownComplete() {
       this.showCountdown = false;
@@ -675,9 +719,9 @@ export default {
       this.isGameStarted = true;
       this.remainingTime = 180; // 3분
       this.startTimer();
-    }
+    },
   },
-}
+};
 </script>
 
 <style scoped>
@@ -760,51 +804,6 @@ export default {
     opacity: 1;
   }
 }
-
-/* 게임 소개 화면 */
-.intro-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: whitesmoke;
- 
-  z-index: 20;
-}
-
-.intro-content {
-  background-color: white;
-  padding: 30px;
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  text-align: center;
-  max-width: 500px;
-  width: 90%;
-}
-
-.start-btn {
-  background: linear-gradient(135deg, #3498db, #2980b9);
-  color: white;
-  border: none;
-  padding: 12px 30px;
-  font-size: 1.1rem;
-  font-weight: bold;
-  border-radius: 25px;
-  margin-top: 25px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
-}
-
-.start-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 15px rgba(52, 152, 219, 0.6);
-}
-
 
 /* 로딩 화면 */
 .loading-overlay {
@@ -1037,7 +1036,9 @@ export default {
   gap: 15px;
 }
 
-.score-display, .distance-display, .rank-points-display {
+.score-display,
+.distance-display,
+.rank-points-display {
   flex: 1;
   min-width: 120px;
   background-color: #f8f9fa;
@@ -1048,18 +1049,24 @@ export default {
   transition: transform 0.3s ease;
 }
 
-.score-display:hover, .distance-display:hover, .rank-points-display:hover {
+.score-display:hover,
+.distance-display:hover,
+.rank-points-display:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
 }
 
-.score-label, .distance-label, .rank-points-label {
+.score-label,
+.distance-label,
+.rank-points-label {
   font-size: 0.9rem;
   color: #666;
   margin-bottom: 5px;
 }
 
-.score-value, .distance-value, .rank-points-value {
+.score-value,
+.distance-value,
+.rank-points-value {
   font-size: 1.5rem;
   font-weight: bold;
   color: #333;
@@ -1119,7 +1126,8 @@ export default {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-.actual-location, .guessed-location {
+.actual-location,
+.guessed-location {
   font-size: 0.9rem;
   color: #333;
   padding: 10px;
@@ -1165,7 +1173,8 @@ export default {
   border-radius: 0 0 20px 20px;
 }
 
-.btn-restart, .btn-exit {
+.btn-restart,
+.btn-exit {
   flex: 1;
   padding: 12px;
   border-radius: 8px;
@@ -1207,13 +1216,13 @@ export default {
   .result-score-section {
     flex-direction: column;
   }
-  
+
   .result-container {
     width: 95%;
     height: auto;
     max-height: 85vh;
   }
-  
+
   .result-map-container {
     height: 150px;
   }
@@ -1298,9 +1307,15 @@ export default {
 }
 
 @keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* 결과 화면 스타일 */
@@ -1377,7 +1392,9 @@ export default {
   gap: 15px;
 }
 
-.score-display, .distance-display, .rank-points-display {
+.score-display,
+.distance-display,
+.rank-points-display {
   flex: 1;
   min-width: 120px;
   background-color: #f8f9fa;
@@ -1387,13 +1404,17 @@ export default {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-.score-label, .distance-label, .rank-points-label {
+.score-label,
+.distance-label,
+.rank-points-label {
   font-size: 0.9rem;
   color: #666;
   margin-bottom: 5px;
 }
 
-.score-value, .distance-value, .rank-points-value {
+.score-value,
+.distance-value,
+.rank-points-value {
   font-size: 1.5rem;
   font-weight: bold;
   color: #333;
@@ -1453,7 +1474,8 @@ export default {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-.actual-location, .guessed-location {
+.actual-location,
+.guessed-location {
   font-size: 0.9rem;
   color: #333;
 }
@@ -1466,7 +1488,8 @@ export default {
   border-top: 1px solid #eee;
 }
 
-.btn-next-round, .btn-exit {
+.btn-next-round,
+.btn-exit {
   flex: 1;
   padding: 12px;
   border-radius: 8px;
@@ -1595,10 +1618,6 @@ export default {
     font-size: 5rem;
   }
 
-  .intro-content {
-    padding: 25px;
-  }
-
   .phone-frame {
     width: 300px;
     height: 600px;
@@ -1688,8 +1707,14 @@ export default {
 }
 
 @keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 </style>
