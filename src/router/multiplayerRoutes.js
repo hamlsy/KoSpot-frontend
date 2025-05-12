@@ -1,5 +1,6 @@
 import MultiplayerLobby from '@/components/game/multiplayerMode/lobby/MultiplayerLobbyMain.vue';
-import MultiplayerRoadViewGame from '@/components/game/multiplayerMode/gameplay/roadview/MultiplayerRoadViewGame.vue';
+import IndividualRoadViewGame from '@/components/game/multiplayerMode/gameplay/roadview/IndividualRoadViewGame.vue';
+import TeamRoadViewGame from '@/components/game/multiplayerMode/gameplay/roadview/TeamRoadViewGame.vue';
 
 const multiplayerRoutes = [
     {
@@ -14,9 +15,9 @@ const multiplayerRoutes = [
         props: true
     },
     {
-        path: '/game/roadview/:roomId',
+        path: '/game/roadview/:roomId/individual',
         name: "RoadViewGame",
-        component: MultiplayerRoadViewGame,
+        component: IndividualRoadViewGame,
         props: true
     },
     {
@@ -28,21 +29,16 @@ const multiplayerRoutes = [
     {
         path: '/testTeamGame',
         name: "TestTeamGame",
-        component: () => import('@/components/game/multiplayerMode/gameplay/roadview/MultiplayerRoadViewGame.vue'),
+        component: TeamRoadViewGame,
         props: { roomId: 'team-test-123', isTeamMode: true }
     },
     {
         path: '/testIndividualGame',
         name: "TestIndividualGame",
-        component: () => import('@/components/game/multiplayerMode/gameplay/roadview/MultiplayerRoadViewGame.vue'),
+        component: IndividualRoadViewGame,
         props: { roomId: 'individual-test-123', isTeamMode: false }
     },
-    {
-        path: '/team-mode',
-        name: 'TeamModeGame',
-        component: () => import('@/components/game/multiplayerMode/gameplay/roadview/MultiplayerRoadViewGame.vue'),
-        props: { isTeamMode: true }
-    }
+    
 ];
 
 export default multiplayerRoutes;

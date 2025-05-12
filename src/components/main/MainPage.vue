@@ -41,6 +41,15 @@
       <!-- Game Modes -->
       <section class="game-modes">
         <div class="modes-grid">
+          <!-- 로그인/사용자 정보 카드 -->
+          <div class="user-card">
+            <UserLoginCard
+              :is-logged-in="isLoggedIn"
+              :user-profile="userProfile"
+              @navigate="navigateTo"
+            />
+          </div>
+
           <div
             class="mode-card roadview"
             @click="navigateTo('roadViewModeMain')"
@@ -64,15 +73,7 @@
               </div>
             </div>
           </div>
-          <!-- 로그인/사용자 정보 카드 -->
-          <div class="user-card">
-            <UserLoginCard
-              :is-logged-in="isLoggedIn"
-              :user-profile="userProfile"
-              @navigate="navigateTo"
-              @social-login="socialLogin"
-            />
-          </div>
+
           <div class="mode-card photo" @click="navigateTo('photoModeMain')">
             <div class="mode-background"></div>
             <div class="mode-icon">
@@ -291,6 +292,9 @@ export default {
   },
   data() {
     return {
+      //로그인 여부
+      isLoggedIn: false,
+
       showProfileMenu: false,
       unreadNotifications: 3,
       currentBanner: 0,
@@ -537,7 +541,6 @@ export default {
   border: 1px solid #eeeeee;
   /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04); */
 }
-
 
 .mode-card:hover {
   transform: translateY(-4px);

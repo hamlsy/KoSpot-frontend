@@ -37,18 +37,23 @@
         
         <div class="player-score" v-if="showScores">
           <template v-if="player.score !== undefined">
-            <div 
-              class="score-value" 
-              :class="{
-                'high-score': player.score >= 4000,
-                'medium-score': player.score >= 2000 && player.score < 4000,
-                'low-score': player.score < 2000
-              }"
-            >
-              {{ formatNumber(player.score) }}
+            <div class="score-container">
+              <div 
+                class="score-value" 
+                :class="{
+                  'high-score': player.score >= 4000,
+                  'medium-score': player.score >= 2000 && player.score < 4000,
+                  'low-score': player.score < 2000
+                }"
+              >
+                {{ formatNumber(player.score) }}
+              </div>
+              <div class="round-score" v-if="player.lastRoundScore">
+                <span class="plus-sign">+</span>{{ formatNumber(player.lastRoundScore) }}
+              </div>
             </div>
             <div class="score-distance" v-if="player.distanceToTarget !== null">
-              {{ player.distanceToTarget.toFixed(2) }}km
+              <i class="fas fa-map-marker-alt"></i> {{ player.distanceToTarget.toFixed(2) }}km
             </div>
           </template>
           <div class="no-score" v-else>-</div>
@@ -85,6 +90,10 @@ export default {
       required: true
     },
     showScores: {
+      type: Boolean,
+      default: false
+    },
+    roundEnded: {
       type: Boolean,
       default: false
     }
@@ -279,31 +288,61 @@ export default {
 }
 
 .player-score {
-  font-weight: 700;
-  text-align: right;
-  margin-right: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3rem;
+}
+
+.score-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .score-value {
+  font-weight: 600;
   font-size: 1.1rem;
 }
 
+.round-score {
+  font-size: 0.9rem;
+  color: #4cd964;
+  background: rgba(76, 217, 100, 0.1);
+  padding: 2px 6px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.plus-sign {
+  font-size: 0.8rem;
+  margin-right: 2px;
+}
+
 .high-score {
-  color: #4caf50;
+  color: #4cd964;
 }
 
 .medium-score {
-  color: #2196f3;
+  color: #007aff;
 }
 
 .low-score {
-  color: #f44336;
+  color: #ff9500;
 }
 
 .score-distance {
   font-size: 0.8rem;
-  color: #666;
-  margin-top: 0.2rem;
+  color: #8e8e93;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.score-distance i {
+  color: #ff3b30;
+  font-size: 0.7rem;
 }
 
 .no-score {

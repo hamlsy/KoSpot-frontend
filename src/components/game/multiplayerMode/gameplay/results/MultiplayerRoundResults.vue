@@ -1,5 +1,5 @@
 <template>
-  <div class="round-results" v-if="visible" v-show="visible">
+  <div class="round-results">
     <div class="results-container">
       <!-- 헤더 -->
       <div class="results-header">
@@ -21,74 +21,19 @@
         </div>
       </div>
       
-      <!-- 실제 위치 정보 -->
-      <div class="location-info">
-        <div class="location-map">
-          <kakao-map
-            :center="actualLocation"
-            :marker-position="null"
-            :actual-position="actualLocation"
-            :prevent-interaction="true"
-            :show-marker-hint="false"
-            :zoom-level="4"
-            :player-guesses="playerGuesses"
-            :show-distance-lines="true"
-            ref="resultMap"
-          />
-        </div>
-        
-      </div>
-      
-      <!-- 플레이어 점수 -->
-      <div class="score-board">
-        <h3 class="scores-title">플레이어 점수</h3>
-        
-        <div class="player-scores">
-          <div 
-            v-for="(player, index) in sortedPlayers" 
-            :key="player.id"
-            class="player-score-row"
-            :class="{ 
-              'current-user': player.id === currentUserId,
-              'first-place': index === 0
-            }"
-          >
-            <div class="rank">{{ index + 1 }}</div>
-            
-            <div class="player-info">
-              <div class="player-avatar">
-                <img 
-                  :src="player.profileImage" 
-                  :alt="player.nickname"
-                  class="avatar-image"
-                />
-                <div class="player-level">{{ player.level }}</div>
-              </div>
-              
-              <div class="player-name">
-                {{ player.nickname }}
-                <span class="host-badge" v-if="player.isHost">방장</span>
-              </div>
-            </div>
-            
-            <div class="score-details">
-              <div class="distance">
-                <i class="fas fa-map-marker-alt"></i>
-                {{ formatDistance(player.distanceToTarget) }}
-              </div>
-              
-              <div class="score">
-                <i class="fas fa-star"></i>
-                {{ formatNumber(player.score) }}점
-              </div>
-              
-              <div class="streak" v-if="player.streak > 0">
-                <i class="fas fa-fire"></i>
-                {{ player.streak }}
-              </div>
-            </div>
-          </div>
-        </div>
+      <!-- 확장된 지도 영역 -->
+      <div class="map-container">
+        <kakao-map
+          :center="actualLocation"
+          :marker-position="null"
+          :actual-position="actualLocation"
+          :prevent-interaction="false"
+          :show-marker-hint="false"
+          :zoom-level="3"
+          :player-guesses="playerGuesses"
+          :show-distance-lines="true"
+          ref="resultMap"
+        />
       </div>
       
       <!-- 하단 버튼 -->
@@ -125,10 +70,6 @@ export default {
   },
   
   props: {
-    visible: {
-      type: Boolean,
-      default: false
-    },
     players: {
       type: Array,
       default: () => []
@@ -191,16 +132,6 @@ export default {
   },
   
   watch: {
-    visible(newVal) {
-      if (newVal) {
-        // 모달이 표시될 때 지도 초기화 작업 수행
-        this.$nextTick(() => {
-          setTimeout(() => {
-            this.initMap();
-          }, 300); // 약간의 지연을 두어 DOM이 완전히 렌더링된 후 지도 초기화
-        });
-      }
-    },
     
     // actualLocation이 변경될 때도 지도 초기화
     actualLocation: {
@@ -233,11 +164,9 @@ export default {
   
   mounted() {
     // 컴포넌트가 마운트될 때 지도 초기화
-    if (this.visible) {
-      this.$nextTick(() => {
-        this.initMap();
-      });
-    }
+    this.$nextTick(() => {
+      this.initMap();
+    });
   },
   
   methods: {
@@ -270,7 +199,7 @@ export default {
         
         // 지도 컨테이너 크기 설정 및 가시성 확인
         mapContainer.style.width = '100%';
-        mapContainer.style.height = '300px';
+        mapContainer.style.height = '500px'; // 지도 높이 증가
         mapContainer.style.display = 'block';
         
         // 카카오맵 API가 로드되었는지 확인
@@ -289,6 +218,7 @@ export default {
             setTimeout(() => {
               if (this.$refs.resultMap) {
                 this.$refs.resultMap.fitMapToAllMarkers();
+                this.$refs.resultMap.drawPlayerDistanceLines(); // 거리 선 표시 명시적 호출
               }
             }, 500);
           }
@@ -319,30 +249,15 @@ export default {
 
 <style scoped>
 .round-results {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  width: 100%;
+  height: 100%;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(4px);
-  animation: fadeIn 0.3s ease;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: white;
 }
 
 .results-container {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-  width: 90%;
-  max-width: 900px;
-  max-height: 90vh;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
   animation: slideUp 0.4s ease;
 }
 
@@ -396,16 +311,32 @@ export default {
   border-bottom: 1px solid #eee;
 }
 
-.location-map {
+.location-details {
   width: 100%;
-  height: 300px;
+}
+
+.location-name {
+  font-size: 1.4rem;
+  margin: 0 0 0.5rem 0;
+  color: #333;
+}
+
+.location-description {
+  color: #555;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+/* 확장된 지도 컨테이너 */
+.map-container {
+  width: 100%;
+  height: 500px;
   border-radius: 8px;
   overflow: hidden;
-  flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   position: relative;
   display: block;
-  min-height: 300px;
+  margin: 0 1.5rem 1.5rem 1.5rem;
 }
 
 .interesting-fact {
@@ -438,140 +369,7 @@ export default {
   object-fit: cover;
 }
 
-/* 점수 보드 */
-.score-board {
-  padding: 1.5rem;
-}
 
-.scores-title {
-  margin: 0 0 1rem 0;
-  font-size: 1.3rem;
-  color: #333;
-}
-
-.player-scores {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-}
-
-.player-score-row {
-  display: flex;
-  align-items: center;
-  padding: 0.8rem;
-  border-radius: 8px;
-  background: #f8f9fa;
-  transition: all 0.2s ease;
-}
-
-.player-score-row:hover {
-  background: #f0f2f5;
-}
-
-.player-score-row.current-user {
-  background: #EBF3FF;
-}
-
-.player-score-row.first-place {
-  background: linear-gradient(to right, #FEF9C3, #FEF5E7);
-}
-
-.rank {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #e0e0e0;
-  color: #333;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  margin-right: 1rem;
-}
-
-.player-score-row.first-place .rank {
-  background: linear-gradient(135deg, #FFD700, #FFC107);
-  color: #784212;
-  box-shadow: 0 2px 4px rgba(255, 193, 7, 0.5);
-}
-
-.player-info {
-  display: flex;
-  align-items: center;
-  flex: 1;
-}
-
-.player-avatar {
-  position: relative;
-  margin-right: 0.8rem;
-}
-
-.avatar-image {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.player-level {
-  position: absolute;
-  bottom: -5px;
-  right: -5px;
-  background: #555;
-  color: white;
-  font-size: 0.7rem;
-  font-weight: 600;
-  padding: 2px 5px;
-  border-radius: 10px;
-  min-width: 18px;
-  text-align: center;
-}
-
-.player-name {
-  font-weight: 500;
-  color: #333;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.host-badge {
-  background: #4285F4;
-  color: white;
-  font-size: 0.7rem;
-  padding: 2px 6px;
-  border-radius: 10px;
-}
-
-.score-details {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-}
-
-.distance, .score, .streak {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-}
-
-.distance i {
-  color: #E53935;
-}
-
-.score {
-  font-weight: 600;
-  color: #333;
-}
-
-.score i {
-  color: #FFC107;
-}
-
-.streak i {
-  color: #FF5722;
-}
 
 /* 푸터 */
 .results-footer {
