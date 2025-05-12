@@ -1,5 +1,5 @@
 <template>
-  <div class="round-results" v-if="visible">
+  <div class="round-results" v-if="visible" v-show="visible">
     <div class="results-container">
       <!-- 헤더 -->
       <div class="results-header">
@@ -31,22 +31,12 @@
             :prevent-interaction="true"
             :show-marker-hint="false"
             :zoom-level="4"
+            :player-guesses="playerGuesses"
+            :show-distance-lines="true"
+            ref="resultMap"
           />
         </div>
         
-        <div class="location-details">
-          <h3 class="location-name">{{ locationName }}</h3>
-          <p class="location-description">{{ locationDescription }}</p>
-          
-          <div class="interesting-fact" v-if="interestingFact">
-            <h4>알고 계셨나요?</h4>
-            <p>{{ interestingFact }}</p>
-          </div>
-          
-          <div class="location-image" v-if="locationImage">
-            <img :src="locationImage" alt="위치 이미지" />
-          </div>
-        </div>
       </div>
       
       <!-- 플레이어 점수 -->
@@ -141,27 +131,27 @@ export default {
     },
     players: {
       type: Array,
-      required: true
+      default: () => []
     },
     actualLocation: {
       type: Object,
-      required: true
+      default: () => ({})
     },
     round: {
       type: Number,
-      required: true
+      default: 1
     },
     totalRounds: {
       type: Number,
-      required: true
+      default: 5
     },
     currentUserId: {
       type: String,
-      required: true
+      default: ''
     },
     locationName: {
       type: String,
-      default: '알 수 없는 위치'
+      default: ''
     },
     locationDescription: {
       type: String,
@@ -174,6 +164,10 @@ export default {
     interestingFact: {
       type: String,
       default: ''
+    },
+    playerGuesses: {
+      type: Array,
+      default: () => []
     }
   },
   
@@ -183,7 +177,66 @@ export default {
     },
     
     isLastRound() {
-      return this.round >= this.totalRounds;
+      return this.round === this.totalRounds;
+    },
+    
+    // 플레이어 추측 위치에 대한 마커 정보 계산
+    playerMarkers() {
+      return this.playerGuesses.map(guess => ({
+        position: guess.position,
+        color: guess.color,
+        playerName: guess.playerName
+      }));
+    }
+  },
+  
+  watch: {
+    visible(newVal) {
+      if (newVal) {
+        // 모달이 표시될 때 지도 초기화 작업 수행
+        this.$nextTick(() => {
+          setTimeout(() => {
+            this.initMap();
+          }, 300); // 약간의 지연을 두어 DOM이 완전히 렌더링된 후 지도 초기화
+        });
+      }
+    },
+    
+    // actualLocation이 변경될 때도 지도 초기화
+    actualLocation: {
+      handler(newVal) {
+        if (newVal && this.visible) {
+          this.$nextTick(() => {
+            setTimeout(() => {
+              this.initMap();
+            }, 300);
+          });
+        }
+      },
+      deep: true
+    },
+    
+    // playerGuesses가 변경될 때도 지도 초기화
+    playerGuesses: {
+      handler(newVal) {
+        if (newVal && newVal.length > 0 && this.visible) {
+          this.$nextTick(() => {
+            setTimeout(() => {
+              this.initMap();
+            }, 300);
+          });
+        }
+      },
+      deep: true
+    }
+  },
+  
+  mounted() {
+    // 컴포넌트가 마운트될 때 지도 초기화
+    if (this.visible) {
+      this.$nextTick(() => {
+        this.initMap();
+      });
     }
   },
   
@@ -201,6 +254,52 @@ export default {
     formatNumber(num) {
       if (num === null || num === undefined) return '0';
       return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    },
+    
+    initMap() {
+      // 지도 컨테이너가 준비되었는지 확인
+      if (this.$refs.resultMap && window.kakao && window.kakao.maps) {
+        console.log('지도 초기화 시작');
+        
+        // 지도 컨테이너 요소 확인
+        const mapContainer = this.$refs.resultMap.$el;
+        if (!mapContainer) {
+          console.error('지도 컨테이너를 찾을 수 없습니다.');
+          return;
+        }
+        
+        // 지도 컨테이너 크기 설정 및 가시성 확인
+        mapContainer.style.width = '100%';
+        mapContainer.style.height = '300px';
+        mapContainer.style.display = 'block';
+        
+        // 카카오맵 API가 로드되었는지 확인
+        if (typeof kakao === 'undefined' || !kakao.maps) {
+          console.error('카카오맵 API가 로드되지 않았습니다.');
+          return;
+        }
+        
+        try {
+          // 지도 초기화 트리거
+          this.$refs.resultMap.initMap();
+          
+          // 실제 위치와 플레이어 추측 위치가 있으면 지도에 맞춤
+          if (this.actualLocation && this.actualLocation.lat && this.actualLocation.lng) {
+            // 약간의 지연을 두어 지도가 완전히 로드된 후 마커와 선을 표시
+            setTimeout(() => {
+              if (this.$refs.resultMap) {
+                this.$refs.resultMap.fitMapToAllMarkers();
+              }
+            }, 500);
+          }
+          
+          console.log('지도 초기화 완료');
+        } catch (error) {
+          console.error('지도 초기화 중 오류 발생:', error);
+        }
+      } else {
+        console.error('지도 컴포넌트 또는 카카오맵 API를 찾을 수 없습니다.');
+      }
     },
     
     close() {
@@ -298,28 +397,15 @@ export default {
 }
 
 .location-map {
-  width: 300px;
-  height: 200px;
+  width: 100%;
+  height: 300px;
   border-radius: 8px;
   overflow: hidden;
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.location-details {
-  flex: 1;
-}
-
-.location-name {
-  margin: 0 0 0.8rem 0;
-  font-size: 1.3rem;
-  color: #333;
-}
-
-.location-description {
-  margin: 0 0 1rem 0;
-  color: #555;
-  line-height: 1.5;
+  position: relative;
+  display: block;
+  min-height: 300px;
 }
 
 .interesting-fact {

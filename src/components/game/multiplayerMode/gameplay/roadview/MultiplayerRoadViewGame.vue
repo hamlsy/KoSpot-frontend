@@ -5,7 +5,7 @@
       <div class="header-left">
         <button class="exit-button" @click="exitGame">
           <i class="fas fa-door-open"></i>
-          나가기
+          <span class="exit-text">나가기</span>
         </button>
         <div class="room-info">
           <h2 class="room-name">{{ gameStore.state.roomData.name }}</h2>
@@ -16,7 +16,7 @@
         </div>
       </div>
 
-      <div class="header-center">
+      <div class="header-center col-md-4">
         <div class="round-info">
           <span class="round-number">
             라운드 {{ gameStore.state.currentRound }}/{{
@@ -37,13 +37,36 @@
         </div>
       </div>
 
-      <div class="header-right">
+      <div class="header-right col-md-4">
         <game-timer
           :initialTime="gameStore.state.remainingTime"
           :totalTime="120"
           :warning-threshold="30"
           :danger-threshold="10"
         />
+      </div>
+    </div>
+    
+    <!-- 모바일 플레이어 정보 -->
+    <div class="mobile-player-info">
+      <div class="mobile-player-list">
+        <div 
+          v-for="player in gameStore.state.players" 
+          :key="player.id" 
+          class="mobile-player-item"
+          :class="{ 'current-player': player.id === gameStore.state.currentUser.id }"
+        >
+          <div class="mobile-player-avatar">
+            <img :src="player.avatar || '/img/default-avatar.png'" alt="아바타">
+          </div>
+          <div class="mobile-player-name">{{ player.nickname }}</div>
+          <div 
+            v-if="gameStore.state.hasSubmittedGuess || gameStore.state.roundEnded" 
+            class="mobile-player-score"
+          >
+            {{ player.score }}
+          </div>
+        </div>
       </div>
     </div>
 
@@ -72,6 +95,12 @@
           />
 
           <!-- 지도 버튼 -->
+          <!-- 채팅 토글 버튼 (모바일) -->
+          <button class="chat-toggle" @click="toggleChat">
+            <i class="fas" :class="isChatOpen ? 'fa-times' : 'fa-comments'"></i>
+            {{ isChatOpen ? "채팅 닫기" : "채팅 열기" }}
+          </button>
+          
           <button class="map-toggle" @click="toggleMap">
             <i
               class="fas"
@@ -182,7 +211,7 @@
       v-if="isMapOpen"
       :centerLocation="mapCenter"
       :actualLocation="
-        gameStore.state.roundEnded ? gameStore.state.actualLocation : null
+        gameStore.state.roundEnded ? gameStore.state.actualLocation : { lat: 0, lng: 0 }
       "
       :showHintCircles="false"
       :disabled="gameStore.state.roundEnded"
@@ -190,9 +219,13 @@
       :showActionButton="false"
       @close="toggleMap"
       @spot-answer="submitGuessFromPhoneMap"
-      @error="showToast"
+      @error="handleMapError"
       ref="phoneMapGame"
     />
+    <!-- 토스트 메시지 -->    
+    <div class="toast-message" :class="{ 'show': showToastFlag }">
+      {{ toastMessage }}
+    </div>
   </div>
 </template>
 
@@ -249,6 +282,13 @@ export default {
       roundTimer: null,
       mapPreviewUrl: "",
       isMapOpen: false,
+      allPlayersSubmitted: false,
+      submittedPlayersCount: 0,
+      playerGuesses: [], // 모든 플레이어의 추측 위치를 저장
+      toastMessage: "",
+      showToastFlag: false,
+      toastTimer: null,
+      isChatOpen: false,
     };
   },
 
@@ -299,13 +339,42 @@ export default {
 
   mounted() {
     // 로딩 화면 제거
+    // 토스트 메시지 스타일 추가
+    this.addToastStyles();
+    this.checkResponsive();
+    window.addEventListener('resize', this.checkResponsive);
   },
 
   beforeDestroy() {
     this.clearTimer();
+    if (this.toastTimer) {
+      clearTimeout(this.toastTimer);
+    }
+    window.removeEventListener('resize', this.checkResponsive);
   },
 
   methods: {
+    checkResponsive() {
+      const isMobile = window.innerWidth <= 992;
+      const rightPanel = document.querySelector('.right-panel');
+      
+      if (rightPanel) {
+        // 모바일이 아닐 때는 채팅창 항상 표시
+        if (!isMobile) {
+          rightPanel.style.display = 'block';
+        } else if (!this.isChatOpen) {
+          rightPanel.style.display = 'none';
+        }
+      }
+    },
+    
+    toggleChat() {
+      this.isChatOpen = !this.isChatOpen;
+      const rightPanel = document.querySelector('.right-panel');
+      if (rightPanel) {
+        rightPanel.style.display = this.isChatOpen ? 'block' : 'none';
+      }
+    },
     initGame() {
       gameStore.initGame();
       this.fetchRoundData();
@@ -316,10 +385,15 @@ export default {
       setTimeout(() => {
         const location = getRandomLocation();
 
-        gameStore.state.currentLocation = {
+        // 현재 위치와 실제 위치(정답 좌표) 모두 설정
+        const locationCoords = {
           lat: location.lat,
           lng: location.lng,
         };
+        
+        gameStore.state.currentLocation = locationCoords;
+        gameStore.state.actualLocation = locationCoords; // 정답 좌표 설정
+        
         gameStore.state.locationInfo = {
           name: location.name,
           description: location.description,
@@ -383,10 +457,30 @@ export default {
 
       gameStore.submitGuess();
 
-      // 실제 구현에서는 서버로 제출
-      setTimeout(() => {
+      // 현재 플레이어의 추측 저장
+      const currentPlayer = this.gameStore.state.currentUser;
+      this.playerGuesses.push({
+        playerId: currentPlayer.id,
+        playerName: currentPlayer.nickname,
+        position: this.guessPosition,
+        color: this.getRandomColor(currentPlayer.id),
+      });
+
+      // 제출한 플레이어 수 증가
+      this.submittedPlayersCount++;
+
+      // 모든 플레이어가 제출했는지 확인 (테스트용)
+      // 실제 구현에서는 서버에서 확인
+      if (this.submittedPlayersCount >= this.gameStore.state.players.length) {
+        this.allPlayersSubmitted = true;
         this.endRound();
-      }, 1000);
+      } else {
+        // 테스트용: 모든 플레이어가 제출하지 않았지만 시간이 다 되었을 때
+        // 실제 구현에서는 서버에서 처리
+        this.$toast.info(
+          `${this.submittedPlayersCount}/${this.gameStore.state.players.length} 플레이어가 제출했습니다.`
+        );
+      }
     },
 
     submitTeamGuess() {
@@ -428,6 +522,31 @@ export default {
 
         gameStore.submitGuess();
 
+        // 현재 플레이어의 추측 저장
+        const currentPlayer = this.gameStore.state.currentUser;
+        this.playerGuesses.push({
+          playerId: currentPlayer.id,
+          playerName: currentPlayer.nickname,
+          position: this.guessPosition,
+          color: this.getRandomColor(currentPlayer.id),
+        });
+
+        // 제출한 플레이어 수 증가
+        this.submittedPlayersCount++;
+
+        // 모든 플레이어가 제출했는지 확인 (테스트용)
+        // 실제 구현에서는 서버에서 확인
+        if (this.submittedPlayersCount >= this.gameStore.state.players.length) {
+          this.allPlayersSubmitted = true;
+          this.endRound();
+        } else {
+          // 테스트용: 모든 플레이어가 제출하지 않았지만 시간이 다 되었을 때
+          // 실제 구현에서는 서버에서 처리
+          this.$toast.info(
+            `${this.submittedPlayersCount}/${this.gameStore.state.players.length} 플레이어가 제출했습니다.`
+          );
+        }
+
         setTimeout(() => {
           this.endRound();
         }, 1000);
@@ -441,15 +560,17 @@ export default {
     },
 
     endRound() {
+      // 라운드 종료 처리
       this.clearTimer();
-
-      // 실제 위치 설정 (테스트용)
-      gameStore.state.actualLocation = {
-        lat: gameStore.state.currentLocation.lat + (Math.random() * 0.1 - 0.05),
-        lng: gameStore.state.currentLocation.lng + (Math.random() * 0.1 - 0.05),
-      };
-
       gameStore.endRound();
+
+      // 모든 플레이어의 추측 위치 정보를 gameStore에 저장
+      gameStore.state.playerGuesses = this.playerGuesses;
+
+      // 라운드 결과 표시
+      setTimeout(() => {
+        gameStore.state.showRoundResults = true;
+      }, 500);
     },
 
     closeRoundResults() {
@@ -457,9 +578,22 @@ export default {
     },
 
     startNextRound() {
-      gameStore.startNextRound();
-      this.guessPosition = null;
-      this.fetchRoundData();
+      // 라운드 결과 닫기
+      gameStore.hideRoundResults();
+
+      // 다음 라운드를 위한 상태 초기화
+      this.allPlayersSubmitted = false;
+      this.submittedPlayersCount = 0;
+      this.playerGuesses = [];
+
+      // 다음 라운드 시작
+      if (gameStore.state.currentRound < gameStore.state.totalRounds) {
+        gameStore.nextRound();
+        this.fetchRoundData();
+      } else {
+        // 모든 라운드 완료
+        gameStore.showGameResults();
+      }
     },
 
     finishGame() {
@@ -499,14 +633,74 @@ export default {
     },
 
     getTeamColor(teamId) {
-      const colorMap = {
-        team1: "blue",
-        team2: "red",
-        team3: "green",
-        team4: "yellow",
-      };
+      const colors = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b"];
+      return colors[teamId % colors.length];
+    },
 
-      return colorMap[teamId] || "blue";
+    getRandomColor(playerId) {
+      // 플레이어 ID에 기반한 고유한 색상 생성
+      const colors = [
+        '#FF5252', '#FF4081', '#E040FB', '#7C4DFF',
+        '#536DFE', '#448AFF', '#40C4FF', '#18FFFF',
+        '#64FFDA', '#69F0AE', '#B2FF59', '#EEFF41',
+        '#FFFF00', '#FFD740', '#FFAB40', '#FF6E40'
+      ];
+      
+      // 간단한 해시 함수로 playerId를 숫자로 변환
+      const hash = playerId.split('').reduce((acc, char) => {
+        return acc + char.charCodeAt(0);
+      }, 0);
+      
+      return colors[hash % colors.length];
+    },
+    
+    // 토스트 메시지 관련 메서드
+    showToast(message, duration = 3000) {
+      this.toastMessage = message;
+      this.showToastFlag = true;
+      
+      // 이전 타이머가 있으면 제거
+      if (this.toastTimer) {
+        clearTimeout(this.toastTimer);
+      }
+      
+      // 지정된 시간 후 토스트 메시지 숨기기
+      this.toastTimer = setTimeout(() => {
+        this.showToastFlag = false;
+      }, duration);
+    },
+    
+    handleMapError(error) {
+      console.error('지도 오류:', error);
+      this.showToast('지도를 불러오는 중 오류가 발생했습니다.');
+    },
+    
+    addToastStyles() {
+      // 동적으로 스타일 추가
+      const style = document.createElement('style');
+      style.textContent = `
+        .toast-message {
+          position: fixed;
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          background-color: rgba(0, 0, 0, 0.8);
+          color: white;
+          padding: 12px 24px;
+          border-radius: 4px;
+          z-index: 9999;
+          font-size: 14px;
+          transition: opacity 0.3s, transform 0.3s;
+          opacity: 0;
+          pointer-events: none;
+        }
+        
+        .toast-message.show {
+          opacity: 1;
+          transform: translate(-50%, -10px);
+        }
+      `;
+      document.head.appendChild(style);
     },
 
     toggleMap() {
@@ -519,7 +713,7 @@ export default {
 
       // 선택한 위치 설정
       this.guessPosition = position;
-      
+
       // 지도 닫기
       this.isMapOpen = false;
 
@@ -565,6 +759,13 @@ export default {
   align-items: center;
 }
 
+
+.header-center {
+  flex: 1;
+  max-width: 400px;
+  margin: 0 2rem;
+}
+
 .exit-button {
   display: flex;
   align-items: center;
@@ -577,6 +778,16 @@ export default {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+}
+
+@media (max-width: 768px) {
+  .exit-text {
+    display: none;
+  }
+  
+  .exit-button {
+    padding: 0.5rem;
+  }
 }
 
 .exit-button:hover {
@@ -596,12 +807,6 @@ export default {
 .game-mode {
   font-size: 0.875rem;
   color: rgba(255, 255, 255, 0.7);
-}
-
-.header-center {
-  flex: 1;
-  max-width: 400px;
-  margin: 0 2rem;
 }
 
 .round-info {
@@ -762,39 +967,68 @@ export default {
     flex-direction: column;
   }
 
-  .left-panel,
+  .left-panel {
+    display: none; /* 모바일에서는 기존 플레이어 리스트 숨김 */
+  }
+  
   .right-panel {
     width: 100%;
     height: auto;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none; /* 모바일에서는 기본적으로 채팅 패널 숨김 */
   }
 
   .main-panel {
     order: -1;
-    height: 50vh;
+    height: calc(100vh - 300px); /* 400px에서 300px로 변경하여 공간 확장 */
+    min-height: 350px; /* 300px에서 350px로 증가 */
+  }
+
+  .game-view {
+    height: 100%;
+    position: relative;
   }
 
   .map-container.expanded {
-    width: 80%;
-    height: 80%;
+    width: 90%;
+    height: 90%;
+    max-height: calc(100vh - 100px);
+  }
+  
+  .mobile-player-info {
+    display: flex;
+  }
+  
+  .chat-toggle {
+    display: flex;
   }
 }
 
 @media (max-width: 768px) {
   .game-header {
-    flex-direction: column;
+    flex-direction: row;
     padding: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .header-left {
+    flex: 1;
+    min-width: 150px;
   }
 
   .header-center {
-    margin: 0.5rem 0;
+    flex: 1;
+    margin: 0 0.5rem;
     max-width: 100%;
   }
 
   .header-right {
-    align-self: flex-end;
+    align-self: center;
   }
 }
-
 
 .home-button {
   width: 40px;
@@ -910,6 +1144,103 @@ export default {
   .phone-spot-button {
     padding: 8px 16px;
     font-size: 0.85rem;
+  }
+}
+/* 모바일 플레이어 정보 스타일 */
+.mobile-player-info {
+  display: none;
+  background-color: white;
+  padding: 0.5rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  z-index: 10;
+}
+
+.mobile-player-list {
+  display: flex;
+  overflow-x: auto;
+  gap: 0.5rem;
+  padding: 0.25rem;
+}
+
+.mobile-player-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 60px;
+  padding: 0.25rem;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+}
+
+.mobile-player-item.current-player {
+  background-color: #e6f7ff;
+  box-shadow: 0 0 0 2px #1890ff;
+}
+
+.mobile-player-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-bottom: 0.25rem;
+}
+
+.mobile-player-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mobile-player-name {
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60px;
+}
+
+.mobile-player-score {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #4f46e5;
+}
+
+/* 채팅 토글 버튼 */
+.chat-toggle {
+  display: none; /* 기본적으로 숨김 */
+  position: absolute;
+  bottom: 30px;
+  left: 30px;
+  background: linear-gradient(135deg, #9c27b0, #673ab7);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 1rem;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  z-index: 50;
+}
+
+.chat-toggle:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+}
+
+@media (max-width: 992px) {
+  .chat-toggle {
+    display: flex;
+    padding: 10px 15px;
+    font-size: 0.9rem;
+    bottom: 20px;
+    left: 20px;
   }
 }
 </style>
