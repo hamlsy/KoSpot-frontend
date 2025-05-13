@@ -2,61 +2,61 @@
   <div class="game-room-waiting" :class="{ 'roadview-mode': isRoadViewMode, 'photo-mode': !isRoadViewMode }">
     <!-- 헤더 영역 -->
     <div class="room-header">
-      <div class="header-left">
-        <button class="exit-button" @click="leaveRoom">
-          <i class="fas fa-arrow-left"></i>
-          로비로 돌아가기
-        </button>
-        <div class="room-info">
-          <h2 class="room-name">{{ roomData.name }}</h2>
-          <div class="room-details">
-            <span class="game-mode-badge" :class="{ 'roadview': isRoadViewMode, 'photo': !isRoadViewMode }">
-              <i :class="isRoadViewMode ? 'fas fa-street-view' : 'fas fa-camera'"></i>
-              {{ roomData.gameMode }}
-            </span>
-            <span class="separator">•</span>
-            <span class="match-type-badge" :class="{ 'individual': !isTeamMode, 'team': isTeamMode }">
-              <i :class="isTeamMode ? 'fas fa-users' : 'fas fa-user'"></i>
-              {{ isTeamMode ? '팀전' : '개인전' }}
-            </span>
-            <span class="separator">•</span>
-            <span class="region-badge">
-              <i class="fas fa-map-marker-alt"></i>
-              {{ roomData.region }}
-            </span>
-            <span class="separator">•</span>
-            <span class="players-count">
-              <i class="fas fa-user-friends"></i>
-              {{ players.length }}/{{ roomData.maxPlayers }}명
-            </span>
-          </div>
-        </div>
-      </div>
+      <button class="exit-button" @click="leaveRoom">
+        <i class="fas fa-arrow-left"></i>
+        <span class="btn-text">로비로 돌아가기</span>
+      </button>
       
-      <div class="header-right">
-        <!-- 호스트인 경우 게임 설정 버튼 표시 -->
-        <button v-if="isHost" class="settings-button" @click="openRoomSettingsModal">
-          <i class="fas fa-cog"></i>
-          방 설정
-        </button>
-        
-        <!-- 호스트인 경우 게임 시작 버튼 -->
-        <button 
-          v-if="isHost" 
-          class="start-game-button" 
-          :disabled="!canStartGame"
-          @click="startGame"
-        >
-          <i class="fas fa-play"></i>
-          게임 시작
-        </button>
-
-        <!-- 비밀방 표시 -->
-        <div v-if="roomData.isPrivate" class="room-privacy-badge">
-          <i class="fas fa-lock"></i> 비밀방
-        </div>
-        <div v-else class="room-privacy-badge public">
-          <i class="fas fa-lock-open"></i> 공개방
+      <div class="room-info">
+        <h2 class="room-name">{{ roomData.name }}</h2>
+        <div class="room-details">
+          <span class="game-mode-badge" :class="{ 'roadview': isRoadViewMode, 'photo': !isRoadViewMode }">
+            <i :class="isRoadViewMode ? 'fas fa-street-view' : 'fas fa-camera'"></i>
+            {{ roomData.gameMode }}
+          </span>
+          <span class="separator">•</span>
+          <span class="match-type-badge" :class="{ 'individual': !isTeamMode, 'team': isTeamMode }">
+            <i :class="isTeamMode ? 'fas fa-users' : 'fas fa-user'"></i>
+            {{ isTeamMode ? '팀전' : '개인전' }}
+          </span>
+          <span class="separator">•</span>
+          <span class="region-badge">
+            <i class="fas fa-map-marker-alt"></i>
+            {{ roomData.region }}
+          </span>
+          <span class="separator">•</span>
+          <span class="players-count">
+            <i class="fas fa-user-friends"></i>
+            {{ players.length }}/{{ roomData.maxPlayers }}명
+          </span>
+          
+          <!-- 비밀방 표시 -->
+          <span class="separator">•</span>
+          <span v-if="roomData.isPrivate" class="room-privacy-badge">
+            <i class="fas fa-lock"></i> <span class="badge-text">비밀방</span>
+          </span>
+          <span v-else class="room-privacy-badge public">
+            <i class="fas fa-lock-open"></i> <span class="badge-text">공개방</span>
+          </span>
+          
+          <!-- 호스트인 경우 게임 설정 버튼 표시 -->
+          <span class="separator" v-if="isHost">•</span>
+          <span v-if="isHost" class="settings-badge" @click="openRoomSettingsModal">
+            <i class="fas fa-cog"></i>
+            <span class="badge-text">방 설정</span>
+          </span>
+          
+          <!-- 호스트인 경우 게임 시작 버튼 -->
+          <span class="separator" v-if="isHost">•</span>
+          <span 
+            v-if="isHost" 
+            class="start-game-badge" 
+            :class="{ 'disabled': !canStartGame }"
+            @click="canStartGame && startGame()"
+          >
+            <i class="fas fa-play"></i>
+            <span class="badge-text">게임 시작</span>
+          </span>
         </div>
       </div>
     </div>
@@ -917,7 +917,6 @@ export default {
 /* 헤더 스타일 */
 .room-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
   background-color: white;
@@ -925,11 +924,7 @@ export default {
   position: relative;
   z-index: 10;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
+  gap: 1rem;
 }
 
 .exit-button {
@@ -945,6 +940,7 @@ export default {
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
 }
 
 .exit-button:hover {
@@ -954,7 +950,8 @@ export default {
 }
 
 .room-info {
-  margin-left: 1.5rem;
+  flex: 1;
+  min-width: 0; /* Needed for text truncation */
 }
 
 .room-name {
@@ -971,29 +968,23 @@ export default {
   gap: 0.6rem;
 }
 
-.header-right {
+/* Settings badge style */
+.settings-badge {
   display: flex;
   align-items: center;
-  gap: 1rem;
-}
-
-/* 설정 버튼 */
-.settings-button {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1.2rem;
-  background-color: #f1f5f9;
-  border: none;
-  border-radius: 12px;
-  color: #475569;
+  gap: 0.25rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
   font-weight: 600;
+  background-color: #f1f5f9;
+  color: #475569;
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.settings-button:hover {
+.settings-badge:hover {
   background-color: #e2e8f0;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -1003,8 +994,8 @@ export default {
 .game-mode-badge,
 .match-type-badge,
 .region-badge,
-.players-count {
-  display: flex;
+.players-count {  
+  white-space: nowrap;
   align-items: center;
   gap: 0.25rem;
   padding: 0.35rem 0.7rem;
@@ -1448,8 +1439,45 @@ export default {
   opacity: 1;
 }
 
-/* 액션 버튼 스타일 */
-.start-game-button, .ready-button {
+/* Start game badge style */
+.start-game-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.roadview-mode .start-game-badge {
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+}
+
+.photo-mode .start-game-badge {
+  background: linear-gradient(135deg, #16a34a 0%, #14532d 100%);
+}
+
+.start-game-badge:hover:not(.disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+}
+
+.start-game-badge.disabled {
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+  transform: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+/* Ready button style - keeping for compatibility */
+.ready-button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1462,32 +1490,6 @@ export default {
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-.start-game-button {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  color: white;
-}
-
-.roadview-mode .start-game-button {
-  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-}
-
-.photo-mode .start-game-button {
-  background: linear-gradient(135deg, #16a34a 0%, #14532d 100%);
-}
-
-.start-game-button:hover:not(:disabled) {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
-}
-
-.start-game-button:disabled {
-  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
-  transform: none;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-  cursor: not-allowed;
-  opacity: 0.8;
 }
 
 /* 카운트다운 오버레이 스타일 */
@@ -2000,18 +2002,21 @@ export default {
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   }
   
-  /* 헤더 조정 */
-  .header-right {
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 0.5rem;
+  /* Reduce badge size on tablet */
+  .game-mode-badge,
+  .match-type-badge,
+  .region-badge,
+  .players-count,
+  .room-privacy-badge,
+  .settings-badge,
+  .start-game-badge {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.6rem;
   }
   
-  .settings-button,
-  .start-game-button,
   .ready-button {
     font-size: 0.85rem;
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 0.8rem;
   }
 }
 
@@ -2028,14 +2033,77 @@ export default {
   }
   
   .room-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-    padding: 1rem;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    gap: 0.5rem;
+  }
+  
+  .header-left {
+    flex: 1;
+    min-width: 0; /* Needed for text truncation */
   }
   
   .header-right {
-    align-self: flex-end;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  
+  /* Hide button text on mobile */
+  .btn-text,
+  .badge-text {
+    display: none;
+  }
+  
+  /* Adjust button sizes for mobile */
+  .exit-button {
+    padding: 0.5rem;
+    min-width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Make all badges the same size on mobile */
+  .game-mode-badge,
+  .match-type-badge,
+  .region-badge,
+  .players-count,
+  .room-privacy-badge,
+  .settings-badge,
+  .start-game-badge {
+    padding: 0.35rem 0.5rem;
+    min-width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Adjust room name for mobile */
+  .room-name {
+    font-size: 1.1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+  }
+  
+  /* Make room details scrollable */
+  .room-details {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.3rem;
+    max-width: 100%;
+    scrollbar-width: none; /* Firefox */
+  }
+  
+  .room-details::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Edge */
   }
   
   .teams-container {
