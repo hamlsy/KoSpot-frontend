@@ -4,7 +4,7 @@ import LoginPage from '@/components/main/LoginPage.vue';
 const mainRoutes = [
     {
         path:'/',
-        redirect: "/loginPage",
+        redirect: "/mainPage",
     },
     {
         path:'/mainPage',

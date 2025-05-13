@@ -97,7 +97,8 @@ export default {
       showInfoWindow: false,
       distance: null,
       playerMarkers: [],
-      distanceLines: []
+      distanceLines: [],
+      distanceOverlays: []
     };
   },
   
@@ -152,11 +153,20 @@ export default {
           level: this.zoomLevel
         };
         
+        // 지도 객체 생성
         this.map = new kakao.maps.Map(container, options);
         
-        // 지도 로딩 완료 시 로딩 상태 변경
+        // 지도 타일 로드 완료 시 로딩 상태 변경
         kakao.maps.event.addListener(this.map, 'tilesloaded', () => {
           this.isLoading = false;
+        });
+        
+        // 지도 확대/축소 시 깜빡임 방지를 위한 처리
+        kakao.maps.event.addListener(this.map, 'zoom_changed', () => {
+          // 지도 타일이 완전히 로드된 후 relayout 호출
+          setTimeout(() => {
+            this.map.relayout();
+          }, 100);
         });
         
         // 마커 위치가 이미 있으면 설정
@@ -239,24 +249,35 @@ export default {
         return;
       }
       
-      // 마커 위치 가져오기
-      const markerPos = this.marker.getPosition();
-      const actualPos = this.actualMarker.getPosition();
+      const markerPosition = this.marker.getPosition();
+      const actualPosition = this.actualMarker.getPosition();
       
-      // 거리 계산 (Haversine 공식)
-      const deg2rad = (deg) => deg * (Math.PI / 180);
+      const lat1 = markerPosition.getLat();
+      const lng1 = markerPosition.getLng();
+      const lat2 = actualPosition.getLat();
+      const lng2 = actualPosition.getLng();
       
+      this.distance = this.calculateHaversineDistance(lat1, lng1, lat2, lng2);
+    },
+    
+    // Haversine 공식을 사용한 거리 계산 (재사용 가능한 함수로 분리)
+    calculateHaversineDistance(lat1, lng1, lat2, lng2) {
+      // Haversine 공식을 사용한 거리 계산
       const R = 6371; // 지구 반경 (km)
-      const dLat = deg2rad(actualPos.getLat() - markerPos.getLat());
-      const dLon = deg2rad(actualPos.getLng() - markerPos.getLng());
+      const dLat = this.deg2rad(lat2 - lat1);
+      const dLng = this.deg2rad(lng2 - lng1);
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) *
+                Math.sin(dLng / 2) * Math.sin(dLng / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c;
       
-      const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(deg2rad(markerPos.getLat())) * Math.cos(deg2rad(actualPos.getLat())) * 
-        Math.sin(dLon/2) * Math.sin(dLon/2);
-      
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      this.distance = R * c; // 킬로미터 단위 거리
+      return distance;
+    },
+    
+    // 거리 계산 (Haversine 공식)
+    deg2rad(deg) {
+      return deg * (Math.PI / 180);
     },
     
     drawLine() {
@@ -334,41 +355,35 @@ export default {
         
         const position = new kakao.maps.LatLng(guess.position.lat, guess.position.lng);
         
-        // 마커 이미지 생성
-        const markerImage = new kakao.maps.MarkerImage(
-          'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_number_blue.png',
-          new kakao.maps.Size(36, 37),
-          {
-            offset: new kakao.maps.Point(13, 37),
-            spriteSize: new kakao.maps.Size(36, 691),
-            spriteOrigin: new kakao.maps.Point(0, 0)
-          }
-        );
+        // 마커 이미지 생성 - 플레이어 색상에 맞게 커스텀 마커 생성
+        // const markerSize = new kakao.maps.Size(36, 37);
+        // const markerOffset = new kakao.maps.Point(13, 37);
         
         // 마커 생성
         const marker = new kakao.maps.Marker({
           position: position,
           map: this.map,
-          title: guess.playerName,
-          image: markerImage
+          title: guess.playerName
         });
         
-        // 마커에 표시할 인포윈도우 생성
-        const infoContent = `<div style="padding:5px;font-size:12px;">${guess.playerName}</div>`;
+        // 마커에 표시할 인포윈도우 생성 - 항상 표시되도록 변경
+        const infoContent = `<div style="padding:5px;font-size:12px;background-color:white;border-radius:4px;border:1px solid #ddd;font-weight:bold;color:black;">${guess.playerName}</div>`;
         const infoWindow = new kakao.maps.InfoWindow({
-          content: infoContent
+          content: infoContent,
+          removable: false,
+          zIndex: 1
         });
         
-        // 마커 클릭 시 인포윈도우 표시
-        kakao.maps.event.addListener(marker, 'click', () => {
-          infoWindow.open(this.map, marker);
-        });
+        // 항상 인포윈도우 표시
+        infoWindow.open(this.map, marker);
         
         // 마커 저장
         this.playerMarkers.push({
           marker: marker,
           infoWindow: infoWindow,
-          color: guess.color
+          color: guess.color,
+          position: position,
+          playerName: guess.playerName
         });
       });
       
@@ -392,11 +407,13 @@ export default {
       
       // 각 플레이어 마커에서 실제 위치까지 선 그리기
       this.playerMarkers.forEach(item => {
+        const playerPosition = item.marker.getPosition();
         const path = [
-          item.marker.getPosition(),
+          playerPosition,
           actualPosition
         ];
         
+        // 선 그리기
         const line = new kakao.maps.Polyline({
           path: path,
           strokeWeight: 3,
@@ -407,6 +424,37 @@ export default {
         
         line.setMap(this.map);
         this.distanceLines.push(line);
+        
+        // 거리 계산
+        const lat1 = playerPosition.getLat();
+        const lng1 = playerPosition.getLng();
+        const lat2 = actualPosition.getLat();
+        const lng2 = actualPosition.getLng();
+        
+        const distance = this.calculateHaversineDistance(lat1, lng1, lat2, lng2);
+        const formattedDistance = this.formatDistance(distance);
+        
+        // 선 중간에 거리 표시
+        const midLat = (lat1 + lat2) / 2;
+        const midLng = (lng1 + lng2) / 2;
+        const midPosition = new kakao.maps.LatLng(midLat, midLng);
+        
+        // 거리 표시 커스텀 오버레이 생성
+        const distanceContent = `
+          <div style="padding:5px 10px;background-color:white;border-radius:15px;border:1px solid #ddd;font-weight:bold;color:black;font-size:12px;box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+            ${formattedDistance}
+          </div>
+        `;
+        
+        const distanceOverlay = new kakao.maps.CustomOverlay({
+          position: midPosition,
+          content: distanceContent,
+          yAnchor: 1,
+          zIndex: 2
+        });
+        
+        distanceOverlay.setMap(this.map);
+        this.distanceLines.push(distanceOverlay); // 제거를 위해 배열에 저장
       });
     },
     
@@ -422,9 +470,9 @@ export default {
     },
     
     clearDistanceLines() {
-      // 기존 거리 선 제거
-      this.distanceLines.forEach(line => {
-        line.setMap(null);
+      // 기존 거리 선 및 오버레이 제거
+      this.distanceLines.forEach(item => {
+        item.setMap(null);
       });
       
       this.distanceLines = [];
@@ -451,8 +499,14 @@ export default {
         bounds.extend(item.marker.getPosition());
       });
       
-      // 지도 범위 설정
-      this.map.setBounds(bounds);
+      // 지도 범위 설정 - 약간의 패딩 추가
+      this.map.setBounds(bounds, 50); // 50픽셀의 패딩 추가
+      
+      // 지도 타일이 완전히 로드된 후 한 번 더 범위 조정 (깜빡임 방지)
+      setTimeout(() => {
+        this.map.relayout();
+        this.map.setBounds(bounds, 50);
+      }, 100);
     }
   }
 };

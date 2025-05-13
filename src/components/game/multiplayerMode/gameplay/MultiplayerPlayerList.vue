@@ -53,7 +53,7 @@
               </div>
             </div>
             <div class="score-distance" v-if="player.distanceToTarget !== null">
-              <i class="fas fa-map-marker-alt"></i> {{ player.distanceToTarget.toFixed(2) }}km
+              <i class="fas fa-map-marker-alt"></i> {{ player.distanceToTarget }}km
             </div>
           </template>
           <div class="no-score" v-else>-</div>

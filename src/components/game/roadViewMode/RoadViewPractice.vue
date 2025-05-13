@@ -215,12 +215,14 @@ import KakaoMapGame from "@/components/game/common/kakao/KakaoMapGame.vue";
 import PhoneFrame from "@/components/game/common/PhoneFrame.vue";
 import CountdownOverlay from "@/components/game/common/CountdownOverlay.vue";
 import IntroOverlay from "@/components/game/common/intro/IntroOverlay.vue";
+// import KakaoMap from "../common/kakao/KakaoMap.vue";
 
 export default {
   name: "RoadViewPractice",
   components: {
     RoadViewGame,
     KakaoMapGame,
+    // KakaoMap,
     PhoneFrame,
     CountdownOverlay,
     IntroOverlay,
@@ -418,7 +420,16 @@ export default {
     // 힌트 적용 (지도에 원 표시)
     applyHint() {
       // 맵 컴포넌트가 없는 경우 중단
-      if (!this.$refs.phoneFrame || !this.$refs.phoneFrame.map) {
+      if (!this.$refs.phoneFrame) {
+        this.showToastMessage(
+          "지도를 불러오는 중입니다. 잠시 후 다시 시도해주세요."
+        );
+        return;
+      }
+  
+      // PhoneFrame 컴포넌트의 getMapInstance() 메서드를 사용하여 맵 인스턴스를 가져옴
+      const map = this.$refs.phoneFrame.getMapInstance();
+      if (!map) {
         this.showToastMessage(
           "지도를 불러오는 중입니다. 잠시 후 다시 시도해주세요."
         );
@@ -435,13 +446,13 @@ export default {
         this.hintCircle = null;
       }
 
-      // 힌트 원 생성
-      const map = this.$refs.phoneFrame.map;
+      // 현재 위치 좌표 생성
       const position = new kakao.maps.LatLng(
         this.currentLocation.lat,
         this.currentLocation.lng
       );
-
+  
+      // 힌트 원 생성
       this.hintCircle = new kakao.maps.Circle({
         center: position,
         radius: this.hintRadius,
@@ -455,7 +466,8 @@ export default {
       });
 
       // 힌트 원의 중심으로 지도 이동 (힌트 원이 보이도록)
-      map.setCenter(position);
+      console.log("힌트 위치:", position);
+      // map.setCenter(position);
 
       // 힌트 반경 조정 (힌트를 사용할 때마다 원이 작아짐)
       if (this.hintCount === 2) {
@@ -828,7 +840,8 @@ export default {
       this.startGameTimer();
 
       // 힌트 타이머 시작 (첫 힌트는 30초 후에 사용 가능)
-      this.nextHintTime = 30;
+      // this.nextHintTime = 30;
+      this.nextHintTime = 3;
       this.hintAvailable = false;
 
       if (this.hintTimer) {

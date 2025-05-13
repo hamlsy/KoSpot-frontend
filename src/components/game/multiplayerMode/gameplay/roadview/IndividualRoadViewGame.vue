@@ -10,7 +10,6 @@
         @send-message="sendChatMessage"
       />
     </template>
-    
     <!-- 메인 게임 영역 -->
     <template #main>
       <!-- 라운드 진행 중일 때는 로드뷰 표시 -->
@@ -101,6 +100,12 @@ export default {
     },
     
     onGuessSubmitted(position) {
+      // 위치 정보 유효성 검사
+      if (!position || position.lat === undefined || position.lng === undefined) {
+        console.error('유효하지 않은 위치 정보:', position);
+        return;
+      }
+      console.log(position)
       // 현재 사용자의 추측 저장
       this.addPlayerGuess(gameStore.state.currentUser.id, position, '#FF5252');
     },

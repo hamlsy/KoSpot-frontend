@@ -275,7 +275,7 @@ export default {
         // K-POP 뮤직비디오 촬영지 테마
         {
           id: "kpop",
-          name: "한국 음악의 발자취",
+          name: "K-POP 뮤직비디오 촬영지지",
           icon: "fas fa-music",
           image:
             "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
