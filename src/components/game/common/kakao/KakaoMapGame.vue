@@ -138,6 +138,7 @@ export default {
   
   methods: {
     initMap() {
+      console.log(this.isInitialized)
       // 이미 초기화되어 있는 경우 리턴
       if (this.isInitialized && this.map) {
         this.resizeMap();
@@ -186,6 +187,7 @@ export default {
     },
     
     resizeMap() {
+      console.log("resize")
       if (this.map) {
         // 지도 크기가 변경되었을 때 호출
         setTimeout(() => {

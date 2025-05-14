@@ -69,10 +69,10 @@
 
       <!-- 휴대폰 프레임 -->
       <PhoneFrame
-        v-if="isMapOpen"
+        :style="{ zIndex: isMapOpen ? 15 : -1 }"
         :centerLocation="centerLocation"
         :actualLocation="currentLocation"
-        :showHintCircles="showHints"
+        :showHintCircles="true"
         :disabled="showResult"
         :showDistance="false"
         :showActionButton="false"
@@ -98,20 +98,6 @@
           </button>
         </template>
       </PhoneFrame>
-
-      <!-- 지도 화면 (휴대폰 외부에서는 숨김) -->
-      <KakaoMapGame
-        v-if="isMapOpen && false"
-        :isOpen="isMapOpen"
-        :centerLocation="centerLocation"
-        :actualLocation="currentLocation"
-        :showHintCircles="showHints"
-        :disabled="showResult"
-        @close="toggleMap"
-        @check-answer="checkAnswer"
-        ref="mapGame"
-        class="kakao-map-container"
-      />
 
       <!-- 인트로 화면 -->
       <IntroOverlay
@@ -211,18 +197,14 @@
 
 <script>
 import RoadViewGame from "@/components/game/common/roadview/RoadViewGame.vue";
-import KakaoMapGame from "@/components/game/common/kakao/KakaoMapGame.vue";
 import PhoneFrame from "@/components/game/common/PhoneFrame.vue";
 import CountdownOverlay from "@/components/game/common/CountdownOverlay.vue";
 import IntroOverlay from "@/components/game/common/intro/IntroOverlay.vue";
-// import KakaoMap from "../common/kakao/KakaoMap.vue";
 
 export default {
   name: "RoadViewPractice",
   components: {
     RoadViewGame,
-    KakaoMapGame,
-    // KakaoMap,
     PhoneFrame,
     CountdownOverlay,
     IntroOverlay,
@@ -266,14 +248,10 @@ export default {
       elapsedTime: 0,
 
       // 지도 관련
-      mapInitialized: false,
       centerLocation: {
         lat: 37.55,
         lng: 126.97,
       },
-
-      //힌트
-      showHints: true,
 
       // 지역 데이터
       regions: [
@@ -314,12 +292,6 @@ export default {
       hintAvailable: false, // 힌트 사용 가능 여부
       nextHintTime: 30, // 다음 힌트까지 남은 시간 (초)
       hintTimer: null, // 힌트 타이머
-
-      // 랭크 모드 관련
-      timeRemaining: 180, // 3분(초 단위)
-      timerInterval: null,
-      currentRankPoints: 1000, // 예시 값
-      rankPointChange: 0,
     };
   },
   mounted() {
@@ -382,21 +354,32 @@ export default {
       this.isMapOpen = !this.isMapOpen;
 
       if (this.isMapOpen) {
-        // 지도를 열 때 초기화
+        // 지도를 열 때 초기화 - z-index를 원래대로 설정
+        if (this.$refs.phoneFrame && this.$refs.phoneFrame.$el) {
+          // z-index를 원래 값으로 복원
+          this.$refs.phoneFrame.$el.style.zIndex = '15';
+        }
+        
         this.$nextTick(() => {
-          if (
-            this.hintCircle &&
-            this.$refs.phoneFrame &&
-            this.$refs.phoneFrame.map
-          ) {
-            // 기존 힌트 원이 있으면 새 지도에 다시 표시
-            this.hintCircle.setMap(this.$refs.phoneFrame.map);
+          // 지도 리사이즈
+          const mapInstance = this.$refs.phoneFrame.getMapInstance();
+          if (mapInstance) {
+            mapInstance.relayout();
+          }
+          
+          // 힌트 원 재표시
+          if (this.hintCircle && mapInstance) {
+            this.hintCircle.setMap(mapInstance);
           }
         });
       } else {
-        // 지도를 닫을 때는 원을 유지
+        // 지도를 닫을 때는 z-index를 -1로 설정하여 화면에서 보이지 않게 함
+        if (this.$refs.phoneFrame && this.$refs.phoneFrame.$el) {
+          this.$refs.phoneFrame.$el.style.zIndex = '-1';
+        }
+        
         // hintCircle 객체는 그대로 유지, 다음에 지도가 열렸을 때 다시 표시
-      }
+      }  
     },
 
     // 힌트 사용
@@ -426,7 +409,7 @@ export default {
         );
         return;
       }
-  
+      
       // PhoneFrame 컴포넌트의 getMapInstance() 메서드를 사용하여 맵 인스턴스를 가져옴
       const map = this.$refs.phoneFrame.getMapInstance();
       if (!map) {
@@ -446,15 +429,32 @@ export default {
         this.hintCircle = null;
       }
 
-      // 현재 위치 좌표 생성
-      const position = new kakao.maps.LatLng(
+      // 정답 위치 좌표
+      const actualPosition = new kakao.maps.LatLng(
         this.currentLocation.lat,
         this.currentLocation.lng
       );
-  
-      // 힌트 원 생성
+      
+      // 랜덤한 원 생성 (정답 위치를 포함하는)
+      // 1. 랜덤한 각도 생성 (0-360도)
+      const randomAngle = Math.random() * 360;
+      
+      // 2. 랜덤한 거리 생성 (0부터 힌트 반경의 70%까지)
+      // 힌트 반경의 70%까지만 이동하여 정답이 항상 원 안에 포함되도록 함
+      const maxDistance = this.hintRadius * 0.7;
+      const randomDistance = Math.random() * maxDistance;
+      
+      // 3. 랜덤한 위치 계산 (정답으로부터 랜덤한 각도와 거리만큼 떨어진 지점)
+      // 위도 1도 = 약 111km, 경도 1도 = 약 111km * cos(위도)
+      const randomLat = this.currentLocation.lat + (randomDistance / 111000) * Math.cos(this.deg2rad(randomAngle));
+      const randomLng = this.currentLocation.lng + (randomDistance / (111000 * Math.cos(this.deg2rad(this.currentLocation.lat)))) * Math.sin(this.deg2rad(randomAngle));
+      
+      // 랜덤한 원의 중심점
+      const circleCenter = new kakao.maps.LatLng(randomLat, randomLng);
+      
+      // 힌트 원 생성 (랜덤한 위치에 중심을 둔 원)
       this.hintCircle = new kakao.maps.Circle({
-        center: position,
+        center: circleCenter,
         radius: this.hintRadius,
         strokeWeight: 2,
         strokeColor: "#FF0000",
@@ -465,9 +465,10 @@ export default {
         map: map,
       });
 
-      // 힌트 원의 중심으로 지도 이동 (힌트 원이 보이도록)
-      console.log("힌트 위치:", position);
-      // map.setCenter(position);
+      // 힌트 원이 보이도록 지도 이동 (원의 중심으로)
+      console.log("힌트 원 중심 위치:", circleCenter);
+      console.log("실제 정답 위치:", actualPosition);
+      // map.setCenter(circleCenter);
 
       // 힌트 반경 조정 (힌트를 사용할 때마다 원이 작아짐)
       if (this.hintCount === 2) {
@@ -476,9 +477,9 @@ export default {
         this.hintRadius = 30000; // 세 번째 힌트는 30km
       }
 
-      // 다음 힌트 사용 가능 시간 설정 (1분 후)
+      // 다음 힌트 사용 가능 시간 설정
       this.hintAvailable = false;
-      this.nextHintTime = 60;
+      this.nextHintTime = 3;
 
       // 힌트 타이머 재설정
       if (this.hintTimer) {
@@ -1493,15 +1494,6 @@ export default {
   100% {
     opacity: 1;
   }
-}
-
-/* 지도 화면 스타일 */
-.kakao-map-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
 }
 
 /* 휴대폰 프레임 스타일 */
