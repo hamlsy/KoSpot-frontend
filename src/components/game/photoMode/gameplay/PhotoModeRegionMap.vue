@@ -469,10 +469,28 @@ export default {
             // 다중 폴리곤 처리 (coordinates가 3차원 배열인 경우)
             if (feature.geometry.type === 'MultiPolygon') {
               feature.geometry.coordinates.forEach(coordSet => {
+                // 모든 좌표 세트를 처리 (첫 번째만이 아닌 모든 폴리곤)
+                coordSet.forEach(coords => {
+                  this.polygons.push({
+                    name: cityName,
+                    originalName: feature.properties.SIG_KOR_NM,
+                    coordinates: coords,
+                    properties: {
+                      ...feature.properties,
+                      SIG_KOR_NM: cityName // 이름 변경
+                    },
+                    cityGroup: cityName, // 같은 그룹임을 표시
+                    region: regionName // 지역 구분을 위한 속성 추가
+                  });
+                });
+              });
+            } else if (feature.geometry.type === 'Polygon') {
+              // 일반 폴리곤 처리 - 모든 좌표 배열을 처리
+              feature.geometry.coordinates.forEach(coords => {
                 this.polygons.push({
                   name: cityName,
                   originalName: feature.properties.SIG_KOR_NM,
-                  coordinates: coordSet[0], // MultiPolygon의 첫 번째 좌표 세트 사용
+                  coordinates: coords,
                   properties: {
                     ...feature.properties,
                     SIG_KOR_NM: cityName // 이름 변경
@@ -480,19 +498,6 @@ export default {
                   cityGroup: cityName, // 같은 그룹임을 표시
                   region: regionName // 지역 구분을 위한 속성 추가
                 });
-              });
-            } else {
-              // 일반 폴리곤 처리
-              this.polygons.push({
-                name: cityName,
-                originalName: feature.properties.SIG_KOR_NM,
-                coordinates: feature.geometry.coordinates[0],
-                properties: {
-                  ...feature.properties,
-                  SIG_KOR_NM: cityName // 이름 변경
-                },
-                cityGroup: cityName, // 같은 그룹임을 표시
-                region: regionName // 지역 구분을 위한 속성 추가
               });
             }
           });
@@ -506,20 +511,25 @@ export default {
         // 다중 폴리곤 처리 (coordinates가 3차원 배열인 경우)
         if (feature.geometry.type === 'MultiPolygon') {
           feature.geometry.coordinates.forEach(coordSet => {
+            // 모든 좌표 세트를 처리 (첫 번째만이 아닌 모든 폴리곤)
+            coordSet.forEach(coords => {
+              this.polygons.push({
+                name: name,
+                coordinates: coords,
+                properties: feature.properties,
+                region: regionName // 지역 구분을 위한 속성 추가
+              });
+            });
+          });
+        } else if (feature.geometry.type === 'Polygon') {
+          // 일반 폴리곤 처리 - 모든 좌표 배열을 처리
+          feature.geometry.coordinates.forEach(coords => {
             this.polygons.push({
               name: name,
-              coordinates: coordSet[0], // MultiPolygon의 첫 번째 좌표 세트 사용
+              coordinates: coords,
               properties: feature.properties,
               region: regionName // 지역 구분을 위한 속성 추가
             });
-          });
-        } else {
-          // 일반 폴리곤 처리
-          this.polygons.push({
-            name: name,
-            coordinates: feature.geometry.coordinates[0],
-            properties: feature.properties,
-            region: regionName // 지역 구분을 위한 속성 추가
           });
         }
       });

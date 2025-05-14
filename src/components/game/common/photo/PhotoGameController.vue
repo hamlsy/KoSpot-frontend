@@ -20,7 +20,7 @@
         </div>
         <div class="team-members">
           <div
-            v-for="(player, index) in teamMembers"
+            v-for="(player) in teamMembers"
             :key="player.id"
             class="team-member"
             :class="{ 'active': player.id === currentPlayerId }"

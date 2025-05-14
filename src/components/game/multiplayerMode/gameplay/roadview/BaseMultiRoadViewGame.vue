@@ -130,7 +130,7 @@
 
     <!-- 휴대폰 프레임 -->
     <PhoneFrame
-      v-if="isMapOpen"
+      :style="{ zIndex: isMapOpen ? 15 : -1 }"
       :centerLocation="mapCenter"
       :actualLocation="
         gameStore.state.roundEnded
