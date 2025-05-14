@@ -89,40 +89,13 @@ export default {
       map: null,
       polygons: [], // 시도별 폴리곤 객체
       regionPolygons: [], // 카카오맵 폴리곤 객체
-      regionLabels: [], // 지역 이름 라벨
       selectedMarker: null, // 선택한 지역 마커
       isMapOpen: false,
       isMobile: false,
       defaultCenter: { lat: 36.2, lng: 127.9 }, // 한국 중심 좌표
       defaultLevel: 13, // 기본 줌 레벨
       labelVisibleLevel: 10, // 이 레벨 이하(더 확대된 상태)에서만 라벨 표시
-      mergedCities: {
-        // Gyeonggi
-        'Goyang': ['고양시 덕양구', '고양시 일산동구', '고양시 일산서구'],
-        'Suwon': ['수원시 장안구', '수원시 권선구', '수원시 팔달구', '수원시 영통구'],
-        'Seongnam': ['성남시 수정구', '성남시 중원구', '성남시 분당구'],
-        'Ansan': ['안산시 상록구', '안산시 단원구'],
-        'Anyang': ['안양시 만안구', '안양시 동안구'],
-        'Yongin': ['용인시 처인구', '용인시 기흥구', '용인시 수지구'],
-        'Bucheon': ['부천시 원미구', '부천시 소사구', '부천시 오정구'],
-        
-        // Chungnam
-        'Cheonan': ['천안시 동남구', '천안시 서북구'],
-        
-        // Jeonbuk
-        'Jeonju': ['전주시 완산구', '전주시 덕진구'],
-        
-        // Jeonnam
-        'Yeosu': ['여수시'],
-        'Sinan': ['신안군'],
-        
-        // Gyeongbuk
-        'Pohang': ['포항시 남구', '포항시 북구'],
-        'Gumi': ['구미시'],
-        
-        // Gyeongnam
-        'Changwon': ['창원시 의창구', '창원시 성산구', '창원시 마산합포구', '창원시 마산회원구', '창원시 진해구']
-      },
+      
       regionColors: {
         //수도권 (파란 계열)
         'Seoul': { fill: '#e6f0ff', stroke: '#a3c2e3' },
@@ -154,83 +127,23 @@ export default {
         'Jeju': { fill: '#fff0e6', stroke: '#e3c2a3' }
       },
       regionSettings: {
-        'Seoul': { 
-          shouldMerge: true, 
-          mergedName: 'Seoul',
-          region: 'Seoul'
-        },
-        'Busan': { 
-          shouldMerge: true, 
-          mergedName: 'Busan',
-          region: 'Busan'
-        },
-        'Daegu': { 
-          shouldMerge: true, 
-          mergedName: 'Daegu',
-          region: 'Daegu'
-        },
-        'Incheon': { 
-          shouldMerge: true, 
-          mergedName: 'Incheon',
-          region: 'Incheon'
-        },
-        'Gwangju': { 
-          shouldMerge: true, 
-          mergedName: 'Gwangju',
-          region: 'Gwangju'
-        },
-        'Daejeon': { 
-          shouldMerge: true, 
-          mergedName: 'Daejeon',
-          region: 'Daejeon'
-        },
-        'Ulsan': { 
-          shouldMerge: true, 
-          mergedName: 'Ulsan',
-          region: 'Ulsan'
-        },
-        'Sejong': { 
-          shouldMerge: true,
-          mergedName: 'Sejong',
-          region: 'Sejong'
-        },
-        'Gyeonggi': { 
-          shouldMerge: 'special', // 특별 처리 필요
-          region: 'Gyeonggi'
-        },
-        'Gangwon': { 
-          shouldMerge: false, 
-          region: 'Gangwon'
-        },
-        'Chungbuk': { 
-          shouldMerge: false, 
-          region: 'Chungbuk'
-        },
-        'Chungnam': { 
-          shouldMerge: 'special', // 천안시 통합 필요
-          region: 'Chungnam'
-        },
-        'Jeonbuk': { 
-          shouldMerge: 'special', // 전주시 통합 필요
-          region: 'Jeonbuk'
-        },
-        'Jeonnam': { 
-          shouldMerge: 'special', // 여수시, 신안군 문제 해결 필요
-          region: 'Jeonnam'
-        },
-        'Gyeongbuk': { 
-          shouldMerge: 'special', // 포항시 통합 필요
-          region: 'Gyeongbuk'
-        },
-        'Gyeongnam': { 
-          shouldMerge: 'special', // 창원시 통합 필요
-          region: 'Gyeongnam'
-        },
-        'Jeju': { 
-          shouldMerge: true, 
-          mergedName: 'Jeju',
-          region: 'Jeju'
-        }
+        'Seoul': { region: 'Seoul' },
+        'Busan': { region: 'Busan' },
+        'Daegu': { region: 'Daegu' },
+        'Incheon': { region: 'Incheon' },
+        'Gwangju': { region: 'Gwangju' },
+        'Daejeon': { region: 'Daejeon' },
+        'Ulsan': { region: 'Ulsan' },
+        'Sejong': { region: 'Sejong' },
+        'Gyeonggi': { region: 'Gyeonggi' },
+        'Gangwon': { region: 'Gangwon' },
+        'Chungbuk': { region: 'Chungbuk' },
+        'Chungnam': { region: 'Chungnam' },
+        'Jeonbuk': { region: 'Jeonbuk' },
+        'Jeonnam': { region: 'Jeonnam' },
+        'Gyeongbuk': { region: 'Gyeongbuk' },
+        'Gyeongnam': { region: 'Gyeongnam' },
+        'Jeju': { region: 'Jeju' }
       }
     };
   },
@@ -323,7 +236,6 @@ export default {
       });
     },
     loadRegionPolygons(polygonData, regionName) {
-      console.log(`${regionName} 폴리곤 데이터 로드 시작`);
       const features = polygonData.features;
       const regionSetting = this.regionSettings[regionName];
       
@@ -332,104 +244,7 @@ export default {
         return;
       }
       
-      // 특별 처리가 필요한 지역들
-      if (regionSetting.shouldMerge === 'special') {
-        if (regionName === 'Gyeonggi') {
-          this.loadGyeonggiPolygonsSpecial(features, regionName);
-        } else if (regionName === 'Chungnam' || regionName === 'Jeonbuk' || 
-                  regionName === 'Jeonnam' || regionName === 'Gyeongbuk' || 
-                  regionName === 'Gyeongnam') {
-          this.loadSpecialRegionPolygons(features, regionName);
-        }
-        return;
-      }
-      
-      if (regionSetting.shouldMerge) {
-        // 모든 구/군을 하나의 지역으로 통합
-        const mergedName = regionSetting.mergedName;
-        
-        features.forEach(feature => {
-          // 폴리곤 좌표가 없는 경우 건너뛰기
-          if (!feature.geometry || !feature.geometry.coordinates || feature.geometry.coordinates.length === 0) {
-            console.warn(`${regionName}의 일부 폴리곤에 좌표가 없습니다:`, feature.properties?.SIG_KOR_NM || '이름 없음');
-            return;
-          }
-          
-          // 다중 폴리곤 처리 (coordinates가 3차원 배열인 경우)
-          if (feature.geometry.type === 'MultiPolygon') {
-            feature.geometry.coordinates.forEach(coordSet => {
-              this.polygons.push({
-                name: mergedName,
-                originalName: feature.properties.SIG_KOR_NM,
-                coordinates: coordSet[0], // MultiPolygon의 첫 번째 좌표 세트 사용
-                properties: {
-                  ...feature.properties,
-                  SIG_KOR_NM: mergedName // 이름 변경
-                },
-                cityGroup: mergedName, // 같은 그룹임을 표시
-                region: regionSetting.region // 지역 구분을 위한 속성 추가
-              });
-            });
-          } else {
-            // 일반 폴리곤 처리
-            this.polygons.push({
-              name: mergedName,
-              originalName: feature.properties.SIG_KOR_NM,
-              coordinates: feature.geometry.coordinates[0],
-              properties: {
-                ...feature.properties,
-                SIG_KOR_NM: mergedName // 이름 변경
-              },
-              cityGroup: mergedName, // 같은 그룹임을 표시
-              region: regionSetting.region // 지역 구분을 위한 속성 추가
-            });
-          }
-        });
-        
-        console.log(`${regionName} 지역 데이터 로드 완료: ${features.length}개 지역을 ${mergedName}으로 통합`);
-      } else {
-        // 통합하지 않고 개별 시/군 단위로 추가
-        features.forEach(feature => {
-          // 폴리곤 좌표가 없는 경우 건너뛰기
-          if (!feature.geometry || !feature.geometry.coordinates || feature.geometry.coordinates.length === 0) {
-            console.warn(`${regionName}의 일부 폴리곤에 좌표가 없습니다:`, feature.properties?.SIG_KOR_NM || '이름 없음');
-            return;
-          }
-          
-          const name = feature.properties.SIG_KOR_NM;
-          
-          // 다중 폴리곤 처리 (coordinates가 3차원 배열인 경우)
-          if (feature.geometry.type === 'MultiPolygon') {
-            feature.geometry.coordinates.forEach(coordSet => {
-              this.polygons.push({
-                name: name,
-                coordinates: coordSet[0], // MultiPolygon의 첫 번째 좌표 세트 사용
-                properties: feature.properties,
-                region: regionSetting.region // 지역 구분을 위한 속성 추가
-              });
-            });
-          } else {
-            // 일반 폴리곤 처리
-            this.polygons.push({
-              name: name,
-              coordinates: feature.geometry.coordinates[0],
-              properties: feature.properties,
-              region: regionSetting.region // 지역 구분을 위한 속성 추가
-            });
-          }
-        });
-        
-        console.log(`${regionName} 지역 데이터 로드 완료: ${features.length}개 지역`);
-      }
-    },
-    
-    // 특별 지역 처리 메서드 (Chungnam, Jeonbuk, Jeonnam, Gyeongbuk, Gyeongnam)
-    loadSpecialRegionPolygons(features, regionName) {
-      // 통합할 도시별로 Feature 그룹화
-      const cityGroups = {};
-      const standaloneFeatures = [];
-      
-      // 각 Feature를 도시별로 분류
+      // 모든 feature를 처리
       features.forEach(feature => {
         // 폴리곤 좌표가 없는 경우 건너뛰기
         if (!feature.geometry || !feature.geometry.coordinates || feature.geometry.coordinates.length === 0) {
@@ -438,206 +253,32 @@ export default {
         }
         
         const name = feature.properties.SIG_KOR_NM;
-        let shouldMerge = false;
-        let mergedCityName = '';
-        
-        // 통합 대상 도시인지 확인
-        Object.keys(this.mergedCities).forEach(cityName => {
-          if (this.mergedCities[cityName].includes(name)) {
-            shouldMerge = true;
-            mergedCityName = cityName;
-          }
-        });
-        
-        if (shouldMerge) {
-          // 통합 대상이면 해당 도시 그룹에 추가
-          if (!cityGroups[mergedCityName]) {
-            cityGroups[mergedCityName] = [];
-          }
-          cityGroups[mergedCityName].push(feature);
-        } else {
-          // 통합 대상이 아니면 그대로 추가
-          standaloneFeatures.push(feature);
-        }
-      });
-      
-      // 통합 도시 Feature 생성 및 추가
-      Object.keys(cityGroups).forEach(cityName => {
-        const features = cityGroups[cityName];
-        if (features.length > 0) {
-          features.forEach(feature => {
-            // 다중 폴리곤 처리 (coordinates가 3차원 배열인 경우)
-            if (feature.geometry.type === 'MultiPolygon') {
-              feature.geometry.coordinates.forEach(coordSet => {
-                // 모든 좌표 세트를 처리 (첫 번째만이 아닌 모든 폴리곤)
-                coordSet.forEach(coords => {
-                  this.polygons.push({
-                    name: cityName,
-                    originalName: feature.properties.SIG_KOR_NM,
-                    coordinates: coords,
-                    properties: {
-                      ...feature.properties,
-                      SIG_KOR_NM: cityName // 이름 변경
-                    },
-                    cityGroup: cityName, // 같은 그룹임을 표시
-                    region: regionName // 지역 구분을 위한 속성 추가
-                  });
-                });
-              });
-            } else if (feature.geometry.type === 'Polygon') {
-              // 일반 폴리곤 처리 - 모든 좌표 배열을 처리
-              feature.geometry.coordinates.forEach(coords => {
-                this.polygons.push({
-                  name: cityName,
-                  originalName: feature.properties.SIG_KOR_NM,
-                  coordinates: coords,
-                  properties: {
-                    ...feature.properties,
-                    SIG_KOR_NM: cityName // 이름 변경
-                  },
-                  cityGroup: cityName, // 같은 그룹임을 표시
-                  region: regionName // 지역 구분을 위한 속성 추가
-                });
-              });
-            }
-          });
-        }
-      });
-      
-      // 독립 Feature 추가
-      standaloneFeatures.forEach(feature => {
-        const name = feature.properties.SIG_KOR_NM;
         
         // 다중 폴리곤 처리 (coordinates가 3차원 배열인 경우)
         if (feature.geometry.type === 'MultiPolygon') {
           feature.geometry.coordinates.forEach(coordSet => {
-            // 모든 좌표 세트를 처리 (첫 번째만이 아닌 모든 폴리곤)
+            // 각 coordSet의 모든 폴리곤 처리
             coordSet.forEach(coords => {
               this.polygons.push({
                 name: name,
                 coordinates: coords,
                 properties: feature.properties,
-                region: regionName // 지역 구분을 위한 속성 추가
+                region: regionSetting.region // 지역 구분을 위한 속성 추가
               });
             });
           });
-        } else if (feature.geometry.type === 'Polygon') {
-          // 일반 폴리곤 처리 - 모든 좌표 배열을 처리
+        } else {
+          // 일반 폴리곤 처리 - 모든 좌표 세트 처리
           feature.geometry.coordinates.forEach(coords => {
             this.polygons.push({
               name: name,
               coordinates: coords,
               properties: feature.properties,
-              region: regionName // 지역 구분을 위한 속성 추가
+              region: regionSetting.region // 지역 구분을 위한 속성 추가
             });
           });
         }
       });
-      
-      console.log(`${regionName} 지역 데이터 로드 완료: ${features.length}개 지역`);
-    },
-    
-    loadGyeonggiPolygonsSpecial(features, regionName) {
-      // 통합할 도시별로 Feature 그룹화
-      const cityGroups = {};
-      const standaloneFeatures = [];
-      
-      // 각 Feature를 도시별로 분류
-      features.forEach(feature => {
-        // 폴리곤 좌표가 없는 경우 건너뛰기
-        if (!feature.geometry || !feature.geometry.coordinates || feature.geometry.coordinates.length === 0) {
-          console.warn(`${regionName}의 일부 폴리곤에 좌표가 없습니다:`, feature.properties?.SIG_KOR_NM || '이름 없음');
-          return;
-        }
-        
-        const name = feature.properties.SIG_KOR_NM;
-        let shouldMerge = false;
-        let mergedCityName = '';
-        
-        // 통합 대상 도시인지 확인
-        Object.keys(this.mergedCities).forEach(cityName => {
-          if (this.mergedCities[cityName].includes(name)) {
-            shouldMerge = true;
-            mergedCityName = cityName;
-          }
-        });
-        
-        if (shouldMerge) {
-          // 통합 대상이면 해당 도시 그룹에 추가
-          if (!cityGroups[mergedCityName]) {
-            cityGroups[mergedCityName] = [];
-          }
-          cityGroups[mergedCityName].push(feature);
-        } else {
-          // 통합 대상이 아니면 그대로 추가
-          standaloneFeatures.push(feature);
-        }
-      });
-      
-      // 통합 도시 Feature 생성 및 추가
-      Object.keys(cityGroups).forEach(cityName => {
-        const features = cityGroups[cityName];
-        if (features.length > 0) {
-          features.forEach(feature => {
-            // 다중 폴리곤 처리 (coordinates가 3차원 배열인 경우)
-            if (feature.geometry.type === 'MultiPolygon') {
-              feature.geometry.coordinates.forEach(coordSet => {
-                this.polygons.push({
-                  name: cityName,
-                  originalName: feature.properties.SIG_KOR_NM,
-                  coordinates: coordSet[0], // MultiPolygon의 첫 번째 좌표 세트 사용
-                  properties: {
-                    ...feature.properties,
-                    SIG_KOR_NM: cityName // 이름 변경
-                  },
-                  cityGroup: cityName, // 같은 그룹임을 표시
-                  region: 'Gyeonggi' // 지역 구분을 위한 속성 추가
-                });
-              });
-            } else {
-              // 일반 폴리곤 처리
-              this.polygons.push({
-                name: cityName,
-                originalName: feature.properties.SIG_KOR_NM,
-                coordinates: feature.geometry.coordinates[0],
-                properties: {
-                  ...feature.properties,
-                  SIG_KOR_NM: cityName // 이름 변경
-                },
-                cityGroup: cityName, // 같은 그룹임을 표시
-                region: 'Gyeonggi' // 지역 구분을 위한 속성 추가
-              });
-            }
-          });
-        }
-      });
-      
-      // 독립 Feature 추가
-      standaloneFeatures.forEach(feature => {
-        const name = feature.properties.SIG_KOR_NM;
-        
-        // 다중 폴리곤 처리 (coordinates가 3차원 배열인 경우)
-        if (feature.geometry.type === 'MultiPolygon') {
-          feature.geometry.coordinates.forEach(coordSet => {
-            this.polygons.push({
-              name: name,
-              coordinates: coordSet[0], // MultiPolygon의 첫 번째 좌표 세트 사용
-              properties: feature.properties,
-              region: 'Gyeonggi' // 지역 구분을 위한 속성 추가
-            });
-          });
-        } else {
-          // 일반 폴리곤 처리
-          this.polygons.push({
-            name: name,
-            coordinates: feature.geometry.coordinates[0],
-            properties: feature.properties,
-            region: 'Gyeonggi' // 지역 구분을 위한 속성 추가
-          });
-        }
-      });
-      
-      console.log(`${regionName} 지역 데이터 로드 완료: ${features.length}개 지역`);
     },
     
     loadGyeonggiPolygons() {
@@ -708,13 +349,6 @@ export default {
       this.regionPolygons.forEach(p => p.polygon.setMap(null));
       this.regionPolygons = [];
       
-      // 기존 라벨 제거
-      this.regionLabels.forEach(label => label.setMap(null));
-      this.regionLabels = [];
-      
-      // 도시 그룹별 중심점 계산을 위한 객체
-      const cityGroupPoints = {};
-      
       // 각 지역별 폴리곤 생성
       this.polygons.forEach(region => {
         const path = region.coordinates.map(coord => 
@@ -763,95 +397,7 @@ export default {
           cityGroup: region.cityGroup,
           region: region.region
         });
-        
-        // 도시 그룹별 좌표 수집 (라벨 중심점 계산용)
-        if (region.cityGroup) {
-          if (!cityGroupPoints[region.cityGroup]) {
-            cityGroupPoints[region.cityGroup] = [];
-          }
-          // 폴리곤의 모든 좌표를 해당 도시 그룹에 추가
-          path.forEach(point => {
-            cityGroupPoints[region.cityGroup].push(point);
-          });
-        }
       });
-      
-      // 라벨 위치 충돌 방지를 위한 배열
-      const labelPositions = [];
-      
-      // 지역 이름 라벨 생성
-      if (this.showRegionNames) {
-        // 1. 일반 지역 라벨 생성
-        this.polygons.forEach(region => {
-          // 도시 그룹에 속한 지역은 개별 라벨을 생성하지 않음
-          if (region.cityGroup) return;
-          
-          const path = region.coordinates.map(coord => 
-            new kakao.maps.LatLng(coord[1], coord[0])
-          );
-          
-          const center = this.getPolygonCenter(path);
-          const adjustedPosition = this.getAdjustedLabelPosition(center, labelPositions, region.name);
-          
-          const customOverlay = new kakao.maps.CustomOverlay({
-            position: adjustedPosition,
-            content: `<div class="region-label">${region.name}</div>`,
-            xAnchor: 0.5,
-            yAnchor: 0.5,
-            zIndex: 1
-          });
-          
-          // 현재 지도 레벨이 labelVisibleLevel 이하일 때만 라벨 표시
-          if (this.map.getLevel() <= this.labelVisibleLevel) {
-            customOverlay.setMap(this.map);
-          }
-          
-          // 라벨 위치 저장
-          labelPositions.push({
-            position: adjustedPosition,
-            name: region.name
-          });
-          
-          this.regionLabels.push(customOverlay);
-        });
-        
-        // 2. 도시 그룹 라벨 생성
-        Object.keys(cityGroupPoints).forEach(cityName => {
-          const points = cityGroupPoints[cityName];
-          if (points.length > 0) {
-            // 도시 그룹의 모든 좌표의 중심점 계산
-            const center = this.getPointsCenter(points);
-            const adjustedPosition = this.getAdjustedLabelPosition(center, labelPositions, cityName);
-            
-            const customOverlay = new kakao.maps.CustomOverlay({
-              position: adjustedPosition,
-              content: `<div class="region-label city-group-label">${cityName}</div>`,
-              xAnchor: 0.5,
-              yAnchor: 0.5,
-              zIndex: 2 // 일반 라벨보다 위에 표시
-            });
-            
-            // 현재 지도 레벨이 labelVisibleLevel 이하일 때만 라벨 표시
-            if (this.map.getLevel() <= this.labelVisibleLevel) {
-              customOverlay.setMap(this.map);
-            }
-            
-            // 라벨 위치 저장
-            labelPositions.push({
-              position: adjustedPosition,
-              name: cityName
-            });
-            
-            this.regionLabels.push(customOverlay);
-          }
-        });
-      }
-      
-      // 지도 줌 레벨 변경 이벤트 리스너 추가
-      kakao.maps.event.addListener(this.map, 'zoom_changed', () => {
-        this.updateLabelsVisibility();
-      });
-      
       this.updatePolygonStyles();
     },
     
@@ -1072,16 +618,7 @@ export default {
     checkScreenSize() {
       this.isMobile = window.innerWidth <= 768;
     },
-    updateLabelsVisibility() {
-      const currentLevel = this.map.getLevel();
-      this.regionLabels.forEach(label => {
-        if (currentLevel <= this.labelVisibleLevel) {
-          label.setMap(this.map);
-        } else {
-          label.setMap(null);
-        }
-      });
-    },
+    
     getAdjustedLabelPosition(center, existingLabels, labelName) {
       // const minDistance = 0.015; // 최소 거리 (위도/경도 단위)
       const maxAttempts = 8; // 최대 시도 횟수
