@@ -350,16 +350,10 @@ export default {
 
     // 지도 토글
     toggleMap() {
-      // 상태 변경
+      // 상태 변경 - 이것만으로 인라인 스타일에서 z-index가 변경됨
       this.isMapOpen = !this.isMapOpen;
 
       if (this.isMapOpen) {
-        // 지도를 열 때 초기화 - z-index를 원래대로 설정
-        if (this.$refs.phoneFrame && this.$refs.phoneFrame.$el) {
-          // z-index를 원래 값으로 복원
-          this.$refs.phoneFrame.$el.style.zIndex = '15';
-        }
-        
         this.$nextTick(() => {
           // 지도 리사이즈
           const mapInstance = this.$refs.phoneFrame.getMapInstance();
@@ -373,10 +367,7 @@ export default {
           }
         });
       } else {
-        // 지도를 닫을 때는 z-index를 -1로 설정하여 화면에서 보이지 않게 함
-        if (this.$refs.phoneFrame && this.$refs.phoneFrame.$el) {
-          this.$refs.phoneFrame.$el.style.zIndex = '-1';
-        }
+        // 지도를 닫을 때는 인라인 스타일에서 자동으로 z-index가 -1로 설정됨
         
         // hintCircle 객체는 그대로 유지, 다음에 지도가 열렸을 때 다시 표시
       }  

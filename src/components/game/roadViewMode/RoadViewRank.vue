@@ -53,7 +53,7 @@
 
       <!-- 휴대폰 프레임 -->
       <PhoneFrame
-        v-if="isMapOpen"
+        :style="{ zIndex: isMapOpen ? 15 : -1 }"
         :centerLocation="centerLocation"
         :actualLocation="currentLocation"
         :showHintCircles="false"
@@ -75,7 +75,6 @@
         :gameDescription="gameDescription"
         @end-intro="endIntro"
       />
-
 
       <!-- 카운트다운 화면 -->
       <CountdownOverlay
@@ -973,8 +972,8 @@ export default {
   border-radius: 20px;
   width: 90%;
   max-width: 550px;
-  height: auto;
-  max-height: 80vh;
+  height: 100%;
+  max-height: 100vh;
   display: flex;
   flex-direction: column;
   animation: popIn 0.5s cubic-bezier(0.19, 1, 0.22, 1);
@@ -1049,12 +1048,6 @@ export default {
   transition: transform 0.3s ease;
 }
 
-.score-display:hover,
-.distance-display:hover,
-.rank-points-display:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-}
 
 .score-label,
 .distance-label,
@@ -1338,7 +1331,7 @@ export default {
   width: 90%;
   max-width: 600px;
   height: auto;
-  max-height: 80vh;
+  max-height: 120vh;
   overflow-y: auto;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   display: flex;
