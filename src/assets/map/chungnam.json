@@ -1009,20 +1009,7 @@
               127.35444478271874,
               36.82947489591912
             ]
-          ]
-        ]
-      },
-      "properties": {
-        "SIG_CD": "44131",
-        "SIG_ENG_NM": "Dongnam-gu, Cheonan-si",
-        "SIG_KOR_NM": "천안시동남구"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
+          ],
           [
             [
               127.12021372236043,
@@ -1141,8 +1128,8 @@
       },
       "properties": {
         "SIG_CD": "44133",
-        "SIG_ENG_NM": "Seobuk-gu, Cheonan-si",
-        "SIG_KOR_NM": "천안시서북구"
+        "SIG_ENG_NM": "Cheonan-si",
+        "SIG_KOR_NM": "천안시"
       }
     },
     {

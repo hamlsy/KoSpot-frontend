@@ -2857,20 +2857,7 @@
               127.66809957260794,
               36.72656468979178
             ]
-          ]
-        ]
-      },
-      "properties": {
-        "SIG_CD": "43111",
-        "SIG_ENG_NM": "Sangdang-gu, Cheongju-si",
-        "SIG_KOR_NM": "청주시 상당구"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
+          ],
           [
             [
               127.48277680684743,
@@ -4108,20 +4095,7 @@
               127.48277680684743,
               36.64483599176233
             ]
-          ]
-        ]
-      },
-      "properties": {
-        "SIG_CD": "43112",
-        "SIG_ENG_NM": "Seowon-gu, Cheongju-si",
-        "SIG_KOR_NM": "청주시 서원구"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
+          ],
           [
             [
               127.35613543162384,
@@ -6007,20 +5981,7 @@
               127.35613543162384,
               36.7173632526254
             ]
-          ]
-        ]
-      },
-      "properties": {
-        "SIG_CD": "43113",
-        "SIG_ENG_NM": "Heungdeok-gu, Cheongju-si",
-        "SIG_KOR_NM": "청주시 흥덕구"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
+          ],
           [
             [
               127.56756172358607,
@@ -8551,8 +8512,8 @@
       },
       "properties": {
         "SIG_CD": "43114",
-        "SIG_ENG_NM": "Cheongwon-gu, Cheongju-si",
-        "SIG_KOR_NM": "청주시 청원구"
+        "SIG_ENG_NM": "Cheongju-si",
+        "SIG_KOR_NM": "청주시"
       }
     },
     {
