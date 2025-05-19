@@ -98,7 +98,7 @@
           <slot name="main">
             <!-- 기본 로드뷰 컴포넌트 (슬롯이 제공되지 않을 경우) -->
             <road-view
-              v-if="!gameStore.state.roundEnded"
+              v-if="!gameStore.state.roundEnded && gameStore.state.currentLocation"
               :position="gameStore.state.currentLocation"
               :show-controls="true"
               :prevent-mouse-events="gameStore.state.hasSubmittedGuess"

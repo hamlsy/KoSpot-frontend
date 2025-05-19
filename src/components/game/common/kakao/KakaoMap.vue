@@ -136,7 +136,7 @@ export default {
         this.showActualPosition(newVal);
         // 실제 위치가 설정되면 플레이어 마커도 함께 표시
         if (this.playerGuesses && this.playerGuesses.length > 0) {
-          this.showPlayerGuesses(this.playerGuesses);
+          // this.showPlayerGuesses(this.playerGuesses);
         }
       } else if (this.actualMarker) {
         this.actualMarker.setMap(null);
@@ -153,11 +153,6 @@ export default {
   
   mounted() {
     this.initMap();
-    
-    // 플레이어 추측 위치가 있으면 표시
-    if (this.playerGuesses && this.playerGuesses.length > 0) {
-      this.showPlayerGuesses(this.playerGuesses);
-    }
   },
   
   beforeDestroy() {
@@ -228,7 +223,6 @@ export default {
         if (this.markerPosition) {
           this.setMarker(this.markerPosition);
         }
-        
         // 실제 위치가 이미 있으면 표시
         if (this.actualPosition) {
           this.showActualPosition(this.actualPosition);
@@ -251,7 +245,6 @@ export default {
             // 결과 화면에서는 마커를 추가하지 않고 이벤트만 발생
             if (this.actualPosition) {
               // 결과 화면에서는 클릭 무시
-              console.log('결과 화면에서는 위치를 선택할 수 없습니다.');
               return;
             }
             

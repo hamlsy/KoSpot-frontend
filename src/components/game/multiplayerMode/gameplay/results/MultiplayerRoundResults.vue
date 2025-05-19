@@ -197,8 +197,6 @@ export default {
         // 지도 렌더링 완료 후 플레이어 추측 표시
         setTimeout(() => {
           if (this.$refs.resultMap) {
-            this.$refs.resultMap.showPlayerGuesses(this.playerGuesses);
-            
             // 모든 마커가 보이도록 지도 범위 조정
             setTimeout(() => {
               if (this.$refs.resultMap) {
