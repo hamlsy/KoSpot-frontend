@@ -84,6 +84,10 @@ export default {
     showDistanceLines: {
       type: Boolean,
       default: false
+    },
+    fitAllMarkers: {
+      type: Boolean,
+      default: false
     }
   },
   
@@ -95,6 +99,8 @@ export default {
       polyline: null,
       isLoading: true,
       showInfoWindow: false,
+      // prop 대신 내부 상태로 관리
+      internalMarkerPosition: this.markerPosition,
       distance: null,
       playerMarkers: [],
       distanceLines: [],
@@ -103,30 +109,45 @@ export default {
   },
   
   watch: {
-    center(newCenter) {
-      if (this.map) {
-        const position = new window.kakao.maps.LatLng(newCenter.lat, newCenter.lng);
-        this.map.setCenter(position);
+    center(newVal) {
+      if (this.map && newVal) {
+        const newCenter = new kakao.maps.LatLng(newVal.lat, newVal.lng);
+        this.map.setCenter(newCenter);
       }
     },
     
-    markerPosition(newPosition) {
-      if (newPosition) {
-        this.setMarker(newPosition);
-      }
-    },
-    
-    actualPosition(newPosition, oldPosition) {
-      if (newPosition && !oldPosition) {
-        this.showActualPosition(newPosition);
-      }
-    },
-    
-    playerGuesses: {
-      handler(newGuesses) {
-        this.showPlayerGuesses(newGuesses);
+    markerPosition: {
+      handler(newVal) {
+        // 내부 상태 업데이트
+        this.internalMarkerPosition = newVal;
+        
+        if (newVal) {
+          this.setMarker(newVal);
+        } else if (this.marker) {
+          this.marker.setMap(null);
+          this.marker = null;
+        }
       },
-      deep: true
+      immediate: true
+    },
+    
+    actualPosition(newVal) {
+      if (newVal) {
+        this.showActualPosition(newVal);
+        // 실제 위치가 설정되면 플레이어 마커도 함께 표시
+        if (this.playerGuesses && this.playerGuesses.length > 0) {
+          this.showPlayerGuesses(this.playerGuesses);
+        }
+      } else if (this.actualMarker) {
+        this.actualMarker.setMap(null);
+        this.actualMarker = null;
+      }
+    },
+    
+    playerGuesses(newVal) {
+      if (newVal && newVal.length > 0 && this.actualPosition) {
+        this.showPlayerGuesses(newVal);
+      }
     }
   },
   
@@ -145,6 +166,40 @@ export default {
   },
   
   methods: {
+    // 사용자 마커 추가 함수
+    addUserMarker(position) {
+      if (!this.map) return;
+      
+      const markerPosition = new kakao.maps.LatLng(position.lat, position.lng);
+      
+      // 기존 마커가 있으면 제거
+      if (this.marker) {
+        this.marker.setMap(null);
+      }
+      
+      // 새 마커 생성
+      this.marker = new kakao.maps.Marker({
+        position: markerPosition,
+        map: this.map
+      });
+      
+      // 마커 위치 업데이트 (내부 상태로 관리)
+      this.internalMarkerPosition = position;
+      // 위치 변경 이벤트 발생
+      this.$emit('update:markerPosition', position);
+      
+      // 실제 위치가 있으면 거리 계산 및 선 그리기
+      if (this.actualPosition) {
+        this.calculateDistance();
+        this.drawLine();
+      }
+    },
+    
+    // 마커 설정 함수 (이전 코드와의 호환성을 위해 유지)
+    setMarker(position) {
+      this.addUserMarker(position);
+    },
+    
     initMap() {
       if (window.kakao && window.kakao.maps) {
         const container = this.$refs.mapContainer;
@@ -193,7 +248,15 @@ export default {
               lng: latlng.getLng()
             };
             
-            this.setMarker(position);
+            // 결과 화면에서는 마커를 추가하지 않고 이벤트만 발생
+            if (this.actualPosition) {
+              // 결과 화면에서는 클릭 무시
+              console.log('결과 화면에서는 위치를 선택할 수 없습니다.');
+              return;
+            }
+            
+            // 게임 플레이 중에만 마커 추가
+            this.addUserMarker(position);
             this.$emit('spot-answer', position);
           });
         }
@@ -217,16 +280,30 @@ export default {
         // 기존 마커 위치 변경
         this.actualMarker.setPosition(markerPosition);
       } else {
-        // 새 마커 생성
+        // 새 마커 생성 - 정답 마커는 다른 이미지 사용
         const markerImage = new kakao.maps.MarkerImage(
-          'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
-          new kakao.maps.Size(24, 35)
+          'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png', // 더 드러나는 빨간색 마커
+          new kakao.maps.Size(35, 35) // 더 크게 설정
         );
         
         this.actualMarker = new kakao.maps.Marker({
           position: markerPosition,
           map: this.map,
-          image: markerImage
+          image: markerImage,
+          zIndex: 10 // 다른 마커보다 위에 표시
+        });
+        
+        // 정답 마커에 정보창 추가
+        const infoContent = `<div style="padding:5px;font-size:12px;background-color:white;border-radius:4px;border:1px solid #ddd;font-weight:bold;color:red;">정답 위치</div>`;
+        const infoWindow = new kakao.maps.InfoWindow({
+          content: infoContent,
+          removable: false,
+          zIndex: 10
+        });
+        
+        // 정답 마커 클릭 시 정보창 표시
+        kakao.maps.event.addListener(this.actualMarker, 'click', () => {
+          infoWindow.open(this.map, this.actualMarker);
         });
       }
       
@@ -244,7 +321,7 @@ export default {
     },
     
     calculateDistance() {
-      if (!this.marker || !this.actualMarker) {
+      if (!this.map || !this.internalMarkerPosition || !this.actualPosition) {
         this.distance = null;
         return;
       }
@@ -281,7 +358,13 @@ export default {
     },
     
     drawLine() {
-      if (!this.marker || !this.actualMarker) return;
+      if (!this.map || !this.internalMarkerPosition || !this.actualPosition) {
+        if (this.polyline) {
+          this.polyline.setMap(null);
+          this.polyline = null;
+        }
+        return;
+      }
       
       // 기존 선이 있으면 제거
       if (this.polyline) {
@@ -344,56 +427,108 @@ export default {
     },
     
     showPlayerGuesses(guesses) {
-      if (!this.map || !guesses || !this.actualPosition) return;
+      if (!this.map) {
+        console.error('지도가 초기화되지 않았습니다.');
+        return;
+      }
+      
+      if (!guesses || guesses.length === 0) {
+        console.warn('표시할 플레이어 추측이 없습니다.');
+        return;
+      }
+      
+      if (!this.actualPosition) {
+        console.warn('실제 위치가 설정되지 않았습니다. 마커만 표시합니다.');
+        // 실제 위치가 없어도 마커는 표시해야 함
+      }
+      
+      console.log('플레이어 추측 표시 시작:', guesses.length, '개');
       
       // 기존 마커와 선 제거
       this.clearPlayerMarkers();
       
       // 각 플레이어의 추측 위치에 마커 표시
-      guesses.forEach(guess => {
-        if (!guess.position) return; // 위치가 없는 경우 건너뛰기
+      guesses.forEach((guess, index) => {
+        if (!guess.position || typeof guess.position.lat === 'undefined' || typeof guess.position.lng === 'undefined') {
+          console.log('유효하지 않은 위치 정보:', guess);
+          return; // 유효하지 않은 위치는 건너뛰기
+        }
         
-        const position = new kakao.maps.LatLng(guess.position.lat, guess.position.lng);
+        console.log(`플레이어 ${index+1} 추측:`, guess.position);
         
-        // 마커 이미지 생성 - 플레이어 색상에 맞게 커스텀 마커 생성
-        // const markerSize = new kakao.maps.Size(36, 37);
-        // const markerOffset = new kakao.maps.Point(13, 37);
-        
-        // 마커 생성
-        const marker = new kakao.maps.Marker({
-          position: position,
-          map: this.map,
-          title: guess.playerName
-        });
-        
-        // 마커에 표시할 인포윈도우 생성 - 항상 표시되도록 변경
-        const infoContent = `<div style="padding:5px;font-size:12px;background-color:white;border-radius:4px;border:1px solid #ddd;font-weight:bold;color:black;">${guess.playerName}</div>`;
-        const infoWindow = new kakao.maps.InfoWindow({
-          content: infoContent,
-          removable: false,
-          zIndex: 1
-        });
-        
-        // 항상 인포윈도우 표시
-        infoWindow.open(this.map, marker);
-        
-        // 마커 저장
-        this.playerMarkers.push({
-          marker: marker,
-          infoWindow: infoWindow,
-          color: guess.color,
-          position: position,
-          playerName: guess.playerName
-        });
+        try {
+          const position = new kakao.maps.LatLng(guess.position.lat, guess.position.lng);
+          
+          // 플레이어별 다른 색상의 마커 이미지 생성
+          const markerSize = new kakao.maps.Size(24, 35);
+          
+          // 기본 마커 이미지 사용
+          const markerImage = new kakao.maps.MarkerImage(
+            'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
+            markerSize
+          );
+          
+          // 마커 생성
+          const marker = new kakao.maps.Marker({
+            position: position,
+            map: this.map,
+            title: guess.playerName || `플레이어 ${index+1}`,
+            image: markerImage
+          });
+          
+          // 마커에 표시할 인포윈도우 생성 - 클릭 시에만 표시되도록 변경
+          const infoContent = `<div style="padding:5px;font-size:12px;background-color:white;border-radius:4px;border:1px solid #ddd;font-weight:bold;color:black;">${guess.playerName || '플레이어 ' + (index+1)}</div>`;
+          const infoWindow = new kakao.maps.InfoWindow({
+            content: infoContent,
+            removable: false,
+            zIndex: 1
+          });
+          
+          // 마커 클릭 시 인포윈도우 표시
+          kakao.maps.event.addListener(marker, 'click', function() {
+            infoWindow.open(this.map, marker);
+          }.bind(this));
+          
+          // 마커 저장
+          this.playerMarkers.push({
+            marker: marker,
+            infoWindow: infoWindow,
+            color: guess.color || this.getRandomColor(index),
+            position: position,
+            playerName: guess.playerName || '플레이어 ' + (index+1)
+          });
+          
+          console.log(`플레이어 ${index+1} 마커 추가 성공`);
+        } catch (error) {
+          console.error(`플레이어 ${index+1} 마커 추가 실패:`, error);
+        }
       });
       
+      console.log('플레이어 마커 추가 완료:', this.playerMarkers.length, '개');
+      
       // 거리 선 표시
-      if (this.showDistanceLines) {
-        this.drawPlayerDistanceLines();
+      if (this.showDistanceLines && this.actualPosition) {
+        setTimeout(() => {
+          this.drawPlayerDistanceLines();
+        }, 100);
       }
       
       // 모든 마커가 보이도록 지도 범위 조정
-      this.fitMapToAllMarkers();
+      if (this.fitAllMarkers) {
+        setTimeout(() => {
+          this.fitMapToAllMarkers();
+        }, 200);
+      }
+    },
+    
+    // 랜덤 색상 생성 함수
+    getRandomColor(index) {
+      const colors = [
+        '#FF5252', '#FF4081', '#E040FB', '#7C4DFF', '#536DFE',
+        '#448AFF', '#40C4FF', '#18FFFF', '#64FFDA', '#69F0AE',
+        '#B2FF59', '#EEFF41', '#FFFF00', '#FFD740', '#FFAB40'
+      ];
+      return colors[index % colors.length];
     },
     
     drawPlayerDistanceLines() {
@@ -479,7 +614,7 @@ export default {
     },
     
     fitMapToAllMarkers() {
-      if (!this.map || (!this.marker && this.playerMarkers.length === 0)) return;
+      if (!this.map || (!this.marker && this.playerMarkers.length === 0 && !this.actualMarker)) return;
       
       // 모든 마커의 위치를 포함하는 경계 생성
       const bounds = new kakao.maps.LatLngBounds();
@@ -500,13 +635,25 @@ export default {
       });
       
       // 지도 범위 설정 - 약간의 패딩 추가
-      this.map.setBounds(bounds, 50); // 50픽셀의 패딩 추가
+      this.map.setBounds(bounds, 100); // 100픽셀의 패딩 추가
+      
+      // 지도 레벨 조정 (너무 가깝게 확대되지 않도록)
+      const currentLevel = this.map.getLevel();
+      if (currentLevel < 3) {
+        this.map.setLevel(3);
+      }
       
       // 지도 타일이 완전히 로드된 후 한 번 더 범위 조정 (깜빡임 방지)
       setTimeout(() => {
         this.map.relayout();
-        this.map.setBounds(bounds, 50);
-      }, 100);
+        this.map.setBounds(bounds, 100);
+        
+        // 한 번 더 지도 레벨 확인
+        const newLevel = this.map.getLevel();
+        if (newLevel < 3) {
+          this.map.setLevel(3);
+        }
+      }, 300);
     }
   }
 };

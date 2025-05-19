@@ -100,6 +100,14 @@ export default {
     initRoadview() {
       console.log('로드뷰 초기화 시작', this.position);
       
+      // position이 null인 경우 오류 처리
+      if (!this.position || typeof this.position.lat === 'undefined' || typeof this.position.lng === 'undefined') {
+        console.error('유효한 위치 정보가 없습니다:', this.position);
+        this.hasError = true;
+        this.$emit('load-error');
+        return;
+      }
+      
       // Kakao Maps Roadview API 사용하여 구현
       if (window.kakao && window.kakao.maps) {
         this.hasError = false;

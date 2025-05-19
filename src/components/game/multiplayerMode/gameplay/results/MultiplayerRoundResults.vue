@@ -29,9 +29,10 @@
           :actual-position="actualLocation"
           :prevent-interaction="false"
           :show-marker-hint="false"
-          :zoom-level="3"
+          :zoom-level="5"
           :player-guesses="playerGuesses"
           :show-distance-lines="true"
+          :fitAllMarkers="true"
           ref="resultMap"
         />
       </div>
@@ -165,7 +166,10 @@ export default {
   mounted() {
     // 컴포넌트가 마운트될 때 지도 초기화
     this.$nextTick(() => {
-      this.initMap();
+      // 지도 초기화 전 약간의 지연을 주어 DOM이 완전히 렌더링되도록 함
+      setTimeout(() => {
+        this.initMap();
+      }, 300);
     });
   },
   
@@ -186,49 +190,23 @@ export default {
     },
     
     initMap() {
-      // 지도 컨테이너가 준비되었는지 확인
-      if (this.$refs.resultMap && window.kakao && window.kakao.maps) {
+      // 지도 초기화 메서드
+      if (this.$refs.resultMap) {
         console.log('지도 초기화 시작');
         
-        // 지도 컨테이너 요소 확인
-        const mapContainer = this.$refs.resultMap.$el;
-        if (!mapContainer) {
-          console.error('지도 컨테이너를 찾을 수 없습니다.');
-          return;
-        }
-        
-        // 지도 컨테이너 크기 설정 및 가시성 확인
-        mapContainer.style.width = '100%';
-        mapContainer.style.height = '500px'; // 지도 높이 증가
-        mapContainer.style.display = 'block';
-        
-        // 카카오맵 API가 로드되었는지 확인
-        if (typeof kakao === 'undefined' || !kakao.maps) {
-          console.error('카카오맵 API가 로드되지 않았습니다.');
-          return;
-        }
-        
-        try {
-          // 지도 초기화 트리거
-          this.$refs.resultMap.initMap();
-          
-          // 실제 위치와 플레이어 추측 위치가 있으면 지도에 맞춤
-          if (this.actualLocation && this.actualLocation.lat && this.actualLocation.lng) {
-            // 약간의 지연을 두어 지도가 완전히 로드된 후 마커와 선을 표시
+        // 지도 렌더링 완료 후 플레이어 추측 표시
+        setTimeout(() => {
+          if (this.$refs.resultMap) {
+            this.$refs.resultMap.showPlayerGuesses(this.playerGuesses);
+            
+            // 모든 마커가 보이도록 지도 범위 조정
             setTimeout(() => {
               if (this.$refs.resultMap) {
                 this.$refs.resultMap.fitMapToAllMarkers();
-                this.$refs.resultMap.drawPlayerDistanceLines(); // 거리 선 표시 명시적 호출
               }
-            }, 500);
+            }, 300);
           }
-          
-          console.log('지도 초기화 완료');
-        } catch (error) {
-          console.error('지도 초기화 중 오류 발생:', error);
-        }
-      } else {
-        console.error('지도 컴포넌트 또는 카카오맵 API를 찾을 수 없습니다.');
+        }, 500);
       }
     },
     
@@ -329,14 +307,15 @@ export default {
 
 /* 확장된 지도 컨테이너 */
 .map-container {
-  width: 100%;
-  height: 500px;
-  border-radius: 8px;
+  flex: 1;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  margin: 0.5rem 1rem 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  height: calc(100% - 120px);
   position: relative;
-  display: block;
-  margin: 0 1.5rem 1.5rem 1.5rem;
+  background-color: #f8f9fa;
+  min-height: 400px;
 }
 
 .interesting-fact {

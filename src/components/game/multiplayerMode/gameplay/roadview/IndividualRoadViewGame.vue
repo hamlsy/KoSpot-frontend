@@ -85,8 +85,18 @@ export default {
   },
   
   created() {
-    // 더미 데이터로 다른 플레이어들의 정답 제출 시뮬레이션
-    this.simulateOtherPlayersGuesses();
+    // 게임 스토어의 상태 변화 감시
+    this.$watch(
+      () => gameStore.state.actualLocation,
+      (newVal) => {
+        if (newVal && Object.keys(newVal).length > 0) {
+          console.log('실제 위치가 설정되었습니다:', newVal);
+          // 실제 위치가 설정된 후에 다른 플레이어들의 추측 시ミュ레이션
+          this.simulateOtherPlayersGuesses();
+        }
+      },
+      { immediate: true, deep: true }
+    );
   },
   
   methods: {
@@ -138,15 +148,35 @@ export default {
       this.$parent.exitToLobby();
     },
     
-    // 더미 데이터로 다른 플레이어들의 정답 제출 시뮬레이션
+    // 더미 데이터로 다른 플레이어들의 정답 제출 시뮤레이션
     simulateOtherPlayersGuesses() {
+      console.log('다른 플레이어 추측 시뮤레이션 시작');
+      
+      // 실제 위치가 없으면 시뮤레이션 중단
+      if (!gameStore.state.actualLocation || !gameStore.state.actualLocation.lat) {
+        console.error('실제 위치가 없어 시뮤레이션을 실행할 수 없습니다.');
+        return;
+      }
+      
       // 현재 플레이어를 제외한 다른 플레이어들
       const otherPlayers = gameStore.state.players.filter(
         player => player.id !== gameStore.state.currentUser.id
       );
       
+      console.log('다른 플레이어 수:', otherPlayers.length);
+      
+      // 자기 자신의 추측도 추가 (현재 사용자의 추측)
+      if (gameStore.state.userGuess && gameStore.state.userGuess.position) {
+        console.log('현재 사용자의 추측 추가:', gameStore.state.userGuess.position);
+        this.addPlayerGuess(
+          gameStore.state.currentUser.id, 
+          gameStore.state.userGuess.position, 
+          '#FF5252'
+        );
+      }
+      
       // 각 플레이어마다 랜덤한 위치 생성
-      otherPlayers.forEach(player => {
+      otherPlayers.forEach((player, index) => {
         // 실제 위치 주변에 랜덤한 위치 생성 (최대 20km 반경 내)
         setTimeout(() => {
           const randomOffset = () => (Math.random() - 0.5) * 0.4; // 약 ±20km 범위
@@ -154,6 +184,8 @@ export default {
             lat: gameStore.state.actualLocation.lat + randomOffset(),
             lng: gameStore.state.actualLocation.lng + randomOffset()
           };
+          
+          console.log(`플레이어 ${player.nickname || index} 추측 생성:`, randomPosition);
           
           // 플레이어 색상 랜덤 생성
           const colors = [
@@ -168,7 +200,9 @@ export default {
           
           // 플레이어 제출 상태 업데이트
           player.hasSubmitted = true;
-        }, 1000 + Math.random() * 5000); // 1~6초 사이에 랜덤하게 제출
+          
+          console.log('현재 추측 수:', this.playerGuesses.length);
+        }, 500 + Math.random() * 2000); // 시간 단축: 0.5~2.5초 사이에 랜덤하게 제출
       });
     },
     
