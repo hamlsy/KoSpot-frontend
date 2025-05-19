@@ -194,7 +194,6 @@ export default {
       isMapOpen: false,
       allPlayersSubmitted: false,
       submittedPlayersCount: 0,
-      playerGuesses: [], // 모든 플레이어의 추측 위치를 저장
       toastMessage: "",
       showToastFlag: false,
       toastTimer: null,
@@ -333,7 +332,16 @@ export default {
 
       // 현재 플레이어의 추측 저장
       const currentPlayer = this.gameStore.state.currentUser;
-      this.playerGuesses.push({
+      
+      // gameStore에 직접 추가
+      if (!gameStore.state.playerGuesses) {
+        gameStore.state.playerGuesses = [];
+      }
+      
+      // 현재 사용자의 추측 정보 저장
+      gameStore.state.userGuess = { position: this.guessPosition };
+      
+      gameStore.state.playerGuesses.push({
         playerId: currentPlayer.id,
         playerName: currentPlayer.nickname,
         position: this.guessPosition,
@@ -368,9 +376,6 @@ export default {
       this.clearTimer();
       gameStore.endRound();
 
-      // 모든 플레이어의 추측 위치 정보를 gameStore에 저장
-      gameStore.state.playerGuesses = this.playerGuesses;
-
       // 플레이어 점수 계산 및 정렬
       this.calculatePlayerScores();
       
@@ -382,7 +387,7 @@ export default {
       // 각 플레이어의 점수 계산 (거리 기반)
       gameStore.state.players.forEach((player) => {
         // 플레이어의 추측 위치 찾기
-        const guess = this.playerGuesses.find((g) => g.playerId === player.id);
+        const guess = gameStore.state.playerGuesses.find((g) => g.playerId === player.id);
         if (guess) {
           // 실제 위치와의 거리 계산 (km)
           const distance = this.calculateDistance(
@@ -440,7 +445,7 @@ export default {
       // 다음 라운드를 위한 상태 초기화
       this.allPlayersSubmitted = false;
       this.submittedPlayersCount = 0;
-      this.playerGuesses = [];
+      gameStore.state.playerGuesses = [];
       this.showResultMap = false;
       
       // 플레이어의 마지막 라운드 점수 초기화
@@ -593,7 +598,16 @@ export default {
       } else {
         // 현재 플레이어의 추측 저장
         const currentPlayer = this.gameStore.state.currentUser;
-        this.playerGuesses.push({
+        
+        // gameStore에 직접 추가
+        if (!gameStore.state.playerGuesses) {
+          gameStore.state.playerGuesses = [];
+        }
+        
+        // 현재 사용자의 추측 정보 저장
+        gameStore.state.userGuess = { position: this.guessPosition };
+        
+        gameStore.state.playerGuesses.push({
           playerId: currentPlayer.id,
           playerName: currentPlayer.nickname,
           position: this.guessPosition,
@@ -647,7 +661,7 @@ export default {
         };
         */
 
-      // 테스트용: 더미 데이터로 다른 플레이어 추측 시뮬레이션
+      // 테스트용: 다른 플레이어 추측 시뮬레이션
       setTimeout(() => {
         this.simulateOtherPlayersGuesses();
       }, 5000);
@@ -690,7 +704,12 @@ export default {
         (p) => p.id === data.playerId
       );
       if (player) {
-        this.playerGuesses.push({
+        // gameStore에 직접 추가
+        if (!gameStore.state.playerGuesses) {
+          gameStore.state.playerGuesses = [];
+        }
+        
+        gameStore.state.playerGuesses.push({
           playerId: data.playerId,
           playerName: player.nickname,
           position: data.position,
@@ -731,13 +750,17 @@ export default {
         (p) => p.id !== gameStore.state.currentUser.id
       );
 
+      // gameStore에 직접 추가
+      if (!gameStore.state.playerGuesses) {
+        gameStore.state.playerGuesses = [];
+      }
+
       // 각 플레이어마다 랜덤 위치 생성 및 제출
       otherPlayers.forEach((player) => {
         // 실제 위치 주변에 랜덤 위치 생성 (최대 50km 반경)
         const actualLat = gameStore.state.actualLocation.lat;
         const actualLng = gameStore.state.actualLocation.lng;
 
-        // 랜덤 오프셋 생성 (위도/경도 각각 최대 ±0.5도)
         const latOffset = (Math.random() - 0.5) * 1;
         const lngOffset = (Math.random() - 0.5) * 1;
 
@@ -747,7 +770,7 @@ export default {
         };
 
         // 플레이어 추측 정보 추가
-        this.playerGuesses.push({
+        gameStore.state.playerGuesses.push({
           playerId: player.id,
           playerName: player.nickname,
           position: position,

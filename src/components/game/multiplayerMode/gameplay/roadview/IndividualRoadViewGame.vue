@@ -30,7 +30,7 @@
         :total-rounds="gameStore.state.totalRounds"
         :current-user-id="gameStore.state.currentUser.id"
         :location-name="gameStore.state.locationInfo.name"
-        :player-guesses="playerGuesses"
+        :player-guesses="gameStore.state.playerGuesses"
         @close="closeRoundResults"
         @next-round="startNextRound"
         @finish-game="finishGame"
@@ -79,8 +79,7 @@ export default {
   
   data() {
     return {
-      gameStore,
-      playerGuesses: []
+      gameStore
     };
   },
   
@@ -115,9 +114,10 @@ export default {
         console.error('유효하지 않은 위치 정보:', position);
         return;
       }
-      console.log(position)
-      // 현재 사용자의 추측 저장
-      this.addPlayerGuess(gameStore.state.currentUser.id, position, '#FF5252');
+      console.log(position);
+      // 현재 사용자의 추측 저장은 부모 컴포넌트에서 처리됨
+      // gameStore에 저장된 userGuess 정보 활용
+      gameStore.state.userGuess = { position: position };
     },
     
     closeRoundResults() {
@@ -127,8 +127,6 @@ export default {
     startNextRound() {
       // 부모 컴포넌트의 메서드 호출
       this.$parent.startNextRound();
-      // 다음 라운드를 위해 플레이어 추측 초기화
-      this.playerGuesses = [];
       // 다음 라운드에서 다른 플레이어들의 추측 시뮬레이션
       this.simulateOtherPlayersGuesses();
     },
@@ -140,7 +138,6 @@ export default {
     restartGame() {
       gameStore.state.showGameResults = false;
       this.$parent.initGame();
-      this.playerGuesses = [];
       this.simulateOtherPlayersGuesses();
     },
     
@@ -168,7 +165,7 @@ export default {
       // 자기 자신의 추측도 추가 (현재 사용자의 추측)
       if (gameStore.state.userGuess && gameStore.state.userGuess.position) {
         console.log('현재 사용자의 추측 추가:', gameStore.state.userGuess.position);
-        this.addPlayerGuess(
+        this.addPlayerGuessToStore(
           gameStore.state.currentUser.id, 
           gameStore.state.userGuess.position, 
           '#FF5252'
@@ -196,27 +193,33 @@ export default {
           const color = colors[Math.floor(Math.random() * colors.length)];
           
           // 플레이어 추측 추가
-          this.addPlayerGuess(player.id, randomPosition, color);
+          this.addPlayerGuessToStore(player.id, randomPosition, color);
           
           // 플레이어 제출 상태 업데이트
           player.hasSubmitted = true;
           
-          console.log('현재 추측 수:', this.playerGuesses.length);
+          console.log('현재 추측 수:', gameStore.state.playerGuesses.length);
         }, 500 + Math.random() * 2000); // 시간 단축: 0.5~2.5초 사이에 랜덤하게 제출
       });
     },
     
-    // 플레이어 추측 추가 헬퍼 메서드
-    addPlayerGuess(playerId, position, color) {
+    // 플레이어 추측을 스토어에 추가하는 헬퍼 메서드
+    addPlayerGuessToStore(playerId, position, color) {
       const player = gameStore.state.players.find(p => p.id === playerId);
       if (!player) return;
       
-      this.playerGuesses.push({
+      // 스토어에 직접 추가
+      if (!gameStore.state.playerGuesses) {
+        gameStore.state.playerGuesses = [];
+      }
+      
+      gameStore.state.playerGuesses.push({
         playerId: playerId,
         playerName: player.nickname,
         position: position,
         color: color
       });
+      console.log("player Guesses in store!", gameStore.state.playerGuesses);
     }
   }
 };

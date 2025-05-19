@@ -1,7 +1,7 @@
 import Vue from 'vue';
 import { testData, individualTestData } from '@/components/game/multiplayerMode/MultiplayerGameTestData';
 
-// 간단한 상태 관리 스토어 생성
+// 게임 상태 관리 스토어 생성
 const gameStore = {
   state: Vue.observable({
     // 게임 공통 상태

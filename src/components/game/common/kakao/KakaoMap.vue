@@ -286,18 +286,28 @@ export default {
           zIndex: 10 // 다른 마커보다 위에 표시
         });
         
-        // 정답 마커에 정보창 추가
-        const infoContent = `<div style="padding:5px;font-size:12px;background-color:white;border-radius:4px;border:1px solid #ddd;font-weight:bold;color:red;">정답 위치</div>`;
-        const infoWindow = new kakao.maps.InfoWindow({
-          content: infoContent,
-          removable: false,
+        // 정답 마커에 커스텀 오버레이 추가 (인포윈도우 대신)
+        const overlayContent = `
+          <div class="custom-actual-overlay">
+            <div class="overlay-content">
+              <span>정답 위치</span>
+            </div>
+            <div class="overlay-arrow"></div>
+          </div>
+        `;
+        
+        const actualOverlay = new kakao.maps.CustomOverlay({
+          position: markerPosition,
+          content: overlayContent,
+          yAnchor: 1.2,
           zIndex: 10
         });
         
-        // 정답 마커 클릭 시 정보창 표시
-        kakao.maps.event.addListener(this.actualMarker, 'click', () => {
-          infoWindow.open(this.map, this.actualMarker);
-        });
+        // 오버레이 바로 표시 (클릭 없이)
+        actualOverlay.setMap(this.map);
+        
+        // 오버레이 참조 저장 (제거를 위해)
+        this.distanceLines.push(actualOverlay);
       }
       
       // 거리 계산 및 선 그리기
@@ -469,23 +479,57 @@ export default {
             image: markerImage
           });
           
-          // 마커에 표시할 인포윈도우 생성 - 클릭 시에만 표시되도록 변경
-          const infoContent = `<div style="padding:5px;font-size:12px;background-color:white;border-radius:4px;border:1px solid #ddd;font-weight:bold;color:black;">${guess.playerName || '플레이어 ' + (index+1)}</div>`;
-          const infoWindow = new kakao.maps.InfoWindow({
-            content: infoContent,
-            removable: false,
-            zIndex: 1
+          // 실제 위치와의 거리 계산
+          let distanceText = '';
+          if (this.actualPosition) {
+            const distance = this.calculateHaversineDistance(
+              position.getLat(),
+              position.getLng(),
+              this.actualPosition.lat,
+              this.actualPosition.lng
+            );
+            distanceText = this.formatDistance(distance);
+          }
+          
+          // 커스텀 오버레이에 표출될 내용
+          const content = `
+            <div class="custom-player-overlay" style="background-color: ${guess.color}">
+              <div class="overlay-content">
+                <span class="player-name">${guess.playerName || '플레이어 ' + (index+1)}</span>
+                ${distanceText ? `<span class="distance-info">${distanceText}</span>` : ''}
+              </div>
+              <div class="overlay-arrow" style="border-top-color: ${guess.color}"></div>
+            </div>
+          `;
+          
+          // 커스텀 오버레이 생성
+          const customOverlay = new kakao.maps.CustomOverlay({
+            map: this.map, // 처음부터 지도에 모든 오버레이 표시
+            position: position,
+            content: content,
+            yAnchor: 2.0, // 마커 위에 충분한 공간을 두고 오버레이 배치
+            zIndex: 2
           });
           
-          // 마커 클릭 시 인포윈도우 표시
-          kakao.maps.event.addListener(marker, 'click', function() {
-            infoWindow.open(this.map, marker);
-          }.bind(this));
+          // 해당 마커의 오버레이 상태 관리
+          marker.overlayVisible = true;
+          
+          // 마커 클릭 시 해당 오버레이만 토글
+          kakao.maps.event.addListener(marker, 'click', () => {
+            if (marker.overlayVisible) {
+              // 현재 보이는 상태면 숨기기
+              customOverlay.setMap(null);
+              marker.overlayVisible = false;
+            } else {
+              // 현재 숨겨진 상태면 보이기
+              customOverlay.setMap(this.map);
+              marker.overlayVisible = true;
+            }
+          });
           
           // 마커 저장
           this.playerMarkers.push({
             marker: marker,
-            infoWindow: infoWindow,
             color: guess.color || this.getRandomColor(index),
             position: position,
             playerName: guess.playerName || '플레이어 ' + (index+1)
@@ -545,7 +589,7 @@ export default {
         const line = new kakao.maps.Polyline({
           path: path,
           strokeWeight: 3,
-          strokeColor: item.color || '#db4040',
+          strokeColor: item.color,
           strokeOpacity: 0.7,
           strokeStyle: 'solid'
         });
@@ -553,36 +597,7 @@ export default {
         line.setMap(this.map);
         this.distanceLines.push(line);
         
-        // 거리 계산
-        const lat1 = playerPosition.getLat();
-        const lng1 = playerPosition.getLng();
-        const lat2 = actualPosition.getLat();
-        const lng2 = actualPosition.getLng();
-        
-        const distance = this.calculateHaversineDistance(lat1, lng1, lat2, lng2);
-        const formattedDistance = this.formatDistance(distance);
-        
-        // 선 중간에 거리 표시
-        const midLat = (lat1 + lat2) / 2;
-        const midLng = (lng1 + lng2) / 2;
-        const midPosition = new kakao.maps.LatLng(midLat, midLng);
-        
-        // 거리 표시 커스텀 오버레이 생성
-        const distanceContent = `
-          <div style="padding:5px 10px;background-color:white;border-radius:15px;border:1px solid #ddd;font-weight:bold;color:black;font-size:12px;box-shadow:0 2px 5px rgba(0,0,0,0.1);">
-            ${formattedDistance}
-          </div>
-        `;
-        
-        const distanceOverlay = new kakao.maps.CustomOverlay({
-          position: midPosition,
-          content: distanceContent,
-          yAnchor: 1,
-          zIndex: 2
-        });
-        
-        distanceOverlay.setMap(this.map);
-        this.distanceLines.push(distanceOverlay); // 제거를 위해 배열에 저장
+        // 선 중간에 거리 표시는 삭제 (요구사항 1)
       });
     },
     
@@ -653,6 +668,64 @@ export default {
 </script>
 
 <style scoped>
+/* 커스텀 오버레이 스타일 */
+:deep(.custom-player-overlay) {
+  position: relative;
+  padding: 5px 10px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  color: white;
+  font-weight: bold;
+  font-size: 13px;
+  white-space: nowrap;
+  text-align: center;
+  transform: translateY(-10px); /* 마커를 가리지 않도록 위치 조정 */
+}
+
+:deep(.custom-actual-overlay) {
+  position: relative;
+  padding: 5px 10px;
+  border-radius: 6px;
+  background-color: #ff3b30; /* 빨간색 배경 */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  color: white;
+  font-weight: bold;
+  font-size: 13px;
+  white-space: nowrap;
+  text-align: center;
+  transform: translateY(-10px);
+}
+
+:deep(.overlay-content) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+:deep(.distance-info) {
+  background-color: white; /* 흰색 배경 (요구사항 2) */
+  color: black; /* 검정 글자 (요구사항 2) */
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: normal;
+  border: 1px solid #ddd;
+  margin-left: 4px;
+}
+
+:deep(.overlay-arrow) {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid #ffffff; /* 기본 색상, 인라인 스타일로 재정의됨 */
+  transform: translateX(-50%);
+}
+
 .kakao-map {
   width: 100%;
   height: 100%;

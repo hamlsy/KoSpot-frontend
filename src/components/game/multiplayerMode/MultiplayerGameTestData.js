@@ -1,4 +1,14 @@
 // 멀티플레이어 게임용 테스트 데이터
+/**
+ * 테스트 데이터
+ * @property {Object} roomData - 게임 방 정보
+ * @property {Object} currentUser - 현재 사용자 정보
+ * @property {Array<Object>} players - 플레이어 목록
+ * @property {Array<Object>} teams - 팀 정보
+ * @property {Array<Object>} locations - 위치 데이터
+ * @property {Array<Object>} chatMessages - 채팅 메시지
+ * @property {Object} teamChatMessages - 팀별 채팅 메시지
+ */
 export const testData = {
   // 게임 방 정보
   roomData: {
