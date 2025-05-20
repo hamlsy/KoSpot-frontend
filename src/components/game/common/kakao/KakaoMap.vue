@@ -48,6 +48,8 @@
 </template>
 
 <script>
+import colors from '@/constants/colors';
+
 export default {
   name: 'KakaoMap',
   
@@ -96,6 +98,7 @@ export default {
       map: null,
       marker: null,
       actualMarker: null,
+      actualOverlay: null, // 정답 위치 오버레이 추가
       polyline: null,
       isLoading: true,
       showInfoWindow: false,
@@ -269,6 +272,11 @@ export default {
       // 실제 위치 마커 생성
       const markerPosition = new kakao.maps.LatLng(position.lat, position.lng);
       
+      // 기존 오버레이 제거
+      if (this.actualOverlay) {
+        this.actualOverlay.setMap(null);
+      }
+      
       if (this.actualMarker) {
         // 기존 마커 위치 변경
         this.actualMarker.setPosition(markerPosition);
@@ -285,30 +293,45 @@ export default {
           image: markerImage,
           zIndex: 10 // 다른 마커보다 위에 표시
         });
-        
-        // 정답 마커에 커스텀 오버레이 추가 (인포윈도우 대신)
-        const overlayContent = `
-          <div class="custom-actual-overlay">
-            <div class="overlay-content">
-              <span>정답 위치</span>
-            </div>
-            <div class="overlay-arrow"></div>
-          </div>
-        `;
-        
-        const actualOverlay = new kakao.maps.CustomOverlay({
-          position: markerPosition,
-          content: overlayContent,
-          yAnchor: 1.2,
-          zIndex: 10
-        });
-        
-        // 오버레이 바로 표시 (클릭 없이)
-        actualOverlay.setMap(this.map);
-        
-        // 오버레이 참조 저장 (제거를 위해)
-        this.distanceLines.push(actualOverlay);
       }
+      
+      const primaryColor = colors.BRAND.PRIMARY;
+
+      // 정답 마커에 커스텀 오버레이 추가 (인포윈도우 대신)
+      const overlayContent = `
+        <div class="custom-player-overlay" style="background-color: ${primaryColor}">
+          <div class="overlay-content">
+            <span class="player-name">정답위치</span>
+          </div>
+          <div class="overlay-arrow" style="border-top-color:${primaryColor}"></div>
+        </div>
+      `;
+    
+      this.actualOverlay = new kakao.maps.CustomOverlay({
+        position: markerPosition,
+        content: overlayContent,
+        yAnchor: 2.0, // 플레이어 마커와 동일한 값 사용
+        zIndex: 10
+      });
+
+      // 오버레이 바로 표시 (클릭 없이)
+      this.actualOverlay.setMap(this.map);
+      
+      // 정답 마커의 오버레이 상태 관리
+      this.actualMarker.overlayVisible = true;
+      
+      // 정답 마커 클릭 시 오버레이 토글
+      kakao.maps.event.addListener(this.actualMarker, 'click', () => {
+        if (this.actualMarker.overlayVisible) {
+          // 현재 보이는 상태면 숨기기
+          this.actualOverlay.setMap(null);
+          this.actualMarker.overlayVisible = false;
+        } else {
+          // 현재 숨겨진 상태면 보이기
+          this.actualOverlay.setMap(this.map);
+          this.actualMarker.overlayVisible = true;
+        }
+      });
       
       // 거리 계산 및 선 그리기
       this.calculateDistance();
@@ -693,7 +716,7 @@ export default {
   font-size: 13px;
   white-space: nowrap;
   text-align: center;
-  transform: translateY(-10px);
+  transform: translateY(-15px); /* 마커와 적절한 간격 유지 */
 }
 
 :deep(.overlay-content) {
