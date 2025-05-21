@@ -80,9 +80,6 @@ import gameStore from "@/store/gameStore";
 export default {
   name: "TeamRoadViewGame",
   
-  // BaseMultiRoadViewGame 확장
-  extends: BaseMultiRoadViewGame,
-
   components: {
     BaseMultiRoadViewGame,
     ChatWindow,

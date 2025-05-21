@@ -44,6 +44,7 @@ const gameStore = {
   
   // 테스트용 데이터 로드
   loadTestData(isTeamMode = true) {
+    console.log("테스트 데이터를 로드합니다")
     const data = isTeamMode ? testData : individualTestData;
     this.state.roomData = data.roomData;
     this.state.currentUser = data.currentUser;
@@ -62,9 +63,9 @@ const gameStore = {
     this.state.showGameResults = false;
     this.state.guessPosition = null;
     this.state.isLoading = false;
-    this.state.players = [];
-    this.state.playersGuesses = [];
-    this.state.teamPlayers = [];
+    // this.state.players = [];
+    // this.state.playersGuesses = [];
+    // this.state.teamPlayers = [];
     
   },
   

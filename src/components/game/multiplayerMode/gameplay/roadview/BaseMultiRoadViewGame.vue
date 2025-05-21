@@ -62,11 +62,14 @@
             <!-- 기본 로드뷰 컴포넌트 (슬롯이 제공되지 않을 경우) -->
             <road-view
               v-if="!gameStore.state.roundEnded && gameStore.state.currentLocation"
-              :position="gameStore.state.currentLocation"
+              :position="gameStore.state.currentLocation || { lat: 37.5665, lng: 126.9780 }"
               :show-controls="true"
               :prevent-mouse-events="gameStore.state.hasSubmittedGuess"
               @load-complete="onViewLoaded"
             />
+            <div v-else-if="!gameStore.state.roundEnded" class="loading-container">
+              <p>로드뷰를 불러오는 중입니다...</p>
+            </div>
           </slot>
           
           <!-- 지도 버튼 -->
@@ -95,16 +98,13 @@
     <!-- 휴대폰 프레임 -->
     <PhoneFrame
       :style="{ zIndex: isMapOpen ? 15 : -1 }"
-      :centerLocation="mapCenter"
-      :actualLocation="gameStore.state.actualLocation"
+      :centerLocation="mapCenter || { lat: 37.5665, lng: 126.9780 }"
+      :actualLocation="gameStore.state.actualLocation || { lat: 37.5665, lng: 126.9780 }"
       :showHintCircles="false"
       :disabled="gameStore.state.roundEnded"
       :showDistance="false"
-      :showActionButton="false"
-      @close="toggleMap"
+      :showMarker="true"
       @spot-answer="handlePhoneMapGuess"
-      @error="handleMapError"
-      ref="phoneMapGame"
     />
     
     <!-- 토스트 메시지 -->
@@ -136,10 +136,6 @@ export default {
     roomId: {
       type: String,
       required: true,
-    },
-    isTeamMode: {
-      type: Boolean,
-      default: false,
     },
     // 게임 모드에 따라 필요한 추가 props
     gameMode: {
@@ -201,10 +197,13 @@ export default {
   },
 
   created() {
+    console.log(`BaseMultiRoadViewGame created - gameMode: ${this.gameMode}, isTeamMode: ${this.isTeamMode}`);
     // 테스트 데이터 로드 및 게임 초기화
     this.gameStore.loadTestData(this.isTeamMode);
     this.initGame();
     this.connectWebSocket();
+    // 이벤트 발생
+    this.$emit('component-created');
   },
 
   mounted() {
@@ -300,6 +299,8 @@ export default {
     onViewLoaded() {
       // 로드뷰 로딩 완료 처리
       console.log("로드뷰 로딩 완료");
+      // 이벤트 발생
+      this.$emit('view-loaded');
     },
 
     onGuessPlaced(position) {
@@ -326,16 +327,6 @@ export default {
         this.isMapOpen = !this.isMapOpen;
       }
     },
-    
-    submitGuess() {
-      if (!this.canSubmit) return;
-      
-      // 제출 상태로 변경
-      this.gameStore.submitGuess();
-      
-      // 토스트 메시지 표시
-      this.showToast("위치가 제출되었습니다!");
-    },
 
     endRound() {
       // 라운드 종료 처리
@@ -349,6 +340,14 @@ export default {
       this.gameStore.state.roundEnded = true;
       
       console.log('라운드 종료:', this.gameMode);
+      
+      // 이벤트 발생
+      this.$emit('round-ended');
+      
+      // 마지막 라운드인지 확인
+      if (this.gameStore.state.currentRound >= this.gameStore.state.totalRounds) {
+        this.$emit('game-finished');
+      }
     },
 
     startNextRound() {
@@ -398,8 +397,9 @@ export default {
     },
     
     // 게임 모드별로 구현해야 하는 메서드 (추상)
-    handleGuessSubmission() {
-      
+    handleGuessSubmission(position) {
+      // 이벤트 발생
+      this.$emit('guess-submitted', position);
     },
 
     // WebSocket 관련 메서드
