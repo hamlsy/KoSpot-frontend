@@ -8,13 +8,14 @@
     >
       <div class="info-content">
         <div class="info-header">
-          <h3>실제 위치</h3>
-          <span class="distance" v-if="distance !== null">
-            {{ formatDistance(distance) }}
+          <span class="winner-info" v-if="topPlayer">
+            1등: {{ topPlayer.playerName || topPlayer.teamName }}
           </span>
         </div>
         <div class="info-body">
-          <p class="coords">{{ formatCoords(actualPosition) }}</p>
+          <p class="winner-distance" v-if="topPlayer && topPlayer.distance">
+            정답과의 거리: <strong>{{ topPlayer.distance }}km</strong>
+          </p>
         </div>
       </div>
     </div>
@@ -24,18 +25,6 @@
         <i class="fas fa-spinner fa-spin"></i>
         <p>지도 로딩 중...</p>
       </div>
-    </div>
-    
-    <div class="map-controls" v-if="!preventInteraction">
-      <button class="control-btn zoom-in" @click="zoomIn" title="줌 인">
-        <i class="fas fa-plus"></i>
-      </button>
-      <button class="control-btn zoom-out" @click="zoomOut" title="줌 아웃">
-        <i class="fas fa-minus"></i>
-      </button>
-      <button class="control-btn reset" @click="resetMap" title="지도 초기화">
-        <i class="fas fa-undo"></i>
-      </button>
     </div>
     
     <div class="markers-container" v-if="showMarkerHint && !marker && !preventInteraction">
@@ -90,6 +79,10 @@ export default {
     fitAllMarkers: {
       type: Boolean,
       default: false
+    },
+    topPlayer: {
+      type: Object,
+      default: null
     }
   },
   
@@ -419,22 +412,6 @@ export default {
       
       // 지도 범위 조정 로직
       // 실제 구현에서는 카카오맵 API의 LatLngBounds 사용
-    },
-    
-    zoomIn() {
-      // 지도 확대
-      // map.setLevel(map.getLevel() - 1);
-    },
-    
-    zoomOut() {
-      // 지도 축소
-      // map.setLevel(map.getLevel() + 1);
-    },
-    
-    resetMap() {
-      // 지도 초기화
-      // map.setCenter(new kakao.maps.LatLng(this.center.lat, this.center.lng));
-      // map.setLevel(this.zoomLevel);
     },
     
     formatCoords(coords) {
@@ -824,13 +801,29 @@ export default {
   color: #333;
 }
 
-.distance {
+.distance, .winner-info {
   background: #f0f2f5;
   padding: 3px 8px;
   border-radius: 12px;
   font-size: 0.8rem;
   font-weight: 600;
   color: #444;
+}
+
+.winner-info {
+  background: #ffefd5;
+  color: #ff6b00;
+}
+
+.winner-distance {
+  margin: 5px 0;
+  font-size: 0.85rem;
+  color: #444;
+}
+
+.winner-distance strong {
+  color: #ff6b00;
+  font-weight: 600;
 }
 
 .info-body {

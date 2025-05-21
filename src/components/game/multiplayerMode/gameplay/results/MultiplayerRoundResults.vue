@@ -7,7 +7,7 @@
           <h2 class="round-title">라운드 {{ round }} 결과</h2>
         </div>
       </div>
-      
+
       <!-- 확장된 지도 영역 -->
       <div class="map-container">
         <kakao-map
@@ -20,25 +20,22 @@
           :player-guesses="playerGuesses"
           :show-distance-lines="true"
           :fitAllMarkers="true"
+          :top-player="topPlayer"
           ref="resultMap"
         />
       </div>
-      
+
       <!-- 하단 버튼 -->
       <div class="results-footer">
-        <button 
-          v-if="isLastRound" 
+        <button
+          v-if="isLastRound"
           class="action-button finish-button"
           @click="finishGame"
         >
           <i class="fas fa-trophy"></i>
           게임 결과 보기
         </button>
-        <button 
-          v-else
-          class="action-button next-button"
-          @click="nextRound"
-        >
+        <button v-else class="action-button next-button" @click="nextRound">
           <i class="fas fa-arrow-right"></i>
           다음 라운드
         </button>
@@ -48,79 +45,82 @@
 </template>
 
 <script>
-import KakaoMap from '@/components/game/common/kakao/KakaoMap.vue';
+import KakaoMap from "@/components/game/common/kakao/KakaoMap.vue";
 
 export default {
-  name: 'RoundResults',
-  
+  name: "RoundResults",
+
   components: {
-    KakaoMap
+    KakaoMap,
   },
-  
+
   props: {
     players: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
     actualLocation: {
       type: Object,
-      default: () => ({})
+      default: () => ({}),
     },
     round: {
       type: Number,
-      default: 1
+      default: 1,
     },
     totalRounds: {
       type: Number,
-      default: 5
+      default: 5,
     },
     currentUserId: {
       type: String,
-      default: ''
+      default: "",
     },
     locationName: {
       type: String,
-      default: ''
+      default: "",
     },
     locationDescription: {
       type: String,
-      default: ''
+      default: "",
     },
     locationImage: {
       type: String,
-      default: ''
+      default: "",
     },
     interestingFact: {
       type: String,
-      default: ''
+      default: "",
     },
     playerGuesses: {
       type: Array,
-      default: () => []
-    }
+      default: () => [],
+    },
+    topPlayer: {
+      type: Object,
+      default: () => ({}),
+    },
   },
-  
+
   computed: {
     sortedPlayers() {
       return [...this.players].sort((a, b) => b.score - a.score);
     },
-    
+
     isLastRound() {
       return this.round === this.totalRounds;
     },
-    
+
     // 플레이어 추측 위치에 대한 마커 정보 계산
     playerMarkers() {
-      return this.playerGuesses.map(guess => ({
+      return this.playerGuesses.map((guess) => ({
         position: guess.position,
         color: guess.color,
-        playerName: guess.playerName
+        playerName: guess.playerName,
       }));
-    }
+    },
   },
-  
+
   watch: {
-    
     // actualLocation이 변경될 때도 지도 초기화
     actualLocation: {
       handler(newVal) {
@@ -132,9 +132,9 @@ export default {
           });
         }
       },
-      deep: true
+      deep: true,
     },
-    
+
     // playerGuesses가 변경될 때도 지도 초기화
     playerGuesses: {
       handler(newVal) {
@@ -146,10 +146,10 @@ export default {
           });
         }
       },
-      deep: true
-    }
+      deep: true,
+    },
   },
-  
+
   mounted() {
     // 컴포넌트가 마운트될 때 지도 초기화
     this.$nextTick(() => {
@@ -159,28 +159,28 @@ export default {
       }, 300);
     });
   },
-  
+
   methods: {
     formatDistance(distance) {
-      if (distance === null || distance === undefined) return '?';
-      
+      if (distance === null || distance === undefined) return "?";
+
       if (distance < 1) {
         return `${(distance * 1000).toFixed(0)}m`;
       } else {
         return `${distance.toFixed(2)}km`;
       }
     },
-    
+
     formatNumber(num) {
-      if (num === null || num === undefined) return '0';
-      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      if (num === null || num === undefined) return "0";
+      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     },
-    
+
     initMap() {
       // 지도 초기화 메서드
       if (this.$refs.resultMap) {
-        console.log('지도 초기화 시작');
-        
+        console.log("지도 초기화 시작");
+
         // 지도 렌더링 완료 후 플레이어 추측 표시
         setTimeout(() => {
           if (this.$refs.resultMap) {
@@ -194,19 +194,19 @@ export default {
         }, 500);
       }
     },
-    
+
     close() {
-      this.$emit('close');
+      this.$emit("close");
     },
-    
+
     nextRound() {
-      this.$emit('next-round');
+      this.$emit("next-round");
     },
-    
+
     finishGame() {
-      this.$emit('finish-game');
-    }
-  }
+      this.$emit("finish-game");
+    },
+  },
 };
 </script>
 
@@ -333,11 +333,9 @@ export default {
   object-fit: cover;
 }
 
-
-
 /* 푸터 */
 .results-footer {
-  padding: 1.5rem;
+  padding: 1rem;
   border-top: 1px solid #eee;
   display: flex;
   justify-content: center;
@@ -368,7 +366,7 @@ export default {
 }
 
 .finish-button {
-  background: linear-gradient(135deg, #FF9800, #F57C00);
+  background: linear-gradient(135deg, #ff9800, #f57c00);
   color: white;
   box-shadow: 0 4px 10px rgba(255, 152, 0, 0.3);
 }
@@ -380,13 +378,23 @@ export default {
 
 /* 애니메이션 */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { transform: translateY(50px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 /* 반응형 디자인 */
@@ -394,23 +402,23 @@ export default {
   .location-info {
     flex-direction: column;
   }
-  
+
   .location-map {
     width: 100%;
   }
-  
+
   .score-details {
     flex-direction: column;
     align-items: flex-end;
     gap: 0.4rem;
   }
-  
+
   .rank {
     width: 25px;
     height: 25px;
     font-size: 0.9rem;
   }
-  
+
   .avatar-image {
     width: 35px;
     height: 35px;
@@ -424,25 +432,28 @@ export default {
     max-height: 100%;
     border-radius: 0;
   }
-  
-  .results-header, .location-info, .score-board, .results-footer {
+
+  .results-header,
+  .location-info,
+  .score-board,
+  .results-footer {
     padding: 1rem;
   }
-  
+
   .round-title {
     font-size: 1.3rem;
   }
-  
+
   .player-score-row {
     padding: 0.6rem;
   }
-  
+
   .player-info {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.3rem;
   }
-  
+
   .player-avatar {
     margin-right: 0;
   }

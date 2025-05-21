@@ -37,6 +37,7 @@
         :current-user-id="gameStore.state.currentUser.id"
         :location-name="gameStore.state.locationInfo.name"
         :player-guesses="gameStore.state.playerGuesses"
+        :top-player="gameStore.state.topPlayer"
         @close="closeRoundResults"
         @next-round="startNextRound"
         @finish-game="finishGame"
@@ -86,7 +87,6 @@ export default {
       // 개인 게임 특화 데이터
       submittedPlayersCount: 0,
       allPlayersSubmitted: false,
-      
     };
   },
   
@@ -137,12 +137,27 @@ export default {
       // 현재 사용자의 추측 정보 저장
       this.gameStore.state.userGuess = { position: position };
 
-      this.gameStore.state.playerGuesses.push({
+      // 추측 정보 객체 생성
+      const guessInfo = {
         playerId: currentPlayer.id,
         playerName: currentPlayer.nickname,
         position: position,
         color: this.getRandomColor(currentPlayer.id),
-      });
+      };
+      
+      // playerGuesses 배열에 추가
+      this.gameStore.state.playerGuesses.push(guessInfo);
+
+      // 플레이어 객체에 제출 상태 업데이트
+      const playerIndex = this.gameStore.state.players.findIndex(p => p.id === currentPlayer.id);
+      if (playerIndex !== -1) {
+        // 플레이어 객체 업데이트
+        this.gameStore.state.players[playerIndex].hasSubmitted = true;
+        
+        // PlayerList 컴포넌트에서 사용하는 속성명으로 설정
+        this.gameStore.state.players[playerIndex].score = this.gameStore.state.players[playerIndex].totalScore || 0;
+        this.gameStore.state.players[playerIndex].lastRoundScore = this.gameStore.state.players[playerIndex].lastScore || 0;
+      }
 
       // 제출한 플레이어 수 증가
       this.submittedPlayersCount++;
@@ -154,6 +169,7 @@ export default {
       });
 
       this.gameStore.submitGuess();
+      console.log("플레이어 제출 상태 업데이트 완료:", this.gameStore.state.players);
 
       // 모든 플레이어가 제출했는지 확인
       this.checkAllPlayersSubmitted();
@@ -257,14 +273,27 @@ export default {
         // 플레이어 정보 업데이트
         const player = this.gameStore.state.players.find(p => p.id === guess.playerId);
         if (player) {
+          // 누적 점수 계산
           if (!player.totalScore) player.totalScore = 0;
           player.totalScore += score;
+          
+          // PlayerList 컴포넌트에서 사용하는 속성명으로 설정
+          player.score = player.totalScore;
           player.lastScore = score;
+          player.lastRoundScore = score;
+          player.distanceToTarget = parseFloat(distance.toFixed(2));
         }
       });
       
+      console.log('점수 계산 완료:', this.gameStore.state.players);
+      
       // 점수 기준으로 정렬
-      this.gameStore.state.players.sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
+      this.gameStore.state.players.sort((a, b) => (b.score || 0) - (a.score || 0));
+      this.gameStore.state.topPlayer = {
+        playerName: this.gameStore.state.players[0].nickname,
+        distance: this.gameStore.state.players[0].distanceToTarget
+      }
+      
     },
     
     // 거리 계산 함수 (Haversine 공식)

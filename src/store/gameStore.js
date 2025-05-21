@@ -13,6 +13,9 @@ const gameStore = {
     teamChatMessages: {},
     playersGuesses: [],
     
+    //순위
+    topPlayer: {},
+    
     // 게임 플레이 상태
     currentRound: 1,
     totalRounds: 5,
