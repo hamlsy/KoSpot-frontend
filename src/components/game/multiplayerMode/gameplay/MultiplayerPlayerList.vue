@@ -11,9 +11,12 @@
           'has-submitted': player.hasSubmitted
         }"
       >
+        <div class="rank-badge" :class="{'first-place': getPlayerRank(player) === 1}" v-if="showScores">
+          {{ getPlayerRank(player) }}
+        </div>
         <div class="player-info">
           <div class="player-avatar">
-            <img :src="player.profileImage || '/assets/default-avatar.png'" alt="프로필 이미지" />
+            <img :src="player.equippedMarker || '/assets/default-marker.png'" alt="플레이어 마커" />
             <div class="player-level">{{ player.level }}</div>
           </div>
           <div class="player-details">
@@ -38,38 +41,20 @@
         <div class="player-score" v-if="showScores">
           <template v-if="player.score !== undefined">
             <div class="score-container">
-              <div 
-                class="score-value" 
-                :class="{
-                  'high-score': player.score >= 4000,
-                  'medium-score': player.score >= 2000 && player.score < 4000,
-                  'low-score': player.score < 2000
-                }"
-              >
-                {{ formatNumber(player.score) }}
-              </div>
-              <div class="round-score" v-if="player.lastRoundScore">
-                <span class="plus-sign">+</span>{{ formatNumber(player.lastRoundScore) }}
+              <div class="score-wrapper">
+                <div class="score-value">
+                  {{ formatRoundScore(getPlayerRank(player)) }}
+                </div>
+                <div class="round-score" v-if="player.lastRoundScore">
+                  <span class="plus-sign">+</span>{{ player.lastRoundScore }}
+                </div>
               </div>
             </div>
             <div class="score-distance" v-if="player.distanceToTarget !== null">
-              <i class="fas fa-map-marker-alt"></i> {{ player.distanceToTarget }}km
+              <i class="fas fa-map-marker-alt"></i> {{ formatDistance(player.distanceToTarget) }}km
             </div>
           </template>
           <div class="no-score" v-else>-</div>
-        </div>
-        
-        <div class="player-rank" v-if="showScores && sortedPlayers.length > 1">
-          <div 
-            class="rank-badge"
-            :class="{
-              'first-place': getPlayerRank(player) === 1,
-              'second-place': getPlayerRank(player) === 2,
-              'third-place': getPlayerRank(player) === 3
-            }"
-          >
-            {{ getPlayerRank(player) }}
-          </div>
         </div>
       </div>
     </div>
@@ -131,6 +116,24 @@ export default {
       
       const index = this.sortedPlayers.findIndex(p => p.id === player.id);
       return index + 1;
+    },
+
+    formatRoundScore(rank) {
+      // 1등은 10점, 2등은 8점 등의 방식으로 점수 부여
+      const scoreMap = {
+        1: 10,
+        2: 8,
+        3: 6,
+        4: 4,
+        5: 2
+      };
+      
+      return scoreMap[rank] || 1; // 5등 이후는 1점
+    },
+    
+    formatDistance(distance) {
+      // 소수점 3자리에서 반올림
+      return Math.round(distance * 100) / 100;
     }
   }
 };
@@ -144,6 +147,7 @@ export default {
   display: flex;
   flex-direction: column;
   flex: 1;
+  max-width: 100%;
 }
 
 .list-title {
@@ -172,14 +176,16 @@ export default {
 }
 
 .player-card {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: auto minmax(120px, 1fr) auto;
   align-items: center;
   padding: 0.8rem;
   border-radius: 10px;
   background: #f9f9f9;
   transition: all 0.3s ease;
   border-left: 3px solid transparent;
+  gap: 0.5rem;
+  width: 100%;
 }
 
 .player-card:hover {
@@ -199,22 +205,27 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.8rem;
-  flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .player-avatar {
   position: relative;
+  min-width: 42px; /* 고정 너비 설정 */
   width: 42px;
   height: 42px;
   border-radius: 50%;
   overflow: hidden;
   background: #eee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .player-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
 }
 
 .player-level {
@@ -236,6 +247,8 @@ export default {
 .player-details {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .player-name {
@@ -245,11 +258,15 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.4rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .host-badge {
   color: #ffc107;
   font-size: 0.8rem;
+  flex-shrink: 0;
 }
 
 .player-status {
@@ -292,12 +309,22 @@ export default {
   flex-direction: column;
   align-items: flex-end;
   gap: 0.3rem;
+  min-width: 60px;
+  justify-self: end;
 }
 
 .score-container {
   display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+}
+
+.score-wrapper {
+  position: relative;
+  display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: flex-end;
 }
 
 .score-value {
@@ -306,30 +333,21 @@ export default {
 }
 
 .round-score {
-  font-size: 0.9rem;
+  font-size: 0.7rem;
   color: #4cd964;
   background: rgba(76, 217, 100, 0.1);
-  padding: 2px 6px;
-  border-radius: 10px;
+  padding: 1px 4px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
+  position: absolute;
+  top: -8px;
+  right: -10px;
 }
 
 .plus-sign {
-  font-size: 0.8rem;
-  margin-right: 2px;
-}
-
-.high-score {
-  color: #4cd964;
-}
-
-.medium-score {
-  color: #007aff;
-}
-
-.low-score {
-  color: #ff9500;
+  font-size: 0.6rem;
+  margin-right: 1px;
 }
 
 .score-distance {
@@ -350,43 +368,24 @@ export default {
   font-size: 1.1rem;
 }
 
-.player-rank {
-  display: flex;
-  justify-content: center;
-  width: 32px;
-}
-
 .rank-badge {
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 700;
   background: #e0e0e0;
   color: #555;
+  flex-shrink: 0;
+  margin-right: 6px;
 }
 
 .first-place {
   background: linear-gradient(135deg, #ffd700, #f9a825);
   color: white;
   box-shadow: 0 2px 5px rgba(249, 168, 37, 0.3);
-  transform: scale(1.2);
-}
-
-.second-place {
-  background: linear-gradient(135deg, #bdbdbd, #9e9e9e);
-  color: white;
-  box-shadow: 0 2px 5px rgba(158, 158, 158, 0.3);
-  transform: scale(1.1);
-}
-
-.third-place {
-  background: linear-gradient(135deg, #d68f56, #bf6c36);
-  color: white;
-  box-shadow: 0 2px 5px rgba(183, 110, 64, 0.3);
-  transform: scale(1.05);
 }
 </style> 

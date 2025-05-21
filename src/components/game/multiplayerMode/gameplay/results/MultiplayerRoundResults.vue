@@ -5,19 +5,6 @@
       <div class="results-header">
         <div class="header-left">
           <h2 class="round-title">라운드 {{ round }} 결과</h2>
-          <div class="round-info">
-            <span>{{ totalRounds - round }}라운드 남음</span>
-          </div>
-        </div>
-        
-        <div class="header-right">
-          <button 
-            class="close-button" 
-            @click="close"
-            v-if="!isLastRound"
-          >
-            <i class="fas fa-times"></i>
-          </button>
         </div>
       </div>
       

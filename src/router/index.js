@@ -23,7 +23,7 @@ const routes = [
   ...devRoutes
 ];
 
-const router = new VueRouter({
+const router = new VueRouter({ // eslint-disable-line no-unused-vars
   mode: 'history',
   base: process.env.BASE_URL,
   routes,

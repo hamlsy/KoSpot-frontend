@@ -11,6 +11,7 @@ const gameStore = {
     teams: [],
     chatMessages: [],
     teamChatMessages: {},
+    playersGuesses: [],
     
     // 게임 플레이 상태
     currentRound: 1,
@@ -61,10 +62,16 @@ const gameStore = {
     this.state.showGameResults = false;
     this.state.guessPosition = null;
     this.state.isLoading = false;
+    this.state.players = [];
+    this.state.playersGuesses = [];
+    this.state.teamPlayers = [];
+    
   },
   
   // 라운드 종료 처리
-  endRound() {
+  endGameRound() {
+    this.state.playersGuesses = [];
+    this.state.players = [];
     this.state.roundEnded = true;
     
     // 실제 로직에서는 서버에서 계산된 점수 받아옴

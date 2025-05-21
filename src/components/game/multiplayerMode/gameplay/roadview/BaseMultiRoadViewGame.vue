@@ -19,18 +19,13 @@
       <div class="header-center col-md-4">
         <div class="round-info">
           <span class="round-number">
-            라운드 {{ gameStore.state.currentRound }}/{{
-              gameStore.state.totalRounds
-            }}
+            라운드 {{ gameStore.state.currentRound }}/{{ gameStore.state.totalRounds }}
           </span>
           <div class="round-progress">
             <div
               class="progress-bar"
               :style="{
-                width: `${
-                  (gameStore.state.currentRound / gameStore.state.totalRounds) *
-                  100
-                }%`,
+                width: `${(gameStore.state.currentRound / gameStore.state.totalRounds) * 100}%`,
               }"
             ></div>
           </div>
@@ -46,37 +41,7 @@
         />
       </div>
     </div>
-
-    <!-- 모바일 플레이어 정보 -->
-    <div class="mobile-player-info">
-      <div class="mobile-player-list">
-        <div
-          v-for="player in gameStore.state.players"
-          :key="player.id"
-          class="mobile-player-item"
-          :class="{
-            'current-player': player.id === gameStore.state.currentUser.id,
-          }"
-        >
-          <div class="mobile-player-avatar">
-            <img
-              :src="player.avatar || '/img/default-avatar.png'"
-              alt="아바타"
-            />
-          </div>
-          <div class="mobile-player-name">{{ player.nickname }}</div>
-          <div
-            v-if="
-              gameStore.state.hasSubmittedGuess || gameStore.state.roundEnded
-            "
-            class="mobile-player-score"
-          >
-            {{ player.score }}
-          </div>
-        </div>
-      </div>
-    </div>
-
+    
     <!-- 게임 메인 영역 -->
     <div class="game-content">
       <!-- 왼쪽 패널: 플레이어 목록 -->
@@ -84,9 +49,7 @@
         <player-list
           :players="gameStore.state.players"
           :current-user-id="gameStore.state.currentUser.id"
-          :show-scores="
-            gameStore.state.hasSubmittedGuess || gameStore.state.roundEnded
-          "
+          :show-scores="gameStore.state.hasSubmittedGuess || gameStore.state.roundEnded"
           :round-ended="gameStore.state.roundEnded"
         />
       </div>
@@ -115,7 +78,7 @@
 
           <button class="map-toggle" @click="toggleMap" v-if="!gameStore.state.roundEnded">
             <i class="fas fa-map-marked-alt"></i>
-            지도 열기
+            지도
           </button>
         </div>
       </div>
@@ -124,6 +87,7 @@
       <div class="right-panel">
         <slot name="chat"></slot>
       </div>
+      
       <!-- 결과 모달 -->
       <slot name="results"></slot>
     </div>
@@ -132,20 +96,17 @@
     <PhoneFrame
       :style="{ zIndex: isMapOpen ? 15 : -1 }"
       :centerLocation="mapCenter"
-      :actualLocation="
-        gameStore.state.roundEnded
-          ? gameStore.state.actualLocation
-          : { lat: 0, lng: 0 }
-      "
+      :actualLocation="gameStore.state.actualLocation"
       :showHintCircles="false"
       :disabled="gameStore.state.roundEnded"
       :showDistance="false"
       :showActionButton="false"
       @close="toggleMap"
-      @spot-answer="submitGuessFromPhoneMap"
+      @spot-answer="handlePhoneMapGuess"
       @error="handleMapError"
       ref="phoneMapGame"
     />
+    
     <!-- 토스트 메시지 -->
     <div class="toast-message" :class="{ show: showToastFlag }">
       {{ toastMessage }}
@@ -180,35 +141,68 @@ export default {
       type: Boolean,
       default: false,
     },
+    // 게임 모드에 따라 필요한 추가 props
+    gameMode: {
+      type: String,
+      default: 'individual',
+      validator: (value) => ['individual', 'team'].includes(value)
+    },
+  },
+  
+  provide() {
+    return {
+      roomId: this.roomId,
+      isTeamMode: this.isTeamMode,
+      gameMode: this.gameMode,
+      gameStore: this.gameStore,
+      toggleMap: this.toggleMap,
+      handlePhoneMapGuess: this.handlePhoneMapGuess,
+      formatCoords: this.formatCoords,
+      calculateDistance: this.calculateDistance,
+      // 자식 컴포넌트에서 사용할 수 있는 메서드들
+      getRandomColor: this.getRandomColor,
+      endRound: this.endRound,
+      startNextRound: this.startNextRound,
+    };
+  },
+  
+  inject: {
+    $super: {
+      default: () => ({}),
+    }
   },
 
   data() {
     return {
       gameStore,
-      isLoading: false,
-      guessPosition: null,
-      isMapExpanded: false,
-      mapCenter: { lat: 36.5, lng: 127.5 },
-      roundTimer: null,
-      mapPreviewUrl: "",
       isMapOpen: false,
-      allPlayersSubmitted: false,
-      submittedPlayersCount: 0,
-      toastMessage: "",
-      showToastFlag: false,
-      toastTimer: null,
+      mapCenter: { lat: 37.5665, lng: 126.978 },
+      guessPosition: null,
+      roundTimer: null,
       isChatOpen: false,
+      isMobile: false,
+      isTablet: false,
+      showToastFlag: false,
+      toastMessage: "",
+      toastTimeout: null,
+      phoneMapPosition: null,
+      phoneMapError: null,
+      submittedPlayersCount: 0,
+      allPlayersSubmitted: false,
+      showResultMap: false,
       webSocket: null,
-      showResultMap: false, // 라운드 결과 지도 표시 여부
-      resultMapCenter: { lat: 36.5, lng: 127.5 }, // 결과 지도 중심 좌표
     };
   },
-
-  computed: {},
+  
+  computed: {
+    canSubmit() {
+      return !this.gameStore.state.hasSubmittedGuess && !this.gameStore.state.roundEnded;
+    }
+  },
 
   created() {
     // 테스트 데이터 로드 및 게임 초기화
-    gameStore.loadTestData(this.isTeamMode);
+    this.gameStore.loadTestData(this.isTeamMode);
     this.initGame();
     this.connectWebSocket();
   },
@@ -223,13 +217,12 @@ export default {
 
   beforeDestroy() {
     this.clearTimer();
-    if (this.toastTimer) {
-      clearTimeout(this.toastTimer);
+    if (this.toastTimeout) {
+      clearTimeout(this.toastTimeout);
     }
     window.removeEventListener("resize", this.checkResponsive);
     this.disconnectWebSocket();
   },
-
   methods: {
     checkResponsive() {
       const isMobile = window.innerWidth <= 992;
@@ -252,8 +245,9 @@ export default {
         rightPanel.style.display = this.isChatOpen ? "block" : "none";
       }
     },
+
     initGame() {
-      gameStore.initGame();
+      this.gameStore.initGame();
       this.fetchRoundData();
     },
 
@@ -268,10 +262,10 @@ export default {
           lng: location.lng,
         };
 
-        gameStore.state.currentLocation = locationCoords;
-        gameStore.state.actualLocation = locationCoords; // 정답 좌표 설정
+        this.gameStore.state.currentLocation = locationCoords;
+        this.gameStore.state.actualLocation = locationCoords; // 정답 좌표 설정
 
-        gameStore.state.locationInfo = {
+        this.gameStore.state.locationInfo = {
           name: location.name,
           description: location.description,
           image: location.image,
@@ -284,13 +278,12 @@ export default {
     },
 
     startRoundTimer() {
-      gameStore.state.remainingTime = 120; // 2분
-    //   gameStore.state.remainingTime = 3; // 2분
+      this.gameStore.state.remainingTime = 120; // 2분
 
       this.roundTimer = setInterval(() => {
-        gameStore.state.remainingTime--;
+        this.gameStore.state.remainingTime--;
 
-        if (gameStore.state.remainingTime <= 0) {
+        if (this.gameStore.state.remainingTime <= 0) {
           this.clearTimer();
           this.endRound();
         }
@@ -324,266 +317,74 @@ export default {
       const lng = position.lng.toFixed(4);
       return `${lat}, ${lng}`;
     },
-
-    submitGuess() {
-      if (!this.canSubmit) return;
-
-      gameStore.submitGuess();
-
-      // 현재 플레이어의 추측 저장
-      const currentPlayer = this.gameStore.state.currentUser;
-      
-      // gameStore에 직접 추가
-      if (!gameStore.state.playerGuesses) {
-        gameStore.state.playerGuesses = [];
-      }
-      
-      // 현재 사용자의 추측 정보 저장
-      gameStore.state.userGuess = { position: this.guessPosition };
-      
-      gameStore.state.playerGuesses.push({
-        playerId: currentPlayer.id,
-        playerName: currentPlayer.nickname,
-        position: this.guessPosition,
-        color: this.getRandomColor(currentPlayer.id),
-      });
-
-      // 제출한 플레이어 수 증가
-      this.submittedPlayersCount++;
-
-      // 웹소켓으로 서버에 제출 정보 전송
-      this.sendGuessToServer({
-        playerId: currentPlayer.id,
-        position: this.guessPosition,
-      });
-
-      // 모든 플레이어가 제출했는지 확인 (테스트용)
-      // 실제 구현에서는 서버에서 확인
-      if (this.submittedPlayersCount >= this.gameStore.state.players.length) {
-        this.allPlayersSubmitted = true;
-        this.endRound();
-      } else {
-        // 테스트용: 모든 플레이어가 제출하지 않았지만 시간이 다 되었을 때
-        // 실제 구현에서는 서버에서 처리
-        this.showToast(
-          `${this.submittedPlayersCount}/${this.gameStore.state.players.length} 플레이어가 제출했습니다.`
-        );
-      }
-    },
-
-    endRound() {
-      // 라운드 종료 처리
-      this.clearTimer();
-      gameStore.endRound();
-
-      // 플레이어 점수 계산 및 정렬
-      this.calculatePlayerScores();
-      
-      // 라운드 종료 상태로 설정 (결과 화면 표시를 위해)
-      gameStore.state.roundEnded = true;
-    },
-
-    calculatePlayerScores() {
-      // 각 플레이어의 점수 계산 (거리 기반)
-      gameStore.state.players.forEach((player) => {
-        // 플레이어의 추측 위치 찾기
-        const guess = gameStore.state.playerGuesses.find((g) => g.playerId === player.id);
-        if (guess) {
-          // 실제 위치와의 거리 계산 (km)
-          const distance = this.calculateDistance(
-            guess.position.lat,
-            guess.position.lng,
-            gameStore.state.actualLocation.lat,
-            gameStore.state.actualLocation.lng
-          );
-
-          // 거리에 따른 점수 계산 (최대 5000점, 거리가 멀수록 점수 감소)
-          const score = Math.max(0, Math.round(5000 - distance * 10));
-
-          // 마지막 라운드 점수 저장
-          player.lastRoundScore = score;
-          
-          // 플레이어 총점 업데이트
-          player.score = (player.score || 0) + score;
-          player.distanceToTarget = distance;
-        }
-      });
-
-      // 점수에 따라 플레이어 정렬
-      gameStore.state.players.sort((a, b) => b.score - a.score);
-    },
-
-    calculateDistance(lat1, lon1, lat2, lon2) {
-      // 두 지점 간의 거리 계산 (Haversine 공식)
-      const R = 6371; // 지구 반경 (km)
-      const dLat = this.deg2rad(lat2 - lat1);
-      const dLon = this.deg2rad(lon2 - lon1);
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(this.deg2rad(lat1)) *
-          Math.cos(this.deg2rad(lat2)) *
-          Math.sin(dLon / 2) *
-          Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      const distance = R * c; // 거리 (km)
-      return distance;
-    },
-
-    deg2rad(deg) {
-      return deg * (Math.PI / 180);
-    },
-
-    closeRoundResults() {
-      gameStore.state.showRoundResults = false;
-    },
-
-    startNextRound() {
-      // 라운드 결과 닫기
-      gameStore.state.showRoundResults = false;
-      gameStore.state.roundEnded = false;
-
-      // 다음 라운드를 위한 상태 초기화
-      this.allPlayersSubmitted = false;
-      this.submittedPlayersCount = 0;
-      gameStore.state.playerGuesses = [];
-      this.showResultMap = false;
-      
-      // 플레이어의 마지막 라운드 점수 초기화
-      gameStore.state.players.forEach(player => {
-        player.lastRoundScore = null;
-        player.hasSubmitted = false;
-      });
-
-      // 다음 라운드 시작
-      if (gameStore.state.currentRound < gameStore.state.totalRounds) {
-        gameStore.state.currentRound++;
-        gameStore.state.hasSubmittedGuess = false;
-        gameStore.state.guessPosition = null;
-        this.fetchRoundData();
-      } else {
-        // 모든 라운드 완료
-        gameStore.finishGame();
-      }
-    },
-
-    finishGame() {
-      gameStore.finishGame();
-    },
-
-    restartGame() {
-      gameStore.state.showGameResults = false;
-      this.initGame();
-    },
-
-    exitGame() {
-      if (
-        confirm(
-          "정말 게임을 나가시겠습니까? 진행 중인 게임은 저장되지 않습니다."
-        )
-      ) {
-        this.exitToLobby();
-      }
-    },
-
-    exitToLobby() {
-      this.clearTimer();
-      this.$router.push("/multiplayerLobby");
-    },
-
-    sendChatMessage(message) {
-      if (!message.trim()) return;
-      gameStore.addChatMessage(message);
-    },
-
-    getRandomColor(playerId) {
-      // 플레이어 ID에 기반한 고유한 색상 생성
-      const colors = [
-        "#FF5252",
-        "#FF4081",
-        "#E040FB",
-        "#7C4DFF",
-        "#536DFE",
-        "#448AFF",
-        "#40C4FF",
-        "#18FFFF",
-        "#64FFDA",
-        "#69F0AE",
-        "#B2FF59",
-        "#EEFF41",
-        "#FFFF00",
-        "#FFD740",
-        "#FFAB40",
-        "#FF6E40",
-      ];
-
-      // 간단한 해시 함수로 playerId를 숫자로 변환
-      const hash = playerId.split("").reduce((acc, char) => {
-        return acc + char.charCodeAt(0);
-      }, 0);
-
-      return colors[hash % colors.length];
-    },
-
-    // 토스트 메시지 관련 메서드
-    showToast(message, duration = 3000) {
-      this.toastMessage = message;
-      this.showToastFlag = true;
-
-      // 이전 타이머가 있으면 제거
-      if (this.toastTimer) {
-        clearTimeout(this.toastTimer);
-      }
-
-      // 지정된 시간 후 토스트 메시지 숨기기
-      this.toastTimer = setTimeout(() => {
-        this.showToastFlag = false;
-      }, duration);
-    },
-
-    handleMapError(error) {
-      console.error("지도 오류:", error);
-      this.showToast("지도를 불러오는 중 오류가 발생했습니다.");
-    },
-
-    addToastStyles() {
-      // 동적으로 스타일 추가
-      const style = document.createElement("style");
-      style.textContent = `
-          .toast-message {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 4px;
-            z-index: 9999;
-            font-size: 14px;
-            transition: opacity 0.3s, transform 0.3s;
-            opacity: 0;
-            pointer-events: none;
-          }
-          
-          .toast-message.show {
-            opacity: 1;
-            transform: translate(-50%, -10px);
-          }
-        `;
-      document.head.appendChild(style);
-    },
-
+    
     toggleMap() {
       // 라운드가 끝났을 때는 결과 지도 표시/숨김 토글
-      if (gameStore.state.roundEnded) {
+      if (this.gameStore.state.roundEnded) {
         this.showResultMap = !this.showResultMap;
       } else {
         this.isMapOpen = !this.isMapOpen;
       }
     },
+    
+    submitGuess() {
+      if (!this.canSubmit) return;
+      
+      // 제출 상태로 변경
+      this.gameStore.submitGuess();
+      
+      // 토스트 메시지 표시
+      this.showToast("위치가 제출되었습니다!");
+    },
 
-    submitGuessFromPhoneMap(position) {
-      if (gameStore.state.hasSubmittedGuess || gameStore.state.roundEnded)
+    endRound() {
+      // 라운드 종료 처리
+      this.clearTimer();
+      this.gameStore.endGameRound();
+
+      // 플레이어 점수 계산 및 정렬
+      this.calculatePlayerScores();
+      
+      // 라운드 종료 상태로 설정 (결과 화면 표시를 위해)
+      this.gameStore.state.roundEnded = true;
+      
+      console.log('라운드 종료:', this.gameMode);
+    },
+
+    startNextRound() {
+      // 라운드 결과 닫기
+      this.gameStore.state.showRoundResults = false;
+      this.gameStore.state.roundEnded = false;
+
+      // 다음 라운드를 위한 상태 초기화
+      this.allPlayersSubmitted = false;
+      this.submittedPlayersCount = 0;
+      this.gameStore.state.playerGuesses = [];
+      this.showResultMap = false;
+      
+      // 플레이어의 마지막 라운드 점수 초기화
+      this.gameStore.state.players.forEach(player => {
+        player.lastRoundScore = null;
+        player.hasSubmitted = false;
+      });
+
+      // 다음 라운드 시작
+      if (this.gameStore.state.currentRound < this.gameStore.state.totalRounds) {
+        this.gameStore.state.currentRound++;
+        this.gameStore.state.hasSubmittedGuess = false;
+        this.gameStore.state.guessPosition = null;
+        this.fetchRoundData();
+        
+        console.log('다음 라운드 시작:', this.gameMode);
+      } else {
+        // 모든 라운드 완료
+        this.gameStore.finishGame();
+      }
+    },
+
+    // ...
+    handlePhoneMapGuess(position) {
+      if (this.gameStore.state.hasSubmittedGuess || this.gameStore.state.roundEnded)
         return;
 
       // 선택한 위치 설정
@@ -591,46 +392,14 @@ export default {
 
       // 지도 닫기
       this.isMapOpen = false;
-
-      // 위치 제출 처리
-      if (this.isTeamMode) {
-        this.submitTeamGuess();
-      } else {
-        // 현재 플레이어의 추측 저장
-        const currentPlayer = this.gameStore.state.currentUser;
-        
-        // gameStore에 직접 추가
-        if (!gameStore.state.playerGuesses) {
-          gameStore.state.playerGuesses = [];
-        }
-        
-        // 현재 사용자의 추측 정보 저장
-        gameStore.state.userGuess = { position: this.guessPosition };
-        
-        gameStore.state.playerGuesses.push({
-          playerId: currentPlayer.id,
-          playerName: currentPlayer.nickname,
-          position: this.guessPosition,
-          color: this.getRandomColor(currentPlayer.id),
-        });
-
-        // 제출한 플레이어 수 증가
-        this.submittedPlayersCount++;
-
-        // 웹소켓으로 서버에 제출 정보 전송
-        this.sendGuessToServer({
-          playerId: currentPlayer.id,
-          position: this.guessPosition,
-        });
-
-        gameStore.submitGuess();
-
-        // 모든 플레이어가 제출했는지 확인
-        if (this.submittedPlayersCount >= this.gameStore.state.players.length) {
-          this.allPlayersSubmitted = true;
-          this.endRound();
-        }
-      }
+      
+      // 게임 모드별 추측 제출 처리
+      this.handleGuessSubmission(position);
+    },
+    
+    // 게임 모드별로 구현해야 하는 메서드 (추상)
+    handleGuessSubmission() {
+      
     },
 
     // WebSocket 관련 메서드
@@ -660,11 +429,6 @@ export default {
           console.log('WebSocket 연결 종료');
         };
         */
-
-      // 테스트용: 다른 플레이어 추측 시뮬레이션
-      setTimeout(() => {
-        this.simulateOtherPlayersGuesses();
-      }, 5000);
     },
 
     disconnectWebSocket() {
@@ -728,69 +492,136 @@ export default {
 
     sendGuessToServer(guessData) {
       // 실제 구현 시 WebSocket으로 전송
+      console.log("서버에 추측 정보 전송:", guessData);
+      
+      // 테스트용 더미 구현
       /*
-        if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
-          const message = {
-            type: 'PLAYER_GUESS',
-            payload: guessData
-          };
-          this.webSocket.send(JSON.stringify(message));
-        }
-        */
-
-      console.log("서버에 추측 정보 전송 (더미):", guessData);
-    },
-
-    // 테스트용: 다른 플레이어들의 추측 시뮬레이션
-    simulateOtherPlayersGuesses() {
-      if (gameStore.state.hasSubmittedGuess || gameStore.state.roundEnded)
-        return;
-
-      const otherPlayers = gameStore.state.players.filter(
-        (p) => p.id !== gameStore.state.currentUser.id
-      );
-
-      // gameStore에 직접 추가
-      if (!gameStore.state.playerGuesses) {
-        gameStore.state.playerGuesses = [];
+      if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
+        this.webSocket.send(JSON.stringify({
+          type: 'PLAYER_GUESS',
+          payload: guessData
+        }));
+      } else {
+        console.error('웹소켓 연결이 없습니다.');
       }
+      */
+    },
+    
+    calculatePlayerScores() {
+      // 각 플레이어의 점수 계산 (거리 기반)
+      this.gameStore.state.players.forEach((player) => {
+        // 플레이어의 추측 위치 찾기
+        const guess = this.gameStore.state.playerGuesses.find((g) => g.playerId === player.id);
+        if (guess) {
+          // 실제 위치와의 거리 계산 (km)
+          const distance = this.calculateDistance(
+            guess.position.lat,
+            guess.position.lng,
+            this.gameStore.state.actualLocation.lat,
+            this.gameStore.state.actualLocation.lng
+          );
 
-      // 각 플레이어마다 랜덤 위치 생성 및 제출
-      otherPlayers.forEach((player) => {
-        // 실제 위치 주변에 랜덤 위치 생성 (최대 50km 반경)
-        const actualLat = gameStore.state.actualLocation.lat;
-        const actualLng = gameStore.state.actualLocation.lng;
+          // 거리에 따른 점수 계산 (최대 5000점, 거리가 멀수록 점수 감소)
+          const score = Math.max(0, Math.round(5000 - distance * 10));
 
-        const latOffset = (Math.random() - 0.5) * 1;
-        const lngOffset = (Math.random() - 0.5) * 1;
-
-        const position = {
-          lat: actualLat + latOffset,
-          lng: actualLng + lngOffset,
-        };
-
-        // 플레이어 추측 정보 추가
-        gameStore.state.playerGuesses.push({
-          playerId: player.id,
-          playerName: player.nickname,
-          position: position,
-          color: this.getRandomColor(player.id),
-        });
-
-        this.submittedPlayersCount++;
+          // 마지막 라운드 점수 저장
+          player.lastRoundScore = score;
+          
+          // 플레이어 총점 업데이트
+          player.score = (player.score || 0) + score;
+          player.distanceToTarget = distance;
+        }
       });
 
-      // 모든 플레이어가 제출했는지 확인
-      if (this.submittedPlayersCount >= gameStore.state.players.length) {
-        this.allPlayersSubmitted = true;
-        this.endRound();
+      // 점수에 따라 플레이어 정렬
+      this.gameStore.state.players.sort((a, b) => b.score - a.score);
+    },
+
+    calculateDistance(lat1, lon1, lat2, lon2) {
+      // 두 지점 간의 거리 계산 (Haversine 공식)
+      const R = 6371; // 지구 반경 (km)
+      const dLat = this.deg2rad(lat2 - lat1);
+      const dLon = this.deg2rad(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(this.deg2rad(lat1)) *
+          Math.cos(this.deg2rad(lat2)) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c; // 거리 (km)
+      return distance;
+    },
+
+    deg2rad(deg) {
+      return deg * (Math.PI / 180);
+    },
+    
+    handleMapError(error) {
+      console.error("지도 오류:", error);
+      this.showToast("지도를 로드하는 중 오류가 발생했습니다.");
+    },
+
+    showToast(message) {
+      this.toastMessage = message;
+      this.showToastFlag = true;
+      
+      if (this.toastTimeout) {
+        clearTimeout(this.toastTimeout);
+      }
+      
+      this.toastTimeout = setTimeout(() => {
+        this.showToastFlag = false;
+      }, 3000);
+    },
+    
+    addToastStyles() {
+      // 동적으로 스타일 추가
+      const style = document.createElement("style");
+      style.textContent = `
+          .toast-message {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 4px;
+            z-index: 9999;
+            font-size: 14px;
+            transition: opacity 0.3s, transform 0.3s;
+            opacity: 0;
+            pointer-events: none;
+          }
+          
+          .toast-message.show {
+            opacity: 1;
+            transform: translate(-50%, -10px);
+          }
+        `;
+      document.head.appendChild(style);
+    },
+    
+    exitGame() {
+      if (
+        confirm(
+          "정말 게임을 나가시겠습니까? 진행 중인 게임은 저장되지 않습니다."
+        )
+      ) {
+        this.exitToLobby();
       }
     },
+
+    exitToLobby() {
+      this.clearTimer();
+      this.$router.push("/multiplayerLobby");
+    }
   },
 };
 </script>
-  
-  <style scoped>
+
+<style scoped>
 .multiplayer-roadview-game {
   display: flex;
   flex-direction: column;
@@ -1202,67 +1033,7 @@ export default {
     font-size: 0.85rem;
   }
 }
-/* 모바일 플레이어 정보 스타일 */
-.mobile-player-info {
-  display: none;
-  background-color: white;
-  padding: 0.5rem;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  z-index: 10;
-}
 
-.mobile-player-list {
-  display: flex;
-  overflow-x: auto;
-  gap: 0.5rem;
-  padding: 0.25rem;
-}
-
-.mobile-player-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 60px;
-  padding: 0.25rem;
-  border-radius: 8px;
-  background-color: #f8f9fa;
-}
-
-.mobile-player-item.current-player {
-  background-color: #e6f7ff;
-  box-shadow: 0 0 0 2px #1890ff;
-}
-
-.mobile-player-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  overflow: hidden;
-  margin-bottom: 0.25rem;
-}
-
-.mobile-player-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.mobile-player-name {
-  font-size: 0.7rem;
-  font-weight: 500;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 60px;
-}
-
-.mobile-player-score {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: #4f46e5;
-}
 
 /* 채팅 토글 버튼 */
 .chat-toggle {

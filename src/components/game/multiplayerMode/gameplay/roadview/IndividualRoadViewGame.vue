@@ -1,8 +1,5 @@
 <template>
-  <base-multi-road-view-game
-    :room-id="roomId"
-    @guess-submitted="onGuessSubmitted"
-  >
+  <base-multi-road-view-game :room-id="roomId">
     <!-- 개인전 채팅창 -->
     <template #chat>
       <chat-window
@@ -10,6 +7,7 @@
         @send-message="sendChatMessage"
       />
     </template>
+    
     <!-- 메인 게임 영역 -->
     <template #main>
       <!-- 라운드 진행 중일 때는 로드뷰 표시 -->
@@ -57,119 +55,166 @@ import ChatWindow from '@/components/game/multiplayerMode/gameplay/chat/Individu
 import RoundResults from '@/components/game/multiplayerMode/gameplay/results/MultiplayerRoundResults.vue';
 import GameResults from '@/components/game/multiplayerMode/gameplay/results/MultiplayerGameResults.vue';
 import RoadView from '@/components/game/common/roadview/RoadView.vue';
-import gameStore from '@/store/gameStore';
+
 
 export default {
   name: 'IndividualRoadViewGame',
   
+  // BaseMultiRoadViewGame 확장
+  extends: BaseMultiRoadViewGame,
+  
   components: {
-    BaseMultiRoadViewGame,
     ChatWindow,
     RoundResults,
     GameResults,
-    RoadView
-  },
-  
-  props: {
-    roomId: {
-      type: String,
-      required: true
-    }
+    RoadView,
+    BaseMultiRoadViewGame
   },
   
   data() {
     return {
-      gameStore
+      // 개인 게임 특화 데이터
+      submittedPlayersCount: 0,
+      allPlayersSubmitted: false
     };
   },
   
   created() {
+    // 게임 모드 설정
+    this.gameMode = 'individual';
+    console.log("players: ", this.gameStore.state.players);
     // 게임 스토어의 상태 변화 감시
-    this.$watch(
-      () => gameStore.state.actualLocation,
-      (newVal) => {
-        if (newVal && Object.keys(newVal).length > 0) {
-          console.log('실제 위치가 설정되었습니다:', newVal);
-          // 실제 위치가 설정된 후에 다른 플레이어들의 추측 시ミュ레이션
+    // this.$watch(
+    //   () => this.gameStore.state.actualLocation,
+    //   (newVal) => {
+    //     if (newVal && Object.keys(newVal).length > 0) {
+    //       console.log('실제 위치가 설정되었습니다:', newVal);
+    //       // 실제 위치가 설정된 후에 다른 플레이어들의 추측 시ミュ레이션
+    //       this.simulateOtherPlayersGuesses();
+    //     }
+    //   },
+    //   { deep: true }
+    // );
           this.simulateOtherPlayersGuesses();
-        }
-      },
-      { immediate: true, deep: true }
-    );
   },
   
   methods: {
+    // BaseMultiRoadViewGame의 추상 메서드 구현
+    handleGuessSubmission(position) {
+      console.log('개인 게임에서 위치 제출:', position);
+      
+      // 현재 플레이어의 추측 저장
+      const currentPlayer = this.gameStore.state.currentUser;
+      
+      // gameStore에 직접 추가
+      if (!this.gameStore.state.playerGuesses) {
+        this.gameStore.state.playerGuesses = [];
+      }
+      
+      // 현재 사용자의 추측 정보 저장
+      this.gameStore.state.userGuess = { position: position };
+      
+      this.gameStore.state.playerGuesses.push({
+        playerId: currentPlayer.id,
+        playerName: currentPlayer.nickname,
+        position: position,
+        color: this.getRandomColor(currentPlayer.id),
+      });
+
+      // 제출한 플레이어 수 증가
+      this.submittedPlayersCount++;
+
+      // 웹소켓으로 서버에 제출 정보 전송
+      this.sendGuessToServer({
+        playerId: currentPlayer.id,
+        position: position,
+      });
+
+      this.gameStore.submitGuess();
+
+      // 모든 플레이어가 제출했는지 확인
+      this.checkAllPlayersSubmitted();
+    },
+    
     sendChatMessage(message) {
       if (!message.trim()) return;
-      gameStore.addChatMessage(message);
+      this.gameStore.addChatMessage(message);
     },
     
     onViewLoaded() {
       console.log('로드뷰 로딩 완료');
     },
-    
-    onGuessSubmitted(position) {
-      // 위치 정보 유효성 검사
-      if (!position || position.lat === undefined || position.lng === undefined) {
-        console.error('유효하지 않은 위치 정보:', position);
-        return;
-      }
-      console.log(position);
-      // 현재 사용자의 추측 저장은 부모 컴포넌트에서 처리됨
-      // gameStore에 저장된 userGuess 정보 활용
-      gameStore.state.userGuess = { position: position };
-    },
-    
+
     closeRoundResults() {
-      gameStore.state.roundEnded = false;
+      this.gameStore.state.roundEnded = false;
     },
     
     startNextRound() {
-      // 부모 컴포넌트의 메서드 호출
-      this.$parent.startNextRound();
-      // 다음 라운드에서 다른 플레이어들의 추측 시뮬레이션
+      // 부모 메서드 호출
+      // 상속한 BaseMultiRoadViewGame의 startNextRound 사용
+      this.$super.startNextRound();
+      
+      // 다음 라운드에서 다른 플레이어들의 추측 시뮬뮬레이션
       this.simulateOtherPlayersGuesses();
     },
     
     finishGame() {
-      gameStore.finishGame();
+      this.gameStore.finishGame();
     },
     
     restartGame() {
-      gameStore.state.showGameResults = false;
-      this.$parent.initGame();
+      this.gameStore.state.showGameResults = false;
+      this.initGame();
       this.simulateOtherPlayersGuesses();
     },
     
     exitToLobby() {
-      this.$parent.exitToLobby();
+      this.exitToLobby();
     },
     
-    // 더미 데이터로 다른 플레이어들의 정답 제출 시뮤레이션
+    // 모든 플레이어가 제출했는지 확인
+    checkAllPlayersSubmitted() {
+      if (this.submittedPlayersCount >= this.gameStore.state.players.length && !this.allPlayersSubmitted) {
+        console.log('모든 플레이어가 제출 완료!');
+        this.allPlayersSubmitted = true;
+        this.endRound();
+      }
+    },
+    
+    // 더미 데이터로 다른 플레이어들의 정답 제출 시뮬레이션
     simulateOtherPlayersGuesses() {
-      console.log('다른 플레이어 추측 시뮤레이션 시작');
+      console.log('다른 플레이어 추측 시뮬레이션 시작');
       
-      // 실제 위치가 없으면 시뮤레이션 중단
-      if (!gameStore.state.actualLocation || !gameStore.state.actualLocation.lat) {
+      // 라운드가 이미 끝났거나 제출이 완료된 경우 중단
+      if (this.gameStore.state.hasSubmittedGuess || this.gameStore.state.roundEnded) {
+        return;
+      }
+      
+      // 제출 카운트 초기화
+      this.submittedPlayersCount = 0;
+      
+      // 실제 위치가 없으면 시뮬레이션 중단
+      if (!this.gameStore.state.actualLocation || !this.gameStore.state.actualLocation.lat) {
         console.error('실제 위치가 없어 시뮤레이션을 실행할 수 없습니다.');
         return;
       }
       
       // 현재 플레이어를 제외한 다른 플레이어들
-      const otherPlayers = gameStore.state.players.filter(
-        player => player.id !== gameStore.state.currentUser.id
+      const otherPlayers = this.gameStore.state.players.filter(
+        player => player.id !== this.gameStore.state.currentUser.id
       );
       
       console.log('다른 플레이어 수:', otherPlayers.length);
       
       // 자기 자신의 추측도 추가 (현재 사용자의 추측)
-      if (gameStore.state.userGuess && gameStore.state.userGuess.position) {
-        console.log('현재 사용자의 추측 추가:', gameStore.state.userGuess.position);
+      if (this.gameStore.state.userGuess && this.gameStore.state.userGuess.position) {
+        console.log('현재 사용자의 추측 추가:', this.gameStore.state.userGuess.position);
         this.addPlayerGuessToStore(
-          gameStore.state.currentUser.id, 
-          gameStore.state.userGuess.position, 
+          this.gameStore.state.currentUser.id, 
+          this.gameStore.state.userGuess.position, 
           '#FF5252'
         );
+        this.submittedPlayersCount++;
       }
       
       // 각 플레이어마다 랜덤한 위치 생성
@@ -178,8 +223,8 @@ export default {
         setTimeout(() => {
           const randomOffset = () => (Math.random() - 0.5) * 0.4; // 약 ±20km 범위
           const randomPosition = {
-            lat: gameStore.state.actualLocation.lat + randomOffset(),
-            lng: gameStore.state.actualLocation.lng + randomOffset()
+            lat: this.gameStore.state.actualLocation.lat + randomOffset(),
+            lng: this.gameStore.state.actualLocation.lng + randomOffset()
           };
           
           console.log(`플레이어 ${player.nickname || index} 추측 생성:`, randomPosition);
@@ -198,28 +243,33 @@ export default {
           // 플레이어 제출 상태 업데이트
           player.hasSubmitted = true;
           
-          console.log('현재 추측 수:', gameStore.state.playerGuesses.length);
+          // 제출 카운트 증가 및 확인
+          this.submittedPlayersCount++;
+          console.log('현재 추측 수:', this.gameStore.state.playerGuesses.length, '제출 카운트:', this.submittedPlayersCount);
+          
+          // 모든 플레이어가 제출했는지 확인
+          this.checkAllPlayersSubmitted();
         }, 500 + Math.random() * 2000); // 시간 단축: 0.5~2.5초 사이에 랜덤하게 제출
       });
     },
     
     // 플레이어 추측을 스토어에 추가하는 헬퍼 메서드
     addPlayerGuessToStore(playerId, position, color) {
-      const player = gameStore.state.players.find(p => p.id === playerId);
+      const player = this.gameStore.state.players.find(p => p.id === playerId);
       if (!player) return;
       
       // 스토어에 직접 추가
-      if (!gameStore.state.playerGuesses) {
-        gameStore.state.playerGuesses = [];
+      if (!this.gameStore.state.playerGuesses) {
+        this.gameStore.state.playerGuesses = [];
       }
       
-      gameStore.state.playerGuesses.push({
+      this.gameStore.state.playerGuesses.push({
         playerId: playerId,
         playerName: player.nickname,
         position: position,
         color: color
       });
-      console.log("player Guesses in store!", gameStore.state.playerGuesses);
+      console.log("player Guesses in store!", this.gameStore.state.playerGuesses);
     }
   }
 };
