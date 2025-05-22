@@ -276,15 +276,15 @@ export default {
       } else {
         // 새 마커 생성 - 정답 마커는 다른 이미지 사용
         const markerImage = new kakao.maps.MarkerImage(
-          'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png', // 더 드러나는 빨간색 마커
-          new kakao.maps.Size(35, 35) // 더 크게 설정
+          'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png',
+          new kakao.maps.Size(35, 35) 
         );
         
         this.actualMarker = new kakao.maps.Marker({
           position: markerPosition,
           map: this.map,
           image: markerImage,
-          zIndex: 10 // 다른 마커보다 위에 표시
+          zIndex: 10
         });
       }
       

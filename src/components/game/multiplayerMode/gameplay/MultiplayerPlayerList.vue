@@ -1,46 +1,74 @@
 <template>
   <div class="player-list">
-    <h3 class="list-title">플레이어 <span class="player-count">{{ players.length }}명</span></h3>
+    <h3 class="list-title">
+      플레이어 <span class="player-count">{{ players.length }}명</span>
+    </h3>
     <div class="players-container">
-      <div 
-        v-for="player in sortedPlayers" 
+      <div
+        v-for="player in sortedPlayers"
         :key="player.id"
-        class="player-card" 
-        :class="{ 
+        class="player-card"
+        :class="{
           'current-user': player.id === currentUserId,
-          'has-submitted': player.hasSubmitted
+          'has-submitted': player.hasSubmitted,
         }"
       >
-        <div class="rank-badge" :class="{'first-place': getPlayerRank(player) === 1}" v-if="showScores">
+        <!-- 순위 -->
+        <div
+          class="rank-badge"
+          :class="{ 'first-place': getPlayerRank(player) === 1 }"
+          v-if="showScores"
+        >
           {{ getPlayerRank(player) }}
         </div>
+        
+        <!-- 프로필 사진 -->
+        <div class="player-avatar">
+          <img
+            :src="player.equippedMarker || '/assets/default-marker.png'"
+            alt="플레이어 마커"
+          />
+        </div>
+        
+        <!-- 닉네임, 점수, 거리 정보 -->
         <div class="player-info">
-          <div class="player-avatar">
-            <img :src="player.equippedMarker || '/assets/default-marker.png'" alt="플레이어 마커" />
-            <div class="player-level">{{ player.level }}</div>
-          </div>
-          <div class="player-details">
+          <!-- 1행: 닉네임 -->
+          <div class="player-name-row">
             <div class="player-name">
               {{ player.nickname }}
-              <i class="fas fa-crown host-badge" v-if="player.isHost" title="방장"></i>
+              <i
+                class="fas fa-crown host-badge"
+                v-if="player.isHost"
+                title="방장"
+              ></i>
             </div>
             <div class="player-status" v-if="!showScores">
               <template v-if="player.hasSubmitted">
-                <i class="fas fa-check-circle"></i> 제출 완료
+                <div class="check-badge">
+                  <i class="fas fa-check"></i>
+                </div>
               </template>
               <template v-else>
-                <i class="fas fa-hourglass-half"></i> 선택 중...
+                <div class="waiting-badge">
+                  <i class="fas fa-hourglass-half"></i>
+                </div>
               </template>
             </div>
             <div class="player-streak" v-if="player.streak > 0">
               <i class="fas fa-fire"></i> {{ player.streak }}
             </div>
           </div>
-        </div>
-        
-        <div class="player-score" v-if="showScores">
-          <template v-if="player.score !== undefined">
-            <div class="score-container">
+          
+          <!-- 2행: 정답과의 거리, 현재점수, 추가점수 -->
+          <div class="player-score-row" v-if="showScores">
+            <template v-if="player.score !== undefined">
+              <!-- 정답과의 거리 -->
+              <div class="score-distance" v-if="player.distanceToTarget !== null">
+                <i class="fas fa-map-marker-alt"></i>
+                {{ formatDistance(player.distanceToTarget) }}km
+              </div>
+              
+              <!-- 현재 점수와 추가 점수 -->
               <div class="score-wrapper">
                 <div class="score-value">
                   {{ formatRoundScore(getPlayerRank(player)) }}
@@ -49,12 +77,9 @@
                   <span class="plus-sign">+</span>{{ player.lastRoundScore }}
                 </div>
               </div>
-            </div>
-            <div class="score-distance" v-if="player.distanceToTarget !== null">
-              <i class="fas fa-map-marker-alt"></i> {{ formatDistance(player.distanceToTarget) }}km
-            </div>
-          </template>
-          <div class="no-score" v-else>-</div>
+            </template>
+            <div class="no-score" v-else>-</div>
+          </div>
         </div>
       </div>
     </div>
@@ -63,27 +88,27 @@
 
 <script>
 export default {
-  name: 'PlayerList',
-  
+  name: "PlayerList",
+
   props: {
     players: {
       type: Array,
-      required: true
+      required: true,
     },
     currentUserId: {
       type: String,
-      required: true
+      required: true,
     },
     showScores: {
       type: Boolean,
-      default: false
+      default: false,
     },
     roundEnded: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
-  
+
   computed: {
     sortedPlayers() {
       if (this.showScores) {
@@ -102,19 +127,19 @@ export default {
           return 0;
         });
       }
-    }
+    },
   },
-  
+
   methods: {
     formatNumber(number) {
-      if (!number && number !== 0) return '0';
+      if (!number && number !== 0) return "0";
       return number.toLocaleString();
     },
-    
+
     getPlayerRank(player) {
-      if (!this.showScores || player.score === undefined) return '-';
-      
-      const index = this.sortedPlayers.findIndex(p => p.id === player.id);
+      if (!this.showScores || player.score === undefined) return "-";
+
+      const index = this.sortedPlayers.findIndex((p) => p.id === player.id);
       return index + 1;
     },
 
@@ -125,17 +150,17 @@ export default {
         2: 8,
         3: 6,
         4: 4,
-        5: 2
+        5: 2,
       };
-      
+
       return scoreMap[rank] || 1; // 5등 이후는 1점
     },
-    
+
     formatDistance(distance) {
       // 소수점 3자리에서 반올림
       return Math.round(distance * 100) / 100;
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -170,22 +195,28 @@ export default {
 .players-container {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  max-width: 100%;
+  padding-right: 0.2rem; /* 스크롤바 공간 확보 */
 }
 
 .player-card {
   display: grid;
-  grid-template-columns: auto minmax(120px, 1fr) auto;
+  grid-template-columns: auto auto 1fr;
   align-items: center;
   padding: 0.8rem;
   border-radius: 10px;
   background: #f9f9f9;
   transition: all 0.3s ease;
   border-left: 3px solid transparent;
-  gap: 0.5rem;
+  gap: 0.8rem;
   width: 100%;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  margin-bottom: 0.5rem;
 }
 
 .player-card:hover {
@@ -198,24 +229,43 @@ export default {
 }
 
 .player-card.has-submitted {
-  background: #f5f9ff;
+  background: #f4f9f4;
+  border-left-color: #4cd964;
+  box-shadow: 0 2px 8px rgba(76, 217, 100, 0.2);
 }
 
 .player-info {
   display: flex;
-  align-items: center;
-  gap: 0.8rem;
+  flex-direction: column;
+  gap: 0.4rem;
   min-width: 0;
-  overflow: hidden;
+  flex: 1;
+}
+
+.player-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.player-score-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: rgba(245, 245, 245, 0.5);
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
 }
 
 .player-avatar {
   position: relative;
-  min-width: 42px; /* 고정 너비 설정 */
+  min-width: 42px;
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  overflow: hidden;
   background: #eee;
   display: flex;
   align-items: center;
@@ -228,28 +278,7 @@ export default {
   object-fit: contain;
 }
 
-.player-level {
-  position: absolute;
-  bottom: -2px;
-  right: -2px;
-  background: #4cd964;
-  color: white;
-  border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  font-size: 0.7rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid white;
-}
 
-.player-details {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  overflow: hidden;
-}
 
 .player-name {
   font-weight: 600;
@@ -258,9 +287,9 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
 }
 
 .host-badge {
@@ -278,16 +307,44 @@ export default {
   margin-top: 0.2rem;
 }
 
-.player-status i {
-  font-size: 0.9rem;
+.check-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #4cd964;
+  color: white;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(76, 217, 100, 0.3);
+  animation: pulse 1.5s infinite;
 }
 
-.player-status i.fa-check-circle {
-  color: #4cd964;
+.waiting-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ff9800;
+  color: white;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(255, 152, 0, 0.3);
 }
 
-.player-status i.fa-hourglass-half {
-  color: #ff9800;
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 2px 5px rgba(76, 217, 100, 0.3);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(76, 217, 100, 0.4);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 2px 5px rgba(76, 217, 100, 0.3);
+  }
 }
 
 .player-streak {
@@ -300,25 +357,8 @@ export default {
   font-weight: 600;
 }
 
-.player-streak i {
-  font-size: 0.9rem;
-}
+/* 2번째 열: 점수와 거리 정보 */
 
-.player-score {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.3rem;
-  min-width: 60px;
-  justify-self: end;
-}
-
-.score-container {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.2rem;
-}
 
 .score-wrapper {
   position: relative;
@@ -329,33 +369,36 @@ export default {
 
 .score-value {
   font-weight: 600;
-  font-size: 1.1rem;
+  font-size: 1rem;
+  color: #333;
+  white-space: nowrap;
 }
 
 .round-score {
-  font-size: 0.7rem;
-  color: #4cd964;
+  font-size: 0.85rem;
+  color: #359245;
   background: rgba(76, 217, 100, 0.1);
   padding: 1px 4px;
   border-radius: 8px;
   display: flex;
   align-items: center;
   position: absolute;
-  top: -8px;
-  right: -10px;
+  top: -12px;
+  right: -20px;
 }
 
 .plus-sign {
-  font-size: 0.6rem;
+  font-size: 0.8rem;
   margin-right: 1px;
 }
 
 .score-distance {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: #8e8e93;
   display: flex;
   align-items: center;
   gap: 4px;
+  white-space: nowrap;
 }
 
 .score-distance i {
@@ -365,27 +408,22 @@ export default {
 
 .no-score {
   color: #999;
-  font-size: 1.1rem;
+  font-size: 0.9rem;
+  text-align: right;
 }
 
 .rank-badge {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
-  font-weight: 700;
-  background: #e0e0e0;
-  color: #555;
+  font-size: 1.3rem;
+  font-weight: 600;
   flex-shrink: 0;
-  margin-right: 6px;
+  margin-right: 2px;
+  color: darkslategray;
 }
 
 .first-place {
-  background: linear-gradient(135deg, #ffd700, #f9a825);
-  color: white;
-  box-shadow: 0 2px 5px rgba(249, 168, 37, 0.3);
+  color: gold;
 }
-</style> 
+</style>

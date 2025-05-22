@@ -19,13 +19,18 @@
       <div class="header-center col-md-4">
         <div class="round-info">
           <span class="round-number">
-            라운드 {{ gameStore.state.currentRound }}/{{ gameStore.state.totalRounds }}
+            라운드 {{ gameStore.state.currentRound }}/{{
+              gameStore.state.totalRounds
+            }}
           </span>
           <div class="round-progress">
             <div
               class="progress-bar"
               :style="{
-                width: `${(gameStore.state.currentRound / gameStore.state.totalRounds) * 100}%`,
+                width: `${
+                  (gameStore.state.currentRound / gameStore.state.totalRounds) *
+                  100
+                }%`,
               }"
             ></div>
           </div>
@@ -41,17 +46,12 @@
         />
       </div>
     </div>
-    
+
     <!-- 게임 메인 영역 -->
     <div class="game-content">
-      <!-- 왼쪽 패널: 플레이어 목록 -->
+      <!-- 왼쪽 패널: 플레이어 목록 (슬롯으로 변경) -->
       <div class="left-panel">
-        <player-list
-          :players="gameStore.state.players"
-          :current-user-id="gameStore.state.currentUser.id"
-          :show-scores="gameStore.state.hasSubmittedGuess || gameStore.state.roundEnded"
-          :round-ended="gameStore.state.roundEnded"
-        />
+        <slot name="player-list"> </slot>
       </div>
 
       <!-- 중앙 패널: 게임 화면 -->
@@ -61,17 +61,27 @@
           <slot name="main">
             <!-- 기본 로드뷰 컴포넌트 (슬롯이 제공되지 않을 경우) -->
             <road-view
-              v-if="!gameStore.state.roundEnded && gameStore.state.currentLocation"
-              :position="gameStore.state.currentLocation || { lat: 37.5665, lng: 126.9780 }"
+              v-if="
+                !gameStore.state.roundEnded && gameStore.state.currentLocation
+              "
+              :position="
+                gameStore.state.currentLocation || {
+                  lat: 37.5665,
+                  lng: 126.978,
+                }
+              "
               :show-controls="true"
               :prevent-mouse-events="gameStore.state.hasSubmittedGuess"
               @load-complete="onViewLoaded"
             />
-            <div v-else-if="!gameStore.state.roundEnded" class="loading-container">
+            <div
+              v-else-if="!gameStore.state.roundEnded"
+              class="loading-container"
+            >
               <p>로드뷰를 불러오는 중입니다...</p>
             </div>
           </slot>
-          
+
           <!-- 지도 버튼 -->
           <!-- 채팅 토글 버튼 (모바일) -->
           <button class="chat-toggle" @click="toggleChat">
@@ -79,7 +89,11 @@
             {{ isChatOpen ? "채팅 닫기" : "채팅 열기" }}
           </button>
 
-          <button class="map-toggle" @click="toggleMap" v-if="!gameStore.state.roundEnded">
+          <button
+            class="map-toggle"
+            @click="toggleMap"
+            v-if="!gameStore.state.roundEnded"
+          >
             <i class="fas fa-map-marked-alt"></i>
             지도
           </button>
@@ -90,7 +104,7 @@
       <div class="right-panel">
         <slot name="chat"></slot>
       </div>
-      
+
       <!-- 결과 모달 -->
       <slot name="results"></slot>
     </div>
@@ -98,15 +112,17 @@
     <!-- 휴대폰 프레임 -->
     <PhoneFrame
       :style="{ zIndex: isMapOpen ? 15 : -1 }"
-      :centerLocation="mapCenter || { lat: 37.5665, lng: 126.9780 }"
-      :actualLocation="gameStore.state.actualLocation || { lat: 37.5665, lng: 126.9780 }"
+      :centerLocation="mapCenter || { lat: 37.5665, lng: 126.978 }"
+      :actualLocation="
+        gameStore.state.actualLocation || { lat: 37.5665, lng: 126.978 }
+      "
       :showHintCircles="false"
       :disabled="gameStore.state.roundEnded"
       :showDistance="false"
       :showMarker="true"
       @spot-answer="handlePhoneMapGuess"
     />
-    
+
     <!-- 토스트 메시지 -->
     <div class="toast-message" :class="{ show: showToastFlag }">
       {{ toastMessage }}
@@ -116,18 +132,15 @@
 
 <script>
 import GameTimer from "@/components/game/common/shared/GameTimer.vue";
-import PlayerList from "@/components/game/multiplayerMode/gameplay/MultiplayerPlayerList.vue";
 import RoadView from "@/components/game/common/roadview/RoadView.vue";
 import PhoneFrame from "@/components/game/common/PhoneFrame.vue";
 import gameStore from "@/store/gameStore";
-import { getRandomLocation } from "@/components/game/multiplayerMode/MultiplayerGameTestData";
 
 export default {
   name: "BaseMultiRoadViewGame",
 
   components: {
     GameTimer,
-    PlayerList,
     RoadView,
     PhoneFrame,
   },
@@ -140,11 +153,11 @@ export default {
     // 게임 모드에 따라 필요한 추가 props
     gameMode: {
       type: String,
-      default: 'individual',
-      validator: (value) => ['individual', 'team'].includes(value)
+      default: "individual",
+      validator: (value) => ["individual", "team"].includes(value),
     },
   },
-  
+
   provide() {
     return {
       roomId: this.roomId,
@@ -157,15 +170,13 @@ export default {
       calculateDistance: this.calculateDistance,
       // 자식 컴포넌트에서 사용할 수 있는 메서드들
       getRandomColor: this.getRandomColor,
-      endRound: this.endRound,
-      startNextRound: this.startNextRound,
     };
   },
-  
+
   inject: {
     $super: {
       default: () => ({}),
-    }
+    },
   },
 
   data() {
@@ -189,21 +200,18 @@ export default {
       webSocket: null,
     };
   },
-  
+
   computed: {
     canSubmit() {
-      return !this.gameStore.state.hasSubmittedGuess && !this.gameStore.state.roundEnded;
-    }
+      return (
+        !this.gameStore.state.hasSubmittedGuess &&
+        !this.gameStore.state.roundEnded
+      );
+    },
   },
 
   created() {
-    console.log(`BaseMultiRoadViewGame created - gameMode: ${this.gameMode}, isTeamMode: ${this.isTeamMode}`);
-    // 테스트 데이터 로드 및 게임 초기화
-    this.gameStore.loadTestData(this.isTeamMode);
-    this.initGame();
     this.connectWebSocket();
-    // 이벤트 발생
-    this.$emit('component-created');
   },
 
   mounted() {
@@ -215,7 +223,6 @@ export default {
   },
 
   beforeDestroy() {
-    this.clearTimer();
     if (this.toastTimeout) {
       clearTimeout(this.toastTimeout);
     }
@@ -245,62 +252,9 @@ export default {
       }
     },
 
-    initGame() {
-      this.gameStore.initGame();
-      this.fetchRoundData();
-    },
-
-    fetchRoundData() {
-      // 테스트 데이터에서 위치 가져오기
-      setTimeout(() => {
-        const location = getRandomLocation();
-
-        // 현재 위치와 실제 위치(정답 좌표) 모두 설정
-        const locationCoords = {
-          lat: location.lat,
-          lng: location.lng,
-        };
-
-        this.gameStore.state.currentLocation = locationCoords;
-        this.gameStore.state.actualLocation = locationCoords; // 정답 좌표 설정
-
-        this.gameStore.state.locationInfo = {
-          name: location.name,
-          description: location.description,
-          image: location.image,
-          fact: location.fact,
-        };
-
-        // 타이머 시작
-        this.startRoundTimer();
-      }, 1500);
-    },
-
-    startRoundTimer() {
-      this.gameStore.state.remainingTime = 120; // 2분
-
-      this.roundTimer = setInterval(() => {
-        this.gameStore.state.remainingTime--;
-
-        if (this.gameStore.state.remainingTime <= 0) {
-          this.clearTimer();
-          this.endRound();
-        }
-      }, 1000);
-    },
-
-    clearTimer() {
-      if (this.roundTimer) {
-        clearInterval(this.roundTimer);
-        this.roundTimer = null;
-      }
-    },
-
     onViewLoaded() {
       // 로드뷰 로딩 완료 처리
       console.log("로드뷰 로딩 완료");
-      // 이벤트 발생
-      this.$emit('view-loaded');
     },
 
     onGuessPlaced(position) {
@@ -318,7 +272,7 @@ export default {
       const lng = position.lng.toFixed(4);
       return `${lat}, ${lng}`;
     },
-    
+
     toggleMap() {
       // 라운드가 끝났을 때는 결과 지도 표시/숨김 토글
       if (this.gameStore.state.roundEnded) {
@@ -328,62 +282,12 @@ export default {
       }
     },
 
-    endRound() {
-      // 라운드 종료 처리
-      this.clearTimer();
-      this.gameStore.endGameRound();
-
-      // 플레이어 점수 계산 및 정렬
-      this.calculatePlayerScores();
-      
-      // 라운드 종료 상태로 설정 (결과 화면 표시를 위해)
-      this.gameStore.state.roundEnded = true;
-      
-      console.log('라운드 종료:', this.gameMode);
-      
-      // 이벤트 발생
-      this.$emit('round-ended');
-      
-      // 마지막 라운드인지 확인
-      if (this.gameStore.state.currentRound >= this.gameStore.state.totalRounds) {
-        this.$emit('game-finished');
-      }
-    },
-
-    startNextRound() {
-      // 라운드 결과 닫기
-      this.gameStore.state.showRoundResults = false;
-      this.gameStore.state.roundEnded = false;
-
-      // 다음 라운드를 위한 상태 초기화
-      this.allPlayersSubmitted = false;
-      this.submittedPlayersCount = 0;
-      this.gameStore.state.playerGuesses = [];
-      this.showResultMap = false;
-      
-      // 플레이어의 마지막 라운드 점수 초기화
-      this.gameStore.state.players.forEach(player => {
-        player.lastRoundScore = null;
-        player.hasSubmitted = false;
-      });
-
-      // 다음 라운드 시작
-      if (this.gameStore.state.currentRound < this.gameStore.state.totalRounds) {
-        this.gameStore.state.currentRound++;
-        this.gameStore.state.hasSubmittedGuess = false;
-        this.gameStore.state.guessPosition = null;
-        this.fetchRoundData();
-        
-        console.log('다음 라운드 시작:', this.gameMode);
-      } else {
-        // 모든 라운드 완료
-        this.gameStore.finishGame();
-      }
-    },
-
     // ...
     handlePhoneMapGuess(position) {
-      if (this.gameStore.state.hasSubmittedGuess || this.gameStore.state.roundEnded)
+      if (
+        this.gameStore.state.hasSubmittedGuess ||
+        this.gameStore.state.roundEnded
+      )
         return;
 
       // 선택한 위치 설정
@@ -391,15 +295,15 @@ export default {
 
       // 지도 닫기
       this.isMapOpen = false;
-      
+
       // 게임 모드별 추측 제출 처리
       this.handleGuessSubmission(position);
     },
-    
+
     // 게임 모드별로 구현해야 하는 메서드 (추상)
     handleGuessSubmission(position) {
       // 이벤트 발생
-      this.$emit('guess-submitted', position);
+      this.$emit("guess-submitted", position);
     },
 
     // WebSocket 관련 메서드
@@ -472,7 +376,7 @@ export default {
         if (!gameStore.state.playerGuesses) {
           gameStore.state.playerGuesses = [];
         }
-        
+
         gameStore.state.playerGuesses.push({
           playerId: data.playerId,
           playerName: player.nickname,
@@ -493,7 +397,7 @@ export default {
     sendGuessToServer(guessData) {
       // 실제 구현 시 WebSocket으로 전송
       console.log("서버에 추측 정보 전송:", guessData);
-      
+
       // 테스트용 더미 구현
       /*
       if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
@@ -506,12 +410,14 @@ export default {
       }
       */
     },
-    
+
     calculatePlayerScores() {
       // 각 플레이어의 점수 계산 (거리 기반)
       this.gameStore.state.players.forEach((player) => {
         // 플레이어의 추측 위치 찾기
-        const guess = this.gameStore.state.playerGuesses.find((g) => g.playerId === player.id);
+        const guess = this.gameStore.state.playerGuesses.find(
+          (g) => g.playerId === player.id
+        );
         if (guess) {
           // 실제 위치와의 거리 계산 (km)
           const distance = this.calculateDistance(
@@ -526,7 +432,7 @@ export default {
 
           // 마지막 라운드 점수 저장
           player.lastRoundScore = score;
-          
+
           // 플레이어 총점 업데이트
           player.score = (player.score || 0) + score;
           player.distanceToTarget = distance;
@@ -556,7 +462,7 @@ export default {
     deg2rad(deg) {
       return deg * (Math.PI / 180);
     },
-    
+
     handleMapError(error) {
       console.error("지도 오류:", error);
       this.showToast("지도를 로드하는 중 오류가 발생했습니다.");
@@ -565,16 +471,16 @@ export default {
     showToast(message) {
       this.toastMessage = message;
       this.showToastFlag = true;
-      
+
       if (this.toastTimeout) {
         clearTimeout(this.toastTimeout);
       }
-      
+
       this.toastTimeout = setTimeout(() => {
         this.showToastFlag = false;
       }, 3000);
     },
-    
+
     addToastStyles() {
       // 동적으로 스타일 추가
       const style = document.createElement("style");
@@ -602,7 +508,7 @@ export default {
         `;
       document.head.appendChild(style);
     },
-    
+
     exitGame() {
       if (
         confirm(
@@ -616,7 +522,7 @@ export default {
     exitToLobby() {
       this.clearTimer();
       this.$router.push("/multiplayerLobby");
-    }
+    },
   },
 };
 </script>
@@ -1033,7 +939,6 @@ export default {
     font-size: 0.85rem;
   }
 }
-
 
 /* 채팅 토글 버튼 */
 .chat-toggle {

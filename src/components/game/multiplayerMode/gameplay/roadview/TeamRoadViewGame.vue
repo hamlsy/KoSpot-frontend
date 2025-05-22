@@ -91,9 +91,16 @@ export default {
 
   data() {
     return {
+      gameStore, // 게임 스토어 참조
       mapPreviewUrl: "",
       submittedPlayersCount: 0,
-      allPlayersSubmitted: false
+      allPlayersSubmitted: false,
+      roomId: "team-room-1", // 테스트용 방 ID
+      gameMode: "team",
+      roundTimer: null, // 라운드 타이머
+      toastTimeout: null, // 토스트 메시지 타이머
+      toastMessage: "",
+      showToastFlag: false
     };
   },
 
@@ -130,6 +137,16 @@ export default {
     // 팀 모드로 설정
     this.isTeamMode = true;
     this.gameMode = 'team';
+    // 테스트 데이터 로드 및 게임 초기화
+    this.gameStore.loadTestData(true);
+    this.initGame();
+  },
+  
+  beforeDestroy() {
+    this.clearTimer();
+    if (this.toastTimeout) {
+      clearTimeout(this.toastTimeout);
+    }
   },
 
   methods: {
@@ -198,6 +215,163 @@ export default {
         );
       }
     },
+    
+    // 타이머 시작 메서드
+    startRoundTimer() {
+      this.gameStore.state.remainingTime = 120; // 2분
+
+      this.roundTimer = setInterval(() => {
+        this.gameStore.state.remainingTime--;
+
+        if (this.gameStore.state.remainingTime <= 0) {
+          this.clearTimer();
+          this.endRound();
+        }
+      }, 1000);
+    },
+    
+    // 타이머 정리 메서드
+    clearTimer() {
+      if (this.roundTimer) {
+        clearInterval(this.roundTimer);
+        this.roundTimer = null;
+      }
+    },
+    
+    // 라운드 종료 메서드
+    endRound() {
+      // 라운드 종료 처리
+      this.clearTimer();
+      this.gameStore.endGameRound();
+
+      // 플레이어 점수 계산 및 정렬
+      this.calculatePlayerScores();
+
+      // 라운드 종료 상태로 설정 (결과 화면 표시를 위해)
+      this.gameStore.state.roundEnded = true;
+
+      console.log("라운드 종료:", this.gameMode);
+    },
+    
+    // 게임 초기화 메서드
+    initGame() {
+      this.gameStore.initGame();
+      this.fetchRoundData();
+    },
+    
+    // 라운드 데이터 가져오기
+    fetchRoundData() {
+      // 테스트 데이터에서 위치 가져오기
+      setTimeout(() => {
+        const getRandomLocation = () => {
+          const locations = [
+            { lat: 37.5665, lng: 126.9780, name: "서울시청", description: "서울 중심부에 위치한 시청" },
+            { lat: 35.1796, lng: 129.0756, name: "부산 해운대", description: "부산의 유명한 해변" },
+            { lat: 33.4996, lng: 126.5312, name: "제주 성산일출봉", description: "제주도의 유명한 관광지" }
+          ];
+          return locations[Math.floor(Math.random() * locations.length)];
+        };
+        
+        const location = getRandomLocation();
+
+        // 현재 위치와 실제 위치(정답 좌표) 모두 설정
+        const locationCoords = {
+          lat: location.lat,
+          lng: location.lng,
+        };
+
+        this.gameStore.state.currentLocation = locationCoords;
+        this.gameStore.state.actualLocation = locationCoords; // 정답 좌표 설정
+
+        this.gameStore.state.locationInfo = {
+          name: location.name,
+          description: location.description,
+          image: location.image,
+          fact: location.fact,
+        };
+
+        // 타이머 시작
+        this.startRoundTimer();
+      }, 1500);
+    },
+    
+    // 플레이어 점수 계산
+    calculatePlayerScores() {
+      // 각 플레이어의 점수 계산 (거리 기반)
+      if (!this.gameStore.state.actualLocation) return;
+      
+      const actualLat = this.gameStore.state.actualLocation.lat;
+      const actualLng = this.gameStore.state.actualLocation.lng;
+      
+      this.gameStore.state.playerGuesses.forEach(guess => {
+        const distance = this.calculateDistance(
+          actualLat, actualLng,
+          guess.position.lat, guess.position.lng
+        );
+        
+        // 거리에 따른 점수 계산 (0~5000점)
+        const score = Math.max(0, Math.floor(5000 - distance * 10));
+        guess.score = score;
+        guess.distance = distance.toFixed(2);
+        
+        // 플레이어 정보 업데이트
+        const player = this.gameStore.state.players.find(p => p.id === guess.playerId);
+        if (player) {
+          // 누적 점수 계산
+          if (!player.totalScore) player.totalScore = 0;
+          player.totalScore += score;
+          
+          // PlayerList 컴포넌트에서 사용하는 속성명으로 설정
+          player.score = player.totalScore;
+          player.lastScore = score;
+          player.lastRoundScore = score;
+          player.distanceToTarget = parseFloat(distance.toFixed(2));
+        }
+      });
+      
+      console.log('점수 계산 완료:', this.gameStore.state.players);
+      
+      // 점수 기준으로 정렬
+      this.gameStore.state.players.sort((a, b) => (b.score || 0) - (a.score || 0));
+      this.gameStore.state.topPlayer = {
+        playerName: this.gameStore.state.players[0].nickname,
+        distance: this.gameStore.state.players[0].distanceToTarget
+      }
+    },
+    
+    // 거리 계산 함수 (Haversine 공식)
+    calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371; // 지구 반경 (km)
+      const dLat = this.deg2rad(lat2 - lat1);
+      const dLon = this.deg2rad(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(this.deg2rad(lat1)) *
+          Math.cos(this.deg2rad(lat2)) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c; // 거리 (km)
+      return distance;
+    },
+    
+    deg2rad(deg) {
+      return deg * (Math.PI / 180);
+    },
+    
+    // 토스트 메시지 표시
+    showToast(message) {
+      this.toastMessage = message;
+      this.showToastFlag = true;
+
+      if (this.toastTimeout) {
+        clearTimeout(this.toastTimeout);
+      }
+
+      this.toastTimeout = setTimeout(() => {
+        this.showToastFlag = false;
+      }, 3000);
+    },
 
     sendTeamMessage(data) {
       const { teamId, message } = data;
@@ -216,8 +390,33 @@ export default {
     },
 
     startNextRound() {
-      // 상속한 BaseMultiRoadViewGame의 startNextRound 사용
-      this.$super.startNextRound();
+      // 라운드 결과 닫기
+      this.gameStore.state.showRoundResults = false;
+      this.gameStore.state.roundEnded = false;
+
+      // 다음 라운드를 위한 상태 초기화
+      this.allPlayersSubmitted = false;
+      this.submittedPlayersCount = 0;
+      this.gameStore.state.playerGuesses = [];
+
+      // 플레이어의 마지막 라운드 점수 초기화
+      this.gameStore.state.players.forEach((player) => {
+        player.lastRoundScore = null;
+        player.hasSubmitted = false;
+      });
+
+      // 다음 라운드 시작
+      if (this.gameStore.state.currentRound < this.gameStore.state.totalRounds) {
+        this.gameStore.state.currentRound++;
+        this.gameStore.state.hasSubmittedGuess = false;
+        this.gameStore.state.guessPosition = null;
+        this.fetchRoundData();
+
+        console.log("다음 라운드 시작:", this.gameMode);
+      } else {
+        // 모든 라운드 완료
+        this.gameStore.finishGame();
+      }
     },
 
     finishGame() {
@@ -227,6 +426,7 @@ export default {
     restartGame() {
       this.gameStore.state.showGameResults = false;
       this.initGame();
+      // 팀 모드에 맞는 추가 초기화 로직이 필요하다면 여기에 구현
     },
 
     exitToLobby() {

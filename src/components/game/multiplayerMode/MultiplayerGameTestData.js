@@ -27,8 +27,7 @@ export const testData = {
   // 현재 사용자 정보
   currentUser: {
     id: 'user123',
-    nickname: '김코스팟',
-    level: 23,
+    nickname: '김아무개',
     profileImage: null,
     isHost: true,
     isReady: false,
@@ -39,10 +38,10 @@ export const testData = {
   players: [
     {
       id: 'user123',
-      nickname: '김코스팟',
-      level: 23,
-      profileImage: null,
+      nickname: '테스트 방장',
+      profileImage: "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
       isHost: true,
+      equippedMarker: "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
       isReady: true,
       teamId: 'team1',
       score: 0,
@@ -53,9 +52,9 @@ export const testData = {
     },
     {
       id: 'user456',
-      nickname: '박지금',
-      level: 15,
-      profileImage: null,
+      nickname: '테스트플레이어2',
+      profileImage: "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
+      equippedMarker: "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
       isHost: false,
       isReady: true,
       teamId: 'team1',
@@ -67,9 +66,9 @@ export const testData = {
     },
     {
       id: 'user789',
-      nickname: '이강산',
-      level: 30,
-      profileImage: null,
+      nickname: '테스트플레이어테스트플레이어테스트플레이어',
+      profileImage: "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
+      equippedMarker: "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
       isHost: false,
       isReady: true,
       teamId: 'team2',
@@ -81,9 +80,9 @@ export const testData = {
     },
     {
       id: 'user101',
-      nickname: '최여행',
-      level: 42,
-      profileImage: null,
+      nickname: '테스트플레이어3',
+      profileImage: "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
+      equippedMarker: "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
       isHost: false,
       isReady: true,
       teamId: 'team2',
@@ -171,21 +170,21 @@ export const testData = {
   chatMessages: [
     {
       id: 'chat1',
-      sender: '시스템',
+      sender: '테스트플레이어1',
       message: '게임이 시작되었습니다! 행운을 빕니다.',
       timestamp: new Date(),
       system: true
     },
     {
       id: 'chat2',
-      sender: '박지금',
+      sender: '테스트플레이어3',
       message: '안녕하세요! 다들 준비되셨나요?',
       timestamp: new Date(),
       system: false
     },
     {
       id: 'chat3',
-      sender: '이강산',
+      sender: '테스트플레이어2',
       message: '네! 열심히 해봐요~',
       timestamp: new Date(),
       system: false
@@ -206,7 +205,6 @@ export const testData = {
         system: false,
         sender: '김코스팟',
         senderId: 'user123',
-        senderLevel: 23,
         message: '안녕하세요 팀원! 잘 부탁드려요.',
         timestamp: new Date().toISOString()
       },
@@ -215,7 +213,6 @@ export const testData = {
         system: false,
         sender: '박지금',
         senderId: 'user456',
-        senderLevel: 15,
         message: '네! 같이 열심히 해봐요.',
         timestamp: new Date().toISOString()
       }
@@ -230,9 +227,8 @@ export const testData = {
       {
         id: 'team2-chat2',
         system: false,
-        sender: '이강산',
+        sender: '테스트플레이어1',
         senderId: 'user789',
-        senderLevel: 30,
         message: '우리팀 화이팅!',
         timestamp: new Date().toISOString()
       }

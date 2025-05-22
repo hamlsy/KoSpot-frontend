@@ -55,6 +55,7 @@ const gameStore = {
     this.state.teams = data.teams || [];
     this.state.chatMessages = data.chatMessages || [];
     this.state.teamChatMessages = data.teamChatMessages || {};
+    
   },
   
   // 게임 상태 초기화
@@ -66,16 +67,11 @@ const gameStore = {
     this.state.showGameResults = false;
     this.state.guessPosition = null;
     this.state.isLoading = false;
-    // this.state.players = [];
-    // this.state.playersGuesses = [];
-    // this.state.teamPlayers = [];
-    
   },
   
   // 라운드 종료 처리
   endGameRound() {
     this.state.playersGuesses = [];
-    this.state.players = [];
     this.state.roundEnded = true;
     
     // 실제 로직에서는 서버에서 계산된 점수 받아옴
@@ -189,7 +185,6 @@ const gameStore = {
       system: isSys,
       sender: isSys ? null : this.state.currentUser.nickname,
       senderId: isSys ? null : this.state.currentUser.id,
-      senderLevel: isSys ? null : this.state.currentUser.level,
       message: message,
       timestamp: new Date().toISOString()
     });
