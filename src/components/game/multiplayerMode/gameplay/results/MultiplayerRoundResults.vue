@@ -8,7 +8,7 @@
         </div>
       </div>
 
-      <!-- 확장된 지도 영역 -->
+      <!-- 지도 영역 -->
       <div class="map-container">
         <kakao-map
           :center="actualLocation"
@@ -31,22 +31,20 @@
           <!-- 플레이어 마커 표시 영역 -->
           <div class="player-markers-container">
             <div 
-              v-for="(player, index) in playersWhoClickedNext" 
+              v-for="(player) in playersWhoClickedNext" 
               :key="player.id"
               class="player-marker-wrapper"
-              :style="{ left: `${index * 30 - 30}px` }"
             >
               <div 
                 class="player-marker" 
                 :style="{ 
-                  backgroundColor: player.markerImage ? 'transparent' : player.color,
-                  backgroundImage: player.markerImage ? `url(${player.markerImage})` : 'none',
+                  backgroundImage: player.equippedMarker ? `url(${player.equippedMarker})` : 'none',
                   backgroundSize: 'cover',
                   backgroundPosition: 'center'
                 }"
-                :title="player.name"
+                :title="player.nickname"
               >
-                <span class="marker-tooltip">{{ player.name }}</span>
+                <span class="marker-tooltip">{{ player.nickname }}</span>
               </div>
             </div>
           </div>
@@ -84,6 +82,7 @@
 
 <script>
 import KakaoMap from "@/components/game/common/kakao/KakaoMap.vue";
+import gameStore from "@/store/gameStore";
 
 export default {
   name: "RoundResults",
@@ -190,6 +189,7 @@ export default {
 
   data() {
     return {
+      gameStore,
       visible: true,
       playersWhoClickedNext: [],
       countdownDuration: 10000, // 10초
@@ -197,20 +197,6 @@ export default {
       countdownProgress: 100,
       countdownInterval: null,
       hasCurrentUserClickedNext: false,
-      // 테스트용 더미 데이터
-      testPlayers: [
-        { id: 'player1', name: '플레이어1', color: '#FF5733', markerImage: '/images/markers/marker1.png' },
-        { id: 'player2', name: '플레이어2', color: '#33FF57', markerImage: '/images/markers/marker2.png' },
-        { id: 'player3', name: '플레이어3', color: '#3357FF', markerImage: '/images/markers/marker3.png' },
-        { id: 'player4', name: '플레이어4', color: '#F033FF', markerImage: '/images/markers/marker4.png' }
-      ],
-      defaultMarkerImages: [
-        '/images/markers/marker1.png',
-        '/images/markers/marker2.png',
-        '/images/markers/marker3.png',
-        '/images/markers/marker4.png',
-        '/images/markers/marker5.png'
-      ]
     };
   },
 
@@ -318,17 +304,8 @@ export default {
       this.hasCurrentUserClickedNext = true;
       
       // 현재 유저 정보 찾기
-      const currentPlayer = this.players.find(player => player.id === this.currentUserId);
-      if (!currentPlayer) {
-        // 테스트용: 플레이어 정보가 없을 경우 더미 데이터 사용
-        this.addPlayerToClickedList({
-          id: 'current-user',
-          name: '현재 유저',
-          color: '#FF9800',
-          markerImage: '/images/markers/marker1.png' // 기본 마커 이미지
-        });
-        return;
-      }
+      const currentPlayer = this.gameStore.state.currentUser;
+      console.log(currentPlayer);
       
       // 실제 환경에서 활성화
       // 소켓 이벤트 발송
@@ -343,12 +320,7 @@ export default {
       }
       
       // 로컬에도 추가
-      this.addPlayerToClickedList({
-        id: this.currentUserId,
-        name: currentPlayer.name,
-        color: currentPlayer.color,
-        markerImage: currentPlayer.markerImage || '/images/markers/marker1.png'
-      });
+      this.addPlayerToClickedList(currentPlayer);
     },
     
     handlePlayerClickedNext(data) {
@@ -367,7 +339,7 @@ export default {
       // 이미 추가된 플레이어인지 확인
       if (!this.playersWhoClickedNext.some(p => p.id === player.id)) {
         // 마커 이미지가 없는 경우 기본 이미지 사용
-        if (!player.markerImage) {
+        if (!player.equippedMarker) {
           const randomIndex = Math.floor(Math.random() * this.defaultMarkerImages.length);
           player.markerImage = this.defaultMarkerImages[randomIndex];
         }
@@ -396,8 +368,7 @@ export default {
     
     // 테스트용: 다른 플레이어들이 버튼을 누르는 것을 시뮬레이션
     simulatePlayersClickingNext() {
-      // 테스트 플레이어는 이미 마커 이미지가 있으므로 그대로 사용
-      const updatedTestPlayers = this.testPlayers;
+      const updatedTestPlayers = this.gameStore.state.players;
       
       // 첫 번째 플레이어는 1초 후에 클릭
       setTimeout(() => {
@@ -522,7 +493,7 @@ export default {
   border-radius: 12px;
   margin: 0.5rem 1rem 1rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  height: calc(100% - 120px);
+  height: calc(100% - 180px);
   position: relative;
   background-color: #f8f9fa;
   min-height: 400px;
@@ -560,8 +531,7 @@ export default {
 
 /* 푸터 */
 .results-footer {
-  padding: 1rem;
-  border-top: 1px solid #eee;
+  padding: 1.4rem;
   display: flex;
   justify-content: center;
 }
@@ -625,7 +595,7 @@ export default {
 }
 
 .player-marker-wrapper {
-  position: absolute;
+  position: relative;
   animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -653,10 +623,9 @@ export default {
 }
 
 .marker-tooltip {
-  position: absolute;
+  position: relative;
   top: -30px;
-  left: 50%;
-  transform: translateX(-50%) translateY(5px);
+  transform: translateX(0%) translateY(5px);
   background-color: rgba(0, 0, 0, 0.8);
   color: white;
   padding: 4px 8px;

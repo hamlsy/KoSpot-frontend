@@ -29,6 +29,7 @@ export const testData = {
     id: 'user123',
     nickname: '김아무개',
     profileImage: null,
+    equippedMarker: "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
     isHost: true,
     isReady: false,
     teamId: 'team1'
