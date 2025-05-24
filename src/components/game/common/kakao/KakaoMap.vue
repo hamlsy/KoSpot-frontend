@@ -729,7 +729,7 @@ export default {
 .kakao-map {
   width: 100%;
   height: 100%;
-  position: relative;
+  position: relative; 
   overflow: hidden;
   background: #e6e8eb;
 }

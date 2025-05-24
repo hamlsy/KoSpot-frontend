@@ -391,12 +391,7 @@ export default {
         }
       }, 5000);
       
-      // 네 번째 플레이어는 7초 후에 클릭
-      setTimeout(() => {
-        if (updatedTestPlayers.length > 3) {
-          this.addPlayerToClickedList(updatedTestPlayers[3]);
-        }
-      }, 7000);
+    
     },
 
     finishGame() {
@@ -413,7 +408,13 @@ export default {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background-color: white;
+}
+
+.results-container {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%; /* 컨테이너가 전체 높이를 차지하도록 설정 */
 }
 
 .results-container {
@@ -489,14 +490,13 @@ export default {
 /* 확장된 지도 컨테이너 */
 .map-container {
   flex: 1;
-  overflow: hidden;
-  border-radius: 12px;
-  margin: 0.5rem 1rem 1rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  height: calc(100% - 180px);
+  width: 100%;
+  height: calc(100% - 120px); /* 헤더와 푸터를 제외한 모든 공간 차지 */
+  min-height: 500px; /* 최소 높이 설정 */
   position: relative;
-  background-color: #f8f9fa;
-  min-height: 400px;
+  overflow: hidden;
+  border-radius: 8px;
+  margin-bottom: 0;
 }
 
 .interesting-fact {
@@ -531,9 +531,10 @@ export default {
 
 /* 푸터 */
 .results-footer {
-  padding: 1.4rem;
+  padding: 1rem;
   display: flex;
   justify-content: center;
+  height: 80px; /* 푸터 높이 고정 */
 }
 
 .action-button {
@@ -609,7 +610,6 @@ export default {
   color: white;
   font-weight: bold;
   font-size: 12px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   position: relative;
   cursor: pointer;
   z-index: 1001; /* 지도보다 높은 z-index 값 */

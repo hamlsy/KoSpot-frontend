@@ -43,6 +43,7 @@
           :totalTime="120"
           :warning-threshold="30"
           :danger-threshold="10"
+          :is-running="!showIntroOverlay"
         />
       </div>
     </div>
@@ -57,6 +58,15 @@
       <!-- 중앙 패널: 게임 화면 -->
       <div class="main-panel">
         <div class="game-view">
+          <!-- 멀티플레이어 인트로 오버레이 -->
+          <multiplayer-intro-overlay
+            v-if="showIntroOverlay"
+            :current-round="gameStore.state.currentRound"
+            :show-intro="showIntroOverlay"
+            :room-id="roomId"
+            :server-start-time="$parent.serverStartTime || 0"
+            @intro-complete="handleIntroComplete"
+          />
           <!-- 메인 게임 영역 (로드뷰 또는 결과 컴포넌트) -->
           <slot name="main">
             <!-- 기본 로드뷰 컴포넌트 (슬롯이 제공되지 않을 경우) -->
@@ -134,6 +144,7 @@
 import GameTimer from "@/components/game/common/shared/GameTimer.vue";
 import RoadView from "@/components/game/common/roadview/RoadView.vue";
 import PhoneFrame from "@/components/game/common/PhoneFrame.vue";
+import MultiplayerIntroOverlay from "@/components/game/multiplayerMode/gameplay/intro/MultiplayerIntroOverlay.vue";
 import gameStore from "@/store/gameStore";
 
 export default {
@@ -143,6 +154,7 @@ export default {
     GameTimer,
     RoadView,
     PhoneFrame,
+    MultiplayerIntroOverlay,
   },
 
   props: {
@@ -183,21 +195,20 @@ export default {
     return {
       gameStore,
       isMapOpen: false,
-      mapCenter: { lat: 37.5665, lng: 126.978 },
-      guessPosition: null,
-      roundTimer: null,
+      mapCenter: null,
       isChatOpen: false,
-      isMobile: false,
-      isTablet: false,
+      isResponsiveMode: false,
       showToastFlag: false,
       toastMessage: "",
       toastTimeout: null,
-      phoneMapPosition: null,
-      phoneMapError: null,
-      submittedPlayersCount: 0,
-      allPlayersSubmitted: false,
-      showResultMap: false,
-      webSocket: null,
+      socket: null,
+      socketConnected: false,
+      socketRetryCount: 0,
+      socketRetryInterval: null,
+      isTeamMode: false,
+      userGuessPosition: null,
+      userHasSubmitted: false,
+      showIntroOverlay: true,
     };
   },
 
@@ -230,6 +241,10 @@ export default {
     this.disconnectWebSocket();
   },
   methods: {
+    // 인트로 완료 처리
+    handleIntroComplete() {
+      this.showIntroOverlay = false;
+    },
     checkResponsive() {
       const isMobile = window.innerWidth <= 992;
       const rightPanel = document.querySelector(".right-panel");

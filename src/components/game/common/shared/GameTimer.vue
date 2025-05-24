@@ -168,29 +168,23 @@ export default {
   },
   
   methods: {
+    
     startTimer() {
       if (this.timerInterval) {
         clearInterval(this.timerInterval);
       }
-      
-      const startTime = Date.now();
-      const initialOffset = this.currentTime;
-      
+
       this.timerInterval = setInterval(() => {
-        const elapsedSeconds = (Date.now() - startTime) / 1000;
-        
-        if (this.countDirection === 'down') {
-          this.currentTime = Math.max(0, initialOffset - elapsedSeconds);
-        } else {
-          this.currentTime = initialOffset + elapsedSeconds;
+        if (this.currentTime > 0) {
+          this.currentTime--;
+
+          // 시간이 다 되면 자동으로 결과 표시
+          if (this.currentTime === 0) {
+            this.stopTimer();
+            this.$emit('timer-completed');
+          }
         }
-        
-        // 타이머 완료 시 이벤트 발생
-        if (this.countDirection === 'down' && this.currentTime <= 0) {
-          this.stopTimer();
-          this.$emit('timer-completed');
-        }
-      }, 100); // 0.1초마다 갱신 (부드러운 진행 효과)
+      }, 1000);
     },
     
     stopTimer() {

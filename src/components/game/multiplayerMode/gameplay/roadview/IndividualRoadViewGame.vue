@@ -104,6 +104,9 @@ export default {
       allPlayersSubmitted: false,
       roundTimer: null, // 라운드 타이머
       toastTimeout: null, // 토스트 메시지 타이머
+      serverStartTime: 0,
+      roundStartDelay: 1000, // 라운드 시작 전 지연 시간(ms)
+      simulationTriggered: false, // 시뮬레이션 중복 호출 방지를 위한 플래그
     };
   },
 
@@ -123,21 +126,30 @@ export default {
     this.$watch(
       () => this.gameStore.state.actualLocation,
       (newVal) => {
-        if (newVal && Object.keys(newVal).length > 0) {
-          console.log("실제 위치가 설정되었습니다:", newVal);
-          // 실제 위치가 설정된 후에 다른 플레이어들의 추측 시뮬레이션
-          this.simulateOtherPlayersGuesses();
+        if (newVal) {
+          console.log("Actual location updated:", newVal);
+          // 실제 위치가 설정된 후에 다른 플레이어들의 추측 시뮤레이션
+          if (newVal && Object.keys(newVal).length > 0 && !this.simulationTriggered) {
+            console.log("실제 위치가 설정되었습니다. 시뮬레이션 시작:", newVal);
+            // 중복 호출 방지를 위한 플래그 설정
+            this.simulationTriggered = true;
+            // 실제 위치가 설정된 후에 다른 플레이어들의 추측 시뮤레이션
+            this.simulateOtherPlayersGuesses();
+          }
         }
       },
       { deep: true }
     );
+    
+    // 첫 라운드 데이터 가져오기
+    this.fetchRoundData();
   },
 
   beforeDestroy() {
+    // 라운드 타이머 정리
     this.clearTimer();
-    if (this.toastTimeout) {
-      clearTimeout(this.toastTimeout);
-    }
+    // 토스트 메시지 타이머 정리
+    clearTimeout(this.toastTimeout);
   },
 
   methods: {
@@ -237,7 +249,7 @@ export default {
         };
 
         // 타이머 시작
-        this.startRoundTimer();
+        // this.startRoundTimer();
       }, 1500);
     },
 
@@ -385,6 +397,15 @@ export default {
       const submittedPlayers = this.gameStore.state.playerGuesses.length;
 
       console.log(`제출 현황: ${submittedPlayers}/${totalPlayers}`);
+      
+      // 현재 사용자가 제출했는지 확인
+      const currentUserSubmitted = this.gameStore.state.hasSubmittedGuess;
+      
+      // 현재 사용자가 제출하지 않았다면 라운드를 종료하지 않음
+      if (!currentUserSubmitted) {
+        console.log("현재 사용자가 아직 제출하지 않아 라운드를 종료하지 않습니다.");
+        return;
+      }
 
       // 모든 플레이어가 제출했는지 확인
       if (submittedPlayers >= totalPlayers) {
@@ -405,6 +426,7 @@ export default {
 
       const actualLat = this.gameStore.state.actualLocation.lat;
       const actualLng = this.gameStore.state.actualLocation.lng;
+    
       this.gameStore.state.playerGuesses.forEach((guess) => {
         const distance = this.calculateDistance(
           actualLat,
@@ -468,38 +490,33 @@ export default {
     },
 
     startNextRound() {
-      // 라운드 결과 닫기
-      this.gameStore.state.showRoundResults = false;
+      console.log("다음 라운드 시작");
+      // 라운드 종료 상태 초기화
       this.gameStore.state.roundEnded = false;
-
-      // 다음 라운드를 위한 상태 초기화
-      this.allPlayersSubmitted = false;
-      this.submittedPlayersCount = 0;
+      this.gameStore.state.hasSubmittedGuess = false;
+      this.gameStore.state.userGuess = null;
       this.gameStore.state.playerGuesses = [];
+      this.submittedPlayersCount = 0;
+      this.allPlayersSubmitted = false;
+      
+      // 시뮬레이션 플래그 초기화 (중요: 새 라운드에서 시뮬레이션을 다시 실행하기 위해)
+      this.simulationTriggered = false;
 
-      // 플레이어의 마지막 라운드 점수 초기화
-      this.gameStore.state.players.forEach((player) => {
-        player.lastRoundScore = null;
-        player.hasSubmitted = false;
-      });
+      // 라운드 증가
+      this.gameStore.state.currentRound++;
 
-      // 다음 라운드 시작
-      if (
-        this.gameStore.state.currentRound < this.gameStore.state.totalRounds
-      ) {
-        this.gameStore.state.currentRound++;
-        this.gameStore.state.hasSubmittedGuess = false;
-        this.gameStore.state.guessPosition = null;
-        this.fetchRoundData();
-
-        console.log("다음 라운드 시작:", this.gameMode);
-      } else {
-        // 모든 라운드 완료
-        this.gameStore.finishGame();
+      // 다음 라운드가 마지막 라운드를 초과하면 게임 종료
+      if (this.gameStore.state.currentRound > this.gameStore.state.totalRounds) {
+        this.finishGame();
+        return;
       }
 
-      // 다음 라운드에서 다른 플레이어들의 추측 시뮬레이션
-      this.simulateOtherPlayersGuesses();
+      // 인트로 오버레이 표시
+      this.gameStore.state.showIntroOverlay = true;
+
+      // 다음 라운드 데이터 가져오기
+      this.fetchRoundData();
+      console.log("다음 라운드 데이터 가져오기 완료");
     },
 
     finishGame() {

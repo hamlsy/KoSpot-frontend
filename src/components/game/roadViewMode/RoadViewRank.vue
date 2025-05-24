@@ -1,24 +1,5 @@
 <template>
   <div class="road-view-practice">
-    <!-- 헤더 -->
-    <div class="game-header">
-      <button class="back-btn" @click="exitGame">
-        <i class="fas fa-arrow-left"></i>
-      </button>
-      <h2 v-if="!gameStarted">랭크 모드</h2>
-      <div v-else class="game-status">
-        <!-- 랭크 모드 타이머 -->
-        <div
-          v-if="isRankMode"
-          class="timer"
-          :class="{ warning: timeRemaining <= 30 }"
-        >
-          <i class="fas fa-clock"></i>
-          <span>{{ formatTime(timeRemaining) }}</span>
-        </div>
-      </div>
-    </div>
-
     <!-- 타이머 표시 -->
     <div v-if="isGameStarted && !showResult" class="timer-container">
       <div class="timer" :class="{ 'timer-warning': remainingTime <= 30 }">
