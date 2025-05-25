@@ -31,13 +31,6 @@
 
     <!-- 메인 게임 영역 -->
     <template #main>
-      <!-- 라운드 진행 중일 때는 로드뷰 표시 -->
-      <road-view
-        v-if="!gameStore.state.roundEnded && gameStore.state.currentLocation"
-        :position="gameStore.state.currentLocation"
-        :show-controls="true"
-        :prevent-mouse-events="gameStore.state.hasSubmittedGuess"
-      />
       <round-results
         v-if="gameStore.state.roundEnded"
         :players="gameStore.state.players"
@@ -75,7 +68,6 @@ import BaseMultiRoadViewGame from "./BaseMultiRoadViewGame.vue";
 import ChatWindow from "@/components/game/multiplayerMode/gameplay/chat/IndividualChat.vue";
 import RoundResults from "@/components/game/multiplayerMode/gameplay/results/MultiplayerRoundResults.vue";
 import GameResults from "@/components/game/multiplayerMode/gameplay/results/MultiplayerGameResults.vue";
-import RoadView from "@/components/game/common/roadview/RoadView.vue";
 import gameStore from "@/store/gameStore";
 import PlayerList from "@/components/game/multiplayerMode/gameplay/MultiplayerPlayerList.vue";
 
@@ -87,7 +79,6 @@ export default {
     ChatWindow,
     RoundResults,
     GameResults,
-    RoadView,
     PlayerList,
   },
 

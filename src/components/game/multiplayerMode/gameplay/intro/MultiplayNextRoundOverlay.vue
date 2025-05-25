@@ -1,10 +1,12 @@
 <template>
   <!-- 다음 라운드 인트로 화면 -->
   <transition name="fade">
-    <div v-if="showIntro" class="intro-overlay">
+    <div v-if="showIntro" class="intro-overlay" :class="{ visible: showIntro }">
       <div class="intro-content">
         <transition name="slide-fade" mode="out-in">
-          <h2 v-if="step === 1" key="step1" class="message">{{ motivationMessage }}</h2>
+          <h2 v-if="step === 1" key="step1" class="message">
+            {{ motivationMessage }}
+          </h2>
           <h2 v-else-if="step === 2" key="step2">{{ currentRound }}라운드</h2>
           <div v-else-if="step === 3" key="step3" class="countdown-container">
             <span class="countdown-number">{{ countdown }}</span>
@@ -30,7 +32,7 @@ export default {
     showIntro: {
       type: Boolean,
       required: true,
-      default: true,
+      default: false,
     },
     userRank: {
       type: Number,
@@ -66,7 +68,10 @@ export default {
   },
   mounted() {
     // 사용자 등수에 따른 메시지 설정
-    this.motivationMessage = getRandomMessageByRank(this.userRank, this.totalPlayers);
+    this.motivationMessage = getRandomMessageByRank(
+      this.userRank,
+      this.totalPlayers
+    );
     this.startIntroSequence();
   },
   beforeDestroy() {
@@ -77,7 +82,7 @@ export default {
     startIntroSequence() {
       // 첫 번째 단계: 사용자 등수에 따른 동기부여 메시지
       // 이미 mounted에서 메시지 설정됨
-      
+
       const timer1 = setTimeout(() => {
         // 두 번째 단계: "n라운드"
         this.step = 2;
@@ -150,7 +155,6 @@ export default {
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
-
 .intro-content {
   text-align: center;
   width: 100%;

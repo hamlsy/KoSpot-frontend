@@ -78,9 +78,9 @@
             :server-start-time="$parent ? $parent.serverStartTime : 0"
             @intro-complete="handleNextRoundComplete"
           />
+
           <!-- 메인 게임 영역 (로드뷰 또는 결과 컴포넌트) -->
           <slot name="main">
-            <!-- 기본 로드뷰 컴포넌트 (슬롯이 제공되지 않을 경우) -->
             <road-view
               v-if="
                 !gameStore.state.roundEnded && gameStore.state.currentLocation
@@ -184,7 +184,7 @@ export default {
     currentUserRank: {
       type: Number,
       default: 1,
-    }
+    },
   },
 
   provide() {
@@ -265,27 +265,30 @@ export default {
     handleIntroComplete() {
       this.showIntroOverlay = false;
     },
-    
+
     // 다음 라운드 인트로 완료 처리
     handleNextRoundComplete() {
       this.showNextRoundOverlay = false;
-      this.$emit('next-round-ready');
+      this.$emit("next-round-ready");
     },
-    
+
     // 슬롯에서 발생하는 next-round 이벤트 처리
     handleNextRound() {
-      this.$emit('next-round');
+      this.$emit("next-round");
     },
-    
+
     // 다음 라운드 시작
     startNextRound(userRank, totalPlayers) {
       this.userRank = userRank;
       this.totalPlayers = totalPlayers;
-      this.showNextRoundOverlay = true;
-      console.log("라운드를 Base에서 시작합니다")
-      this.fetchRoundData();
+      this.$nextTick(() => {
+        setTimeout(() => {
+          this.showNextRoundOverlay = true;
+          this.fetchRoundData();
+        }, 500);
+      });
     },
-    
+
     // 라운드 데이터 가져오기
     fetchRoundData() {
       // 라운드 종료 상태 초기화
@@ -294,19 +297,26 @@ export default {
       this.gameStore.state.userGuess = null;
       this.gameStore.state.playerGuesses = [];
     },
-    
+
     // 사용자의 현재 등수 가져오기
     getUserRank() {
-      if (!this.gameStore.state.players || this.gameStore.state.players.length === 0) {
+      if (
+        !this.gameStore.state.players ||
+        this.gameStore.state.players.length === 0
+      ) {
         return 1;
       }
-      
+
       // 점수 기준으로 정렬된 플레이어 배열 생성
-      const sortedPlayers = [...this.gameStore.state.players].sort((a, b) => b.score - a.score);
-      
+      const sortedPlayers = [...this.gameStore.state.players].sort(
+        (a, b) => b.score - a.score
+      );
+
       // 현재 사용자의 인덱스 찾기
-      const currentUserIndex = sortedPlayers.findIndex(player => player.id === this.gameStore.state.currentUser.id);
-      
+      const currentUserIndex = sortedPlayers.findIndex(
+        (player) => player.id === this.gameStore.state.currentUser.id
+      );
+
       // 인덱스 + 1이 등수
       return currentUserIndex !== -1 ? currentUserIndex + 1 : 1;
     },
@@ -1054,5 +1064,15 @@ export default {
     bottom: 20px;
     left: 20px;
   }
+}
+
+/* 페이드 트랜지션 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
