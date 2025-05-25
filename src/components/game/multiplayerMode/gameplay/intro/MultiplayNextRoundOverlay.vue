@@ -1,13 +1,12 @@
 <template>
-  <!-- 멀티플레이어 인트로 화면 -->
+  <!-- 다음 라운드 인트로 화면 -->
   <transition name="fade">
     <div v-if="showIntro" class="intro-overlay">
       <div class="intro-content">
         <transition name="slide-fade" mode="out-in">
-          <h2 v-if="step === 1" key="step1">게임을 시작합니다.</h2>
-          <h2 v-else-if="step === 2" key="step2">준비되셨나요?</h2>
-          <h2 v-else-if="step === 3" key="step3">{{ currentRound }}라운드</h2>
-          <div v-else-if="step === 4" key="step4" class="countdown-container">
+          <h2 v-if="step === 1" key="step1" class="message">{{ motivationMessage }}</h2>
+          <h2 v-else-if="step === 2" key="step2">{{ currentRound }}라운드</h2>
+          <div v-else-if="step === 3" key="step3" class="countdown-container">
             <span class="countdown-number">{{ countdown }}</span>
           </div>
         </transition>
@@ -15,12 +14,13 @@
     </div>
   </transition>
 </template>
-
+  
 <script>
 import gameStore from "@/store/gameStore";
+import { getRandomMessageByRank } from "./NextRoundMessages.js";
 
 export default {
-  name: "MultiplayerIntroOverlay",
+  name: "MultiplayNextRoundOverlay",
   props: {
     currentRound: {
       type: Number,
@@ -31,6 +31,16 @@ export default {
       type: Boolean,
       required: true,
       default: true,
+    },
+    userRank: {
+      type: Number,
+      required: true,
+      default: 1,
+    },
+    totalPlayers: {
+      type: Number,
+      required: true,
+      default: 1,
     },
     roomId: {
       type: String,
@@ -50,105 +60,40 @@ export default {
       syncTimer: null,
       localStartTime: 0,
       timeOffset: 0,
+      motivationMessage: "",
       gameStore,
     };
   },
   mounted() {
-    // 서버 시간과 로컬 시간의 차이 계산
-    if (this.serverStartTime > 0) {
-      this.syncWithServerTime();
-    } else {
-      // 서버 시간이 없는 경우 로컬 시작
-      this.startIntroSequence();
-    }
+    // 사용자 등수에 따른 메시지 설정
+    this.motivationMessage = getRandomMessageByRank(this.userRank, this.totalPlayers);
+    this.startIntroSequence();
   },
   beforeDestroy() {
     this.clearAllTimers();
   },
   methods: {
-    // 서버 시간과 동기화
-    syncWithServerTime() {
-      this.localStartTime = Date.now();
-      this.timeOffset = this.serverStartTime - this.localStartTime;
-      console.log(`서버 시간 오프셋: ${this.timeOffset}ms`);
-
-      // 서버 시간을 기준으로 인트로 시퀀스 시작
-      this.startSyncedIntroSequence();
-    },
-
-    // 서버 시간과 동기화된 인트로 시퀀스
-    startSyncedIntroSequence() {
-      // 서버 시간과 현재 시간의 차이 계산
-      const now = Date.now();
-      const elapsedSinceStart = now - (this.serverStartTime - this.timeOffset);
-
-      // 이미 시간이 지났다면 해당 단계로 직접 이동
-      if (elapsedSinceStart >= 4500) {
-        // 카운트다운 단계
-        this.step = 4;
-        const remainingTime = 7500 - elapsedSinceStart;
-        if (remainingTime > 0) {
-          // 남은 카운트다운 시간 계산
-          this.countdown = Math.ceil(remainingTime / 1000);
-          this.startCountdown();
-        } else {
-          // 이미 끝났으면 바로 완료
-          this.$emit("intro-complete");
-        }
-      } else if (elapsedSinceStart >= 3000) {
-        // 라운드 번호 단계
-        this.step = 3;
-        this.scheduleNextStep(4500 - elapsedSinceStart);
-      } else if (elapsedSinceStart >= 1500) {
-        // "준비되셨나요?" 단계
-        this.step = 2;
-        this.scheduleNextStep(3000 - elapsedSinceStart);
-      } else {
-        // 처음 단계
-        this.step = 1;
-        this.scheduleNextStep(1500 - elapsedSinceStart);
-      }
-    },
-
-    // 다음 단계 스케줄링
-    scheduleNextStep(delay) {
-      const timer = setTimeout(() => {
-        this.step++;
-        if (this.step === 4) {
-          this.startCountdown();
-        }
-      }, delay);
-      this.stepTimers.push(timer);
-    },
-
-    // 로컬 시작용 인트로 시퀀스 (서버 연결 없을 때 사용)
+    // 다음 라운드 인트로 시퀀스
     startIntroSequence() {
-      // 첫 번째 단계: "게임을 시작합니다."
+      // 첫 번째 단계: 사용자 등수에 따른 동기부여 메시지
+      // 이미 mounted에서 메시지 설정됨
+      
       const timer1 = setTimeout(() => {
-        // 두 번째 단계: "준비되셨나요?"
+        // 두 번째 단계: "n라운드"
         this.step = 2;
 
         const timer2 = setTimeout(() => {
-          // 세 번째 단계: "n라운드"
+          // 세 번째 단계: 카운트다운 "3, 2, 1"
           this.step = 3;
-
-          const timer3 = setTimeout(() => {
-            // 네 번째 단계: 카운트다운 "3, 2, 1"
-            this.step = 4;
-            this.startCountdown();
-          }, 1500);
-          this.stepTimers.push(timer3);
-        }, 1500);
+          this.startCountdown();
+        }, 2000);
         this.stepTimers.push(timer2);
-      }, 1500);
+      }, 2000);
       this.stepTimers.push(timer1);
-
-      // 서버 구현 시 여기에 소켓 이벤트 전송 코드 추가
     },
 
     startCountdown() {
       this.countdown = 3;
-
       this.clearTimer(this.timer);
       setTimeout(() => {
         this.timer = setInterval(() => {
@@ -187,8 +132,8 @@ export default {
   },
 };
 </script>
-
-<style scoped>
+  
+  <style scoped>
 /* 게임 소개 화면 */
 .intro-overlay {
   position: absolute;
@@ -274,3 +219,4 @@ export default {
   }
 }
 </style>
+  

@@ -3,9 +3,13 @@
     :room-id="roomId"
     :game-mode="gameMode"
     :is-team-mode="false"
+    :current-user-rank="currentUserRank"
     @guess-submitted="handleGuessSubmission"
     @round-ended="handleRoundEnded"
     @game-finished="handleGameFinished"
+    @next-round-ready="handleNextRoundReady"
+    @next-round="startNextRound"
+    ref="baseGame"
   >
     <!-- 개인전용 플레이어 리스트 -->
     <template #player-list>
@@ -107,6 +111,9 @@ export default {
       serverStartTime: 0,
       roundStartDelay: 1000, // 라운드 시작 전 지연 시간(ms)
       simulationTriggered: false, // 시뮬레이션 중복 호출 방지를 위한 플래그
+
+      //현재 유저 랭크
+      currentUserRank: 1,
     };
   },
 
@@ -128,12 +135,12 @@ export default {
       (newVal) => {
         if (newVal) {
           console.log("Actual location updated:", newVal);
-          // 실제 위치가 설정된 후에 다른 플레이어들의 추측 시뮤레이션
+          // 실제 위치가 설정된 후에 다른 플레이어들의 추측 시ミュ레이션
           if (newVal && Object.keys(newVal).length > 0 && !this.simulationTriggered) {
-            console.log("실제 위치가 설정되었습니다. 시뮬레이션 시작:", newVal);
+            console.log("실제 위치가 설정되었습니다. 시ミュ레이션 시작:", newVal);
             // 중복 호출 방지를 위한 플래그 설정
             this.simulationTriggered = true;
-            // 실제 위치가 설정된 후에 다른 플레이어들의 추측 시뮤레이션
+            // 실제 위치가 설정된 후에 다른 플레이어들의 추측 시ミュ레이션
             this.simulateOtherPlayersGuesses();
           }
         }
@@ -491,16 +498,11 @@ export default {
 
     startNextRound() {
       console.log("다음 라운드 시작");
-      // 라운드 종료 상태 초기화
-      this.gameStore.state.roundEnded = false;
-      this.gameStore.state.hasSubmittedGuess = false;
-      this.gameStore.state.userGuess = null;
-      this.gameStore.state.playerGuesses = [];
+      // 시뮬레이션 플래그 초기화
+      this.simulationTriggered = false;
       this.submittedPlayersCount = 0;
       this.allPlayersSubmitted = false;
-      
-      // 시뮬레이션 플래그 초기화 (중요: 새 라운드에서 시뮬레이션을 다시 실행하기 위해)
-      this.simulationTriggered = false;
+      this.gameStore.state.roundEnded = false;
 
       // 라운드 증가
       this.gameStore.state.currentRound++;
@@ -511,12 +513,13 @@ export default {
         return;
       }
 
-      // 인트로 오버레이 표시
-      this.gameStore.state.showIntroOverlay = true;
-
-      // 다음 라운드 데이터 가져오기
-      this.fetchRoundData();
-      console.log("다음 라운드 데이터 가져오기 완료");
+      // 사용자 등수 계산
+      this.currentUserRank = this.calculateUserRank();
+      const totalPlayers = this.gameStore.state.players.length;
+      
+      // 이벤트 기반 통신으로 변경
+      // 사용자 등수와 총 플레이어 수를 이벤트 데이터로 전달
+      this.$emit('start-next-round', { userRank: this.currentUserRank, totalPlayers });
     },
 
     finishGame() {
@@ -530,7 +533,35 @@ export default {
     },
 
     exitToLobby() {
-      this.exitToLobby();
+      this.$router.push("/lobby");
+    },
+  
+    // 다음 라운드 준비 완료 처리
+    handleNextRoundReady() {
+      // 인트로 오버레이 표시 (기존 인트로 오버레이 사용)
+      this.gameStore.state.showIntroOverlay = true;
+    },
+    
+    // 다음 라운드 시작 이벤트 처리
+    handleStartNextRound(eventData) {
+      // Base 컴포넌트의 startNextRound 메서드 호출
+      this.$refs.baseGame.startNextRound(eventData.userRank, eventData.totalPlayers);
+    },
+    
+    // 사용자의 현재 등수 계산
+    calculateUserRank() {
+      if (!this.gameStore.state.players || this.gameStore.state.players.length === 0) {
+        return 1;
+      }
+      
+      // 점수 기준으로 정렬된 플레이어 배열 생성
+      const sortedPlayers = [...this.gameStore.state.players].sort((a, b) => b.score - a.score);
+      
+      // 현재 사용자의 인덱스 찾기
+      const currentUserIndex = sortedPlayers.findIndex(player => player.id === this.gameStore.state.currentUser.id);
+      
+      // 인덱스 + 1이 등수
+      return currentUserIndex !== -1 ? currentUserIndex + 1 : 1;
     },
 
     // 더미 데이터로 다른 플레이어들의 정답 제출 시뮬레이션

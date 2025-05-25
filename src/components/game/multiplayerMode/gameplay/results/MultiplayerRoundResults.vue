@@ -309,15 +309,15 @@ export default {
       
       // 실제 환경에서 활성화
       // 소켓 이벤트 발송
-      if (this.$socket && typeof this.$socket.emit === 'function') {
-        this.$socket.emit('player-next-round-clicked', {
-          playerId: this.currentUserId,
-          playerName: currentPlayer.name,
-          playerColor: currentPlayer.color,
-          playerMarkerImage: currentPlayer.markerImage || '/images/markers/marker1.png',
-          roomId: this.$route.params && this.$route.params.roomId
-        });
-      }
+      // if (this.$socket && typeof this.$socket.emit === 'function') {
+      //   this.$socket.emit('player-next-round-clicked', {
+      //     playerId: this.currentUserId,
+      //     playerName: currentPlayer.name,
+      //     playerColor: currentPlayer.color,
+      //     playerMarkerImage: currentPlayer.markerImage || '/images/markers/marker1.png',
+      //     roomId: this.$route.params && this.$route.params.roomId
+      //   });
+      // }
       
       // 로컬에도 추가
       this.addPlayerToClickedList(currentPlayer);
@@ -361,9 +361,9 @@ export default {
     
     proceedToNextRound() {
       this.stopCountdown();
-      // 이벤트 이름 수정 - 오류 해결
-      // 이벤트 이름을 startNextRound로 변경
-      this.$emit("startNextRound");
+      console.log("다음 라운드로 진행 이벤트 발생");
+      // next-round 이벤트로 통일
+      this.$emit("next-round");
     },
     
     // 테스트용: 다른 플레이어들이 버튼을 누르는 것을 시뮬레이션

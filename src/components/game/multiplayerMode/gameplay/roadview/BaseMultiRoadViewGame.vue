@@ -43,7 +43,7 @@
           :totalTime="120"
           :warning-threshold="30"
           :danger-threshold="10"
-          :is-running="!showIntroOverlay"
+          :is-running="!showIntroOverlay && !showNextRoundOverlay"
         />
       </div>
     </div>
@@ -60,12 +60,23 @@
         <div class="game-view">
           <!-- 멀티플레이어 인트로 오버레이 -->
           <multiplayer-intro-overlay
-            v-if="showIntroOverlay"
+            v-if="showIntroOverlay && !showNextRoundOverlay"
             :current-round="gameStore.state.currentRound"
             :show-intro="showIntroOverlay"
             :room-id="roomId"
             :server-start-time="$parent.serverStartTime || 0"
             @intro-complete="handleIntroComplete"
+          />
+          <!-- 다음 라운드 오버레이 -->
+          <multiplay-next-round-overlay
+            v-if="showNextRoundOverlay"
+            :current-round="gameStore.state.currentRound"
+            :show-intro="showNextRoundOverlay"
+            :user-rank="userRank"
+            :total-players="totalPlayers"
+            :room-id="roomId"
+            :server-start-time="$parent ? $parent.serverStartTime : 0"
+            @intro-complete="handleNextRoundComplete"
           />
           <!-- 메인 게임 영역 (로드뷰 또는 결과 컴포넌트) -->
           <slot name="main">
@@ -145,6 +156,7 @@ import GameTimer from "@/components/game/common/shared/GameTimer.vue";
 import RoadView from "@/components/game/common/roadview/RoadView.vue";
 import PhoneFrame from "@/components/game/common/PhoneFrame.vue";
 import MultiplayerIntroOverlay from "@/components/game/multiplayerMode/gameplay/intro/MultiplayerIntroOverlay.vue";
+import MultiplayNextRoundOverlay from "@/components/game/multiplayerMode/gameplay/intro/MultiplayNextRoundOverlay.vue";
 import gameStore from "@/store/gameStore";
 
 export default {
@@ -155,6 +167,7 @@ export default {
     RoadView,
     PhoneFrame,
     MultiplayerIntroOverlay,
+    MultiplayNextRoundOverlay,
   },
 
   props: {
@@ -168,6 +181,10 @@ export default {
       default: "individual",
       validator: (value) => ["individual", "team"].includes(value),
     },
+    currentUserRank: {
+      type: Number,
+      default: 1,
+    }
   },
 
   provide() {
@@ -209,6 +226,9 @@ export default {
       userGuessPosition: null,
       userHasSubmitted: false,
       showIntroOverlay: true,
+      showNextRoundOverlay: false,
+      userRank: 1,
+      totalPlayers: 1,
     };
   },
 
@@ -244,6 +264,50 @@ export default {
     // 인트로 완료 처리
     handleIntroComplete() {
       this.showIntroOverlay = false;
+    },
+    
+    // 다음 라운드 인트로 완료 처리
+    handleNextRoundComplete() {
+      this.showNextRoundOverlay = false;
+      this.$emit('next-round-ready');
+    },
+    
+    // 슬롯에서 발생하는 next-round 이벤트 처리
+    handleNextRound() {
+      this.$emit('next-round');
+    },
+    
+    // 다음 라운드 시작
+    startNextRound(userRank, totalPlayers) {
+      this.userRank = userRank;
+      this.totalPlayers = totalPlayers;
+      this.showNextRoundOverlay = true;
+      this.fetchRoundData();
+    },
+    
+    // 라운드 데이터 가져오기
+    fetchRoundData() {
+      // 라운드 종료 상태 초기화
+      this.gameStore.state.roundEnded = false;
+      this.gameStore.state.hasSubmittedGuess = false;
+      this.gameStore.state.userGuess = null;
+      this.gameStore.state.playerGuesses = [];
+    },
+    
+    // 사용자의 현재 등수 가져오기
+    getUserRank() {
+      if (!this.gameStore.state.players || this.gameStore.state.players.length === 0) {
+        return 1;
+      }
+      
+      // 점수 기준으로 정렬된 플레이어 배열 생성
+      const sortedPlayers = [...this.gameStore.state.players].sort((a, b) => b.score - a.score);
+      
+      // 현재 사용자의 인덱스 찾기
+      const currentUserIndex = sortedPlayers.findIndex(player => player.id === this.gameStore.state.currentUser.id);
+      
+      // 인덱스 + 1이 등수
+      return currentUserIndex !== -1 ? currentUserIndex + 1 : 1;
     },
     checkResponsive() {
       const isMobile = window.innerWidth <= 992;
