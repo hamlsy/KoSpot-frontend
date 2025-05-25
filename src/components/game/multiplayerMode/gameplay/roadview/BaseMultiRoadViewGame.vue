@@ -282,6 +282,7 @@ export default {
       this.userRank = userRank;
       this.totalPlayers = totalPlayers;
       this.showNextRoundOverlay = true;
+      console.log("라운드를 Base에서 시작합니다")
       this.fetchRoundData();
     },
     

@@ -8,7 +8,6 @@
     @round-ended="handleRoundEnded"
     @game-finished="handleGameFinished"
     @next-round-ready="handleNextRoundReady"
-    @next-round="startNextRound"
     ref="baseGame"
   >
     <!-- 개인전용 플레이어 리스트 -->
@@ -35,14 +34,10 @@
       <!-- 라운드 진행 중일 때는 로드뷰 표시 -->
       <road-view
         v-if="!gameStore.state.roundEnded && gameStore.state.currentLocation"
-        :position="
-          gameStore.state.currentLocation || { lat: 37.5665, lng: 126.978 }
-        "
+        :position="gameStore.state.currentLocation"
         :show-controls="true"
         :prevent-mouse-events="gameStore.state.hasSubmittedGuess"
       />
-
-      <!-- 라운드 종료 시 결과 컴포넌트 표시 -->
       <round-results
         v-if="gameStore.state.roundEnded"
         :players="gameStore.state.players"
@@ -56,7 +51,7 @@
         :player-guesses="gameStore.state.playerGuesses"
         :top-player="gameStore.state.topPlayer"
         @close="closeRoundResults"
-        @next-round="startNextRound"
+        @next-round="handleNextRound"
         @finish-game="finishGame"
       />
     </template>
@@ -118,29 +113,24 @@ export default {
   },
 
   created() {
-    console.log("IndividualRoadViewGame created");
     // 테스트 데이터 로드 및 게임 초기화
     this.gameStore.loadTestData(false);
     this.initGame();
   },
 
   mounted() {
-    console.log(
-      "IndividualRoadViewGame mounted - players: ",
-      this.gameStore.state.players
-    );
     // 게임 스토어의 상태 변화 감시
     this.$watch(
       () => this.gameStore.state.actualLocation,
       (newVal) => {
         if (newVal) {
           console.log("Actual location updated:", newVal);
-          // 실제 위치가 설정된 후에 다른 플레이어들의 추측 시ミュ레이션
+          // 실제 위치가 설정된 후에 다른 플레이어들의 추측 시뮬레이션
           if (newVal && Object.keys(newVal).length > 0 && !this.simulationTriggered) {
-            console.log("실제 위치가 설정되었습니다. 시ミュ레이션 시작:", newVal);
+            console.log("실제 위치가 설정되었습니다. 시뮬레이션 시작:", newVal);
             // 중복 호출 방지를 위한 플래그 설정
             this.simulationTriggered = true;
-            // 실제 위치가 설정된 후에 다른 플레이어들의 추측 시ミュ레이션
+            // 실제 위치가 설정된 후에 다른 플레이어들의 추측 시뮬레이션
             this.simulateOtherPlayersGuesses();
           }
         }
@@ -160,6 +150,11 @@ export default {
   },
 
   methods: {
+    // next-round 이벤트 처리
+    handleNextRound() {
+      this.startNextRound();
+    },
+    
     // 이벤트 핸들러 메서드
     handleRoundEnded() {
       console.log("라운드가 종료되었습니다.");
@@ -517,9 +512,8 @@ export default {
       this.currentUserRank = this.calculateUserRank();
       const totalPlayers = this.gameStore.state.players.length;
       
-      // 이벤트 기반 통신으로 변경
-      // 사용자 등수와 총 플레이어 수를 이벤트 데이터로 전달
-      this.$emit('start-next-round', { userRank: this.currentUserRank, totalPlayers });
+      // Base 컴포넌트의 startNextRound 메서드 직접 호출
+      this.$refs.baseGame.startNextRound(this.currentUserRank, totalPlayers);
     },
 
     finishGame() {
@@ -540,12 +534,6 @@ export default {
     handleNextRoundReady() {
       // 인트로 오버레이 표시 (기존 인트로 오버레이 사용)
       this.gameStore.state.showIntroOverlay = true;
-    },
-    
-    // 다음 라운드 시작 이벤트 처리
-    handleStartNextRound(eventData) {
-      // Base 컴포넌트의 startNextRound 메서드 호출
-      this.$refs.baseGame.startNextRound(eventData.userRank, eventData.totalPlayers);
     },
     
     // 사용자의 현재 등수 계산
