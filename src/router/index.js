@@ -32,4 +32,14 @@ const router = new VueRouter({ // eslint-disable-line no-unused-vars
   }
 });
 
+//컴포넌트 자동 등록
+const requireComponent = require.context('./', true, /index\.vue$/)
+const components = {}
+
+requireComponent.keys().forEach(fileName => {
+  const componentConfig = requireComponent(fileName)
+  const componentName = fileName.split('/')[1]
+  components[componentName] = componentConfig.default || componentConfig
+})
+
 export default router;
