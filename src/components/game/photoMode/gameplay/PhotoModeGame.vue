@@ -180,18 +180,21 @@
 </template>
   
   <script>
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick, defineComponent } from 'vue';
+import { useRouter } from 'vue-router';
 import ProgressTimer from "@/components/game/photoMode/timer/PhotoModeProgressTimer.vue";
 import RegionMap from "./PhotoModeRegionMap.vue";
 import GameResult from "@/components/game/photoMode/results/PhotoModeGameResult.vue";
 import PhotoModePhotoGrid from "./PhotoModePhotoGrid.vue";
 import PhotoModeHintDisplay from "./PhotoModeHintDisplay.vue";
 import PhotoModeNextRoundButton from "./PhotoModeNextRoundButton.vue";
-import IntroOverlay from "../../common/intro/IntroOverlay.vue";
-import CountdownOverlay from "../../common/CountdownOverlay.vue";
+import IntroOverlay from "@/components/game/common/intro/IntroOverlay.vue";
+import CountdownOverlay from "@/components/game/common/CountdownOverlay.vue";
+import useGame from '@/composables/useGame';
+import gameService from '@/api/services/game.service';
 
-export default {
+export default defineComponent({
   name: "PhotoModeGame",
-
   components: {
     ProgressTimer,
     RegionMap,
@@ -207,7 +210,9 @@ export default {
     mode: {
       type: String,
       default: "practice",
-      validator: (value) => ["practice", "ranked", "theme"].includes(value),
+      validator(value) {
+        return ["practice", "rank", "theme"].includes(value);
+      },
     },
     region: {
       type: String,
@@ -320,89 +325,60 @@ export default {
           fact: "동대문의 정식 명칭은 흥인지문으로, 국보 제1호입니다.",
         },
         {
-          id: 9,
-          photoUrl: require("@/assets/banner/Seoul-temp1.jpg"),
-          locationName: "서울 남산",
-          locationDescription:
-            "서울 중구와 용산구에 걸쳐 있는 남산은 서울의 중심에 위치한 산입니다.",
-          region: "Seoul",
-          fact: "남산에는 서울을 대표하는 랜드마크인 N서울타워가 있습니다.",
-        },
-      ],
-      gamePhotos: [],
-      currentPhotos: [],
-      currentPhoto: null,
-      photoLoadCount: 0,
 
-      // 지역 선택 관련
-      selectedRegion: null,
-      correctRegion: null,
-      wrongRegion: null,
+    // 지도 상태
+    const isMapOpen = ref(true);
+    const mapDisabled = ref(false);
 
-      // 점수 관련
-      score: 0,
-      lastRoundScore: 0,
-      correctCount: 0,
-      wrongCount: 0,
-      totalTimeTaken: 0,
+    // 결과 화면
+    const showGameResult = ref(false);
+    const finalScore = ref(0);
+    const accuracy = ref(0);
+    const averageTime = ref(0);
+    const bestRound = ref(null);
+    const worstRound = ref(null);
+    const rank = ref("");
+    const rankPercentile = ref(0);
+    const rankPointChange = ref(0);
 
-      // 애니메이션 상태
-      showIncorrectAnimation: false,
-      showCorrectAnimation: false,
-      showTimeoutAnimation: false,
+    // 모달
+    const showExitConfirmation = ref(false);
 
-      // 힌트 시스템
-      showHint: false,
-      showHintNotification: true,
-      currentHint: "10초 뒤 힌트가 표시됩니다!",
-      hintLevel: 0,
-      hintTimeThresholds: [30, 15], // 남은 시간이 30초, 15초일 때 힌트 표시
+    // 사진 로딩 상태
+    const photosLoaded = ref(0);
+    const totalPhotosToLoad = ref(0);
+    const allPhotosLoaded = ref(false);
 
-      // 결과 표시
-      showGameResult: false,
-
-      // 모달 상태
-      showExitConfirmation: false,
-
-      // 랭크 정보
-      rank: null,
-      rankPercentile: null,
-      rankPointChange: null,
-
-      // 완료된 라운드 정보 (게임 결과에 표시)
-      completedRounds: [],
-
-      // 지도 토글 버튼 관련
-      isMapOpen: false,
-      isMobile: false,
-
-      // 힌트 타이머
-      hintNotificationTimer: null,
-      hintTimer: null,
+    // 지역 이름 매핑
+    const regionNames = {
+      seoul: "서울",
+      gyeonggi: "경기도",
+      incheon: "인천",
+      gangwon: "강원도",
+      chungbuk: "충청북도",
+      chungnam: "충청남도",
+      daejeon: "대전",
+      sejong: "세종",
+      gyeongbuk: "경상북도",
+      gyeongnam: "경상남도",
+      daegu: "대구",
+      busan: "부산",
+      ulsan: "울산",
+      jeonbuk: "전라북도",
+      jeonnam: "전라남도",
+      gwangju: "광주",
+      jeju: "제주도",
     };
-  },
 
-  computed: {
-    isRankMode() {
-      return this.mode === "rank";
-    },
+    // 타이머 및 지도 참조
+    const timer = ref(null);
+    const regionMap = ref(null);
 
-    isPracticeMode() {
-      return this.mode === "practice";
-    },
+    // ... (나머지 코드는 여기에 추가)
 
-    gameMode() {
-      const modeMap = {
-        practice: "연습",
-        ranked: "랭크",
-        theme: "테마",
-      };
-      return modeMap[this.mode] || "연습";
-    },
-
-    regionLabel() {
-      return this.region === "all" ? "전국" : this.region;
-    },
+    return {
+      // ... (반환 값은 여기에 추가)
+    }
 
     isLastGuessCorrect() {
       return this.correctRegion !== null;

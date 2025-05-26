@@ -171,227 +171,285 @@
 </template>
 
 <script>
+import { ref, reactive, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import AppLogo from "@/components/common/AppLogo.vue";
+import useGame from '@/composables/useGame';
+import useAuth from '@/composables/useAuth';
+import gameService from '@/api/gameService';
+
 export default {
   name: "PhotoModeGame",
   components: {
     AppLogo,
   },
-
-  data() {
-    return {
-      selectedGameMode: null,
-      selectedRegion: null,
-      selectedTheme: null,
-      userRank: "Silver II",
-      showProfileMenu: false,
-      isLoading: false,
-      hoverMode: null,
-      hoverStat: null,
-      hoverRecord: null,
-
-      gameModes: [
-        {
-          id: "practice",
-          title: "연습 게임",
-          icon: "fas fa-graduation-cap",
-          shortDescription: "지역을 선택하고 쉽게 연습해보세요",
-          fullDescription:
-            "특정 지역의 관광지 사진으로 연습할 수 있는 모드입니다. 편안한 속도로 학습하세요.",
-          color: "practice-color",
-        },
-        {
-          id: "rank",
-          title: "랭크 게임",
-          icon: "fas fa-trophy",
-          shortDescription: "랜덤 사진으로 다른 플레이어와 경쟁하세요",
-          fullDescription:
-            "전국 랭킹에 도전하는 경쟁 모드입니다. 관광지 사진을 보고 위치를 맞춰 최고의 성적을 목표로 하세요.",
-          color: "rank-color",
-        },
-      ],
-      regions: {
-        수도권: "sudo",
-        강원도: "kangwon",
-        충청권: "chungcheong",
-        경상권: "gyeongsang",
-        호남권: "honam",
+  setup() {
+    const router = useRouter();
+    const { user, isLoggedIn } = useAuth();
+    const { gameState, startGame: initGame } = useGame();
+    
+    // 상태 정의
+    const isLoading = ref(false);
+    const selectedGameMode = ref(null);
+    const selectedRegion = ref(null);
+    const selectedTheme = ref(null);
+    const hoverMode = ref(null);
+    const hoverRecord = ref(null);
+    const showProfileMenu = ref(false);
+    const userRank = ref("Silver II");
+    const stats = ref([
+      { icon: "fas fa-gamepad", label: "플레이 횟수", value: "32회" },
+      { icon: "fas fa-map-marker-alt", label: "정확도", value: "68%" },
+      { icon: "fas fa-medal", label: "최고 점수", value: "4,850점" },
+      { icon: "fas fa-users", label: "전체 랭킹", value: "상위 15%" },
+    ]);
+    const recentRecords = ref([
+      {
+        id: 1,
+        mode: "랭크",
+        score: 4320,
+        date: "2024.12.29",
+        region: "",
       },
+      {
+        id: 2,
+        mode: "테마",
+        score: 3950,
+        date: "2024.12.28",
+        region: "산과 숲",
+      },
+      {
+        id: 3,
+        mode: "연습",
+        score: 4100,
+        date: "2024.12.28",
+        region: "부산",
+      },
+      {
+        id: 4,
+        mode: "랭크",
+        score: 3850,
+        date: "2024.12.27",
+        region: "",
+      },
+      {
+        id: 5,
+        mode: "테마",
+        score: 3720,
+        date: "2024.12.26",
+        region: "궁궐과 사찰",
+      },
+    ]);
 
-      themes: [
-        {
-          id: "mountain",
-          name: "산과 숲",
-          icon: "fas fa-mountain",
-          description: "한국의 아름다운 산과 숲 풍경",
-        },
-        {
-          id: "sea",
-          name: "바다와 해변",
-          icon: "fas fa-water",
-          description: "동해, 서해, 남해의 다양한 해안선",
-        },
-        {
-          id: "palace",
-          name: "궁궐과 사찰",
-          icon: "fas fa-torii-gate",
-          description: "한국의 전통 건축물",
-        },
-        {
-          id: "modern",
-          name: "현대 도시",
-          icon: "fas fa-city",
-          description: "현대적인 도시 경관",
-        },
-      ],
+    // 게임 모드 데이터
+    const gameModes = [
+      {
+        id: "practice",
+        title: "연습 모드",
+        shortDescription: "지역별로 사진을 보고 위치를 맞혀보세요",
+        fullDescription:
+          "연습 모드에서는 원하는 지역을 선택하여 해당 지역의 사진을 보고 위치를 맞추는 연습을 할 수 있습니다. 점수는 기록되지만 랭킹에는 반영되지 않습니다.",
+        icon: "fas fa-graduation-cap",
+        color: "practice-color",
+      },
+      {
+        id: "rank",
+        title: "랭크 모드",
+        shortDescription: "전국 무작위 사진으로 실력을 겨루세요",
+        fullDescription:
+          "랭크 모드에서는 전국의 무작위 사진이 출제됩니다. 점수는 기록되며 랭킹에 반영됩니다. 시즌별로 랭킹이 초기화되며, 상위 랭커에게는 특별한 보상이 주어집니다.",
+        icon: "fas fa-trophy",
+        color: "rank-color",
+      },
+      {
+        id: "theme",
+        title: "테마 모드",
+        shortDescription: "특별한 테마의 사진으로 게임을 즐겨보세요",
+        fullDescription:
+          "테마 모드에서는 '산과 숲', '해변과 바다', '도시 풍경', '궁궐과 사찰' 등 특정 테마의 사진들로 게임을 즐길 수 있습니다. 점수는 기록되지만 랭킹에는 반영되지 않습니다.",
+        icon: "fas fa-image",
+        color: "theme-color",
+      },
+    ];
 
-      stats: [
-        { icon: "fas fa-trophy", label: "내 랭크", value: "Bronze 3" },
-        { icon: "fas fa-trophy", label: "내 레이팅 점수", value: "3200" },
-        { icon: "fas fa-clock", label: "총 플레이 수", value: "500 판" },
-        { icon: "fas fa-medal", label: "최고 점수", value: "4,850점" },
-        { icon: "fas fa-users", label: "전체 랭킹", value: "상위 15%" },
-      ],
+    // 지역 데이터
+    const regions = [
+      { id: "all", name: "전국", icon: "fas fa-map" },
+      { id: "seoul", name: "서울", icon: "fas fa-city" },
+      { id: "busan", name: "부산", icon: "fas fa-ship" },
+      { id: "jeju", name: "제주", icon: "fas fa-umbrella-beach" },
+      { id: "gyeonggi", name: "경기도", icon: "fas fa-mountain" },
+      { id: "gangwon", name: "강원도", icon: "fas fa-skiing" },
+      { id: "chungcheong", name: "충청도", icon: "fas fa-leaf" },
+      { id: "gyeongsang", name: "경상도", icon: "fas fa-industry" },
+      { id: "jeolla", name: "전라도", icon: "fas fa-seedling" },
+    ];
 
-      recentRecords: [
-        {
-          id: 1,
-          mode: "랭크",
-          score: 4320,
-          date: "2024.12.29",
-          region: "",
-        },
-        {
-          id: 2,
-          mode: "테마",
-          score: 3950,
-          date: "2024.12.28",
-          region: "산과 숲",
-        },
-        {
-          id: 3,
-          mode: "연습",
-          score: 4100,
-          date: "2024.12.28",
-          region: "부산",
-        },
-        {
-          id: 4,
-          mode: "랭크",
-          score: 3850,
-          date: "2024.12.27",
-          region: "",
-        },
-        {
-          id: 5,
-          mode: "테마",
-          score: 3720,
-          date: "2024.12.26",
-          region: "궁궐과 사찰",
-        },
-      ],
-    };
-  },
+    // 테마 데이터
+    const themes = [
+      { id: "mountains", name: "산과 숲", icon: "fas fa-mountain" },
+      { id: "beaches", name: "해변과 바다", icon: "fas fa-umbrella-beach" },
+      { id: "cityscape", name: "도시 풍경", icon: "fas fa-city" },
+      { id: "palaces", name: "궁궐과 사찰", icon: "fas fa-torii-gate" },
+      { id: "landmarks", name: "유명 랜드마크", icon: "fas fa-landmark" },
+      { id: "nature", name: "자연 경관", icon: "fas fa-leaf" },
+      { id: "festivals", name: "축제와 행사", icon: "fas fa-music" },
+      { id: "food", name: "음식과 시장", icon: "fas fa-utensils" },
+    ];
 
-  computed: {
-    isGameStartReady() {
-      if (this.selectedGameMode?.id === "practice")
-        return this.selectedRegion !== null;
-      if (this.selectedGameMode?.id === "theme")
-        return this.selectedTheme !== null;
-      if (this.selectedGameMode?.id === "rank") return true;
+    // 게임 시작 준비 상태 계산
+    const isGameStartReady = computed(() => {
+      if (selectedGameMode.value?.id === "practice")
+        return selectedRegion.value !== null;
+      if (selectedGameMode.value?.id === "theme")
+        return selectedTheme.value !== null;
+      if (selectedGameMode.value?.id === "rank") return true;
       return false;
-    },
-  },
+    });
 
-  mounted() {
-    this.fetchUserStats();
-  },
+    // 게임 모드 팝업 열기
+    const openGameModePopup = (mode) => {
+      selectedGameMode.value = mode;
+      selectedRegion.value = null;
+      selectedTheme.value = null;
+    };
 
-  methods: {
-    openGameModePopup(mode) {
-      this.selectedGameMode = mode;
-      this.selectedRegion = null;
-      this.selectedTheme = null;
-    },
+    // 게임 모드 팝업 닫기
+    const closeGameModePopup = () => {
+      selectedGameMode.value = null;
+      selectedRegion.value = null;
+      selectedTheme.value = null;
+    };
 
-    closeGameModePopup() {
-      this.selectedGameMode = null;
-      this.selectedRegion = null;
-      this.selectedTheme = null;
-    },
+    // 지역 선택
+    const selectRegion = (region) => {
+      selectedRegion.value = region;
+    };
 
-    selectRegion(region) {
-      this.selectedRegion = region;
-    },
+    // 테마 선택
+    const selectTheme = (themeId) => {
+      selectedTheme.value = themeId;
+    };
 
-    selectTheme(themeId) {
-      this.selectedTheme = themeId;
-    },
+    // 게임 시작
+    const startGame = async () => {
+      if (!isGameStartReady.value) return;
 
-    async startGame() {
-      if (!this.isGameStartReady) return;
-
-      this.isLoading = true;
+      isLoading.value = true;
 
       const gameData = {
-        mode: this.selectedGameMode.id,
-        region: this.selectedRegion,
-        theme: this.selectedTheme,
+        mode: selectedGameMode.value.id,
+        region: selectedRegion.value,
+        theme: selectedTheme.value,
+        totalRounds: 5 // 기본 라운드 수
       };
 
-      console.log("Starting game with:", gameData);
-
       try {
-        // 실제 구현에서는 API 호출로 대체
-        // const response = await axios.post('/api/photo-game/start', gameData);
+        // 게임 데이터 로드 및 게임 시작
+        await initGame('photo', {
+          region: gameData.region,
+          theme: gameData.theme,
+          totalRounds: gameData.totalRounds
+        });
 
-        // 테스트를 위한 타임아웃
-        setTimeout(() => {
-          this.isLoading = false;
-          // 게임 화면으로 라우팅하는 로직이 구현되어야 함
-          // this.$router.push({
-          //   name: 'photoModePlay',
-          //   params: { gameId: 'generated-id' }
-          // });
-        }, 1500);
+        // 게임 모드에 따라 라우팅
+        if (gameData.mode === 'practice') {
+          router.push({
+            name: 'PhotoModePractice',
+            query: {
+              region: gameData.region,
+              theme: gameData.theme,
+              totalRounds: gameData.totalRounds
+            }
+          });
+        } else if (gameData.mode === 'rank') {
+          router.push({ name: 'PhotoModeRank' });
+        } else if (gameData.mode === 'theme') {
+          router.push({
+            name: 'PhotoModePractice',
+            query: {
+              mode: 'theme',
+              theme: gameData.theme,
+              totalRounds: gameData.totalRounds
+            }
+          });
+        }
       } catch (error) {
         console.error("게임 시작 중 오류 발생:", error);
-        this.isLoading = false;
+      } finally {
+        isLoading.value = false;
       }
-    },
+    };
 
-    formatNumber(number) {
+    // 숫자 포맷팅
+    const formatNumber = (number) => {
       return number.toLocaleString();
-    },
+    };
 
-    // 필요 시 사용할 예정이므로 유지
-    toggleProfileMenu() {
-      this.showProfileMenu = !this.showProfileMenu;
-    },
+    // 프로필 메뉴 토글
+    const toggleProfileMenu = () => {
+      showProfileMenu.value = !showProfileMenu.value;
+    };
 
-    getRankIcon(rank) {
-      // 랭크에 따른 아이콘 클래스 반환
+    // 랭크 아이콘 가져오기
+    const getRankIcon = (rank) => {
       if (rank.includes("Gold")) return "fas fa-trophy gold";
       if (rank.includes("Silver")) return "fas fa-trophy silver";
       if (rank.includes("Bronze")) return "fas fa-trophy bronze";
       return "fas fa-trophy";
-    },
+    };
 
-    async fetchUserStats() {
+    // 사용자 통계 가져오기
+    const fetchUserStats = async () => {
       try {
-        // 실제 구현에서는 API 호출로 대체
-        // const response = await axios.get('/api/user/photo-stats');
-        // this.stats = response.data.stats;
-        // this.userRank = response.data.userRank;
-        // this.recentRecords = response.data.recentRecords;
-        // 테스트 데이터는 이미 설정되어 있음
+        if (isLoggedIn.value) {
+          // API 서비스를 사용하여 사용자 게임 통계 가져오기
+          const response = await gameService.getUserGameStats(user.value.id);
+          stats.value = response.data.stats;
+          userRank.value = response.data.userRank;
+          
+          // 최근 게임 기록 가져오기
+          const historyResponse = await gameService.getUserGameHistory(user.value.id, {
+            gameMode: 'photo',
+            limit: 5
+          });
+          recentRecords.value = historyResponse.data;
+        }
       } catch (error) {
         console.error("사용자 통계 조회 중 오류 발생:", error);
       }
-    },
-  },
-};
+    };
+
+    // 컴포넌트 마운트 시 사용자 통계 가져오기
+    onMounted(() => {
+      fetchUserStats();
+    });
+
+    return {
+      isLoading,
+      selectedGameMode,
+      selectedRegion,
+      selectedTheme,
+      hoverMode,
+      hoverRecord,
+      showProfileMenu,
+      userRank,
+      gameModes,
+      regions,
+      themes,
+      stats,
+      recentRecords,
+      isGameStartReady,
+      openGameModePopup,
+      closeGameModePopup,
+      selectRegion,
+      selectTheme,
+      startGame,
+      formatNumber,
+      toggleProfileMenu,
+      getRankIcon
+    };
+  }
 </script>
 
 <style scoped>

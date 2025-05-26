@@ -281,8 +281,12 @@
 </template>
 
 <script>
+import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { useRouter } from 'vue-router';
+import { useStore } from 'vuex';
 import NavigationBar from "@/components/common/NavigationBar.vue";
 import UserLoginCard from "@/components/main/UserLoginCard.vue";
+import useAuth from '@/composables/useAuth';
 
 export default {
   name: "MainPage",
@@ -301,97 +305,17 @@ export default {
       bannerInterval: null,
       showToast: false,
       toastMessage: "",
-
-      userProfile: {
-        name: "김코스팟",
-        email: "user@kospot.com",
-        avatar: null,
-        isAdmin: true, // 관리자 권한 설정 (실제 구현에서는 인증 서비스에서 가져옴)
-        nickname: "테스트유저",
-        level: 5,
-        rankPoints: 1250,
-        playCount: 42,
-      },
-      banners: [
-        {
-          image: require("@/assets/banner/Seoul-Dongdaemun-Gate.jpg"),
-          badge: "뱃지1",
-          title: "타이틀 1",
-          description: "설명 1",
-        },
-        {
-          image: require("@/assets/banner/Seoul-temp1.jpg"),
-          badge: "뱃지2",
-          title: "타이틀 2",
-          description: "설명 2",
-        },
-        {
-          image: "/images/busan-banner.jpg",
-          badge: "뱃지3",
-          title: "타이틀 3",
-          description: "설명 3",
-        },
-      ],
-      recentNotices: [
-        {
-          id: 1,
-          category: "업데이트",
-          title: "KoSpot 2.0 업데이트 안내",
-          date: "2025.03.08",
-        },
-        {
-          id: 2,
-          category: "이벤트",
-          title: "봄맞이 지역 사진 공유 이벤트",
-          date: "2025.03.07",
-        },
-        {
-          id: 3,
-          category: "공지",
-          title: "시스템 점검 안내 (3월 10일)",
-          date: "2025.03.06",
-        },
-        {
-          id: 4,
-          category: "이벤트",
-          title: "친구 초대 시 포인트 2배 이벤트",
-          date: "2025.03.04",
-        },
-      ],
-      recentActivities: [
-        {
-          id: 1,
-          type: "success",
-          icon: "fas fa-check-circle",
-          text: "명동 로드뷰 챌린지 성공",
-          time: "방금 전",
-        },
-        {
-          id: 2,
-          type: "achievement",
-          icon: "fas fa-medal",
-          text: "정확도 마스터 뱃지 획득",
-          time: "2시간 전",
-        },
-        {
-          id: 3,
-          type: "friend",
-          icon: "fas fa-user-plus",
-          text: "민준님이 친구추가 했습니다",
-          time: "3시간 전",
-        },
-      ],
     };
   },
-  mounted() {
-    this.startBannerRotation();
-  },
-  beforeDestroy() {
+  beforeUnmount() {
     this.stopBannerRotation();
   },
   methods: {
     toggleProfileMenu() {
       this.showProfileMenu = !this.showProfileMenu;
+    // ... 
+  }
+}
       if (this.showProfileMenu) {
         document.body.style.overflow = "hidden";
       } else {

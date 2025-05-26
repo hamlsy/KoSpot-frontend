@@ -2,22 +2,18 @@ import Vue from 'vue';
 import VueRouter from 'vue-router';
 
 // Import route modules
-import mainRoutes from './mainRoutes';
-import roadViewRoutes from './roadViewRoutes';
-import photoModeRoutes from './photoModeRoutes';
-import multiplayerRoutes from './multiplayerRoutes';
-import userRoutes from './userRoutes';
-import adminRoutes from './adminRoutes';
+import homeRoutes from './modules/home.routes';
+import gameRoutes from './modules/game.routes';
+import userRoutes from './modules/user.routes';
+import adminRoutes from './modules/admin.routes';
 import devRoutes from './devRoutes';
 
 Vue.use(VueRouter);
 
 // Combine all routes
 const routes = [
-  ...mainRoutes,
-  ...roadViewRoutes,
-  ...photoModeRoutes,
-  ...multiplayerRoutes,
+  ...homeRoutes,
+  ...gameRoutes,
   ...userRoutes,
   ...adminRoutes,
   ...devRoutes

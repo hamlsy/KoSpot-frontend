@@ -13,7 +13,8 @@
     "core-js": "^3.8.3",
     "crypto-js": "^4.2.0",
     "sass-loader": "^16.0.5",
-    "vue": "^2.6.14",
+    "vue": "^3.5.14",
+    "vue-compat": "^0.0.1",
     "vue-router": "^3.5.4",
     "vuex": "^3.6.2",
     "xlsx": "^0.18.5"
@@ -42,7 +43,9 @@
     "parserOptions": {
       "parser": "@babel/eslint-parser"
     },
-    "rules": {},
+    "rules": {
+      "no-unused-vars": "off"
+    },
     "globals": {
       "kakao": false
     }
