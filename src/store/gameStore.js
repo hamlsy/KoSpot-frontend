@@ -1,9 +1,9 @@
-import Vue from 'vue';
+import { reactive } from 'vue';
 import { testData, individualTestData } from '@/components/game/multiplayerMode/MultiplayerGameTestData';
 
 // 게임 상태 관리 스토어 생성
 const gameStore = {
-  state: Vue.observable({
+  state: reactive({
     // 게임 공통 상태
     roomData: null,
     currentUser: null,
@@ -177,7 +177,7 @@ const gameStore = {
     if (!teamId) return;
     
     if (!this.state.teamChatMessages[teamId]) {
-      Vue.set(this.state.teamChatMessages, teamId, []);
+      this.state.teamChatMessages[teamId] = [];
     }
     
     this.state.teamChatMessages[teamId].push({

@@ -48,7 +48,7 @@
 </template>
 
 <script>
-import KakaoMapGame from '@/components/game/common/kakao/KakaoMapGame.vue';
+import KakaoMapGame from '@/components/common/game/kakao/KakaoMapGame.vue';
 
 export default {
   name: 'PhoneMapFrame',

@@ -227,9 +227,9 @@
 <script>
 import GameTimer from '@/components/ui/GameTimer.vue';
 import MultiplayerPlayerList from './components/gameplay/MultiplayerPlayerList.vue';
-import RoadView from '@/components/game/common/roadview/RoadView.vue';
-import PhotoView from '@/components/game/common/photo/PhotoView.vue';
-import KakaoMap from '@/components/game/common/kakao/KakaoMap.vue';
+import RoadView from '@/components/common/game/roadview/RoadView.vue';
+import PhotoView from '@/components/common/game/photo/PhotoView.vue';
+import KakaoMap from '@/components/common/game/kakao/KakaoMap.vue';
 import IndividualChat from './components/gameplay/chat/IndividualChat.vue';
 import MultiplayerRoundResults from './components/results/MultiplayerRoundResults.vue';
 import MultiplayerGameResults from './components/results/MultiplayerGameResults.vue';

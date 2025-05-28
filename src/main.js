@@ -13,7 +13,7 @@ import "@fortawesome/fontawesome-free/js/all.js";
 import '@/assets/styles/index.css';
 
 // Vuex 스토어 가져오기 (Pinia로 마이그레이션 전까지 임시 사용)
-import store from './store';
+// import store from './store'; // 임시로 주석 처리
 
 // 앱 인스턴스 생성
 const app = createApp(App);
@@ -23,16 +23,16 @@ app.config.globalProperties.$axios = axios;
 
 // 플러그인 등록
 app.use(router);
-app.use(store); // Vuex 스토어 사용
+// app.use(store); // Vuex 스토어 사용 (임시로 주석 처리)
 app.use(KakaoMapsPlugin, {
   appKey: 'c66fbf360458039285570a638bad813a', // 현재 index.html에 있는 앱키 사용
   libraries: 'services,clusterer,drawing,geometry' // 필요한 라이브러리 추가
 });
 
-// 앱 초기화 작업
-if (store.state.initialized === false) {
-  store.dispatch('initializeApp');
-}
+// 앱 초기화 작업 (임시로 주석 처리)
+// if (store.state.initialized === false) {
+//   store.dispatch('initializeApp');
+// }
 
 // 앱 마운트
 app.mount('#app');

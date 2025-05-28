@@ -179,14 +179,14 @@
 <script>
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick, defineComponent } from 'vue';
 import { useRouter } from 'vue-router';
-import ProgressTimer from "./timer/PhotoModeProgressTimer.vue";
-import RegionMap from "./map/RegionMap.vue";
-import GameResult from "./results/PhotoModeGameResult.vue";
+import ProgressTimer from 'src/views/Game/PhotoMode/components/gameplay/PhotoModeProgressTimer.vue'
+import RegionMap from 'src/views/Game/PhotoMode/components/gameplay/PhotoModeRegionMap.vue'
+import GameResult from "@/views/Game/PhotoMode/components/results/PhotoModeGameResult.vue";
 import PhotoModePhotoGrid from "./PhotoModePhotoGrid.vue";
 import PhotoModeHintDisplay from "./PhotoModeHintDisplay.vue";
 import PhotoModeNextRoundButton from "./PhotoModeNextRoundButton.vue";
-import IntroOverlay from "@/components/ui/overlay/IntroOverlay.vue";
-import CountdownOverlay from "@/components/ui/overlay/CountdownOverlay.vue";
+import IntroOverlay from "@/components/common/game/intro/IntroOverlay.vue";
+import CountdownOverlay from "@/components/common/game/CountdownOverlay.vue";
 import useGame from '@/composables/useGame';
 import gameService from '@/api/services/game.service';
 

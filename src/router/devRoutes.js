@@ -1,8 +1,8 @@
-import TempPage from '@/components/dummy/TempPage.vue';
-import TestMapPage from '@/components/dummy/TestMapPage.vue';
-import CoordData from '@/components/dummy/coordData.vue';
-import KakaoMapTest from '@/components/dummy/KakaoMapTest.vue';
-import EncryptTest from '@/components/dummy/EncryptTest.vue';
+import TempPage from '@/components/dummy/TempPage.vue'
+import TestMapPage from '@/components/dummy/TestMapPage.vue'
+import CoordData from '@/components/dummy/coordData.vue'
+import KakaoMapTest from '@/components/dummy/KakaoMapTest.vue'
+import EncryptTest from '@/components/dummy/EncryptTest.vue'
 
 const devRoutes = [
     {

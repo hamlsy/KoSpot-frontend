@@ -70,11 +70,11 @@
   
   <script>
 import BaseMultiRoadViewGame from "./BaseMultiRoadViewGame.vue";
-import ChatWindow from '@/components/game/multiplayerMode/gameplay/chat/IndividualChat.vue'
-import TeamRoundResults from "@/components/game/multiplayerMode/gameplay/results/MultiplayerTeamRoundResults.vue";
-import TeamGameResults from "@/components/game/multiplayerMode/gameplay/results/MultiplayerTeamGameResults.vue";
-import TeamVotingModal from "@/components/game/multiplayerMode/gameplay/results/MultiplayerTeamVotingModal.vue";
-import RoadView from "@/components/game/common/roadview/RoadView.vue";
+import ChatWindow from '@/views/Game/MultiplayerMode/components/gameplay/chat/IndividualChat.vue'
+import TeamRoundResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamRoundResults.vue";
+import TeamGameResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamGameResults.vue";
+import TeamVotingModal from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamVotingModal.vue";
+import RoadView from 'src/views/Game/RoadViewMode/components/gameplay/RoadView.vue'
 import gameStore from "@/store/gameStore";
 
 export default {

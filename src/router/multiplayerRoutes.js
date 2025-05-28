@@ -1,6 +1,6 @@
-import MultiplayerLobby from '@/components/game/multiplayerMode/lobby/MultiplayerLobbyMain.vue';
-import IndividualRoadViewGame from '@/components/game/multiplayerMode/gameplay/roadview/IndividualRoadViewGame.vue';
-import TeamRoadViewGame from '@/components/game/multiplayerMode/gameplay/roadview/TeamRoadViewGame.vue';
+import MultiplayerLobby from '@/views/Game/MultiplayerMode/MultiplayerLobby.vue';
+import IndividualRoadViewGame from '@/views/Game/MultiplayerMode/components/gameplay/roadview/IndividualRoadViewGame.vue';
+import TeamRoadViewGame from '@/views/Game/MultiplayerMode/components/gameplay/roadview/TeamRoadViewGame.vue';
 
 const multiplayerRoutes = [
     {
@@ -11,7 +11,7 @@ const multiplayerRoutes = [
     {
         path: '/gameRoom/:roomId',
         name: "GameRoomWaiting",
-        component: () => import('@/components/game/multiplayerMode/room/waiting/MultiplayerRoomWaiting.vue'),
+        component: () => import('@/views/Game/MultiplayerMode/components/room/MultiplayerRoomWaiting.vue'),
         props: true
     },
     {
@@ -23,7 +23,7 @@ const multiplayerRoutes = [
     {
         path: '/game/photo/:roomId',
         name: "PhotoGame",
-        component: () => import('@/components/game/multiplayerMode/gameplay/photo/MultiplayerPhotoGame.vue'),
+        component: () => import('@/views/Game/MultiplayerMode/components/gameplay/photo/MultiplayerPhotoGame.vue'),
         props: true
     },
     {

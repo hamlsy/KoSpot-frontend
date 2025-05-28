@@ -11,7 +11,7 @@
 
 <script>
 import { defineComponent } from 'vue';
-import PhotoModeGame from '../gameplay/PhotoModeGame.vue';
+import PhotoModeGame from '@/views/Game/PhotoMode/components/gameplay/PhotoModeGame.vue';
 import useGame from '@/composables/useGame';
 
 export default defineComponent({
