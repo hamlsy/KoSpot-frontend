@@ -283,8 +283,8 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
-// 스토어 경로 수정
-import store from '@/store';
+// 스토어 경로 수정 (임시로 주석 처리)
+// import store from '@/store';
 import NavigationBar from "@/components/layout/TheHeader.vue";
 import UserLoginCard from "@/components/main/UserLoginCard.vue";
 import useAuth from '@/composables/useAuth';

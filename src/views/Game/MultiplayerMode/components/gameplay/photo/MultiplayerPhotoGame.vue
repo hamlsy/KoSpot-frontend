@@ -207,19 +207,19 @@
 </template>
 
 <script>
-import GameTimer from '@/components/game/common/shared/GameTimer.vue';
-import PlayerList from '@/components/game/multiplayerMode/gameplay/MultiplayerPlayerList.vue';
-import PhotoView from '@/components/game/common/photo/PhotoView.vue';
-import KakaoMap from '@/components/game/common/kakao/KakaoMapGame.vue';
-import ChatWindow from '@/components/game/multiplayerMode/lobby/chat/MultiplayerLobbyChatWindow.vue';
-import RoundResults from '@/components/game/multiplayerMode/gameplay/results/MultiplayerRoundResults.vue';
-import GameResults from '@/components/game/multiplayerMode/gameplay/results/MultiplayerGameResults.vue';
-import TeamChat from '@/components/game/multiplayerMode/gameplay/chat/TeamChat.vue';
-import TeamVotingModal from '@/components/game/multiplayerMode/gameplay/results/MultiplayerTeamVotingModal.vue';
-import TeamGameResults from '@/components/game/multiplayerMode/gameplay/results/MultiplayerTeamGameResults.vue';
-import TeamRoundResults from '@/components/game/multiplayerMode/gameplay/results/MultiplayerTeamRoundResults.vue';
+import GameTimer from '@/components/common/ui/game/BaseGameTimer.vue';
+import PlayerList from '@/views/Game/MultiplayerMode/components/gameplay/MultiplayerPlayerList.vue';
+import PhotoView from '@/components/common/game/photo/PhotoView.vue';
+import KakaoMap from '@/components/common/game/kakao/KakaoMapGame.vue';
+import ChatWindow from '@/views/Game/MultiplayerMode/components/lobby/chat/MultiplayerLobbyChatWindow.vue';
+import RoundResults from '@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerRoundResults.vue';
+import GameResults from '@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerGameResults.vue';
+import TeamChat from '@/views/Game/MultiplayerMode/components/gameplay/chat/TeamChat.vue';
+import TeamVotingModal from '@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamVotingModal.vue';
+import TeamGameResults from '@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamGameResults.vue';
+import TeamRoundResults from '@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamRoundResults.vue';
 import gameStore from '@/store/gameStore';
-import { getRandomLocation } from '@/components/game/multiplayerMode/MultiplayerGameTestData';
+import { getRandomLocation } from '@/views/Game/MultiplayerMode/MultiplayerGameTestData';
 
 export default {
   name: 'MultiplayerPhotoGame',

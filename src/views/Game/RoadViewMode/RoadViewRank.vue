@@ -179,9 +179,9 @@
 
 <script>
 import RoadViewGame from "./components/gameplay/RoadViewGame.vue";
-import PhoneFrame from "@/components/ui/PhoneFrame.vue";
-import CountdownOverlay from "@/components/ui/overlay/CountdownOverlay.vue";
-import IntroOverlay from "@/components/ui/overlay/IntroOverlay.vue";
+import PhoneFrame from "@/components/common/game/PhoneFrame.vue";
+import CountdownOverlay from "@/components/common/game/CountdownOverlay.vue";
+import IntroOverlay from "@/components/common/game/intro/IntroOverlay.vue";
 
 export default {
   name: "RoadViewRank",

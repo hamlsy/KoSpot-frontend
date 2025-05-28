@@ -347,8 +347,8 @@
 </template>
 
 <script>
-import RoomSettingsModal from '../settings/MultiplayerRoomSettingsModal.vue';
-import ChatModal from '../chat/MultiplayerRoomChat.vue';
+import RoomSettingsModal from '@/views/Game/MultiplayerMode/components/room/settings/MultiplayerRoomSettingsModal.vue'
+import ChatModal from '@/views/Game/MultiplayerMode/components/room/chat/MultiplayerRoomChat.vue';
 
 export default {
   name: 'MultiplayerRoomWaiting',

@@ -19,7 +19,7 @@
 </template>
 
 <script>
-import PhotoDisplay from '@/components/game/common/photo/PhotoView.vue';
+import PhotoDisplay from '@/components/common/game/photo/PhotoView.vue';
 
 export default {
   name: 'PhotoModePhotoGrid',

@@ -89,8 +89,9 @@
 </template>
 
 <script>
-import PurchaseModal from './components/shop/PurchaseModal.vue';
-import NavigationBar from '@/components/layout/NavigationBar.vue';
+
+import PurchaseModal from 'src/components/user/shop/PurchaseModal.vue'
+import NavigationBar from 'src/components/common/NavigationBar.vue'
 
 export default {
   name: 'ShopMain',

@@ -10,11 +10,11 @@
 
     <!-- Game Controls Section -->
     <div class="game-controls">
-      <router-link to="/mainPage" tag="button" class="start-button">
-        <router-link to="/mainPage" tag="span" class="button-text"
-          >게임 시작</router-link
-        >
-        <div class="button-effect"></div>
+      <router-link to="/mainPage" custom v-slot="{ navigate }">
+        <button @click="navigate" class="start-button">
+          <span class="button-text">게임 시작</span>
+          <div class="button-effect"></div>
+        </button>
       </router-link>
       <!-- Social Login Buttons (shown when not logged in) -->
       <div v-if="!isLoggedIn" class="social-login-section">

@@ -1,5 +1,6 @@
 import axios from 'axios';
-import store from '@/store';
+// store import 임시 주석 처리
+// import store from '@/store';
 
 // API 기본 설정
 const apiClient = axios.create({
@@ -14,10 +15,11 @@ const apiClient = axios.create({
 // 요청 인터셉터 - 토큰 추가
 apiClient.interceptors.request.use(
   config => {
-    const token = store.state.auth.token;
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
+    // store 사용 부분 임시 주석 처리
+    // const token = store.state.auth.token;
+    // if (token) {
+    //   config.headers['Authorization'] = `Bearer ${token}`;
+    // }
     return config;
   },
   error => {
@@ -33,8 +35,9 @@ apiClient.interceptors.response.use(
   error => {
     // 401 에러 (인증 실패) 처리
     if (error.response && error.response.status === 401) {
-      // 토큰 만료 시 로그아웃 처리
-      store.dispatch('auth/logout');
+      // 토큰 만료 시 로그아웃 처리 (임시 주석 처리)
+      // store.dispatch('auth/logout');
+      console.log('인증 오류 발생');
     }
     return Promise.reject(error);
   }
