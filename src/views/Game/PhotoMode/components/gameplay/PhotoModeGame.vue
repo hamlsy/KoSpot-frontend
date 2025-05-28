@@ -99,9 +99,9 @@
 
         <photo-mode-next-round-button
           :visible="
-            (showCorrectAnimation ||
-              showTimeoutAnimation ||
-              (isPracticeMode && roundCompleted))
+            showCorrectAnimation ||
+            showTimeoutAnimation ||
+            (isPracticeMode && roundCompleted)
           "
           :is-last-round="currentRound >= totalRounds"
           :isRankMode="isRankMode"
@@ -110,16 +110,13 @@
       </div>
 
       <!-- 지도 영역 - 오른쪽에 배치 -->
-      <div
-        class="map-section"
-        :class="{ 'map-open': isMapOpen }"
-      >
+      <div class="map-section" :class="{ 'map-open': isMapOpen }">
         <region-map
           :disabled="mapDisabled"
           :show-region-names="!isRankMode"
           :correct-region="correctRegion"
           :wrong-region="wrongRegion"
-          :selectedRegion.sync="selectedRegion"
+          :selectedRegion="selectedRegion"
           @submit-guess="submitGuess"
           ref="regionMap"
         />
@@ -178,22 +175,22 @@
     </button>
   </div>
 </template>
-  
-  <script>
+
+<script>
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick, defineComponent } from 'vue';
 import { useRouter } from 'vue-router';
-import ProgressTimer from "@/components/game/photoMode/timer/PhotoModeProgressTimer.vue";
-import RegionMap from "./PhotoModeRegionMap.vue";
-import GameResult from "@/components/game/photoMode/results/PhotoModeGameResult.vue";
+import ProgressTimer from "./timer/PhotoModeProgressTimer.vue";
+import RegionMap from "./map/RegionMap.vue";
+import GameResult from "./results/PhotoModeGameResult.vue";
 import PhotoModePhotoGrid from "./PhotoModePhotoGrid.vue";
 import PhotoModeHintDisplay from "./PhotoModeHintDisplay.vue";
 import PhotoModeNextRoundButton from "./PhotoModeNextRoundButton.vue";
-import IntroOverlay from "@/components/game/common/intro/IntroOverlay.vue";
-import CountdownOverlay from "@/components/game/common/CountdownOverlay.vue";
+import IntroOverlay from "@/components/ui/overlay/IntroOverlay.vue";
+import CountdownOverlay from "@/components/ui/overlay/CountdownOverlay.vue";
 import useGame from '@/composables/useGame';
 import gameService from '@/api/services/game.service';
 
-export default defineComponent({
+export default {
   name: "PhotoModeGame",
   components: {
     ProgressTimer,
@@ -324,69 +321,66 @@ export default defineComponent({
           region: "Seoul",
           fact: "동대문의 정식 명칭은 흥인지문으로, 국보 제1호입니다.",
         },
-        {
+        // 여기에 더 많은 사진 데이터 추가 가능
+      ],
+      
+      // 지도 상태
+      isMapOpen: true,
 
-    // 지도 상태
-    const isMapOpen = ref(true);
-    const mapDisabled = ref(false);
+      // 결과 화면
+      showGameResult: false,
+      finalScore: 0,
+      accuracy: 0,
+      averageTime: 0,
+      bestRound: null,
+      worstRound: null,
+      rank: "",
+      rankPercentile: 0,
+      rankPointChange: 0,
 
-    // 결과 화면
-    const showGameResult = ref(false);
-    const finalScore = ref(0);
-    const accuracy = ref(0);
-    const averageTime = ref(0);
-    const bestRound = ref(null);
-    const worstRound = ref(null);
-    const rank = ref("");
-    const rankPercentile = ref(0);
-    const rankPointChange = ref(0);
+      // 모달
+      showExitConfirmation: false,
 
-    // 모달
-    const showExitConfirmation = ref(false);
+      // 사진 로딩 상태
+      photosLoaded: 0,
+      totalPhotosToLoad: 0,
+      allPhotosLoaded: false,
 
-    // 사진 로딩 상태
-    const photosLoaded = ref(0);
-    const totalPhotosToLoad = ref(0);
-    const allPhotosLoaded = ref(false);
+      // 지역 이름 매핑
+      regionNames: {
+        seoul: "서울",
+        gyeonggi: "경기도",
+        incheon: "인천",
+        gangwon: "강원도",
+        chungbuk: "충청북도",
+        chungnam: "충청남도",
+        daejeon: "대전",
+        sejong: "세종",
+        gyeongbuk: "경상북도",
+        gyeongnam: "경상남도",
+        daegu: "대구",
+        busan: "부산",
+        ulsan: "울산",
+        jeonbuk: "전라북도",
+        jeonnam: "전라남도",
+        gwangju: "광주",
+        jeju: "제주도",
+      },
 
-    // 지역 이름 매핑
-    const regionNames = {
-      seoul: "서울",
-      gyeonggi: "경기도",
-      incheon: "인천",
-      gangwon: "강원도",
-      chungbuk: "충청북도",
-      chungnam: "충청남도",
-      daejeon: "대전",
-      sejong: "세종",
-      gyeongbuk: "경상북도",
-      gyeongnam: "경상남도",
-      daegu: "대구",
-      busan: "부산",
-      ulsan: "울산",
-      jeonbuk: "전라북도",
-      jeonnam: "전라남도",
-      gwangju: "광주",
-      jeju: "제주도",
+      // 타이머 및 지도 참조
+      timer: null,
+      regionMap: null
     };
-
-    // 타이머 및 지도 참조
-    const timer = ref(null);
-    const regionMap = ref(null);
-
-    // ... (나머지 코드는 여기에 추가)
-
-    return {
-      // ... (반환 값은 여기에 추가)
-    }
-
+  },
+  
+  computed: {
     isLastGuessCorrect() {
       return this.correctRegion !== null;
     },
 
     isLastRound() {
       return this.currentRound >= this.totalRounds;
-    },
+    }
   },
 
   watch: {
@@ -899,7 +893,7 @@ export default defineComponent({
     },
   },
 
-  beforeDestroy() {
+  beforeUnmount() {
     // 타이머 정리
     if (this.hintNotificationTimer) {
       clearTimeout(this.hintNotificationTimer);

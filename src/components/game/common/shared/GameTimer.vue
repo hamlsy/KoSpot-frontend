@@ -163,7 +163,7 @@ export default {
     }
   },
   
-  beforeDestroy() {
+  beforeUnmount() {
     this.stopTimer();
   },
   

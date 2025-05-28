@@ -874,7 +874,7 @@ export default {
     // 웹소켓 연결 등의 초기화 로직
   },
   
-  beforeDestroy() {
+  beforeUnmount() {
     // 웹소켓 연결 해제 등의 정리 로직
   }
 };

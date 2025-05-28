@@ -283,8 +283,8 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
-import { useGameStore } from '@/stores/game';
-import { useMainStore } from '@/stores/main';
+// 스토어 경로 수정
+import store from '@/store';
 import NavigationBar from "@/components/layout/TheHeader.vue";
 import UserLoginCard from "@/components/main/UserLoginCard.vue";
 import useAuth from '@/composables/useAuth';
@@ -293,8 +293,8 @@ import useAuth from '@/composables/useAuth';
 const router = useRouter();
 
 // 스토어 설정
-const gameStore = useGameStore();
-const mainStore = useMainStore();
+// const gameStore = useGameStore();
+// const mainStore = useMainStore();
 
 // 반응형 상태 정의
 const isLoggedIn = ref(false);

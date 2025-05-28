@@ -151,7 +151,7 @@ export default {
     this.initMap();
   },
   
-  beforeDestroy() {
+  beforeUnmount() {
     // 리소스 정리
     // 실제 구현에서는 이벤트 리스너 정리 등의 작업 수행
   },

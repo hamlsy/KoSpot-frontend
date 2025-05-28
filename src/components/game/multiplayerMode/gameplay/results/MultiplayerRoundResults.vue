@@ -221,7 +221,7 @@ export default {
     this.simulatePlayersClickingNext();
   },
   
-  beforeDestroy() {
+  beforeUnmount() {
     // 컴포넌트가 제거될 때 필요한 정리 작업
     this.stopCountdown();
     

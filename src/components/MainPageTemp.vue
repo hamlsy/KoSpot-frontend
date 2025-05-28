@@ -345,7 +345,7 @@ export default {
   mounted() {
     this.startBannerRotation();
   },
-  beforeDestroy() {
+  beforeUnmount() {
     this.stopBannerRotation();
   },
   methods: {

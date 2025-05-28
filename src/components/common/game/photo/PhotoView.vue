@@ -68,7 +68,7 @@ export default {
     document.addEventListener('MSFullscreenChange', this.handleFullscreenChange);
   },
   
-  beforeDestroy() {
+  beforeUnmount() {
     // 이벤트 리스너 정리
     document.removeEventListener('fullscreenchange', this.handleFullscreenChange);
     document.removeEventListener('webkitfullscreenchange', this.handleFullscreenChange);

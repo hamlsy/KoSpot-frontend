@@ -133,7 +133,7 @@ export default {
     this.fetchRoundData();
   },
 
-  beforeDestroy() {
+  beforeUnmount() {
     // 라운드 타이머 정리
     this.clearTimer();
     // 토스트 메시지 타이머 정리

@@ -89,7 +89,7 @@ export default {
     }
   },
   
-  beforeDestroy() {
+  beforeUnmount() {
     // 이벤트 리스너 정리
     if (this.roadview && this.viewpointChangedListener && window.kakao && window.kakao.maps) {
       kakao.maps.event.removeListener(this.viewpointChangedListener);

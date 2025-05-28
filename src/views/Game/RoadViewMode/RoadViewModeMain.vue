@@ -187,8 +187,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import AppLogo from "@/components/common/ui/BaseAppLogo.vue";
-import ThemeModePopup from "@/components/game/roadViewMode/ThemeModePopup.vue";
+import AppLogo from "@/components/ui/AppLogo.vue";
+import ThemeModePopup from "./components/gameplay/ThemeModePopup.vue";
 
 // 라우터 설정
 const router = useRouter();

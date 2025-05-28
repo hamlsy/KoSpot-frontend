@@ -253,7 +253,7 @@ export default {
     window.addEventListener("resize", this.checkResponsive);
   },
 
-  beforeDestroy() {
+  beforeUnmount() {
     if (this.toastTimeout) {
       clearTimeout(this.toastTimeout);
     }

@@ -43,13 +43,23 @@
     "parserOptions": {
       "parser": "@babel/eslint-parser",
       "ecmaVersion": 2021,
-      "sourceType": "module"
+      "sourceType": "module",
+      "requireConfigFile": false,
+      "babelOptions": {
+        "configFile": "./babel.config.js"
+      }
     },
     "rules": {
-      "no-unused-vars": "off"
+      "no-unused-vars": "off",
+      "no-mixed-spaces-and-tabs": 0,
+      "vue/multi-word-component-names": 0
     },
     "globals": {
-      "kakao": false
+      "kakao": "readonly",
+      "defineProps": "readonly",
+      "defineEmits": "readonly",
+      "defineExpose": "readonly",
+      "withDefaults": "readonly"
     }
   },
   "browserslist": [

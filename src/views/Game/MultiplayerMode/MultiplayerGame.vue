@@ -225,40 +225,109 @@
 </template>
 
 <script>
-import GameTimer from '@/components/game/common/shared/GameTimer.vue';
-import PlayerList from './PlayerList.vue';
+import GameTimer from '@/components/ui/GameTimer.vue';
+import MultiplayerPlayerList from './components/gameplay/MultiplayerPlayerList.vue';
 import RoadView from '@/components/game/common/roadview/RoadView.vue';
 import PhotoView from '@/components/game/common/photo/PhotoView.vue';
 import KakaoMap from '@/components/game/common/kakao/KakaoMap.vue';
-import ChatWindow from '../lobbyScreen/ChatWindow.vue';
-import RoundResults from './RoundResults.vue';
-import GameResults from '@/components/game/multiplayerMode/gameplay/results/MultiplayerGameResults.vue'
-import GameRoomWaiting from '../gameRoomScreen/GameRoomWaiting.vue';
-import TeamChat from './TeamChat.vue';
-import TeamVotingModal from './TeamVotingModal.vue';
-import TeamGameResults from './TeamGameResults.vue';
-import TeamRoundResults from './TeamRoundResults.vue';
+import IndividualChat from './components/gameplay/chat/IndividualChat.vue';
+import MultiplayerRoundResults from './components/results/MultiplayerRoundResults.vue';
+import MultiplayerGameResults from './components/results/MultiplayerGameResults.vue';
+import MultiplayerRoomWaiting from './components/room/MultiplayerRoomWaiting.vue';
+import TeamChat from './components/gameplay/chat/TeamChat.vue';
+import MultiplayerTeamVotingModal from './components/results/MultiplayerTeamVotingModal.vue';
+import MultiplayerTeamGameResults from './components/results/MultiplayerTeamGameResults.vue';
+import MultiplayerTeamRoundResults from './components/results/MultiplayerTeamRoundResults.vue';
 
-// 테스트 데이터 가져오기
-import { testData, individualTestData, getRandomLocation } from '../MultiplayerGameTestData.js';
+// 테스트 데이터 정의
+const testData = {
+  roomData: {
+    id: 'room-1',
+    name: '팀 모드 테스트',
+    gameMode: '로드뷰',
+    matchType: 'team',
+    region: '서울',
+    maxPlayers: 8,
+    createdAt: new Date().toISOString(),
+    hostId: 'user-1'
+  },
+  currentUser: {
+    id: 'user-1',
+    nickname: '플레이어 1',
+    level: 10,
+    profileImage: '/assets/default-profile.png',
+    teamId: 'team1'
+  },
+  players: [
+    { id: 'user-1', nickname: '플레이어 1', score: 0, teamId: 'team1' },
+    { id: 'user-2', nickname: '플레이어 2', score: 0, teamId: 'team1' },
+    { id: 'user-3', nickname: '플레이어 3', score: 0, teamId: 'team2' },
+    { id: 'user-4', nickname: '플레이어 4', score: 0, teamId: 'team2' }
+  ],
+  teams: [
+    { id: 'team1', name: '블루팀', color: 'blue', totalScore: 0 },
+    { id: 'team2', name: '레드팀', color: 'red', totalScore: 0 }
+  ],
+  chatMessages: [],
+  teamChatMessages: {
+    'team1': [],
+    'team2': []
+  }
+};
+
+const individualTestData = {
+  roomData: {
+    id: 'room-2',
+    name: '개인 모드 테스트',
+    gameMode: '로드뷰',
+    matchType: 'individual',
+    region: '서울',
+    maxPlayers: 8,
+    createdAt: new Date().toISOString(),
+    hostId: 'user-1'
+  },
+  currentUser: {
+    id: 'user-1',
+    nickname: '플레이어 1',
+    level: 10,
+    profileImage: '/assets/default-profile.png',
+    teamId: null
+  },
+  players: [
+    { id: 'user-1', nickname: '플레이어 1', score: 0, teamId: null },
+    { id: 'user-2', nickname: '플레이어 2', score: 0, teamId: null },
+    { id: 'user-3', nickname: '플레이어 3', score: 0, teamId: null },
+    { id: 'user-4', nickname: '플레이어 4', score: 0, teamId: null }
+  ],
+  teams: [],
+  chatMessages: []
+};
+
+// 랜덤 위치 생성 함수
+function getRandomLocation() {
+  // 서울 지역 내 랜덤 좌표
+  const lat = 37.5 + (Math.random() - 0.5) * 0.2;
+  const lng = 127 + (Math.random() - 0.5) * 0.2;
+  return { lat, lng };
+}
 
 export default {
   name: 'MultiplayerGame',
   
   components: {
     GameTimer,
-    PlayerList,
+    PlayerList: MultiplayerPlayerList,
     RoadView,
     PhotoView,
     KakaoMap,
-    ChatWindow,
-    RoundResults,
-    GameResults,
-    GameRoomWaiting,
+    ChatWindow: IndividualChat,
+    RoundResults: MultiplayerRoundResults,
+    GameResults: MultiplayerGameResults,
+    GameRoomWaiting: MultiplayerRoomWaiting,
     TeamChat,
-    TeamVotingModal,
-    TeamGameResults,
-    TeamRoundResults
+    TeamVotingModal: MultiplayerTeamVotingModal,
+    TeamGameResults: MultiplayerTeamGameResults,
+    TeamRoundResults: MultiplayerTeamRoundResults
   },
   
   props: {

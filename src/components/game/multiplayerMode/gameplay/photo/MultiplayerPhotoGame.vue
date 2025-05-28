@@ -307,7 +307,7 @@ export default {
     this.initGame();
   },
   
-  beforeDestroy() {
+  beforeUnmount() {
     this.clearTimer();
   },
   

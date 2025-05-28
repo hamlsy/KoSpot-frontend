@@ -198,7 +198,7 @@ export default {
     window.addEventListener('resize', this.checkScreenSize);
     window.addEventListener('resize', this.resizeMap);
   },
-  beforeDestroy() {
+  beforeUnmount() {
     window.removeEventListener('resize', this.checkScreenSize);
     window.removeEventListener('resize', this.resizeMap);
   },

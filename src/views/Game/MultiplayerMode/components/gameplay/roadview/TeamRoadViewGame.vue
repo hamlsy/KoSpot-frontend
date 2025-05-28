@@ -142,7 +142,7 @@ export default {
     this.initGame();
   },
   
-  beforeDestroy() {
+  beforeUnmount() {
     this.clearTimer();
     if (this.toastTimeout) {
       clearTimeout(this.toastTimeout);

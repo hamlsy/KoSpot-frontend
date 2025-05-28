@@ -269,7 +269,7 @@ export default {
     this.startTimer();
   },
   
-  beforeDestroy() {
+  beforeUnmount() {
     this.stopTimer();
   },
   

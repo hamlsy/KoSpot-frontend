@@ -178,10 +178,10 @@
 </template>
 
 <script>
-import RoadViewGame from "@/components/game/common/roadview/RoadViewGame.vue";
-import PhoneFrame from "@/components/game/common/PhoneFrame.vue";
-import CountdownOverlay from "@/components/game/common/CountdownOverlay.vue";
-import IntroOverlay from "../common/intro/IntroOverlay.vue";
+import RoadViewGame from "./components/gameplay/RoadViewGame.vue";
+import PhoneFrame from "@/components/ui/PhoneFrame.vue";
+import CountdownOverlay from "@/components/ui/overlay/CountdownOverlay.vue";
+import IntroOverlay from "@/components/ui/overlay/IntroOverlay.vue";
 
 export default {
   name: "RoadViewRank",
@@ -271,7 +271,7 @@ export default {
     // 게임 위치 데이터 요청
     this.fetchGameLocationData();
   },
-  beforeDestroy() {
+  beforeUnmount() {
     // 컴포넌트 소멸 시 타이머 정리
     this.clearAllTimers();
 

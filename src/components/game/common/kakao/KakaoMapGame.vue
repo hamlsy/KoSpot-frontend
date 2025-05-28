@@ -130,7 +130,7 @@ export default {
     }
   },
   
-  beforeDestroy() {
+  beforeUnmount() {
     this.removeClickListener();
     this.removeMarker();
     this.removeCircles();

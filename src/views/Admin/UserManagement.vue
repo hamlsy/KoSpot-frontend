@@ -124,7 +124,7 @@
 </template>
 
 <script>
-import AdminPanel from './AdminPanel.vue';
+import AdminPanel from '@/components/admin/AdminPanel.vue';
 
 export default {
   name: 'UserManagement',

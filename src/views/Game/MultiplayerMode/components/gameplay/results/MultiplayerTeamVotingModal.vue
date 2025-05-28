@@ -223,7 +223,7 @@ export default {
     }
   },
   
-  beforeDestroy() {
+  beforeUnmount() {
     this.clearTimer();
   }
 };

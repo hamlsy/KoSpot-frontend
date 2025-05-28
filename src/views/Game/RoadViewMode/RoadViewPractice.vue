@@ -303,7 +303,7 @@ export default {
     // 게임 위치 데이터 요청
     this.fetchGameLocationData();
   },
-  beforeDestroy() {
+  beforeUnmount() {
     this.clearAllTimers();
   },
   methods: {
@@ -420,6 +420,13 @@ export default {
         this.hintCircle = null;
       }
 
+      // kakao 객체가 정의되어 있는지 확인
+      if (typeof kakao === 'undefined') {
+        console.error('Kakao Maps SDK is not loaded');
+        this.showToastMessage('지도를 불러오는 중 오류가 발생했습니다.');
+        return;
+      }
+      
       // 정답 위치 좌표
       const actualPosition = new kakao.maps.LatLng(
         this.currentLocation.lat,

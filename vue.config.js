@@ -5,7 +5,4 @@ module.exports = defineConfig({
     hot: true,
     port: 3000, // 포트 3000으로 변경
   },
-  env: {
-    'vue/setup-compiler-macros': true
-  }
 })

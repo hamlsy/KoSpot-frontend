@@ -74,7 +74,7 @@ export default {
     );
     this.startIntroSequence();
   },
-  beforeDestroy() {
+  beforeUnmount() {
     this.clearAllTimers();
   },
   methods: {

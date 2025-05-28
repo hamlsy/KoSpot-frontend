@@ -60,7 +60,7 @@ export default {
       }
     }
   },
-  beforeDestroy() {
+  beforeUnmount() {
     this.clearCountdownTimer();
   }
 };

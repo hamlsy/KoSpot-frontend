@@ -57,18 +57,18 @@
 </template>
 
 <script>
-import GameRoomList from './room/MultiplayerRoomList.vue';
-import ChatWindow from './chat/MultiplayerLobbyChatWindow.vue';
-import CreateRoomModal from './room/MultiplayerCreateRoomModal.vue';
-import AppLogo from '@/components/common/AppLogo.vue'; // AppLogo 컴포넌트 추가
+import MultiplayerRoomList from './components/lobby/room/MultiplayerRoomList.vue';
+import MultiplayerLobbyChatWindow from './components/lobby/chat/MultiplayerLobbyChatWindow.vue';
+import MultiplayerCreateRoomModal from './components/lobby/room/MultiplayerCreateRoomModal.vue';
+import AppLogo from '@/components/ui/AppLogo.vue'; // AppLogo 컴포넌트 추가
 
 export default {
   name: "MultiplayerLobby",
   
   components: {
-    GameRoomList,
-    ChatWindow,
-    CreateRoomModal,
+    GameRoomList: MultiplayerRoomList,
+    ChatWindow: MultiplayerLobbyChatWindow,
+    CreateRoomModal: MultiplayerCreateRoomModal,
     AppLogo // AppLogo 컴포넌트 등록
   },
   
@@ -92,7 +92,7 @@ export default {
     this.initializeData();
   },
   
-  beforeDestroy() {
+  beforeUnmount() {
     if (this.refreshInterval) {
       clearInterval(this.refreshInterval);
     }

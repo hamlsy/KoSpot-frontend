@@ -171,7 +171,7 @@ export default {
     this.initMap();
   },
   
-  beforeDestroy() {
+  beforeUnmount() {
     // 마커 및 이벤트 리스너 제거
     this.userMarkers.forEach(marker => {
       marker.setMap(null);

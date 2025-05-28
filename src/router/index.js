@@ -1,16 +1,19 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
 // Import route modules
-import homeRoutes from './modules/home.routes';
-import gameRoutes from './modules/game.routes';
-import userRoutes from './modules/user.routes';
-import adminRoutes from './modules/admin.routes';
-import devRoutes from './devRoutes';
+import mainRoutes from 'src/router/mainRoutes.js'
+import multiplayerRoutes from 'src/router/multiplayerRoutes.js'
+import photoModeRoutes from 'src/router/photoModeRoutes.js'
+import roadViewRoutes from 'src/router/roadViewRoutes.js'
+import userRoutes from 'src/router/userRoutes.js'
+import devRoutes from 'src/router/devRoutes.js'
+import adminRoutes from 'src/router/adminRoutes.js'
 
 // Combine all routes
 const routes = [
-  ...homeRoutes,
-  ...gameRoutes,
+  ...mainRoutes,
+  ...photoModeRoutes,
+  ...roadViewRoutes,
   ...userRoutes,
   ...adminRoutes,
   ...devRoutes
