@@ -1,12 +1,12 @@
-import PhotoModeMain from '@/components/game/photoMode/PhotoModeMain.vue';
+import PhotoModeView from 'src/views/Game/PhotoMode/PhotoModeView.vue'
 import PhotoModePractice from '@/components/game/photoMode/views/PhotoModePractice.vue';
 import PhotoModeRank from '@/components/game/photoMode/views/PhotoModeRank.vue';
 
 const photoModeRoutes = [
     {
-        path: '/photoModeMain',
-        name: "PhotoModeMain",
-        component: PhotoModeMain
+        path: '/photoModeView',
+        name: "PhotoModeView",
+        component: PhotoModeView
     },
     {
         path: '/photoModePractice',

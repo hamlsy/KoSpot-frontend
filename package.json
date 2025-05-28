@@ -13,9 +13,9 @@
     "core-js": "^3.8.3",
     "crypto-js": "^4.2.0",
     "sass-loader": "^16.0.5",
-    "vue": "^2.6.14",
-    "vue-router": "^3.5.4",
-    "vuex": "^3.6.2",
+    "vue": "^3.5.14",
+    "vue-router": "^4.2.5",
+    "pinia": "^2.1.7",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
@@ -24,11 +24,12 @@
     "@vue/cli-plugin-babel": "~5.0.8",
     "@vue/cli-plugin-eslint": "~5.0.8",
     "@vue/cli-service": "~5.0.8",
+    "@vue/compiler-sfc": "^3.5.14",
     "autoprefixer": "^10.4.16",
     "eslint": "^7.32.0",
-    "eslint-plugin-vue": "^7.20.0",
+    "eslint-plugin-vue": "^9.19.2",
     "postcss": "^8.4.38",
-    "vue-template-compiler": "^2.6.14"
+    "sass": "^1.69.5"
   },
   "eslintConfig": {
     "root": true,
@@ -36,15 +37,29 @@
       "node": true
     },
     "extends": [
-      "plugin:vue/essential",
+      "plugin:vue/vue3-essential",
       "eslint:recommended"
     ],
     "parserOptions": {
-      "parser": "@babel/eslint-parser"
+      "parser": "@babel/eslint-parser",
+      "ecmaVersion": 2021,
+      "sourceType": "module",
+      "requireConfigFile": false,
+      "babelOptions": {
+        "configFile": "./babel.config.js"
+      }
     },
-    "rules": {},
+    "rules": {
+      "no-unused-vars": "off",
+      "no-mixed-spaces-and-tabs": 0,
+      "vue/multi-word-component-names": 0
+    },
     "globals": {
-      "kakao": false
+      "kakao": "readonly",
+      "defineProps": "readonly",
+      "defineEmits": "readonly",
+      "defineExpose": "readonly",
+      "withDefaults": "readonly"
     }
   },
   "browserslist": [
