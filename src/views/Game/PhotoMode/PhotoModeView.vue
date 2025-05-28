@@ -2,10 +2,10 @@
   <div class="photo-mode-container">
     <header class="header">
       <div class="header-content">
-        <button class="back-button" @click="$router.push('/mainPage')">
+        <button class="back-button" @click="$router.push('/')">
           <i class="fas fa-arrow-left"></i>
         </button>
-        <app-logo class="home-link" to="/mainPage" />
+        <app-logo class="home-link" to="/" />
         <div class="header-right">
           <h3>포토 모드</h3>
         </div>
@@ -89,7 +89,6 @@
                 :class="{
                   'rank-mode': record.mode === '랭크',
                   'practice-mode': record.mode === '연습',
-                  'theme-mode': record.mode === '테마',
                 }"
               >
                 {{ record.mode }}
@@ -187,7 +186,6 @@ const { gameState, startGame: initGame } = useGame();
 const isLoading = ref(false);
 const selectedGameMode = ref(null);
 const selectedRegion = ref(null);
-const selectedTheme = ref(null);
 const hoverMode = ref(null);
 const hoverRecord = ref(null);
 const showProfileMenu = ref(false);
@@ -256,15 +254,7 @@ const gameModes = [
     icon: "fas fa-trophy",
     color: "rank-color",
   },
-  {
-    id: "theme",
-    title: "테마 모드",
-    shortDescription: "특별한 테마의 사진으로 게임을 즐겨보세요",
-    fullDescription:
-      "테마 모드에서는 '산과 숲', '해변과 바다', '도시 풍경', '궁궐과 사찰' 등 특정 테마의 사진들로 게임을 즐길 수 있습니다. 점수는 기록되지만 랭킹에는 반영되지 않습니다.",
-    icon: "fas fa-image",
-    color: "theme-color",
-  },
+
 ];
 
 // 지역 데이터
@@ -280,24 +270,10 @@ const regions = [
   { id: "jeolla", name: "전라도", icon: "fas fa-seedling" },
 ];
 
-// 테마 데이터
-const themes = [
-  { id: "mountains", name: "산과 숲", icon: "fas fa-mountain" },
-  { id: "beaches", name: "해변과 바다", icon: "fas fa-umbrella-beach" },
-  { id: "cityscape", name: "도시 풍경", icon: "fas fa-city" },
-  { id: "palaces", name: "궁궐과 사찰", icon: "fas fa-torii-gate" },
-  { id: "landmarks", name: "유명 랜드마크", icon: "fas fa-landmark" },
-  { id: "nature", name: "자연 경관", icon: "fas fa-leaf" },
-  { id: "festivals", name: "축제와 행사", icon: "fas fa-music" },
-  { id: "food", name: "음식과 시장", icon: "fas fa-utensils" },
-];
-
 // 게임 시작 준비 상태 계산
 const isGameStartReady = computed(() => {
   if (selectedGameMode.value?.id === "practice")
     return selectedRegion.value !== null;
-  if (selectedGameMode.value?.id === "theme")
-    return selectedTheme.value !== null;
   if (selectedGameMode.value?.id === "rank") return true;
   return false;
 });
@@ -306,24 +282,17 @@ const isGameStartReady = computed(() => {
 const openGameModePopup = (mode) => {
   selectedGameMode.value = mode;
   selectedRegion.value = null;
-  selectedTheme.value = null;
 };
 
 // 게임 모드 팝업 닫기
 const closeGameModePopup = () => {
   selectedGameMode.value = null;
   selectedRegion.value = null;
-  selectedTheme.value = null;
 };
 
 // 지역 선택
 const selectRegion = (region) => {
   selectedRegion.value = region;
-};
-
-// 테마 선택
-const selectTheme = (themeId) => {
-  selectedTheme.value = themeId;
 };
 
 // 게임 시작
@@ -335,7 +304,6 @@ const startGame = async () => {
   const gameData = {
     mode: selectedGameMode.value.id,
     region: selectedRegion.value,
-    theme: selectedTheme.value,
     totalRounds: 5 // 기본 라운드 수
   };
 
@@ -343,7 +311,6 @@ const startGame = async () => {
     // 게임 데이터 로드 및 게임 시작
     await initGame('photo', {
       region: gameData.region,
-      theme: gameData.theme,
       totalRounds: gameData.totalRounds
     });
 
@@ -353,22 +320,13 @@ const startGame = async () => {
         name: 'PhotoModePractice',
         query: {
           region: gameData.region,
-          theme: gameData.theme,
           totalRounds: gameData.totalRounds
         }
       });
     } else if (gameData.mode === 'rank') {
       router.push({ name: 'PhotoModeRank' });
-    } else if (gameData.mode === 'theme') {
-      router.push({
-        name: 'PhotoModePractice',
-        query: {
-          mode: 'theme',
-          theme: gameData.theme,
-          totalRounds: gameData.totalRounds
-        }
-      });
-    }
+    } 
+      
   } catch (error) {
     console.error("게임 시작 중 오류 발생:", error);
   } finally {
@@ -510,10 +468,6 @@ const getRankIcon = (rank) => {
   border-left: 4px solid #f59e0b;
 }
 
-.theme-mode {
-  border-left: 4px solid #6366f1;
-}
-
 .game-mode-icon {
   width: 48px;
   height: 48px;
@@ -536,10 +490,6 @@ const getRankIcon = (rank) => {
   color: #f59e0b;
 }
 
-.theme-color {
-  background-color: rgba(99, 102, 241, 0.1);
-  color: #6366f1;
-}
 
 .game-mode-details {
   flex: 1;
@@ -660,11 +610,6 @@ const getRankIcon = (rank) => {
   color: #10b981;
 }
 
-.record-mode-badge.theme-mode {
-  background-color: rgba(99, 102, 241, 0.1);
-  color: #6366f1;
-}
-
 .record-region {
   color: #6b7280;
   font-size: 0.875rem;
@@ -734,49 +679,17 @@ const getRankIcon = (rank) => {
 }
 
 .practice-mode-options,
-.theme-mode-options {
-  margin-bottom: 1.5rem;
-}
 
-.practice-mode-options h3,
-.theme-mode-options h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 1rem;
-}
+.practice-mode-options h3,  
 
 .region-selector,
-.theme-selector {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
-}
 
 .region-selector button,
-.theme-selector button {
-  background-color: #f3f4f6;
-  border: none;
-  border-radius: 8px;
-  padding: 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #4b5563;
-  cursor: pointer;
-  transition: all 0.2s;
-}
 
 .region-selector button:hover,
-.theme-selector button:hover {
-  background-color: #e5e7eb;
-}
+
 
 .region-selector button.selected,
-.theme-selector button.selected {
-  background-color: #4a6cf7;
-  color: white;
-}
-
 .rank-mode-options {
   margin-bottom: 1.5rem;
 }
@@ -849,14 +762,6 @@ const getRankIcon = (rank) => {
   background-color: #d97706;
 }
 
-.start-game-button.theme-color {
-  background-color: #6366f1;
-}
-
-.start-game-button.theme-color:hover:not(:disabled) {
-  background-color: #4f46e5;
-}
-
 .loading-overlay {
   position: fixed;
   top: 0;
@@ -904,8 +809,7 @@ const getRankIcon = (rank) => {
     padding: 1.5rem;
   }
   
-  .region-selector,
-  .theme-selector {
+  .region-selector{
     grid-template-columns: 1fr 1fr;
   }
 }

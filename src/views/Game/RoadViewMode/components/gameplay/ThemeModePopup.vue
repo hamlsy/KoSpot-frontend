@@ -375,7 +375,16 @@ export default {
 
   methods: {
     selectTheme(themeId) {
-      this.selectedTheme = themeId;
+      // 현재 선택된 테마와 동일한 테마를 선택하면 무시
+      if (this.selectedTheme === themeId) return;
+      
+      // 선택된 테마를 먼저 null로 설정하여 DOM 업데이트 사이클을 분리
+      this.selectedTheme = null;
+      
+      // nextTick을 사용하여 DOM 업데이트 후 새 테마 설정
+      this.$nextTick(() => {
+        this.selectedTheme = themeId;
+      });
     },
     closePopup() {
       this.$emit("close");

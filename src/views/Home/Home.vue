@@ -52,7 +52,7 @@
 
           <div
             class="mode-card roadview"
-            @click="navigateTo('roadViewModeMain')"
+            @click="navigateTo('roadViewModeView')"
           >
             <div class="mode-background"></div>
             <div class="mode-icon">
@@ -74,7 +74,7 @@
             </div>
           </div>
 
-          <div class="mode-card photo" @click="navigateTo('photoModeMain')">
+          <div class="mode-card photo" @click="navigateTo('photoModeView')">
             <div class="mode-background"></div>
             <div class="mode-icon">
               <i class="fas fa-camera"></i>

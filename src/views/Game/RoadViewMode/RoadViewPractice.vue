@@ -760,12 +760,12 @@ export default {
     exitGame() {
       // 타이머 정리
       this.clearTimer();
-      this.$router.push("/roadViewMode");
+      this.$router.push("/roadViewModeView");
     },
 
     // 게임 종료 확인
     confirmExit() {
-      this.$router.push("/roadViewModeMain");
+      this.$router.push("/roadViewModeView");
     },
 
     // 지역 선택 변경

@@ -3,10 +3,10 @@
     <!-- Header -->
     <header class="header">
       <div class="header-content">
-        <button class="back-button" @click="$router.push('/mainPage')">
+        <button class="back-button" @click="$router.push('/')">
           <i class="fas fa-arrow-left"></i>
         </button>
-        <app-logo class="home-link" to="/mainPage" />
+        <app-logo class="home-link" to="/" />
         <div class="header-right">
           <h3>로드뷰 모드</h3>
         </div>
