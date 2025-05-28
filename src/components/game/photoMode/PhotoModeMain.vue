@@ -450,6 +450,7 @@ export default {
       getRankIcon
     };
   }
+}
 </script>
 
 <style scoped>

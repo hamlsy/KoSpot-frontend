@@ -2,17 +2,14 @@
   <router-view></router-view>
 </template>
 
-<script>
-export default {
-  name: "App",
-  // components: {
-  //   HelloWorld
-  // }
-  mounted() {
-  },
-  methods: {
-  }
-};
+<script setup>
+// Vue 3 Composition API 방식으로 변경
+import { onMounted } from 'vue';
+
+// 컴포넌트 마운트 시 실행할 로직
+onMounted(() => {
+  // 초기화 로직
+});
 </script>
 
 <style>

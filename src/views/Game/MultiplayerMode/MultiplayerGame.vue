@@ -232,7 +232,7 @@ import PhotoView from '@/components/game/common/photo/PhotoView.vue';
 import KakaoMap from '@/components/game/common/kakao/KakaoMap.vue';
 import ChatWindow from '../lobbyScreen/ChatWindow.vue';
 import RoundResults from './RoundResults.vue';
-import GameResults from './GameResults.vue';
+import GameResults from '@/components/game/multiplayerMode/gameplay/results/MultiplayerGameResults.vue'
 import GameRoomWaiting from '../gameRoomScreen/GameRoomWaiting.vue';
 import TeamChat from './TeamChat.vue';
 import TeamVotingModal from './TeamVotingModal.vue';

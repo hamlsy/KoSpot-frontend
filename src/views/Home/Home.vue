@@ -280,83 +280,150 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
-import { useStore } from 'vuex';
-import NavigationBar from "@/components/common/NavigationBar.vue";
+import { useGameStore } from '@/stores/game';
+import { useMainStore } from '@/stores/main';
+import NavigationBar from "@/components/layout/TheHeader.vue";
 import UserLoginCard from "@/components/main/UserLoginCard.vue";
 import useAuth from '@/composables/useAuth';
 
-export default {
-  name: "MainPage",
-  components: {
-    NavigationBar,
-    UserLoginCard,
-  },
-  data() {
-    return {
-      //로그인 여부
-      isLoggedIn: false,
+// 라우터 설정
+const router = useRouter();
 
-      showProfileMenu: false,
-      unreadNotifications: 3,
-      currentBanner: 0,
-      bannerInterval: null,
-      showToast: false,
-      toastMessage: "",
-    };
+// 스토어 설정
+const gameStore = useGameStore();
+const mainStore = useMainStore();
+
+// 반응형 상태 정의
+const isLoggedIn = ref(false);
+const showProfileMenu = ref(false);
+const unreadNotifications = ref(3);
+const currentBanner = ref(0);
+const bannerInterval = ref(null);
+const showToast = ref(false);
+const toastMessage = ref("");
+
+// 사용자 프로필 정보
+const userProfile = ref({
+  name: "사용자",
+  email: "user@example.com",
+  avatar: "/default-avatar.png",
+  isAdmin: false
+});
+
+// 배너 데이터
+const banners = [
+  {
+    badge: "이벤트",
+    title: "여름 특별 이벤트: 제주도 여행 퀴즈",
+    description: "제주도의 아름다운 명소들을 맞추고 경품을 받아가세요!",
+    image: "https://via.placeholder.com/1200x400/4a6cf7/ffffff?text=제주도+여행+퀴즈"
   },
-  beforeUnmount() {
-    this.stopBannerRotation();
+  {
+    badge: "신규",
+    title: "신규 테마: 서울 랜드마크",
+    description: "서울의 유명 랜드마크를 맞추는 새로운 테마가 추가되었습니다.",
+    image: "https://via.placeholder.com/1200x400/6366f1/ffffff?text=서울+랜드마크"
   },
-  methods: {
-    toggleProfileMenu() {
-      this.showProfileMenu = !this.showProfileMenu;
-    // ... 
+  {
+    badge: "업데이트",
+    title: "멀티플레이어 모드 업데이트",
+    description: "친구들과 함께 즐길 수 있는 새로운 기능이 추가되었습니다.",
+    image: "https://via.placeholder.com/1200x400/8b5cf6/ffffff?text=멀티플레이어+모드"
+  }
+];
+
+// 공지사항 데이터
+const recentNotices = [
+  {
+    id: 1,
+    category: "공지",
+    title: "서비스 점검 안내 (6/15)",
+    date: "2024.06.10"
+  },
+  {
+    id: 2,
+    category: "이벤트",
+    title: "여름 특별 이벤트: 제주도 여행 퀴즈",
+    date: "2024.06.05"
+  },
+  {
+    id: 3,
+    category: "업데이트",
+    title: "버전 2.0 업데이트 안내",
+    date: "2024.06.01"
+  }
+];
+
+// 컴포넌트 마운트 시 실행
+onMounted(() => {
+  startBannerRotation();
+});
+
+// 컴포넌트 언마운트 전 실행
+onBeforeUnmount(() => {
+  stopBannerRotation();
+});
+
+// 프로필 메뉴 토글 함수
+function toggleProfileMenu() {
+  showProfileMenu.value = !showProfileMenu.value;
+  
+  if (showProfileMenu.value) {
+    document.body.style.overflow = "hidden";
+  } else {
+    document.body.style.overflow = "";
   }
 }
-      if (this.showProfileMenu) {
-        document.body.style.overflow = "hidden";
-      } else {
-        document.body.style.overflow = "";
-      }
-    },
-    closeProfileMenu() {
-      this.showProfileMenu = false;
-      document.body.style.overflow = "";
-    },
-    openNotifications() {
-      // 알림 메뉴 열기 로직
-    },
-    navigateTo(route) {
-      this.$router.push(`/${route}`);
-    },
-    startBannerRotation() {
-      this.bannerInterval = setInterval(() => {
-        this.currentBanner = (this.currentBanner + 1) % this.banners.length;
-      }, 5000);
-    },
-    stopBannerRotation() {
-      clearInterval(this.bannerInterval);
-    },
-    setCurrentBanner(index) {
-      this.currentBanner = index;
-      // 자동 회전 재시작
-      this.stopBannerRotation();
-      this.startBannerRotation();
-    },
-    showLockedMessage() {
-      this.toastMessage = "포토 모드는 곧 오픈 예정입니다! 기대해주세요.";
-      this.showToast = true;
 
-      // 토스트 메시지 3초 후 사라짐
-      setTimeout(() => {
-        this.showToast = false;
-      }, 3000);
-    },
-  },
-};
+// 프로필 메뉴 닫기 함수
+function closeProfileMenu() {
+  showProfileMenu.value = false;
+  document.body.style.overflow = "";
+}
+
+// 알림 메뉴 열기 함수
+function openNotifications() {
+  // 알림 메뉴 열기 로직
+}
+
+// 페이지 이동 함수
+function navigateTo(route) {
+  router.push(`/${route}`);
+}
+
+// 배너 회전 시작 함수
+function startBannerRotation() {
+  bannerInterval.value = setInterval(() => {
+    currentBanner.value = (currentBanner.value + 1) % banners.length;
+  }, 5000);
+}
+
+// 배너 회전 중지 함수
+function stopBannerRotation() {
+  clearInterval(bannerInterval.value);
+}
+
+// 현재 배너 설정 함수
+function setCurrentBanner(index) {
+  currentBanner.value = index;
+  // 자동 회전 재시작
+  stopBannerRotation();
+  startBannerRotation();
+}
+
+// 잠긴 모드 메시지 표시 함수
+function showLockedMessage() {
+  toastMessage.value = "포토 모드는 곧 오픈 예정입니다! 기대해주세요.";
+  showToast.value = true;
+
+  // 토스트 메시지 3초 후 사라짐
+  setTimeout(() => {
+    showToast.value = false;
+  }, 3000);
+}
 </script>
 
 <style scoped>

@@ -102,7 +102,8 @@ export default function useAuth() {
       isLoading.value = true;
       
       // 사용자 프로필 API 호출
-      const response = await userService.getProfile();
+      // const response = await userService.getProfile();
+      const response = NaN;
       user.value = response.data;
       
       isLoading.value = false;

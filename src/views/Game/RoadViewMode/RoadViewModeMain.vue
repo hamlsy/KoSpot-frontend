@@ -184,236 +184,248 @@
   </div>
 </template>
 
-<script>
-import AppLogo from "@/components/common/AppLogo.vue";
-import ThemeModePopup from "./ThemeModePopup.vue";
+<script setup>
+import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import AppLogo from "@/components/common/ui/BaseAppLogo.vue";
+import ThemeModePopup from "@/components/game/roadViewMode/ThemeModePopup.vue";
 
-export default {
-  name: "RoadViewGame",
-  components: {
-    AppLogo,
-    ThemeModePopup,
+// 라우터 설정
+const router = useRouter();
+
+// 반응형 상태 정의
+const selectedGameMode = ref(null);
+const selectedRegion = ref(null);
+const userRank = ref("Gold III");
+const showProfileMenu = ref(false);
+const isLoading = ref(false);
+const hoverMode = ref(null);
+const hoverStat = ref(null);
+const hoverRecord = ref(null);
+const showThemeModePopup = ref(false);
+
+// 게임 모드 데이터
+const gameModes = [
+  {
+    id: "practice",
+    title: "연습 게임",
+    icon: "fas fa-graduation-cap",
+    shortDescription: "지역을 선택하고 쉽게 연습해보세요",
+    fullDescription:
+      "특정 지역을 선택하여 로드뷰 능력을 천천히 향상시킬 수 있는 모드입니다. 편안한 속도로 학습하세요.",
+    color: "practice-color",
   },
-  data() {
-    return {
-      selectedGameMode: null,
-      selectedRegion: null,
-      userRank: "Gold III",
-      showProfileMenu: false,
-      isLoading: false,
-      hoverMode: null,
-      hoverStat: null,
-      hoverRecord: null,
-      showThemeModePopup: false,
-
-      gameModes: [
-        {
-          id: "practice",
-          title: "연습 게임",
-          icon: "fas fa-graduation-cap",
-          shortDescription: "지역을 선택하고 쉽게 연습해보세요",
-          fullDescription:
-            "특정 지역을 선택하여 로드뷰 능력을 천천히 향상시킬 수 있는 모드입니다. 편안한 속도로 학습하세요.",
-          color: "practice-color",
-        },
-        {
-          id: "theme",
-          title: "테마 게임",
-          icon: "fas fa-map-marked-alt",
-          shortDescription: "특별한 테마로 즐기는 게임",
-          color: "theme-color",
-        },
-        {
-          id: "rank",
-          title: "랭크 게임",
-          icon: "fas fa-trophy",
-          shortDescription: "랜덤 맵으로 다른 플레이어와 경쟁하세요",
-          fullDescription:
-            "전국 랭킹에 도전하는 경쟁 모드입니다. 최고의 성적을 목표로 하세요.",
-          color: "rank-color",
-        },
-      ],
-      regions: {
-        서울: "seoul",
-        경기: "gyeonggi",
-        인천: "incheon",
-        부산: "busan",
-        대구: "daegu",
-        대전: "daejeon",
-        광주: "gwangju",
-        울산: "ulsan",
-        강원: "gangwon",
-        충청: "chungcheong",
-        전라: "jeolla",
-        경상: "gyeongsang",
-        제주: "jeju",
-      },
-
-      stats: [
-        { icon: "fas fa-trophy", label: "내 랭크", value: "Bronze 3" },
-        { icon: "fas fa-trophy", label: "내 레이팅 점수", value: "3200" },
-        { icon: "fas fa-clock", label: "총 플레이 수", value: "500 판" },
-        { icon: "fas fa-medal", label: "최고 점수", value: "4,850점" },
-        { icon: "fas fa-users", label: "전체 랭킹", value: "상위 15%" },
-      ],
-
-      recentRecords: [
-        {
-          id: 1,
-          mode: "랭크",
-          score: 4850,
-          date: "2024.12.29",
-          region: "",
-        },
-        {
-          id: 2,
-          mode: "연습",
-          score: 4200,
-          date: "2024.12.29",
-          region: "부산",
-        },
-        {
-          id: 3,
-          mode: "랭크",
-          score: 4600,
-          date: "2024.12.28",
-          region: "",
-        },
-        {
-          id: 4,
-          mode: "랭크",
-          score: 4350,
-          date: "2024.12.28",
-          region: "",
-        },
-        {
-          id: 5,
-          mode: "랭크",
-          score: 4100,
-          date: "2024.12.27",
-          region: "",
-        },
-      ],
-    };
+  {
+    id: "theme",
+    title: "테마 게임",
+    icon: "fas fa-map-marked-alt",
+    shortDescription: "특별한 테마로 즐기는 게임",
+    color: "theme-color",
   },
-
-  computed: {
-    isGameStartReady() {
-      if (this.selectedGameMode?.id === "practice")
-        return this.selectedRegion !== null;
-      if (this.selectedGameMode?.id === "rank") return true;
-      return false;
-    },
+  {
+    id: "rank",
+    title: "랭크 게임",
+    icon: "fas fa-trophy",
+    shortDescription: "랜덤 맵으로 다른 플레이어와 경쟁하세요",
+    fullDescription:
+      "전국 랭킹에 도전하는 경쟁 모드입니다. 최고의 성적을 목표로 하세요.",
+    color: "rank-color",
   },
+];
 
-  mounted() {
-    this.fetchUserStats();
-  },
-
-  methods: {
-    selectRegion(region) {
-      this.selectedRegion = region;
-    },
-
-    async startGame() {
-      if (!this.isGameStartReady) return;
-
-      this.isLoading = true;
-
-      const gameData = {
-        mode: this.selectedGameMode.id,
-        region: this.selectedRegion,
-      };
-
-      console.log("Starting game with:", gameData);
-
-      try {
-        // 실제 구현에서는 API 호출로 대체
-        // const response = await axios.post('/api/game/start', gameData);
-
-        // 테스트를 위한 타임아웃
-        setTimeout(() => {
-          this.isLoading = false;
-          // 게임 화면으로 라우팅하는 로직이 구현되어야 함
-          // this.$router.push({
-          //   name: 'roadViewPlay',
-          //   params: { gameId: 'generated-id' }
-          // });
-        }, 1500);
-      } catch (error) {
-        console.error("게임 시작 중 오류 발생:", error);
-        this.isLoading = false;
-      }
-    },
-
-    formatNumber(number) {
-      return number.toLocaleString();
-    },
-
-    toggleProfileMenu() {
-      this.showProfileMenu = !this.showProfileMenu;
-    },
-
-    getRankIcon(rank) {
-      // 랭크에 따른 아이콘 클래스 반환
-      if (rank.includes("Gold")) return "fas fa-trophy gold";
-      if (rank.includes("Silver")) return "fas fa-trophy silver";
-      if (rank.includes("Bronze")) return "fas fa-trophy bronze";
-      return "fas fa-trophy";
-    },
-
-    async fetchUserStats() {
-      try {
-        // 실제 구현에서는 API 호출로 대체
-        // const response = await axios.get('/api/user/stats');
-        // this.stats = response.data.stats;
-        // this.userRank = response.data.userRank;
-        // this.recentRecords = response.data.recentRecords;
-        // 테스트 데이터는 이미 설정되어 있음
-      } catch (error) {
-        console.error("사용자 통계 조회 중 오류 발생:", error);
-      }
-    },
-    openGameModePopup(mode) {
-      if (mode.id === "theme") {
-        this.showThemeModePopup = true;
-      } else {
-        this.selectedGameMode = mode;
-        this.selectedRegion = null;
-      }
-    },
-    closeThemeModePopup() {
-      this.showThemeModePopup = false;
-    },
-    closeGameModePopup() {
-      this.selectedGameMode = null;
-      this.selectedRegion = null;
-    },
-    startThemeGame(gameData) {
-      this.isLoading = true;
-      console.log("Starting theme game with:", gameData);
-
-      try {
-        // 실제 구현에서는 API 호출로 대체
-        // const response = await axios.post('/api/game/start', gameData);
-
-        // 테스트를 위한 타임아웃
-        setTimeout(() => {
-          this.isLoading = false;
-          this.showThemeModePopup = false;
-          // 게임 화면으로 라우팅하는 로직이 구현되어야 함
-          // this.$router.push({
-          //   name: 'roadViewPlay',
-          //   params: { gameId: 'generated-id' }
-          // });
-        }, 1500);
-      } catch (error) {
-        console.error("게임 시작 중 오류 발생:", error);
-        this.isLoading = false;
-      }
-    },
-  },
+// 지역 데이터
+const regions = {
+  서울: "seoul",
+  경기: "gyeonggi",
+  인천: "incheon",
+  부산: "busan",
+  대구: "daegu",
+  대전: "daejeon",
+  광주: "gwangju",
+  울산: "ulsan",
+  강원: "gangwon",
+  충청: "chungcheong",
+  전라: "jeolla",
+  경상: "gyeongsang",
+  제주: "jeju",
 };
+
+// 통계 데이터
+const stats = [
+  { icon: "fas fa-trophy", label: "내 랭크", value: "Bronze 3" },
+  { icon: "fas fa-trophy", label: "내 레이팅 점수", value: "3200" },
+  { icon: "fas fa-clock", label: "총 플레이 수", value: "500 판" },
+  { icon: "fas fa-medal", label: "최고 점수", value: "4,850점" },
+  { icon: "fas fa-users", label: "전체 랭킹", value: "상위 15%" },
+];
+
+// 최근 기록 데이터
+const recentRecords = [
+  {
+    id: 1,
+    mode: "랭크",
+    score: 4850,
+    date: "2024.12.29",
+    region: "",
+  },
+  {
+    id: 2,
+    mode: "연습",
+    score: 4200,
+    date: "2024.12.29",
+    region: "부산",
+  },
+  {
+    id: 3,
+    mode: "랭크",
+    score: 4600,
+    date: "2024.12.28",
+    region: "",
+  },
+  {
+    id: 4,
+    mode: "랭크",
+    score: 4350,
+    date: "2024.12.28",
+    region: "",
+  },
+  {
+    id: 5,
+    mode: "랭크",
+    score: 4100,
+    date: "2024.12.27",
+    region: "",
+  },
+];
+
+// computed 속성
+const isGameStartReady = computed(() => {
+  if (selectedGameMode.value?.id === "practice")
+    return selectedRegion.value !== null;
+  if (selectedGameMode.value?.id === "rank") return true;
+  return false;
+});
+
+// 컴포넌트 마운트 시 실행
+onMounted(() => {
+  fetchUserStats();
+});
+
+// 지역 선택 함수
+function selectRegion(region) {
+  selectedRegion.value = region;
+}
+
+// 게임 시작 함수
+async function startGame() {
+  if (!isGameStartReady.value) return;
+
+  isLoading.value = true;
+
+  const gameData = {
+    mode: selectedGameMode.value.id,
+    region: selectedRegion.value,
+  };
+
+  console.log("Starting game with:", gameData);
+
+  try {
+    // 실제 구현에서는 API 호출로 대체
+    // const response = await axios.post('/api/game/start', gameData);
+
+    // 테스트를 위한 타임아웃
+    setTimeout(() => {
+      isLoading.value = false;
+      // 게임 화면으로 라우팅하는 로직이 구현되어야 함
+      // router.push({
+      //   name: 'roadViewPlay',
+      //   params: { gameId: 'generated-id' }
+      // });
+    }, 1500);
+  } catch (error) {
+    console.error("게임 시작 중 오류 발생:", error);
+    isLoading.value = false;
+  }
+}
+
+// 숫자 포맷팅 함수
+function formatNumber(number) {
+  return number.toLocaleString();
+}
+
+// 프로필 메뉴 토글 함수
+function toggleProfileMenu() {
+  showProfileMenu.value = !showProfileMenu.value;
+}
+
+// 랭크 아이콘 가져오기 함수
+function getRankIcon(rank) {
+  // 랭크에 따른 아이콘 클래스 반환
+  if (rank.includes("Gold")) return "fas fa-trophy gold";
+  if (rank.includes("Silver")) return "fas fa-trophy silver";
+  if (rank.includes("Bronze")) return "fas fa-trophy bronze";
+  return "fas fa-trophy";
+}
+
+// 사용자 통계 가져오기 함수
+async function fetchUserStats() {
+  try {
+    // 실제 구현에서는 API 호출로 대체
+    // const response = await axios.get('/api/user/stats');
+    // stats.value = response.data.stats;
+    // userRank.value = response.data.userRank;
+    // recentRecords.value = response.data.recentRecords;
+    // 테스트 데이터는 이미 설정되어 있음
+  } catch (error) {
+    console.error("사용자 통계 조회 중 오류 발생:", error);
+  }
+}
+
+// 게임 모드 팝업 열기 함수
+function openGameModePopup(mode) {
+  if (mode.id === "theme") {
+    showThemeModePopup.value = true;
+  } else {
+    selectedGameMode.value = mode;
+    selectedRegion.value = null;
+  }
+}
+
+// 테마 모드 팝업 닫기 함수
+function closeThemeModePopup() {
+  showThemeModePopup.value = false;
+}
+
+// 게임 모드 팝업 닫기 함수
+function closeGameModePopup() {
+  selectedGameMode.value = null;
+  selectedRegion.value = null;
+}
+
+// 테마 게임 시작 함수
+function startThemeGame(gameData) {
+  isLoading.value = true;
+  console.log("Starting theme game with:", gameData);
+
+  try {
+    // 실제 구현에서는 API 호출로 대체
+    // const response = await axios.post('/api/game/start', gameData);
+
+    // 테스트를 위한 타임아웃
+    setTimeout(() => {
+      isLoading.value = false;
+      showThemeModePopup.value = false;
+      // 게임 화면으로 라우팅하는 로직이 구현되어야 함
+      // router.push({
+      //   name: 'themePlay',
+      //   params: { themeId: gameData.themeId }
+      // });
+    }, 1500);
+  } catch (error) {
+    console.error("테마 게임 시작 중 오류 발생:", error);
+    isLoading.value = false;
+  }
+}
 </script>
 
 <style scoped>
