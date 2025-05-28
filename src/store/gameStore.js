@@ -1,9 +1,9 @@
-import Vue from 'vue';
+import { reactive } from 'vue';
 import { testData, individualTestData } from '@/components/game/multiplayerMode/MultiplayerGameTestData';
 
-// 간단한 상태 관리 스토어 생성
+// 게임 상태 관리 스토어 생성
 const gameStore = {
-  state: Vue.observable({
+  state: reactive({
     // 게임 공통 상태
     roomData: null,
     currentUser: null,
@@ -11,6 +11,10 @@ const gameStore = {
     teams: [],
     chatMessages: [],
     teamChatMessages: {},
+    playersGuesses: [],
+    
+    //순위
+    topPlayer: {},
     
     // 게임 플레이 상태
     currentRound: 1,
@@ -43,6 +47,7 @@ const gameStore = {
   
   // 테스트용 데이터 로드
   loadTestData(isTeamMode = true) {
+    console.log("테스트 데이터를 로드합니다")
     const data = isTeamMode ? testData : individualTestData;
     this.state.roomData = data.roomData;
     this.state.currentUser = data.currentUser;
@@ -50,6 +55,7 @@ const gameStore = {
     this.state.teams = data.teams || [];
     this.state.chatMessages = data.chatMessages || [];
     this.state.teamChatMessages = data.teamChatMessages || {};
+    
   },
   
   // 게임 상태 초기화
@@ -64,7 +70,8 @@ const gameStore = {
   },
   
   // 라운드 종료 처리
-  endRound() {
+  endGameRound() {
+    this.state.playersGuesses = [];
     this.state.roundEnded = true;
     
     // 실제 로직에서는 서버에서 계산된 점수 받아옴
@@ -170,7 +177,7 @@ const gameStore = {
     if (!teamId) return;
     
     if (!this.state.teamChatMessages[teamId]) {
-      Vue.set(this.state.teamChatMessages, teamId, []);
+      this.state.teamChatMessages[teamId] = [];
     }
     
     this.state.teamChatMessages[teamId].push({
@@ -178,7 +185,6 @@ const gameStore = {
       system: isSys,
       sender: isSys ? null : this.state.currentUser.nickname,
       senderId: isSys ? null : this.state.currentUser.id,
-      senderLevel: isSys ? null : this.state.currentUser.level,
       message: message,
       timestamp: new Date().toISOString()
     });

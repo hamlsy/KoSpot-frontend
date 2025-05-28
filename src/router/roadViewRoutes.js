@@ -1,12 +1,12 @@
-import RoadViewModeMain from '@/components/game/roadViewMode/RoadViewModeMain.vue';
-import RoadViewPractice from '@/components/game/roadViewMode/RoadViewPractice.vue';
-import RoadViewRank from '@/components/game/roadViewMode/RoadViewRank.vue';
+import RoadViewModeView from '@/views/Game/RoadViewMode/RoadViewModeView.vue'
+import RoadViewPractice from '@/views/Game/RoadViewMode/RoadViewPractice.vue'
+import RoadViewRank from '@/views/Game/RoadViewMode/RoadViewRank.vue'
 
 const roadViewRoutes = [
     {
-        path: '/roadViewModeMain',
-        name: "RoadViewModeMain",
-        component: RoadViewModeMain
+        path: '/roadViewModeView',
+        name: "RoadViewModeView",
+        component: RoadViewModeView
     },
     { 
         path:'/roadViewPractice',

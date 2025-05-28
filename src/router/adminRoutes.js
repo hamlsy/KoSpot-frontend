@@ -1,11 +1,11 @@
-import AdminDashboard from '@/components/admin/AdminDashboard.vue';
-import UserManagement from '@/components/admin/UserManagement.vue';
+import Dashboard from '@/views/Admin/Dashboard.vue'
+import UserManagement from '@/views/Admin/UserManagement.vue'
 
 const adminRoutes = [
     {
         path: '/admin',
-        name: "AdminDashboard",
-        component: AdminDashboard
+        name: "Dashboard",
+        component: Dashboard
     },
     {
         path: '/admin/users',

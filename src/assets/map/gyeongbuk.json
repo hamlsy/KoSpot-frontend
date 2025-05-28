@@ -177,20 +177,7 @@
               129.57892457035516,
               36.051757803275194
             ]
-          ]
-        ]
-      },
-      "properties": {
-        "SIG_CD": "47111",
-        "SIG_ENG_NM": "Nam-gu, Pohang-si",
-        "SIG_KOR_NM": "포항시 남구"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
+          ],
           [
             [
               129.375743400757,
@@ -397,8 +384,8 @@
       },
       "properties": {
         "SIG_CD": "47113",
-        "SIG_ENG_NM": "Buk-gu, Pohang-si",
-        "SIG_KOR_NM": "포항시 북구"
+        "SIG_ENG_NM": "Pohang-si",
+        "SIG_KOR_NM": "포항시"
       }
     },
     {

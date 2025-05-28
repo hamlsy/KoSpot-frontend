@@ -1,24 +1,24 @@
-import ShopMain from '@/components/user/shop/ShopMain.vue';
-import InventoryMain from '@/components/user/inventory/InventoryMain.vue';
-import MyProfile from '@/components/user/mypage/MyProfile.vue';
-import FriendsList from '@/components/user/mypage/FriendsList.vue';
-import AccountSettings from '@/components/user/mypage/AccountSettings.vue';
+import Shop from '@/views/User/Shop.vue'
+import Inventory from '@/views/User/Inventory.vue'
+import Profile from '@/views/User/Profile.vue'
+import FriendsList from '@/views/User/components/mypage/FriendsList.vue'
+import AccountSettings from '@/views/User/components/mypage/AccountSettings.vue'
 
 const userRoutes = [
     {
-        path: '/shopMain',
-        name: "ShopMain",
-        component: ShopMain
+        path: '/shop',
+        name: "Shop",
+        component: Shop
     },
     {
         path: '/inventory',
-        name: "InventoryMain",
-        component: InventoryMain
+        name: "Inventory",
+        component: Inventory
     },
     {
-        path: '/myProfile',
-        name: "MyProfile",
-        component: MyProfile
+        path: '/profile',
+        name: "Profile",
+        component: Profile
     },
     {
         path: '/friendsList',

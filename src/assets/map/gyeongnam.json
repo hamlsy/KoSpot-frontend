@@ -385,20 +385,7 @@
               128.63232621165326,
               35.22104621267526
             ]
-          ]
-        ]
-      },
-      "properties": {
-        "SIG_CD": "48121",
-        "SIG_ENG_NM": "Uichang-gu, Changwon-si",
-        "SIG_KOR_NM": "창원시 의창구"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
+          ],
           [
             [
               128.67135711390264,
@@ -496,20 +483,7 @@
               128.67135711390264,
               35.24363319344348
             ]
-          ]
-        ]
-      },
-      "properties": {
-        "SIG_CD": "48123",
-        "SIG_ENG_NM": "Seongsan-gu, Changwon-si",
-        "SIG_KOR_NM": "창원시 성산구"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
+          ],
           [
             [
               128.5876766806292,
@@ -663,20 +637,7 @@
               128.5876766806292,
               35.22043917848053
             ]
-          ]
-        ]
-      },
-      "properties": {
-        "SIG_CD": "48125",
-        "SIG_ENG_NM": "Masanhappo-gu, Changwon-si",
-        "SIG_KOR_NM": "창원시 마산합포구"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
+          ],
           [
             [
               128.58608951174048,
@@ -962,20 +923,7 @@
               128.58608951174048,
               35.27209446959808
             ]
-          ]
-        ]
-      },
-      "properties": {
-        "SIG_CD": "48127",
-        "SIG_ENG_NM": "Masanhoewon-gu, Changwon-si",
-        "SIG_KOR_NM": "창원시 마산회원구"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
+          ],
           [
             [
               128.69774930993705,
@@ -1146,8 +1094,8 @@
       },
       "properties": {
         "SIG_CD": "48129",
-        "SIG_ENG_NM": "Jinhae-gu, Changwon-si",
-        "SIG_KOR_NM": "창원시 진해구"
+        "SIG_ENG_NM": "Changwon-si",
+        "SIG_KOR_NM": "창원시"
       }
     },
     {
