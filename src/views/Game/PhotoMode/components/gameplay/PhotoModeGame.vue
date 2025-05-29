@@ -120,6 +120,7 @@
           :correct-region="correctRegion"
           :wrong-region="wrongRegion"
           v-model:selectedRegion="selectedRegion"
+          v-model:selectedRegionEng="selectedRegionEng"
           @submit-guess="submitGuess"
           ref="regionMap"
         />
@@ -359,6 +360,7 @@ export default {
       correctRegion: null,
       wrongRegion: null,
       selectedRegion: null,
+      selectedRegionEng: null,
       currentPhoto: null,
       gamePhotos: [],
       score: 0,
@@ -492,8 +494,6 @@ export default {
           maxPhotos - ((roundNumber - 1) / (totalRounds - 1)) * (maxPhotos - 1)
         )
       );
-
-      console.log(`라운드 ${roundNumber}: 사진 ${photosCount}개 표시`);
       return photosCount;
     },
 
@@ -619,10 +619,6 @@ export default {
     submitGuess(region) {
       if (!this.roundStarted || this.mapDisabled) return;
 
-      console.log('PhotoModeGame submitGuess - 전달받은 region:', region);
-      console.log('PhotoModeGame submitGuess - this.selectedRegion:', this.selectedRegion);
-      console.log('PhotoModeGame submitGuess - this.currentPhoto.region:', this.currentPhoto.region);
-
       // 지역이 정의되지 않은 경우 선택된 지역 사용
       if (!region && this.selectedRegion) {
         console.log('전달받은 region이 없어서 this.selectedRegion 사용:', this.selectedRegion);
@@ -635,13 +631,8 @@ export default {
         return;
       }
 
-      console.log(`제출한 지역: ${region}`);
-      console.log(`지역 타입: ${typeof region}`);
-
-      // 정답 확인 (대소문자 구분 없이 비교)
-      console.log('비교:', region.toLowerCase(), this.currentPhoto.region.toLowerCase());
       const isCorrect =
-        region.toLowerCase() === this.currentPhoto.region.toLowerCase();
+        region.toLowerCase().split("-")[0] === this.currentPhoto.region.toLowerCase();
 
       if (isCorrect) {
         this.handleCorrectGuess(region);

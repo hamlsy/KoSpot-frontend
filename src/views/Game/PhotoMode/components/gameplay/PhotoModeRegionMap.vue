@@ -13,7 +13,7 @@
         </button>
       </div>
       <div class="selected-region-display">
-        선택한 지역: <span>{{ getRegionDisplayName(selectedRegion) }}</span>
+        선택한 지역: <span>{{ selectedRegion }}</span>
       </div>
       <div id="kakao-map" class="map-container"></div>
       <div v-if="selectedRegion && !disabled" class="spot-button-container">
@@ -72,6 +72,10 @@ export default {
       type: String,
       default: null
     },
+    selectedRegionEng: {
+      type: String,
+      default: null
+    },
     correctRegion: {
       type: String,
       default: null
@@ -81,7 +85,7 @@ export default {
       default: null
     }
   },
-  emits: ['update:selectedRegion', 'submit-guess'],
+  emits: ['update:selectedRegion', 'submit-guess', 'update:selectedRegionEng'],
   data() {
     return {
       hoveredRegion: null,
@@ -149,7 +153,6 @@ export default {
   },
   watch: {
     selectedRegion() {
-      console.log(this.selectedRegion);
       this.updatePolygonStyles();
       this.showMarkerAtRegion(this.selectedRegion);
     },
@@ -197,11 +200,9 @@ export default {
     this.initMap();
     this.checkScreenSize();
     window.addEventListener('resize', this.checkScreenSize);
-    window.addEventListener('resize', this.resizeMap);
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.checkScreenSize);
-    window.removeEventListener('resize', this.resizeMap);
   },
   methods: {
     initMap() {
@@ -253,7 +254,8 @@ export default {
           return;
         }
         
-        const name = feature.properties.SIG_KOR_NM;
+        const kor_name = feature.properties.SIG_KOR_NM;
+        const eng_name = feature.properties.CTP_ENG_NM || feature.properties.SIG_ENG_NM; 
         
         // 다중 폴리곤 처리 (coordinates가 3차원 배열인 경우)
         if (feature.geometry.type === 'MultiPolygon') {
@@ -261,7 +263,8 @@ export default {
             // 각 coordSet의 모든 폴리곤 처리
             coordSet.forEach(coords => {
               this.polygons.push({
-                name: name,
+                kor_name: kor_name,
+                eng_name: eng_name,
                 coordinates: coords,
                 properties: feature.properties,
                 region: regionSetting.region // 지역 구분을 위한 속성 추가
@@ -272,7 +275,8 @@ export default {
           // 일반 폴리곤 처리 - 모든 좌표 세트 처리
           feature.geometry.coordinates.forEach(coords => {
             this.polygons.push({
-              name: name,
+              kor_name: kor_name,
+              eng_name: eng_name,
               coordinates: coords,
               properties: feature.properties,
               region: regionSetting.region // 지역 구분을 위한 속성 추가
@@ -373,16 +377,13 @@ export default {
         // 폴리곤 클릭 이벤트
         kakao.maps.event.addListener(polygon, 'click', () => {
           if (!this.disabled) {
-            // 도시 그룹이 있으면 그룹명으로, 없으면 지역 이름으로 선택
-            const selectName = region.cityGroup || region.name;
-            this.selectRegion(selectName);
+            this.selectRegion(region);
           }
         });
         
         // 폴리곤 마우스오버 이벤트
         kakao.maps.event.addListener(polygon, 'mouseover', () => {
-          // 도시 그룹이 있으면 그룹명으로, 없으면 지역 이름으로 호버
-          const hoverName = region.cityGroup || region.name;
+          const hoverName = region.kor_name;
           this.hoverRegion(hoverName);
         });
         
@@ -394,8 +395,8 @@ export default {
         // 폴리곤과 지역 이름 저장
         this.regionPolygons.push({
           polygon,
-          name: region.name,
-          cityGroup: region.cityGroup,
+          kor_name: region.kor_name,
+          eng_name: region.eng_name,
           region: region.region
         });
       });
@@ -424,9 +425,8 @@ export default {
     updatePolygonStyles() {
       this.regionPolygons.forEach(polygon => {
         if (polygon.polygon instanceof kakao.maps.Polygon) {
-          const regionName = polygon.name;
-          const cityGroup = polygon.cityGroup;
-          const effectiveName = cityGroup || regionName; // 도시 그룹이 있으면 그룹명 사용
+          const regionName = polygon.kor_name;
+          const effectiveName = regionName; 
           const region = polygon.region || '기본';
           
           // 지역별 기본 색상 가져오기
@@ -444,6 +444,7 @@ export default {
             strokeWeight = 3;
             fillColor = '#60a5fa';
             fillOpacity = 0.7;
+            
           }
           
           // 정답 지역
@@ -452,6 +453,7 @@ export default {
             strokeWeight = 3;
             fillColor = '#34d399';
             fillOpacity = 0.7;
+            
           }
           
           // 오답 지역
@@ -460,6 +462,7 @@ export default {
             strokeWeight = 3;
             fillColor = '#f87171';
             fillOpacity = 0.7;
+            
           }
           
           // 호버된 지역
@@ -468,6 +471,7 @@ export default {
             strokeWeight = 3;
             fillColor = regionColor.fill; // 지역 색상 유지하면서 약간 밝게
             fillOpacity = 0.9;
+            
           }
           
           // 비활성화된 경우
@@ -482,14 +486,16 @@ export default {
             fillColor: fillColor,
             fillOpacity: fillOpacity
           });
+          
         }
       });
     },
-    selectRegion(regionName) {
-      this.$emit('update:selectedRegion', regionName);
+    selectRegion(region) {
+      this.$emit('update:selectedRegion', region.kor_name);
+      this.$emit('update:selectedRegionEng', region.eng_name);
       
       // 선택한 지역의 중심점에 마커 표시
-      this.showMarkerAtRegion(regionName);
+      this.showMarkerAtRegion(region.kor_name);
     },
     
     showMarkerAtRegion(regionName) {
@@ -510,20 +516,10 @@ export default {
       
       // 해당 지역의 모든 폴리곤 좌표 수집
       this.regionPolygons.forEach(region => {
-        if ((region.cityGroup && region.cityGroup === regionName) || 
-            (!region.cityGroup && region.name === regionName)) {
+        if ((region.name === regionName)) {
           
           // 폴리곤 경로 가져오기
           const path = region.polygon.getPath();
-          
-          if (!cityGroupPoints[regionName]) {
-            cityGroupPoints[regionName] = [];
-          }
-          
-          // 모든 좌표 수집
-          for (let i = 0; i < path.length; i++) {
-            cityGroupPoints[regionName].push(path[i]);
-          }
           
           found = true;
         }
@@ -552,11 +548,8 @@ export default {
       this.$emit('update:selectedRegion', null);
     },
     submitGuess() {
-    // 제출 전에 지도 리사이즈 확인
-    this.resizeMap();
-    // selectedRegion을 인자로 전달
-    
-    this.$emit('submit-guess', this.selectedRegion);
+    // selectedRegionEng을 인자로 전달
+    this.$emit('submit-guess', this.selectedRegionEng);
   },
     zoomIn() {
       if (this.map) {
@@ -582,40 +575,11 @@ export default {
     },
     toggleMap() {
       this.isMapOpen = !this.isMapOpen;
-      
-      // 지도가 열릴 때 리사이즈 처리
-      if (this.isMapOpen) {
-        this.$nextTick(() => {
-          this.resizeMap();
-        });
-      }
     },
   
   // 영문 지역 코드를 한글 지역명으로 변환하는 메서드
-  getRegionDisplayName(regionCode) {
-    if (!regionCode) return '';
-    
-    const regionMap = {
-      'Seoul': '서울특별시',
-      'Busan': '부산광역시',
-      'Daegu': '대구광역시',
-      'Incheon': '인천광역시',
-      'Gwangju': '광주광역시',
-      'Daejeon': '대전광역시',
-      'Ulsan': '울산광역시',
-      'Sejong': '세종특별자치시',
-      'Gyeonggi': '경기도',
-      'Gangwon': '강원도',
-      'Chungbuk': '충청북도',
-      'Chungnam': '충청남도',
-      'Jeonbuk': '전라북도',
-      'Jeonnam': '전라남도',
-      'Gyeongbuk': '경상북도',
-      'Gyeongnam': '경상남도',
-      'Jeju': '제주특별자치도'
-    };
-    
-    return regionMap[regionCode] || regionCode;
+  getRegionDisplayName(region) {
+    return region;
   },
     checkScreenSize() {
       this.isMobile = window.innerWidth <= 768;
@@ -681,19 +645,6 @@ export default {
       
       return false; // 충돌 없음
     },
-    
-    // 지도 크기 변경 시 호출하여 지도를 리사이즈
-    resizeMap() {
-      if (this.map) {
-        // 카카오맵 API의 relayout 메서드 호출
-        this.map.relayout();
-        // 중심점 재설정 (선택사항)
-        const center = new kakao.maps.LatLng(this.defaultCenter.lat, this.defaultCenter.lng);
-        this.map.setCenter(center);
-        
-        console.log('지도 리사이즈 완료');
-      }
-    }
   }
 };
 </script>
