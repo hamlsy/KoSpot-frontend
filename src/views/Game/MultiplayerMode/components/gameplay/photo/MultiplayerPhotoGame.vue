@@ -209,8 +209,8 @@
 <script>
 import GameTimer from '@/components/common/ui/game/BaseGameTimer.vue';
 import PlayerList from '@/views/Game/MultiplayerMode/components/gameplay/MultiplayerPlayerList.vue';
-import PhotoView from '@/components/common/game/photo/PhotoView.vue';
-import KakaoMap from '@/components/common/game/kakao/KakaoMapGame.vue';
+import PhotoView from '@/components/game/photo/PhotoView.vue';
+import KakaoMap from '@/components/game/kakao/KakaoMapGame.vue';
 import ChatWindow from '@/views/Game/MultiplayerMode/components/lobby/chat/MultiplayerLobbyChatWindow.vue';
 import RoundResults from '@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerRoundResults.vue';
 import GameResults from '@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerGameResults.vue';
