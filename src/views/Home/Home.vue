@@ -315,17 +315,17 @@ const userProfile = ref({
 
 // 배너 데이터
 const banners = [
-  {
-    badge: "이벤트",
-    title: "여름 특별 이벤트: 제주도 여행 퀴즈",
-    description: "제주도의 아름다운 명소들을 맞추고 경품을 받아가세요!",
-    image: "https://via.placeholder.com/1200x400/4a6cf7/ffffff?text=제주도+여행+퀴즈"
-  },
+  // {
+  //   badge: "이벤트",
+  //   title: "여름 특별 이벤트: 제주도 여행 퀴즈",
+  //   description: "제주도의 아름다운 명소들을 맞추고 경품을 받아가세요!",
+  //   image: "https://via.placeholder.com/1200x400/4a6cf7/ffffff?text=제주도+여행+퀴즈"
+  // },
   {
     badge: "신규",
-    title: "신규 테마: 서울 랜드마크",
-    description: "서울의 유명 랜드마크를 맞추는 새로운 테마가 추가되었습니다.",
-    image: "https://via.placeholder.com/1200x400/6366f1/ffffff?text=서울+랜드마크"
+    title: "신규 테마: 유명 영화 촬영지",
+    description: "전국 유명 영화 촬영지를 맞추는 새로운 테마가 추가되었습니다.",
+    image: "https://myseoulbox.com/cdn/shop/articles/Kdramas.jpg?v=1686882570"
   },
   {
     badge: "업데이트",
@@ -339,21 +339,21 @@ const banners = [
 const recentNotices = [
   {
     id: 1,
-    category: "공지",
-    title: "서비스 점검 안내 (6/15)",
-    date: "2024.06.10"
+    category: "test",
+    title: "test",
+    date: "2025.06.10"
   },
   {
     id: 2,
-    category: "이벤트",
-    title: "여름 특별 이벤트: 제주도 여행 퀴즈",
-    date: "2024.06.05"
+    category: "test",
+    title: "test",
+    date: "2025.06.05"
   },
   {
     id: 3,
-    category: "업데이트",
-    title: "버전 2.0 업데이트 안내",
-    date: "2024.06.01"
+    category: "test3",
+    title: "test4",
+    date: "2025.06.01"
   }
 ];
 

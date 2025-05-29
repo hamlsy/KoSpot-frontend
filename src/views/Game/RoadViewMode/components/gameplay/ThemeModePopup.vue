@@ -202,6 +202,11 @@
 </template>
 
 <script>
+import InstagramHotPlace from "@/assets/theme/instgram-hot-place-theme.png";
+import KMovie from "@/assets/theme/k-movie-theme.png";
+import NightMarket from "@/assets/theme/night-market-theme.webp";
+import KPopMusicVideo from "@/assets/theme/k-pop-music-video-theme.jpg";
+
 export default {
   name: "ThemeModePopup",
   props: {
@@ -217,12 +222,12 @@ export default {
         // K-드라마 촬영지 테마
         {
           id: "kdrama",
-          name: "인기 K-드라마 촬영지",
+          name: "인기 K-영화 촬영지",
           icon: "fas fa-video",
           image:
-            "https://images.unsplash.com/photo-1564507004663-b6dfb3c824d5?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
+            KMovie,
           description:
-            "전국 각지에 있는 인기 드라마 촬영지를 탐험하세요. 서울부터 제주까지, 감동적인 장면이 촬영된 실제 장소들을 방문하고 점수를 획득하세요.",
+            "전국 각지에 있는 인기 영화 촬영지를 탐험하세요. 서울부터 제주까지, 감동적인 장면이 촬영된 실제 장소들을 방문하고 점수를 획득하세요.",
           completedLocations: 1,
           totalLocations: 7,
           locations: [
@@ -241,9 +246,9 @@ export default {
             { id: 7, name: "춘천 남이섬", unlocked: false },
           ],
           rewardIcon: "fas fa-star",
-          rewardName: "K-드라마 팬 배지",
+          rewardName: "K-영화 팬 배지",
           rewardDescription:
-            "모든 드라마 촬영지를 완료하면 특별한 K-드라마 팬 배지가 추가됩니다.",
+            "모든 영화 촬영지를 완료하면 특별한 K-영화화 팬 배지가 추가됩니다.",
         },
 
         // 인스타그램 핫플레이스 테마
@@ -252,7 +257,7 @@ export default {
           name: "인스타그램 핫플레이스",
           icon: "fas fa-camera",
           image:
-            "https://images.unsplash.com/photo-1581345628965-9a5d438b4f4b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
+            InstagramHotPlace,
           description:
             "전국의 SNS에서 인기 있는 장소들을 탐험하세요. 인스타그램에서 핫한 장소들을 방문하고 점수를 획득하세요.",
           completedLocations: 0,
@@ -275,10 +280,10 @@ export default {
         // K-POP 뮤직비디오 촬영지 테마
         {
           id: "kpop",
-          name: "K-POP 뮤직비디오 촬영지지",
+          name: "K-POP 뮤직비디오 촬영지",
           icon: "fas fa-music",
           image:
-            "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
+          KPopMusicVideo,
           description:
             "K-POP 뮤직비디오 촬영지와 음악 관련 명소들을 탐험하세요. 아이돌 그룹의 뮤직비디오가 촬영된 장소들을 방문하고 점수를 획득하세요.",
           completedLocations: 0,
@@ -304,7 +309,7 @@ export default {
           name: "전국 야시장 투어",
           icon: "fas fa-store",
           image:
-            "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
+          NightMarket,
           description:
             "전국의 유명 야시장과 먹거리 골목을 탐험하세요. 다양한 지역의 특색 있는 시장과 맛집을 방문하고 점수를 획득하세요.",
           completedLocations: 0,
@@ -325,30 +330,30 @@ export default {
         },
 
         // 한국 게임 속 실제 배경 테마
-        {
-          id: "gamescene",
-          name: "한국 게임 속 실제 배경",
-          icon: "fas fa-gamepad",
-          image:
-            "https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
-          description:
-            "인기 한국 게임의 실제 모델이 된 장소들을 탐험하세요. 유명 게임의 배경이 된 실제 장소들을 방문하고 점수를 획득하세요.",
-          completedLocations: 7,
-          totalLocations: 7,
-          locations: [
-            { id: 1, name: "서울 강남역", unlocked: false },
-            { id: 2, name: "부산 해운대", unlocked: false },
-            { id: 3, name: "인천 송도", unlocked: false },
-            { id: 4, name: "대전 유성구", unlocked: false },
-            { id: 5, name: "대구 동성로", unlocked: false },
-            { id: 6, name: "광주 충장로", unlocked: false },
-            { id: 7, name: "울산 태화강", unlocked: false },
-          ],
-          rewardIcon: "fas fa-trophy",
-          rewardName: "게이머 칭호",
-          rewardDescription:
-            "모든 게임 배경 장소를 완료하면 '프로 게이머' 칭호를 획득할 수 있습니다.",
-        },
+        // {
+        //   id: "gamescene",
+        //   name: "한국 게임 속 실제 배경",
+        //   icon: "fas fa-gamepad",
+        //   image:
+        //     "https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
+        //   description:
+        //     "인기 한국 게임의 실제 모델이 된 장소들을 탐험하세요. 유명 게임의 배경이 된 실제 장소들을 방문하고 점수를 획득하세요.",
+        //   completedLocations: 7,
+        //   totalLocations: 7,
+        //   locations: [
+        //     { id: 1, name: "서울 강남역", unlocked: false },
+        //     { id: 2, name: "부산 해운대", unlocked: false },
+        //     { id: 3, name: "인천 송도", unlocked: false },
+        //     { id: 4, name: "대전 유성구", unlocked: false },
+        //     { id: 5, name: "대구 동성로", unlocked: false },
+        //     { id: 6, name: "광주 충장로", unlocked: false },
+        //     { id: 7, name: "울산 태화강", unlocked: false },
+        //   ],
+        //   rewardIcon: "fas fa-trophy",
+        //   rewardName: "게이머 칭호",
+        //   rewardDescription:
+        //     "모든 게임 배경 장소를 완료하면 '프로 게이머' 칭호를 획득할 수 있습니다.",
+        // },
       ],
     };
   },

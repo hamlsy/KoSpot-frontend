@@ -4,7 +4,7 @@ import router from './router';
 import axios from 'axios';
 
 // 카카오 맵 플러그인 가져오기
-import { KakaoMapsPlugin } from '@/plugins/kakaoMaps';
+// import { KakaoMapsPlugin } from '@/plugins/kakaoMaps';
 
 import "@fortawesome/fontawesome-free/css/all.css";
 import "@fortawesome/fontawesome-free/js/all.js";
@@ -24,10 +24,10 @@ app.config.globalProperties.$axios = axios;
 // 플러그인 등록
 app.use(router);
 // app.use(store); // Vuex 스토어 사용 (임시로 주석 처리)
-app.use(KakaoMapsPlugin, {
-  appKey: 'c66fbf360458039285570a638bad813a', // 현재 index.html에 있는 앱키 사용
-  libraries: 'services,clusterer,drawing,geometry' // 필요한 라이브러리 추가
-});
+// app.use(KakaoMapsPlugin, {
+//   appKey: 'c66fbf360458039285570a638bad813a', // 현재 index.html에 있는 앱키 사용
+//   libraries: 'services,clusterer,drawing,geometry' // 필요한 라이브러리 추가
+// });
 
 // 앱 초기화 작업 (임시로 주석 처리)
 // if (store.state.initialized === false) {
