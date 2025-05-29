@@ -149,6 +149,7 @@ export default {
   },
   watch: {
     selectedRegion() {
+      console.log(this.selectedRegion);
       this.updatePolygonStyles();
       this.showMarkerAtRegion(this.selectedRegion);
     },
@@ -554,6 +555,7 @@ export default {
     // 제출 전에 지도 리사이즈 확인
     this.resizeMap();
     // selectedRegion을 인자로 전달
+    
     this.$emit('submit-guess', this.selectedRegion);
   },
     zoomIn() {

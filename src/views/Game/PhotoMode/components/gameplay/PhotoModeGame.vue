@@ -252,8 +252,6 @@ export default {
           id: 1,
           photoUrl: require("@/assets/photo/seoul/seoul_63building.jpg"),
           locationName: "서울 63빌딩",
-          locationDescription:
-            "서울 영등포구에 위치한 63빌딩은 한때 대한민국에서 가장 높은 건물이었습니다.",
           region: "Seoul",
           fact: "63빌딩은 63개 층으로 이루어져 있으며, 1985년에 완공되었습니다.",
         },
@@ -261,8 +259,6 @@ export default {
           id: 2,
           photoUrl: require("@/assets/photo/seoul/seoul_cheonggyecheon.jpg"),
           locationName: "청계천",
-          locationDescription:
-            "서울 중구와 종로구를 흐르는 청계천은 도심 속 생태하천으로 복원되었습니다.",
           region: "Seoul",
           fact: "청계천은 2003년부터 2005년까지 복원 공사가 진행되었으며, 현재는 서울의 대표적인 관광지입니다.",
         },
@@ -270,55 +266,37 @@ export default {
           id: 3,
           photoUrl: require("@/assets/photo/seoul/seoul_cheonggyecheon1.jpg"),
           locationName: "청계천 광장",
-          locationDescription:
-            "서울 중구에 위치한 청계광장은 청계천의 시작점으로 다양한 문화행사가 열리는 공간입니다.",
           region: "Seoul",
-          fact: "청계광장에는 높이 4.3m의 분수대인 스프링이 설치되어 있습니다.",
         },
         {
           id: 4,
           photoUrl: require("@/assets/photo/seoul/seoul_olympicPark.jpg"),
           locationName: "올림픽 공원",
-          locationDescription:
-            "서울 송파구에 위치한 올림픽공원은 1988년 서울올림픽을 위해 조성된 대규모 공원입니다.",
           region: "Seoul",
-          fact: "올림픽공원 내에는 몽촌토성이라는 백제시대 유적이 있습니다.",
         },
         {
           id: 5,
           photoUrl: require("@/assets/photo/seoul/seoul_seoulCityHall.jpg"),
           locationName: "서울시청",
-          locationDescription:
-            "서울 중구에 위치한 서울시청은 독특한 곡선형 건축물로 유명합니다.",
           region: "Seoul",
-          fact: "현재의 서울시청 신청사는 2012년에 완공되었으며, 옛 청사는 서울도서관으로 활용되고 있습니다.",
         },
         {
           id: 6,
           photoUrl: require("@/assets/photo/seoul/seoul_yeouidoPark.jpg"),
           locationName: "여의도 공원",
-          locationDescription:
-            "서울 영등포구 여의도에 위치한 여의도공원은 도심 속 녹지공간입니다.",
           region: "Seoul",
-          fact: "여의도공원은 과거 비행장으로 사용되었던 부지를 공원으로 조성한 것입니다.",
         },
         {
           id: 7,
           photoUrl: require("@/assets/photo/seoul/seoul_yeouidoPark1.jpg"),
           locationName: "여의도 한강공원",
-          locationDescription:
-            "서울 영등포구 여의도에 위치한 한강공원은 시민들의 휴식공간입니다.",
           region: "Seoul",
-          fact: "여의도 한강공원은 서울의 한강공원 중 가장 인기 있는 곳 중 하나입니다.",
         },
         {
           id: 8,
           photoUrl: require("@/assets/banner/Seoul-Dongdaemun-Gate.jpg"),
           locationName: "동대문",
-          locationDescription:
-            "서울 중구와 종로구 경계에 위치한 동대문은 조선시대 한양도성의 동쪽 성문입니다.",
           region: "Seoul",
-          fact: "동대문의 정식 명칭은 흥인지문으로, 국보 제1호입니다.",
         },
         // 여기에 더 많은 사진 데이터 추가 가능
       ],
@@ -598,7 +576,7 @@ export default {
     
     // 힌트가 표시되었을 때 호출되는 메서드
     handleHintShown(level) {
-      console.log(`힌트 레벨 ${level + 1} 표시됨`);
+      
     },
     handleCorrectGuess(region) {
       // 타이머 중지
@@ -641,8 +619,13 @@ export default {
     submitGuess(region) {
       if (!this.roundStarted || this.mapDisabled) return;
 
+      console.log('PhotoModeGame submitGuess - 전달받은 region:', region);
+      console.log('PhotoModeGame submitGuess - this.selectedRegion:', this.selectedRegion);
+      console.log('PhotoModeGame submitGuess - this.currentPhoto.region:', this.currentPhoto.region);
+
       // 지역이 정의되지 않은 경우 선택된 지역 사용
       if (!region && this.selectedRegion) {
+        console.log('전달받은 region이 없어서 this.selectedRegion 사용:', this.selectedRegion);
         region = this.selectedRegion;
       }
 
@@ -653,9 +636,10 @@ export default {
       }
 
       console.log(`제출한 지역: ${region}`);
+      console.log(`지역 타입: ${typeof region}`);
 
       // 정답 확인 (대소문자 구분 없이 비교)
-      console.log(region.toLowerCase(), this.currentPhoto.region.toLowerCase());
+      console.log('비교:', region.toLowerCase(), this.currentPhoto.region.toLowerCase());
       const isCorrect =
         region.toLowerCase() === this.currentPhoto.region.toLowerCase();
 
@@ -844,25 +828,6 @@ export default {
       if (this.hintTimer) {
         clearTimeout(this.hintTimer);
       }
-
-      // 힌트 표시 시간 설정 (난이도에 따라 다름)
-      const hintDelay = this.roundTimeLimit * 0.3; // 30% 시점에 힌트 표시
-
-      // 힌트 알림 표시 (힌트 표시 5초 전)
-      // this.hintNotificationTimer = setTimeout(() => {
-      //   this.showHintNotification = true;
-      //   this.currentHint = `${Math.floor(hintDelay - 5)}초 후에 힌트가 표시됩니다!`;
-      // }, (hintDelay - 5) * 1000);
-
-      // 힌트 표시
-      this.hintTimer = setTimeout(() => {
-        this.showHintNotification = false;
-        this.showHint = true;
-
-        // 정답 지역의 한글 이름 가져오기
-        const regionName = this.getRegionName(this.currentPhoto.region);
-        this.currentHint = this.getInitialConsonants(regionName);
-      }, hintDelay * 1000);
     },
 
     getInitialConsonants(text) {

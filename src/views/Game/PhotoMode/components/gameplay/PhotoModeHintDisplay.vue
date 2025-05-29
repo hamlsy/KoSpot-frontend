@@ -1,5 +1,5 @@
 <template>
-  <div class="hint-container" v-if="showHint || showHintNotification">
+  <div class="hint-container">
     <div class="hint-badge">
       <i class="fas fa-lightbulb"></i> {{ showHintNotification ? '알림' : '힌트' }}
     </div>
@@ -41,8 +41,8 @@ export default {
       // 힌트 관련 변수
       hintTimeThresholds: [25, 20, 15, 10],
       hintLevel: 0,
-      showHint: false,
-      showHintNotification: false,
+      showHint: true,
+      showHintNotification: true,
       currentHint: "",
       hints: [],
       hintTimer: null,
@@ -67,19 +67,6 @@ export default {
     setupHintTimers() {
       // 힌트 관련 변수 초기화
       this.hintLevel = 0;
-      this.showHint = false;
-      this.showHintNotification = false;
-      
-      // 현재 라운드의 사진에 맞는 힌트 준비
-      if (this.currentPhoto) {
-        // 힌트 레벨에 따라 다른 힌트 준비
-        this.hints = [
-          this.currentPhoto.locationName, // 레벨 1 힌트: 장소 이름
-          this.currentPhoto.fact, // 레벨 2 힌트: 장소 관련 사실
-          this.currentPhoto.locationDescription, // 레벨 3 힌트: 장소 설명
-          `정답 지역: ${this.getRegionName(this.currentPhoto.region)}` // 레벨 4 힌트: 지역 이름
-        ];
-      }
     },
     
     handleTimeUpdate(time) {
@@ -112,11 +99,6 @@ export default {
           this.currentHint = `지역 힌트: ${this.currentPhoto.region}`;
         }
       }
-      
-      // 힌트 표시 후 3초 후 자동으로 닫기
-      setTimeout(() => {
-        this.showHint = false;
-      }, 3000);
       
       // 힌트가 표시되었음을 부모 컴포넌트에 알림
       this.$emit('hint-shown', level);
