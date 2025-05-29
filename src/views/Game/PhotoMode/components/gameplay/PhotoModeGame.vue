@@ -185,8 +185,8 @@ import GameResult from "@/views/Game/PhotoMode/components/results/PhotoModeGameR
 import PhotoModePhotoGrid from "./PhotoModePhotoGrid.vue";
 import PhotoModeHintDisplay from "./PhotoModeHintDisplay.vue";
 import PhotoModeNextRoundButton from "./PhotoModeNextRoundButton.vue";
-import IntroOverlay from "@/components/common/game/intro/IntroOverlay.vue";
-import CountdownOverlay from "@/components/common/game/CountdownOverlay.vue";
+import IntroOverlay from "@/components/game/intro/IntroOverlay.vue";
+import CountdownOverlay from "@/components/game/countdown/CountdownOverlay.vue";
 import useGame from '@/composables/useGame';
 import gameService from '@/api/services/game.service';
 

@@ -197,9 +197,9 @@
 
 <script>
 import RoadViewGame from "@/views/Game/RoadViewMode/components/gameplay/RoadViewGame.vue";
-import PhoneFrame from "@/components/common/game/PhoneFrame.vue";
-import CountdownOverlay from "@/components/common/game/CountdownOverlay.vue";
-import IntroOverlay from "@/components/common/game/intro/IntroOverlay.vue";
+import PhoneFrame from "@/components/game/phone/PhoneFrame.vue";
+import CountdownOverlay from "@/components/game/countdown/CountdownOverlay.vue";
+import IntroOverlay from "@/components/game/intro/IntroOverlay.vue";
 
 export default {
   name: "RoadViewPractice",

@@ -1,11 +1,12 @@
 <template>
-  <div class="phone-frame">
+  <div class="phone-frame" v-if="isOpen">
     <div class="phone-header">
       <div class="phone-notch"></div>
     </div>
     <div class="phone-content">
       <!-- 맵 게임 컴포넌트가 여기에 표시됨 -->
-      <KakaoMapGame
+      <kakao-map-game
+        v-if="isOpen"
         :isOpen="true"
         :centerLocation="centerLocation"
         :actualLocation="actualLocation"
@@ -14,16 +15,26 @@
         :showDistance="showDistance"
         :showActionButton="showActionButton"
         @close="$emit('close')"
-        @check-answer="onCheckAnswer"
+        @check-answer="$emit('check-answer', $event)"
         ref="phoneMapGame"
         class="phone-map"
       />
       
-      <!-- 슬롯으로 추가 버튼 제공 -->
-      <slot name="buttons"></slot>
+      <!-- 힌트 버튼 (휴대폰 프레임 내부) -->
+      <button 
+        v-if="!disabled && showHintButton && hintCount > 0" 
+        class="phone-hint-button"
+        @click="$emit('use-hint')"
+        :disabled="!hintAvailable || hintCount <= 0"
+      >
+        <i class="fas fa-lightbulb"></i> 
+        <span v-if="hintCount > 0 && !hintAvailable">{{ nextHintTime }}초 후 사용 가능</span>
+        <span v-else>힌트 사용 ({{ hintCount }}/{{ maxHints }})</span>
+      </button>
       
       <!-- Spot 버튼 (휴대폰 프레임 내부) -->
-      <button v-if="!disabled" 
+      <button 
+        v-if="!disabled && showSpotButton" 
         class="phone-spot-button"
         @click="checkSpotAnswer"
       >
@@ -37,44 +48,83 @@
 </template>
 
 <script>
-import KakaoMapGame from "@/components/common/game/kakao/KakaoMapGame.vue";
+import KakaoMapGame from '@/components/game/kakao/KakaoMapGame.vue';
 
 export default {
-  name: "PhoneFrame",
+  name: 'PhoneMapFrame',
+  
   components: {
     KakaoMapGame
   },
+  
   props: {
+    isOpen: {
+      type: Boolean,
+      default: false
+    },
     centerLocation: {
       type: Object,
-      required: true
+      default: () => ({
+        lat: 36.480401, 
+        lng: 127.574667 // 한국 중심점
+      })
     },
     actualLocation: {
       type: Object,
-      required: true
-    },
-    showHintCircles: {
-      type: Boolean,
-      default: false
+      default: null
     },
     disabled: {
       type: Boolean,
       default: false
     },
-    showDistance: {
+    showHintCircles: {
       type: Boolean,
       default: false
+    },
+    showHintButton: {
+      type: Boolean,
+      default: false
+    },
+    showSpotButton: {
+      type: Boolean,
+      default: true
+    },
+    showDistance: {
+      type: Boolean,
+      default: true
     },
     showActionButton: {
       type: Boolean,
       default: false
+    },
+    hintCount: {
+      type: Number,
+      default: 0
+    },
+    maxHints: {
+      type: Number,
+      default: 3
+    },
+    hintAvailable: {
+      type: Boolean,
+      default: true
+    },
+    nextHintTime: {
+      type: Number,
+      default: 0
     }
   },
+  
   methods: {
-    onCheckAnswer(location) {
-      this.$emit('check-answer', location);
+    // 현재 마커 위치 확인
+    getMarkerPosition() {
+      if (this.$refs.phoneMapGame) {
+        return this.$refs.phoneMapGame.getMarkerPosition();
+      }
+      return Promise.reject('지도가 준비되지 않았습니다.');
     },
     
+    // Spot 버튼 클릭 시 마커 위치 확인
     checkSpotAnswer() {
       if (!this.$refs.phoneMapGame) {
         this.$emit('error', '지도가 준비되지 않았습니다. 다시 시도해주세요.');
@@ -85,27 +135,15 @@ export default {
       this.$refs.phoneMapGame.getMarkerPosition()
         .then(markerPosition => {
           if (markerPosition) {
-            this.$emit('spot-answer', markerPosition);
+            this.$emit('check-answer', markerPosition);
           } else {
             this.$emit('error', '위치를 선택해주세요!');
           }
         })
         .catch(() => {
           this.$emit('error', '위치를 선택해주세요!');
+          
         });
-    },
-    
-    // 맵 인스턴스 노출
-    getMapInstance() {
-      return this.$refs.phoneMapGame ? this.$refs.phoneMapGame.map : null;
-    },
-    
-    // 마커 위치 가져오기
-    getMarkerPosition() {
-      if (!this.$refs.phoneMapGame) {
-        return Promise.reject('지도가 준비되지 않았습니다.');
-      }
-      return this.$refs.phoneMapGame.getMarkerPosition();
     }
   }
 };
@@ -119,7 +157,7 @@ export default {
   left: 50%;
   transform: translate(-50%, -50%);
   width: 360px;
-  height: 680px;
+  height: 720px;
   background-color: #111;
   border-radius: 40px;
   overflow: hidden;
@@ -270,6 +308,50 @@ export default {
   font-size: 0.9rem;
 }
 
+.phone-hint-button {
+  position: absolute;
+  bottom: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #ff9800, #ff5722);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(255, 152, 0, 0.4);
+  transition: all 0.3s ease;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 180px;
+  text-align: center;
+  justify-content: center;
+}
+
+.phone-hint-button:hover:not(:disabled) {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 6px 12px rgba(255, 152, 0, 0.6);
+}
+
+.phone-hint-button:active:not(:disabled) {
+  transform: translateX(-50%) translateY(-1px);
+}
+
+.phone-hint-button:disabled {
+  background: linear-gradient(135deg, #ccc, #999);
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.8;
+}
+
+.phone-hint-button i {
+  font-size: 0.9rem;
+}
+
 /* 반응형 디자인 */
 @media (max-width: 768px) {
   .phone-frame {
@@ -289,4 +371,4 @@ export default {
     font-size: 0.85rem;
   }
 }
-</style>
+</style> 

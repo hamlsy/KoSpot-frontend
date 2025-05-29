@@ -153,8 +153,8 @@
 
 <script>
 import GameTimer from "@/components/common/ui/game/BaseGameTimer.vue";
-import RoadView from "@/views/Game/RoadViewMode/components/gameplay/RoadView.vue";
-import PhoneFrame from "@/components/common/game/PhoneFrame.vue";
+import RoadView from "@/components/game/roadview/RoadView.vue";
+import PhoneFrame from "@/components/game/phone/PhoneFrame.vue";
 import MultiplayerIntroOverlay from "@/views/Game/MultiplayerMode/components/gameplay/intro/MultiplayerIntroOverlay.vue";
 import MultiplayNextRoundOverlay from "@/views/Game/MultiplayerMode/components/gameplay/intro/MultiplayNextRoundOverlay.vue";
 import gameStore from "@/store/gameStore";

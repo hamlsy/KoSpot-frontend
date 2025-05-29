@@ -10,7 +10,7 @@
 
     <!-- Game Controls Section -->
     <div class="game-controls">
-      <router-link to="/mainPage" custom v-slot="{ navigate }">
+      <router-link to="/" custom v-slot="{ navigate }">
         <button @click="navigate" class="start-button">
           <span class="button-text">게임 시작</span>
           <div class="button-effect"></div>

@@ -1,5 +1,5 @@
 import { reactive } from 'vue';
-import { testData, individualTestData } from '@/components/game/multiplayerMode/MultiplayerGameTestData';
+import { testData, individualTestData } from '@/store/MultiplayerGameTestData'
 
 // 게임 상태 관리 스토어 생성
 const gameStore = {

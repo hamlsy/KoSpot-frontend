@@ -74,7 +74,7 @@ import ChatWindow from '@/views/Game/MultiplayerMode/components/gameplay/chat/In
 import TeamRoundResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamRoundResults.vue";
 import TeamGameResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamGameResults.vue";
 import TeamVotingModal from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamVotingModal.vue";
-import RoadView from 'src/views/Game/RoadViewMode/components/gameplay/RoadView.vue'
+import RoadView from '@/components/game/roadview/RoadView.vue'
 import gameStore from "@/store/gameStore";
 
 export default {

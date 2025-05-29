@@ -24,31 +24,12 @@
 
       <section class="game-modes">
         <div class="game-mode-list">
-          <div
+          <game-mode-card
             v-for="mode in gameModes"
             :key="mode.id"
-            class="game-mode-card"
-            :class="{ 
-              'mode-card-hover': hoverMode === mode.id,
-              'practice-mode': mode.id === 'practice',
-              'rank-mode': mode.id === 'rank',
-              'theme-mode': mode.id === 'theme'
-            }"
-            @click="openGameModePopup(mode)"
-            @mouseenter="hoverMode = mode.id"
-            @mouseleave="hoverMode = null"
-          >
-            <div class="game-mode-icon" :class="mode.color">
-              <i :class="mode.icon"></i>
-            </div>
-            <div class="game-mode-details">
-              <h3>{{ mode.title }}</h3>
-              <p>{{ mode.shortDescription }}</p>
-            </div>
-            <div class="game-mode-arrow">
-              <i class="fas fa-chevron-right"></i>
-            </div>
-          </div>
+            :mode="mode"
+            @select="openGameModePopup"
+          />
         </div>
       </section>
 
@@ -175,6 +156,7 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import AppLogo from "@/components/common/ui/BaseAppLogo.vue";
 import useGame from '@/composables/useGame';
+import GameModeCard from "@/components/common/ui/GameModeCard.vue";
 import useAuth from '@/composables/useAuth';
 
 // 라우터 및 컴포지션 API 사용
