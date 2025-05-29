@@ -1,10 +1,10 @@
 <template>
-  <div class="hint-container" v-if="visible">
+  <div class="hint-container" v-if="showHint || showHintNotification">
     <div class="hint-badge">
-      <i class="fas fa-lightbulb"></i> {{ isNotification ? '알림' : '힌트' }}
+      <i class="fas fa-lightbulb"></i> {{ showHintNotification ? '알림' : '힌트' }}
     </div>
     <div class="hint-content">
-      {{ hint }}
+      {{ currentHint }}
     </div>
   </div>
 </template>
@@ -14,17 +14,185 @@ export default {
   name: 'PhotoModeHintDisplay',
   
   props: {
-    visible: {
-      type: Boolean,
-      default: false
-    },
-    hint: {
+    mode: {
       type: String,
-      default: ''
+      default: 'practice'
     },
-    isNotification: {
-      type: Boolean,
-      default: false
+    roundTimeLimit: {
+      type: Number,
+      default: 30
+    },
+    currentPhoto: {
+      type: Object,
+      default: null
+    },
+    remainingTime: {
+      type: Number,
+      default: 0
+    },
+    getRegionName: {
+      type: Function,
+      required: true
+    }
+  },
+  
+  data() {
+    return {
+      // 힌트 관련 변수
+      hintTimeThresholds: [25, 20, 15, 10],
+      hintLevel: 0,
+      showHint: false,
+      showHintNotification: false,
+      currentHint: "",
+      hints: [],
+      hintTimer: null,
+      hintNotificationTimer: null
+    };
+  },
+  
+  watch: {
+    currentPhoto: {
+      handler() {
+        this.setupHintTimers();
+      },
+      immediate: true
+    },
+    
+    remainingTime(time) {
+      this.handleTimeUpdate(time);
+    }
+  },
+  
+  methods: {
+    setupHintTimers() {
+      // 힌트 관련 변수 초기화
+      this.hintLevel = 0;
+      this.showHint = false;
+      this.showHintNotification = false;
+      
+      // 현재 라운드의 사진에 맞는 힌트 준비
+      if (this.currentPhoto) {
+        // 힌트 레벨에 따라 다른 힌트 준비
+        this.hints = [
+          this.currentPhoto.locationName, // 레벨 1 힌트: 장소 이름
+          this.currentPhoto.fact, // 레벨 2 힌트: 장소 관련 사실
+          this.currentPhoto.locationDescription, // 레벨 3 힌트: 장소 설명
+          `정답 지역: ${this.getRegionName(this.currentPhoto.region)}` // 레벨 4 힌트: 지역 이름
+        ];
+      }
+    },
+    
+    handleTimeUpdate(time) {
+      if (this.mode === "practice") {
+        for (let i = 0; i < this.hintTimeThresholds.length; i++) {
+          if (time === this.hintTimeThresholds[i] && this.hintLevel <= i) {
+            this.showNextHint(i);
+            break;
+          }
+        }
+      }
+    },
+    
+    showNextHint(level) {
+      this.hintLevel = level + 1;
+      this.showHint = true;
+      
+      // 힌트 레벨에 따라 다른 힌트 표시
+      if (this.hints && this.hints.length > level) {
+        this.currentHint = this.hints[level];
+      } else if (level === 0) {
+        // 기본 힌트: 지역 이니셜
+        const regionName = this.currentPhoto?.region;
+        if (regionName) {
+          this.currentHint = `지역 힌트: ${regionName.charAt(0)}`;
+        }
+      } else if (level === 1) {
+        // 기본 힌트: 지역 이름
+        if (this.currentPhoto?.region) {
+          this.currentHint = `지역 힌트: ${this.currentPhoto.region}`;
+        }
+      }
+      
+      // 힌트 표시 후 3초 후 자동으로 닫기
+      setTimeout(() => {
+        this.showHint = false;
+      }, 3000);
+      
+      // 힌트가 표시되었음을 부모 컴포넌트에 알림
+      this.$emit('hint-shown', level);
+    },
+    
+    getInitialConsonants(text) {
+      if (!text) return "";
+      
+      // 한글 초성 추출 로직
+      const consonants = [
+        'ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ',
+        'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'
+      ];
+      
+      let result = '';
+      for (let i = 0; i < text.length; i++) {
+        const char = text.charAt(i);
+        const code = char.charCodeAt(0);
+        
+        if (code >= 44032 && code <= 55203) {
+          const consonantIndex = Math.floor((code - 44032) / 588);
+          result += consonants[consonantIndex];
+        } else {
+          result += char;
+        }
+      }
+      
+      return `지역 힌트: ${result}`;
+    },
+    
+    showHintWithDelay() {
+      // 기존 타이머 제거
+      if (this.hintNotificationTimer) {
+        clearTimeout(this.hintNotificationTimer);
+      }
+      if (this.hintTimer) {
+        clearTimeout(this.hintTimer);
+      }
+
+      // 힌트 표시 시간 설정 (난이도에 따라 다름)
+      const hintDelay = this.roundTimeLimit * 0.3; // 30% 시점에 힌트 표시
+
+      // 힌트 알림 표시 (힌트 표시 5초 전)
+      this.hintNotificationTimer = setTimeout(() => {
+        this.showHintNotification = true;
+        this.currentHint = `${Math.floor(hintDelay - 5)}초 후에 힌트가 표시됩니다!`;
+      }, (hintDelay - 5) * 1000);
+
+      // 힌트 표시
+      this.hintTimer = setTimeout(() => {
+        this.showHintNotification = false;
+        this.showHint = true;
+
+        // 정답 지역의 한글 이름 가져오기
+        const regionName = this.getRegionName(this.currentPhoto.region);
+        this.currentHint = this.getInitialConsonants(regionName);
+        
+        // 힌트가 표시되었음을 부모 컴포넌트에 알림
+        this.$emit('hint-shown', 0);
+      }, hintDelay * 1000);
+    },
+    
+    resetHints() {
+      // 타이머 제거
+      if (this.hintNotificationTimer) {
+        clearTimeout(this.hintNotificationTimer);
+      }
+      if (this.hintTimer) {
+        clearTimeout(this.hintTimer);
+      }
+      
+      // 상태 초기화
+      this.hintLevel = 0;
+      this.showHint = false;
+      this.showHintNotification = false;
+      this.currentHint = "";
     }
   }
 };

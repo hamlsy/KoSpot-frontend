@@ -3,7 +3,6 @@
     <photo-mode-game
       mode="rank"
       :region="region"
-      :theme="theme"
       :total-rounds="totalRounds"
     />
   </div>

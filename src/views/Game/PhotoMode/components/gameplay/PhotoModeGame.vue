@@ -92,9 +92,12 @@
 
         <photo-mode-hint-display
           v-if="isPracticeMode"
-          :visible="showHint || showHintNotification"
-          :hint="currentHint"
-          :is-notification="showHintNotification"
+          :mode="mode"
+          :round-time-limit="roundTimeLimit"
+          :current-photo="currentPhoto"
+          :remaining-time="remainingTime"
+          :get-region-name="getRegionName"
+          @hint-shown="handleHintShown"
         />
 
         <photo-mode-next-round-button
@@ -116,7 +119,7 @@
           :show-region-names="!isRankMode"
           :correct-region="correctRegion"
           :wrong-region="wrongRegion"
-          :selectedRegion="selectedRegion"
+          v-model:selectedRegion="selectedRegion"
           @submit-guess="submitGuess"
           ref="regionMap"
         />
@@ -208,16 +211,12 @@ export default {
       type: String,
       default: "practice",
       validator(value) {
-        return ["practice", "rank", "theme"].includes(value);
+        return ["practice", "rank"].includes(value);
       },
     },
     region: {
       type: String,
       default: "all",
-    },
-    theme: {
-      type: String,
-      default: "",
     },
   },
 
@@ -334,7 +333,7 @@ export default {
       averageTime: 0,
       bestRound: null,
       worstRound: null,
-      rank: "",
+      rank: 0,
       rankPercentile: 0,
       rankPointChange: 0,
 
@@ -369,7 +368,28 @@ export default {
 
       // 타이머 및 지도 참조
       timer: null,
-      regionMap: null
+      regionMap: null,
+
+      // 게임 상태 변수
+      gameMode: "연습 모드",
+      regionLabel: "전체 지역",
+      showCorrectAnimation: false,
+      showIncorrectAnimation: false,
+      showTimeoutAnimation: false,
+      showIntro: true,
+      currentPhotos: [],
+      correctRegion: null,
+      wrongRegion: null,
+      selectedRegion: null,
+      currentPhoto: null,
+      gamePhotos: [],
+      score: 0,
+      correctCount: 0,
+      wrongCount: 0,
+      totalTimeTaken: 0,
+      completedRounds: [],
+      remainingTime: 0,
+      
     };
   },
   
@@ -380,6 +400,21 @@ export default {
 
     isLastRound() {
       return this.currentRound >= this.totalRounds;
+    },
+    
+    // 현재 점수 계산
+    currentScore() {
+      return this.score;
+    },
+    
+    // 연습 모드인지 확인
+    isPracticeMode() {
+      return this.mode === "practice";
+    },
+    
+    // 랭크 모드인지 확인
+    isRankMode() {
+      return this.mode === "rank";
     }
   },
 
@@ -544,6 +579,8 @@ export default {
         `라운드 ${this.currentRound} 시작: ${photosCount}개 사진 표시`
       );
     },
+    
+    // setupHintTimers 메서드는 PhotoModeHintDisplay 컴포넌트로 이동함
 
     handlePhotoLoaded() {
       this.photoLoadCount++;
@@ -556,31 +593,12 @@ export default {
 
     handleTimeUpdate(time) {
       this.remainingTime = time;
-
-      // 힌트 표시 로직 (연습 모드에서만)
-      if (this.mode === "practice") {
-        for (let i = 0; i < this.hintTimeThresholds.length; i++) {
-          if (time === this.hintTimeThresholds[i] && this.hintLevel <= i) {
-            this.showNextHint(i);
-            break;
-          }
-        }
-      }
+      // 힌트 관련 로직은 PhotoModeHintDisplay 컴포넌트로 이동함
     },
-
-    showNextHint(level) {
-      this.hintLevel = level + 1;
-      this.showHint = true;
-
-      // 힌트 레벨에 따라 다른 힌트 표시
-      if (level === 0) {
-        // 첫 번째 힌트: 지역 이니셜
-        const regionName = this.currentPhoto.region;
-        this.currentHint = `지역 힌트: ${regionName.charAt(0)}`;
-      } else if (level === 1) {
-        // 두 번째 힌트: 지역 이름
-        this.currentHint = `지역 힌트: ${this.currentPhoto.region}`;
-      }
+    
+    // 힌트가 표시되었을 때 호출되는 메서드
+    handleHintShown(level) {
+      console.log(`힌트 레벨 ${level + 1} 표시됨`);
     },
     handleCorrectGuess(region) {
       // 타이머 중지
@@ -772,7 +790,6 @@ export default {
     exitGame() {
       this.$router.push("/");
     },
-
     getRegionName(regionCode) {
       const regionMap = {
         Seoul: "서울특별시",
