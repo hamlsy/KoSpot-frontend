@@ -187,13 +187,6 @@ const recentRecords = ref([
     region: "",
   },
   {
-    id: 2,
-    mode: "테마",
-    score: 3950,
-    date: "2024.12.28",
-    region: "산과 숲",
-  },
-  {
     id: 3,
     mode: "연습",
     score: 4100,
@@ -207,13 +200,7 @@ const recentRecords = ref([
     date: "2024.12.27",
     region: "",
   },
-  {
-    id: 5,
-    mode: "테마",
-    score: 3720,
-    date: "2024.12.26",
-    region: "궁궐과 사찰",
-  },
+  
 ]);
 
 // 게임 모드 데이터

@@ -26,7 +26,7 @@
 </template>
 
 <script>
-import sidoPolygons from '@/assets/map/sido_kakao.json';
+// import sidoPolygons from '@/assets/map/sido_kakao.json';
 
 //수도권
 import seoulPolygons from '@/assets/map/seoul.json';
@@ -164,7 +164,7 @@ export default {
     }
   },
   created() {
-    this.loadPolygons();
+    // this.loadPolygons();
 
     //수도권
     this.loadGyeonggiPolygons();
@@ -226,17 +226,17 @@ export default {
         }, 1000);
       }
     },
-    loadPolygons() {
-      // GeoJSON 데이터 로드
-      this.polygons = sidoPolygons.features.map(f => {
-        const name = f.properties.SIG_KOR_NM || f.properties.CTP_KOR_NM || f.properties.CTP_ENG_NM || '지역';
-        return {
-          name,
-          coordinates: f.geometry.coordinates[0], // 단일 폴리곤만 사용
-          properties: f.properties,
-        };
-      });
-    },
+    // loadPolygons() {
+    //   // GeoJSON 데이터 로드
+    //   this.polygons = sidoPolygons.features.map(f => {
+    //     const name = f.properties.SIG_KOR_NM || f.properties.CTP_KOR_NM || f.properties.CTP_ENG_NM || '지역';
+    //     return {
+    //       name,
+    //       coordinates: f.geometry.coordinates[0], // 단일 폴리곤만 사용
+    //       properties: f.properties,
+    //     };
+    //   });
+    // },
     loadRegionPolygons(polygonData, regionName) {
       const features = polygonData.features;
       const regionSetting = this.regionSettings[regionName];
@@ -453,7 +453,6 @@ export default {
             strokeWeight = 3;
             fillColor = '#34d399';
             fillOpacity = 0.7;
-            
           }
           
           // 오답 지역
@@ -462,7 +461,6 @@ export default {
             strokeWeight = 3;
             fillColor = '#f87171';
             fillOpacity = 0.7;
-            
           }
           
           // 호버된 지역
