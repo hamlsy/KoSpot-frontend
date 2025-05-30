@@ -8,13 +8,14 @@
             {{ motivationMessage }}
           </h2>
           <h2 v-else-if="step === 2" key="step2">{{ currentRound }}라운드</h2>
-          <div v-else-if="step === 3" key="step3" class="countdown-container">
+          <div v-else-if="step === 3" class="countdown-container">
             <span class="countdown-number">{{ countdown }}</span>
           </div>
         </transition>
       </div>
     </div>
   </transition>
+  
 </template>
   
 <script>

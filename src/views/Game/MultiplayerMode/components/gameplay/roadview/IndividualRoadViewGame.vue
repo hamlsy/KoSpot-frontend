@@ -114,20 +114,17 @@ export default {
     this.$watch(
       () => this.gameStore.state.actualLocation,
       (newVal) => {
-        if (newVal) {
-          console.log("Actual location updated:", newVal);
-          // 실제 위치가 설정된 후에 다른 플레이어들의 추측 시뮬레이션
-          if (newVal && Object.keys(newVal).length > 0 && !this.simulationTriggered) {
-            console.log("실제 위치가 설정되었습니다. 시뮬레이션 시작:", newVal);
-            // 중복 호출 방지를 위한 플래그 설정
-            this.simulationTriggered = true;
-            // 실제 위치가 설정된 후에 다른 플레이어들의 추측 시뮬레이션
+        if (newVal && Object.keys(newVal).length > 0 && !this.simulationTriggered) {
+          this.simulationTriggered = true;
+          setTimeout(() => {
             this.simulateOtherPlayersGuesses();
-          }
+          }, 2000); // 2초 후에 시뮬레이션 시작
         }
-      },
-      { deep: true }
+      }
     );
+
+    // 라운드 시작 타이머 설정
+    this.startRoundTimer();
     
     // 첫 라운드 데이터 가져오기
     this.fetchRoundData();
@@ -523,8 +520,16 @@ export default {
   
     // 다음 라운드 준비 완료 처리
     handleNextRoundReady() {
+      // 게임 상태 초기화
+      this.gameStore.state.hasSubmittedGuess = false;
+      this.gameStore.state.userGuess = null;
+      this.gameStore.state.playerGuesses = [];
+      
       // 인트로 오버레이 표시 (기존 인트로 오버레이 사용)
       this.gameStore.state.showIntroOverlay = true;
+      
+      // 다음 라운드 데이터 가져오기 준비
+      this.fetchRoundData();
     },
     
     // 사용자의 현재 등수 계산
