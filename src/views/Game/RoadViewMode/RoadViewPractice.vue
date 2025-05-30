@@ -1003,85 +1003,9 @@ export default {
   font-size: 1.1rem;
 }
 
-/* 게임 소개 화면 */
-.intro-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: whitesmoke;
-  z-index: 20;
-}
+/* IntroOverlay 컴포넌트에서 관리하므로 제거 */
 
-.intro-content {
-  background-color: white;
-  padding: 30px;
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  text-align: center;
-  max-width: 500px;
-  width: 90%;
-}
-
-/* 로딩 화면 */
-.loading-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: rgba(0, 0, 0, 0.7);
-  z-index: 10;
-}
-
-.loading-spinner {
-  width: 60px;
-  height: 60px;
-  border: 6px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: white;
-  animation: spin 1s infinite linear;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.load-error {
-  background-color: white;
-  padding: 25px;
-  border-radius: 12px;
-  text-align: center;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-}
-
-.load-error button {
-  background: linear-gradient(135deg, #3498db, #2980b9);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  margin-top: 15px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.load-error button:hover {
-  transform: translateY(-2px);
-}
+/* 로딩 관련 스타일 - 사용하지 않는 부분 제거 */
 
 /* 게임 컨테이너 */
 .game-content {
@@ -1134,13 +1058,7 @@ export default {
   font-size: 1.1rem;
 }
 
-/* 지도 토글 컨테이너 */
-.map-toggle-container {
-  position: absolute;
-  bottom: 30px;
-  right: 30px;
-  z-index: 10;
-}
+/* 지도 토글 버튼 스타일 */
 
 .map-toggle {
   position: fixed;
@@ -1393,15 +1311,6 @@ export default {
 
 /* 반응형 디자인 */
 @media (max-width: 768px) {
-  .countdown {
-    font-size: 8rem;
-  }
-
-  .phone-frame {
-    width: 340px;
-    height: 640px;
-  }
-
   .result-map {
     height: 250px;
   }
@@ -1418,19 +1327,6 @@ export default {
     gap: 5px;
   }
 
-  .countdown {
-    font-size: 5rem;
-  }
-
-  .intro-content {
-    padding: 25px;
-  }
-
-  .phone-frame {
-    width: 300px;
-    height: 600px;
-  }
-
   .result-map {
     height: 200px;
   }
@@ -1442,11 +1338,6 @@ export default {
   .result-buttons {
     flex-direction: column;
     gap: 15px;
-  }
-
-  .map-toggle-container {
-    bottom: 20px;
-    right: 20px;
   }
 
   .map-toggle {
@@ -1461,11 +1352,6 @@ export default {
     font-size: 0.85rem;
     bottom: 20px;
     left: 20px;
-  }
-
-  .phone-spot-button {
-    padding: 8px 16px;
-    font-size: 0.85rem;
   }
 }
 
@@ -1494,162 +1380,9 @@ export default {
   }
 }
 
-/* 휴대폰 프레임 스타일 */
-.phone-frame {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 360px;
-  height: 720px;
-  background-color: #111;
-  border-radius: 40px;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5),
-    inset 0 0 10px rgba(255, 255, 255, 0.1), 0 0 0 8px #333;
-  z-index: 15;
-}
+/* 휴대폰 프레임 스타일은 PhoneFrame 컴포넌트에서 관리하므로 제거 */
 
-.phone-header {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 50px;
-  background-color: #000;
-  z-index: 16;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-}
-
-.phone-notch {
-  position: relative;
-  top: 0;
-  width: 150px;
-  height: 30px;
-  background-color: #000;
-  border-radius: 0 0 15px 15px;
-  z-index: 17;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.phone-notch:before {
-  content: "";
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  background-color: #444;
-  border-radius: 50%;
-  left: 40px;
-  top: 10px;
-}
-
-.phone-notch:after {
-  content: "";
-  position: absolute;
-  width: 50px;
-  height: 6px;
-  background-color: #444;
-  border-radius: 3px;
-  right: 40px;
-  top: 11px;
-}
-
-.phone-content {
-  position: absolute;
-  top: 50px;
-  left: 0;
-  right: 0;
-  bottom: 50px;
-  z-index: 15;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.phone-footer {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 50px;
-  background-color: #000;
-  z-index: 16;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.home-button {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #333, #222);
-  border-radius: 50%;
-  border: 2px solid #444;
-  cursor: pointer;
-  position: relative;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
-}
-
-.home-button:before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 15px;
-  height: 15px;
-  border: 2px solid #666;
-  border-radius: 3px;
-}
-
-.home-button:active {
-  transform: scale(0.95);
-  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8);
-}
-
-.phone-map {
-  width: 100%;
-  height: 100%;
-  z-index: 15;
-}
-
-/* 휴대폰 내부 Spot 버튼 */
-.phone-spot-button {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: linear-gradient(135deg, #27ae60, #2ecc71);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 25px;
-  font-weight: bold;
-  font-size: 0.9rem;
-  cursor: pointer;
-  box-shadow: 0 4px 10px rgba(46, 204, 113, 0.4);
-  transition: all 0.3s ease;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.phone-spot-button:hover {
-  transform: translateX(-50%) translateY(-2px);
-  box-shadow: 0 6px 12px rgba(46, 204, 113, 0.6);
-}
-
-.phone-spot-button:active {
-  transform: translateX(-50%) translateY(-1px);
-}
-
-.phone-spot-button i {
-  font-size: 0.9rem;
-}
+/* PhoneFrame 컴포넌트에서 관리하므로 제거 */
 
 .phone-hint-button {
   position: absolute;
