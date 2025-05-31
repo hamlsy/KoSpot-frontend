@@ -189,46 +189,57 @@ export default {
 .game-rooms-panel {
   flex: 1;
   background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-radius: 20px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   max-height: 600px;
+  border: 1px solid rgba(240, 244, 248, 0.8);
+  transition: all 0.3s ease;
 }
 
 .panel-header {
-  padding: 1rem 1.2rem;
+  padding: 1rem 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #eee;
-  background: linear-gradient(to right, #f8f9fa, #f1f3f9);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  background: linear-gradient(to right, rgba(240, 244, 248, 0.5), rgba(215, 227, 252, 0.5));
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
 }
 
 .panel-title {
   margin: 0;
-  font-size: 1.3rem;
-  color: #333;
-  position: relative;
+  font-size: 1.2rem;
   font-weight: 700;
+  color: #111827;
+  position: relative;
+  padding-bottom: 5px;
 }
 
 .panel-title::after {
   content: '';
   position: absolute;
-  bottom: -5px;
+  bottom: 0;
   left: 0;
-  width: 30px;
+  width: 40px;
   height: 3px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 3px;
+  background: linear-gradient(90deg, #60a5fa, #8b5cf6);
+  border-radius: 2px;
 }
 
 .room-actions {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.8rem;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .search-box {
@@ -236,64 +247,92 @@ export default {
 }
 
 .search-box input {
-  padding: 0.6rem 1rem 0.6rem 2.2rem;
-  border: 1px solid #ddd;
+  padding: 0.6rem 0.8rem 0.6rem 2.2rem;
+  border: 1px solid #e2e8f0;
   border-radius: 20px;
   font-size: 0.9rem;
-  width: 200px;
   transition: all 0.3s ease;
-  background-color: rgba(255, 255, 255, 0.8);
+  width: 180px;
+  background-color: rgba(248, 250, 252, 0.8);
+  color: #334155;
 }
 
 .search-box input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
   width: 240px;
   background-color: white;
 }
 
 .search-box i {
   position: absolute;
-  left: 0.8rem;
+  left: 0.9rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #999;
+  color: #94a3b8;
+  transition: color 0.3s ease;
+}
+
+.search-box input:focus + i {
+  color: #60a5fa;
 }
 
 .refresh-button {
-  background: none;
-  border: none;
-  color: #667eea;
+  background: rgba(240, 244, 248, 0.8);
+  border: 1px solid #e2e8f0;
+  color: #60a5fa;
   font-size: 1rem;
   cursor: pointer;
-  padding: 0.5rem;
+  padding: 0.6rem;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .refresh-button:hover {
-  background: #f0f2fa;
+  background: white;
   transform: rotate(180deg);
+  box-shadow: 0 4px 8px rgba(96, 165, 250, 0.15);
+  color: #3b82f6;
 }
 
 .rooms-container {
   flex: 1;
-  padding: 1rem;
+  padding: 1.2rem;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
-  background-color: #f9fafc;
+  gap: 1rem;
+  background-color: #f8fafc;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.rooms-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.rooms-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rooms-container::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 6px;
 }
 
 .room-card {
   background: white;
-  border-radius: 12px;
-  padding: 0.8rem 1rem;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-  transition: background-color 0.2s ease;
-  border-left: 4px solid #667eea;
+  border-radius: 16px;
+  padding: 1rem 1.2rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s ease;
+  border-left: 4px solid #60a5fa;
   position: relative;
   overflow: hidden;
   min-height: 105px;
@@ -301,16 +340,38 @@ export default {
   flex-direction: column;
   justify-content: space-between;
   cursor: pointer;
+  animation: slideIn 0.4s ease-out;
+  animation-fill-mode: both;
 }
 
+@keyframes slideIn {
+  from { 
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.room-card:nth-child(1) { animation-delay: 0.05s; }
+.room-card:nth-child(2) { animation-delay: 0.1s; }
+.room-card:nth-child(3) { animation-delay: 0.15s; }
+.room-card:nth-child(4) { animation-delay: 0.2s; }
+.room-card:nth-child(5) { animation-delay: 0.25s; }
+
 .room-card.playing {
-  border-left-color: #ff9800;
+  border-left-color: #f59e0b;
   cursor: not-allowed;
-  opacity: 0.85;
+  opacity: 0.9;
+  background: linear-gradient(to right, rgba(255, 247, 237, 0.5), white);
 }
 
 .room-card:not(.playing):hover {
-  background-color: #f7f9fc;
+  background-color: #f0f9ff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.06);
 }
 
 .room-card:not(.playing):hover::after,
@@ -319,32 +380,29 @@ export default {
   /* 모두 제거 */
 }
 
-.room-content {
-  position: relative;
-  z-index: 1;
-}
-
-.room-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 0.8rem;
-}
-
 .room-info {
   flex: 1;
 }
 
 .room-name {
-  margin: 0 0 0.2rem 0;
+  margin: 0 0 0.3rem 0;
   font-size: 1.05rem;
-  color: #333;
+  color: #111827;
   font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .room-host {
   font-size: 0.85rem;
-  color: #666;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.room-host::before {
+  content: '👑';
+  font-size: 0.8rem;
 }
 
 .room-badges {
@@ -353,33 +411,35 @@ export default {
 }
 
 .mode-badge, .status-badge {
-  padding: 0.3rem 0.6rem;
-  border-radius: 12px;
+  padding: 0.35rem 0.7rem;
+  border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 600;
   display: flex;
   align-items: center;
   gap: 0.3rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.7);
 }
 
 .roadview-mode {
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: linear-gradient(135deg, #dcfce7, #d1fae5);
+  color: #16a34a;
 }
 
 .photo-mode {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: linear-gradient(135deg, #dbeafe, #e0f2fe);
+  color: #2563eb;
 }
 
 .waiting {
-  background: #e8eaf6;
-  color: #3949ab;
+  background: linear-gradient(135deg, #e0e7ff, #ddd6fe);
+  color: #4f46e5;
 }
 
 .playing {
-  background: #fff3e0;
-  color: #e65100;
+  background: linear-gradient(135deg, #fef3c7, #ffedd5);
+  color: #d97706;
 }
 
 .round-info {
@@ -399,13 +459,18 @@ export default {
 .detail-item {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
   font-size: 0.85rem;
-  color: #666;
+  color: #64748b;
+  background: #f8fafc;
+  padding: 0.4rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
 }
 
 .detail-item i {
-  color: #999;
+  color: #60a5fa;
+  font-size: 0.9rem;
 }
 
 .empty-state {
@@ -415,20 +480,37 @@ export default {
   align-items: center;
   justify-content: center;
   padding: 3rem 0;
-  color: #999;
-  background-color: #f9fafc;
+  color: #94a3b8;
+  background-color: #f8fafc;
+  animation: fadeIn 0.5s ease-out;
 }
 
 .empty-state i {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  opacity: 0.3;
-  color: #667eea;
+  font-size: 3.5rem;
+  margin-bottom: 1.2rem;
+  color: #cbd5e1;
+  background: linear-gradient(135deg, #60a5fa, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  opacity: 0.4;
+  animation: pulse 2s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
 }
 
 .empty-state p {
-  margin: 0 0 1rem 0;
+  margin: 0 0 1.2rem 0;
   font-size: 1rem;
+  font-weight: 500;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 0.6rem 1.2rem;
+  border-radius: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
 }
 
 /* 비밀번호 모달 스타일 */
@@ -438,69 +520,136 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
 }
 
 .password-modal {
   background: white;
   padding: 1.5rem;
-  border-radius: 12px;
+  border-radius: 20px;
   width: 90%;
   max-width: 400px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .password-modal h3 {
-  margin: 0 0 1rem 0;
-  color: #333;
+  margin: 0 0 1.2rem 0;
+  color: #111827;
   font-size: 1.2rem;
+  font-weight: 700;
+  position: relative;
+  padding-bottom: 5px;
+}
+
+.password-modal h3::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 40px;
+  height: 3px;
+  background: linear-gradient(90deg, #60a5fa, #8b5cf6);
+  border-radius: 2px;
 }
 
 .password-modal input {
   width: 100%;
-  padding: 0.8rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
-  margin-bottom: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  margin-bottom: 1.2rem;
+  outline: none;
+  transition: all 0.3s ease;
+  background-color: #f8fafc;
+  color: #334155;
+}
+
+.password-modal input:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+  background-color: white;
 }
 
 .modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
+  gap: 0.8rem;
 }
 
 .cancel-button, .submit-button {
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
+  padding: 0.7rem 1.2rem;
+  border-radius: 12px;
   font-size: 0.9rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .cancel-button {
-  background: #f0f2f5;
-  border: 1px solid #ddd;
-  color: #666;
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
 }
 
 .submit-button {
-  background: #667eea;
+  background: linear-gradient(135deg, #60a5fa 0%, #8b5cf6 100%);
   border: none;
   color: white;
+  box-shadow: 0 4px 15px rgba(96, 165, 250, 0.25);
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.submit-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #8b5cf6 0%, #60a5fa 100%);
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.3s ease;
 }
 
 .cancel-button:hover {
-  background: #e0e2e5;
+  background: #f8fafc;
+  color: #334155;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
 }
 
 .submit-button:hover {
-  background: #5a6edb;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(96, 165, 250, 0.35);
+}
+
+.submit-button:hover::before {
+  opacity: 1;
 }
 
 @media (max-width: 768px) {

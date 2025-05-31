@@ -16,20 +16,38 @@
     </header>
 
     <main class="main-content">
+      <!-- 모바일 채팅 토글 버튼 -->
+      <button 
+        v-if="isMobile" 
+        class="chat-toggle-button" 
+        @click="isChatVisible = !isChatVisible"
+        :class="{ 'active': isChatVisible }"
+      >
+        <i class="fas" :class="isChatVisible ? 'fa-times' : 'fa-comments'"></i>
+        <span>{{ isChatVisible ? '채팅 닫기' : '채팅 열기' }}</span>
+      </button>
+
       <div class="lobby-layout">
         <!-- 왼쪽 패널: 게임 방 목록 -->
         <GameRoomList 
           :rooms="rooms" 
           @join-room="joinRoom"
           @refresh-rooms="fetchRooms"
+          class="game-room-list"
+          :class="{ 'chat-open': isChatVisible && isMobile }"
         />
 
         <!-- 오른쪽 패널: 채팅 및 방 생성 -->
-        <div class="right-panel">
+        <div 
+          class="right-panel" 
+          :class="{ 'mobile-visible': isChatVisible, 'mobile-hidden': !isChatVisible }"
+        >
           <ChatWindow 
             :messages="chatMessages" 
             @send-message="sendChatMessage"
             :current-user-id="currentUser.id"
+            :show-mobile-close="isMobile"
+            @close="isChatVisible = false"
           />
           
           <button class="create-room-button" @click="showCreateRoomModal = true">
@@ -84,12 +102,17 @@ export default {
         level: 23,
         profileImage: '/assets/default-profile.png'
       },
-      isInitialized: false
+      isInitialized: false,
+      isMobile: false,
+      isChatVisible: false,
+      windowWidth: window.innerWidth
     };
   },
   
   mounted() {
     this.initializeData();
+    this.checkMobileView();
+    window.addEventListener('resize', this.checkMobileView);
   },
   
   beforeUnmount() {
@@ -97,9 +120,15 @@ export default {
       clearInterval(this.refreshInterval);
     }
     this.disconnectFromChat();
+    window.removeEventListener('resize', this.checkMobileView);
   },
   
   methods: {
+    checkMobileView() {
+      this.windowWidth = window.innerWidth;
+      this.isMobile = this.windowWidth <= 900;
+      this.isChatVisible = !this.isMobile;
+    },
     async initializeData() {
       this.isLoading = true;
       await this.fetchRooms();
@@ -309,9 +338,10 @@ export default {
 
 .multiplayer-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+  background: linear-gradient(135deg, #f0f4f8 0%, #d7e3fc 100%);
   padding-bottom: 40px;
   position: relative;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* 헤더 스타일 */
@@ -320,8 +350,10 @@ export default {
   top: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(to right, #ffffff, #f8f9fa);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.03);
   z-index: 100;
   transition: all 0.3s ease;
 }
@@ -361,9 +393,10 @@ export default {
 .header-right h3 {
   margin: 0;
   font-size: 1.2rem;
-  color: #333;
+  color: #111827;
   font-weight: 700;
   position: relative;
+  letter-spacing: -0.01em;
 }
 
 .header-right h3::after {
@@ -372,8 +405,8 @@ export default {
   bottom: -6px;
   left: 0;
   width: 40%;
-  height: 2px;
-  background: linear-gradient(90deg, #667eea, #764ba2);
+  height: 3px;
+  background: linear-gradient(90deg, #60a5fa, #8b5cf6);
   border-radius: 2px;
 }
 
@@ -391,6 +424,13 @@ export default {
   position: relative;
   height: calc(100vh - 120px);
   max-height: 700px;
+  margin-top: 1rem;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .right-panel {
@@ -406,15 +446,31 @@ export default {
   justify-content: center;
   padding: 1rem;
   margin-top: 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #60a5fa 0%, #8b5cf6 100%);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 15px rgba(96, 165, 250, 0.25);
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.create-room-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #8b5cf6 0%, #60a5fa 100%);
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.3s ease;
 }
 
 .create-room-button i {
@@ -424,7 +480,16 @@ export default {
 
 .create-room-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 8px 20px rgba(96, 165, 250, 0.35);
+}
+
+.create-room-button:hover::before {
+  opacity: 1;
+}
+
+.create-room-button:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 10px rgba(96, 165, 250, 0.2);
 }
 
 /* 로딩 오버레이 */
@@ -476,17 +541,83 @@ export default {
   font-weight: 600;
 }
 
+/* 채팅 토글 버튼 */
+.chat-toggle-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 30px;
+  padding: 12px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  z-index: 50;
+}
+
+.chat-toggle-button i {
+  margin-right: 8px;
+}
+
+.chat-toggle-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.chat-toggle-button.active {
+  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
+}
+
 /* 반응형 스타일 */
 @media (max-width: 900px) {
   .lobby-layout {
     flex-direction: column;
     height: auto;
     max-height: none;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .game-room-list {
+    width: 100%;
+    transition: all 0.3s ease;
+    z-index: 10;
+  }
+  
+  .game-room-list.chat-open {
+    opacity: 0;
+    pointer-events: none;
   }
   
   .right-panel {
     width: 100%;
     min-width: auto;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    z-index: 20;
+    transition: all 0.3s ease;
+  }
+  
+  .right-panel.mobile-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(100%);
+  }
+  
+  .right-panel.mobile-visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
   }
 }
 
@@ -501,6 +632,13 @@ export default {
   
   .main-content {
     padding: 70px 15px 15px;
+  }
+  
+  .chat-toggle-button {
+    bottom: 15px;
+    right: 15px;
+    padding: 10px 16px;
+    font-size: 0.85rem;
   }
 }
 </style>
