@@ -15,13 +15,17 @@ import "@fortawesome/fontawesome-free/css/all.css";
 import "@fortawesome/fontawesome-free/js/all.js";
 
 // 전역 스타일 가져오기
-import '@/assets/styles/index.css';
-
+import '@/assets/styles/index.css'
 // Vuex 스토어 가져오기 (Pinia로 마이그레이션 전까지 임시 사용)
 // import store from './store'; // 임시로 주석 처리
 
+//vue-number-animation
+import CountUp from 'vue-countup-v3';
+
 // 앱 인스턴스 생성
 const app = createApp(App);
+
+app.component('CountUp', CountUp);
 
 // 전역 속성 설정 (Vue 3 방식으로 변경)
 app.config.globalProperties.$axios = axios;
@@ -38,6 +42,7 @@ app.use(router);
 // if (store.state.initialized === false) {
 //   store.dispatch('initializeApp');
 // }
+
 
 // 앱 마운트
 app.mount('#app');

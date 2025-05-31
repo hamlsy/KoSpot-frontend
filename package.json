@@ -13,7 +13,6 @@
     "core-js": "^3.8.3",
     "crypto-js": "^4.2.0",
     "pinia": "^2.1.7",
-    "sass-loader": "^16.0.5",
     "vue": "^3.2.39",
     "vue-countup-v3": "^1.4.2",
     "vue-router": "^4.5.1",
@@ -30,7 +29,8 @@
     "eslint": "^7.32.0",
     "eslint-plugin-vue": "^9.19.2",
     "postcss": "^8.4.38",
-    "sass": "^1.69.5"
+    "sass": "^1.69.5",
+    "sass-loader": "^10.5.2"
   },
   "eslintConfig": {
     "root": true,

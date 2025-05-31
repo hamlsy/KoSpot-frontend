@@ -20,7 +20,12 @@
               <i class="fas fa-ruler"></i>
             </div>
             <div class="distance-label">거리</div>
-            <div class="distance-value">{{ formattedDistance }}</div>
+            <!-- <div class="distance-value">{{ formattedDistance }}</div> -->
+            <CountUp
+              :endVal="distance"
+              :options="options"
+              class="distance-value"
+            />
           </div>
 
           <div class="rank-points-display">
@@ -43,7 +48,7 @@
           </div>
         </div>
 
-        <ResultMapSection 
+        <ResultMapSection
           :currentLocation="currentLocation"
           :guessedLocation="guessedLocation"
           :locationDescription="locationDescription"
@@ -63,51 +68,65 @@
 </template>
 
 <script>
-import ResultMapSection from './ResultMapSection.vue';
+import ResultMapSection from "./ResultMapSection.vue";
 
 export default {
   name: "ResultOverlay",
   components: {
-    ResultMapSection
+    ResultMapSection,
   },
   props: {
     show: {
       type: Boolean,
-      default: false
+      default: false,
     },
     score: {
       type: Number,
-      default: 0
+      default: 0,
     },
     distance: {
       type: Number,
-      default: 0
+      default: 0,
     },
     currentRankPoints: {
       type: Number,
-      default: 0
+      default: 0,
     },
     rankPointChange: {
       type: Number,
-      default: 0
+      default: 0,
     },
     currentLocation: {
       type: Object,
-      default: null
+      default: null,
     },
     guessedLocation: {
       type: Object,
-      default: null
+      default: null,
     },
     locationDescription: {
       type: String,
-      default: ""
-    }
+      default: "",
+    },
+  },
+  data() {
+    return {
+      options: {
+        duration: 1.1,
+        useEasing: true,
+        useGrouping: true,
+        separator: ",",
+        suffix: "KM",
+        decimal: ".",
+        decimalPlaces: 3,
+      },
+    };
   },
 
   computed: {
     formattedDistance() {
-      if (this.distance === null || this.distance === undefined) return "알 수 없음";
+      if (this.distance === null || this.distance === undefined)
+        return "알 수 없음";
 
       if (this.distance < 1) {
         // 1km 미만은 m 단위로 표시
@@ -116,16 +135,16 @@ export default {
         // 1km 이상은 소수점 두 자리까지 표시
         return `${this.distance.toFixed(2)} km`;
       }
-    }
+    },
   },
   methods: {
     onRestart() {
-      this.$emit('restart');
+      this.$emit("restart");
     },
     onExit() {
-      this.$emit('exit');
-    }
-  }
+      this.$emit("exit");
+    },
+  },
 };
 </script>
 
@@ -230,7 +249,7 @@ export default {
 
 /* 상단 그라데이션 바 간소화 */
 .score-display::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -240,7 +259,7 @@ export default {
 }
 
 .distance-display::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -250,7 +269,7 @@ export default {
 }
 
 .rank-points-display::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -322,7 +341,11 @@ export default {
 }
 
 @keyframes bounceUp {
-  0%, 20%, 50%, 80%, 100% {
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
     transform: translateY(0);
   }
   40% {
@@ -343,7 +366,11 @@ export default {
 }
 
 @keyframes bounceDown {
-  0%, 20%, 50%, 80%, 100% {
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
     transform: translateY(0);
   }
   40% {
@@ -432,21 +459,21 @@ export default {
   .result-header {
     padding: 15px 20px;
   }
-  
+
   .result-header h2 {
     font-size: 1.4rem;
   }
-  
+
   .result-content {
     padding: 20px;
   }
-  
+
   .result-actions {
     padding: 15px 20px;
     flex-direction: column;
   }
-  
-  .btn-restart, 
+
+  .btn-restart,
   .btn-exit {
     padding: 12px;
   }
