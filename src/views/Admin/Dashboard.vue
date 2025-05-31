@@ -8,10 +8,10 @@
           
           <!-- 네비게이션 탭 -->
           <div class="admin-nav mb-6">
-            <div class="flex border-b border-gray-200">
+            <div class="flex border-b border-gray-200 overflow-x-auto pb-1">
               <button 
                 @click="activeSection = 'main'" 
-                class="px-4 py-2 text-sm font-medium transition-colors relative"
+                class="px-4 py-2 text-sm font-medium transition-colors relative whitespace-nowrap"
                 :class="activeSection === 'main' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
               >
                 <i class="fas fa-tachometer-alt mr-2"></i>
@@ -23,7 +23,7 @@
               </button>
               <button 
                 @click="activeSection = 'statistics'" 
-                class="px-4 py-2 text-sm font-medium transition-colors relative"
+                class="px-4 py-2 text-sm font-medium transition-colors relative whitespace-nowrap"
                 :class="activeSection === 'statistics' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
               >
                 <i class="fas fa-chart-line mr-2"></i>
@@ -34,8 +34,44 @@
                 ></div>
               </button>
               <button 
+                @click="activeSection = 'game-management'" 
+                class="px-4 py-2 text-sm font-medium transition-colors relative whitespace-nowrap"
+                :class="activeSection === 'game-management' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
+              >
+                <i class="fas fa-gamepad mr-2"></i>
+                <span>게임 관리</span>
+                <div 
+                  v-if="activeSection === 'game-management'" 
+                  class="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600"
+                ></div>
+              </button>
+              <button 
+                @click="activeSection = 'shop-management'" 
+                class="px-4 py-2 text-sm font-medium transition-colors relative whitespace-nowrap"
+                :class="activeSection === 'shop-management' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
+              >
+                <i class="fas fa-store mr-2"></i>
+                <span>상점 관리</span>
+                <div 
+                  v-if="activeSection === 'shop-management'" 
+                  class="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600"
+                ></div>
+              </button>
+              <button 
+                @click="activeSection = 'user-management'" 
+                class="px-4 py-2 text-sm font-medium transition-colors relative whitespace-nowrap"
+                :class="activeSection === 'user-management' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
+              >
+                <i class="fas fa-users-cog mr-2"></i>
+                <span>사용자 관리</span>
+                <div 
+                  v-if="activeSection === 'user-management'" 
+                  class="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600"
+                ></div>
+              </button>
+              <button 
                 @click="activeSection = 'settings'" 
-                class="px-4 py-2 text-sm font-medium transition-colors relative"
+                class="px-4 py-2 text-sm font-medium transition-colors relative whitespace-nowrap"
                 :class="activeSection === 'settings' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
               >
                 <i class="fas fa-cog mr-2"></i>
@@ -81,6 +117,25 @@
             <DetailedStatistics />
           </div>
           
+          <!-- 게임 관리 섹션 -->
+          <div v-if="activeSection === 'game-management'">
+            <GameModeManagement 
+              :initial-game-modes="gameModes" 
+              @toggle-mode="handleGameModeToggle" 
+              @open-settings="openGameModeSettings"
+            />
+          </div>
+          
+          <!-- 상점 관리 섹션 -->
+          <div v-if="activeSection === 'shop-management'">
+            <ShopManagement />
+          </div>
+          
+          <!-- 사용자 관리 섹션 -->
+          <div v-if="activeSection === 'user-management'">
+            <UserManagement />
+          </div>
+          
           <!-- 시스템 설정 섹션 -->
           <div v-if="activeSection === 'settings'">
             <SystemSettings />
@@ -92,8 +147,9 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
-import AdminPanel from '@/components/admin/AdminPanel.vue';
+import { ref, reactive, onMounted, watchEffect } from 'vue';
+import { useRoute } from 'vue-router';
+import AdminPanel from './components/AdminPanel.vue';
 import TheHeader from '@/components/layout/TheHeader.vue';
 import DashboardStats from './components/DashboardStats.vue';
 import RecentActivities from './components/RecentActivities.vue';
@@ -102,6 +158,8 @@ import SystemStatus from './components/SystemStatus.vue';
 import GameModeManagement from './components/GameModeManagement.vue';
 import DetailedStatistics from './components/DetailedStatistics.vue';
 import SystemSettings from './components/SystemSettings.vue';
+import ShopManagement from './components/ShopManagement.vue';
+import UserManagement from './components/UserManagement.vue';
 
 // 통계 데이터
 const stats = reactive({
@@ -203,8 +261,19 @@ const openGameModeSettings = (mode) => {
   console.log(`${mode.name} 설정 열기`);
 };
 
-// 활성 섹션 관리 (메인 대시보드, 상세 통계, 시스템 설정)
+// 활성 섹션 상태
 const activeSection = ref('main');
+
+// URL 쿼리 파라미터에서 섹션 가져오기
+const route = useRoute();
+
+// 라우트 변경 감지 및 섹션 업데이트
+watchEffect(() => {
+  const sectionParam = route.query.section;
+  if (sectionParam) {
+    activeSection.value = sectionParam;
+  }
+});
 </script>
 
 <style scoped>

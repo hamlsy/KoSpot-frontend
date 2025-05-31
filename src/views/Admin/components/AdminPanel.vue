@@ -24,30 +24,30 @@
           <span>대시보드</span>
         </router-link>
         
-        <router-link to="/admin/users" class="menu-item" active-class="active">
+        <router-link to="/admin?section=user-management" class="menu-item" active-class="active">
           <i class="fas fa-users"></i>
           <span>사용자 관리</span>
         </router-link>
         
-        <div class="menu-item">
+        <router-link to="/admin?section=game-management" class="menu-item" active-class="active">
           <i class="fas fa-gamepad"></i>
           <span>게임 관리</span>
-        </div>
+        </router-link>
         
-        <div class="menu-item">
+        <router-link to="/admin?section=shop-management" class="menu-item" active-class="active">
           <i class="fas fa-shopping-cart"></i>
           <span>상점 관리</span>
-        </div>
+        </router-link>
         
-        <div class="menu-item">
+        <router-link to="/admin?section=statistics" class="menu-item" active-class="active">
           <i class="fas fa-chart-line"></i>
           <span>통계 관리</span>
-        </div>
+        </router-link>
         
-        <div class="menu-item">
+        <router-link to="/admin?section=settings" class="menu-item" active-class="active">
           <i class="fas fa-cog"></i>
           <span>시스템 설정</span>
-        </div>
+        </router-link>
       </nav>
       
       <div class="sidebar-footer">

@@ -1,5 +1,4 @@
 import Dashboard from '@/views/Admin/Dashboard.vue'
-import UserManagement from '@/views/Admin/UserManagement.vue'
 
 const adminRoutes = [
     {
@@ -7,11 +6,6 @@ const adminRoutes = [
         name: "Dashboard",
         component: Dashboard
     },
-    {
-        path: '/admin/users',
-        name: "UserManagement",
-        component: UserManagement
-    }
 ];
 
 export default adminRoutes;
