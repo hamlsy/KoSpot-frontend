@@ -5,7 +5,7 @@
       <div class="header-left">
         <button class="exit-button" @click="confirmExit">
           <i class="fas fa-door-open"></i>
-          나가기
+          <span class="button-text">나가기</span>
         </button>
         <div class="game-info">
           <h2>{{ gameMode }} 게임</h2>
@@ -31,15 +31,20 @@
           </div>
         </div>
       </div>
-      <!-- 정답 지역 표시 -->
-      <div
-        v-if="
-          (showCorrectAnimation || showTimeoutAnimation || roundCompleted) &&
-          correctRegion
-        "
-        class="correct-region-display"
-      >
-        <span>정답 지역: {{ getRegionName(correctRegion) }}</span>
+      <div class="header-right">
+        <!-- 정답 지역 표시 -->
+        <div
+          v-if="
+            (showCorrectAnimation || showTimeoutAnimation || roundCompleted) &&
+            correctRegion
+          "
+          class="correct-region-display"
+        >
+          <span
+            ><span class="region-label">정답 지역:</span>
+            {{ getRegionName(correctRegion) }}</span
+          >
+        </div>
       </div>
     </div>
 
@@ -61,7 +66,7 @@
 
     <!-- 게임 메인 콘텐츠 -->
     <div class="game-content">
-      <div class="header-right">
+      <div class="timer-container">
         <progress-timer
           :initial-time="roundTimeLimit"
           :warning-threshold="10"
@@ -115,7 +120,6 @@
       <!-- 지도 영역 - 오른쪽에 배치 -->
       <div class="map-section" :class="{ 'map-open': isMapOpen }">
         <region-map
-          :disabled="mapDisabled"
           :show-region-names="!isRankMode"
           :correct-region="correctRegion"
           :wrong-region="wrongRegion"
@@ -181,18 +185,27 @@
 </template>
 
 <script>
-import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick, defineComponent } from 'vue';
-import { useRouter } from 'vue-router';
-import ProgressTimer from 'src/views/Game/PhotoMode/components/gameplay/PhotoModeProgressTimer.vue'
-import RegionMap from 'src/views/Game/PhotoMode/components/gameplay/PhotoModeRegionMap.vue'
+import {
+  ref,
+  computed,
+  watch,
+  onMounted,
+  onBeforeUnmount,
+  nextTick,
+  defineComponent,
+} from "vue";
+import { useRouter } from "vue-router";
+import ProgressTimer from "src/views/Game/PhotoMode/components/gameplay/PhotoModeProgressTimer.vue";
+import RegionMap from "src/views/Game/PhotoMode/components/gameplay/PhotoModeRegionMap.vue";
 import GameResult from "@/views/Game/PhotoMode/components/results/PhotoModeGameResult.vue";
 import PhotoModePhotoGrid from "./PhotoModePhotoGrid.vue";
 import PhotoModeHintDisplay from "./PhotoModeHintDisplay.vue";
 import PhotoModeNextRoundButton from "./PhotoModeNextRoundButton.vue";
 import IntroOverlay from "@/components/game/intro/IntroOverlay.vue";
 import CountdownOverlay from "@/components/game/countdown/CountdownOverlay.vue";
-import useGame from '@/composables/useGame';
-import gameService from '@/api/services/game.service';
+import useGame from "@/composables/useGame";
+import gameService from "@/api/services/game.service";
+import Color from "@/constants/colors";
 
 export default {
   name: "PhotoModeGame",
@@ -301,9 +314,9 @@ export default {
         },
         // 여기에 더 많은 사진 데이터 추가 가능
       ],
-      
+
       // 지도 상태
-      isMapOpen: true,
+      isMapOpen: false,
 
       // 결과 화면
       showGameResult: false,
@@ -369,10 +382,9 @@ export default {
       totalTimeTaken: 0,
       completedRounds: [],
       remainingTime: 0,
-      
     };
   },
-  
+
   computed: {
     isLastGuessCorrect() {
       return this.correctRegion !== null;
@@ -381,21 +393,21 @@ export default {
     isLastRound() {
       return this.currentRound >= this.totalRounds;
     },
-    
+
     // 현재 점수 계산
     currentScore() {
       return this.score;
     },
-    
+
     // 연습 모드인지 확인
     isPracticeMode() {
       return this.mode === "practice";
     },
-    
+
     // 랭크 모드인지 확인
     isRankMode() {
       return this.mode === "rank";
-    }
+    },
   },
 
   watch: {
@@ -410,7 +422,6 @@ export default {
 
   created() {
     this.prepareGame();
-    this.checkMobile();
   },
 
   methods: {
@@ -483,18 +494,17 @@ export default {
     // 라운드별 사진 개수 계산 메서드
     getPhotosForRound(roundNumber) {
       // 라운드가 진행될수록 사진 개수 감소 (최대 4개, 최소 1개)
-      // 1라운드: 4개, 2라운드: 3개, 3라운드: 3개, 4라운드: 2개, 5라운드: 1개
-      const maxPhotos = 4;
+      // 1라운드: 4개, 2-3라운드: 2개, 4-5라운드: 1개
       const totalRounds = this.totalRounds;
 
-      // 라운드 진행에 따라 사진 개수 감소 계산
-      const photosCount = Math.max(
-        1,
-        Math.ceil(
-          maxPhotos - ((roundNumber - 1) / (totalRounds - 1)) * (maxPhotos - 1)
-        )
-      );
-      return photosCount;
+      // 라운드에 따라 사진 개수 결정 (4, 2, 1)
+      if (roundNumber === 1) {
+        return 4;
+      } else if (roundNumber <= 3) {
+        return 2;
+      } else {
+        return 1;
+      }
     },
 
     startNextRound() {
@@ -557,7 +567,7 @@ export default {
         `라운드 ${this.currentRound} 시작: ${photosCount}개 사진 표시`
       );
     },
-    
+
     // setupHintTimers 메서드는 PhotoModeHintDisplay 컴포넌트로 이동함
 
     handlePhotoLoaded() {
@@ -573,11 +583,9 @@ export default {
       this.remainingTime = time;
       // 힌트 관련 로직은 PhotoModeHintDisplay 컴포넌트로 이동함
     },
-    
+
     // 힌트가 표시되었을 때 호출되는 메서드
-    handleHintShown(level) {
-      
-    },
+    handleHintShown(level) {},
     handleCorrectGuess(region) {
       // 타이머 중지
       this.timerActive = false;
@@ -609,19 +617,23 @@ export default {
       // 라운드 결과 저장
       this.saveRoundResult(true, roundScore);
 
-      // 랭크 모드에서는 정답 후 자동으로 다음 라운드 결과 표시
-      if (this.isRankMode) {
+      // 랭크 모드에서만 정답 후 자동으로 다음 라운드 결과 표시
+      if (this.isRankMode && !this.isPracticeMode) {
         setTimeout(() => {
+          this.nextRound();
         }, 2000);
       }
     },
 
     submitGuess(region) {
-      if (!this.roundStarted || this.mapDisabled) return;
+      if (!this.roundStarted) return;
 
       // 지역이 정의되지 않은 경우 선택된 지역 사용
       if (!region && this.selectedRegion) {
-        console.log('전달받은 region이 없어서 this.selectedRegion 사용:', this.selectedRegion);
+        console.log(
+          "전달받은 region이 없어서 this.selectedRegion 사용:",
+          this.selectedRegion
+        );
         region = this.selectedRegion;
       }
 
@@ -632,7 +644,8 @@ export default {
       }
 
       const isCorrect =
-        region.toLowerCase().split("-")[0] === this.currentPhoto.region.toLowerCase();
+        region.toLowerCase().split("-")[0] ===
+        this.currentPhoto.region.toLowerCase();
 
       if (isCorrect) {
         this.handleCorrectGuess(region);
@@ -671,9 +684,10 @@ export default {
       // 라운드 결과 저장
       this.saveRoundResult(false, 0);
 
-      // 랭크 모드에서는 시간이 지나면 자동으로 다음 라운드 결과 표시
-      if (this.isRankMode) {
+      // 랭크 모드에서만 시간이 지나면 자동으로 다음 라운드 결과 표시
+      if (this.isRankMode && !this.isPracticeMode) {
         setTimeout(() => {
+          this.nextRound();
         }, 2000);
       }
     },
@@ -693,7 +707,6 @@ export default {
     },
 
     closeRoundResult() {
-
       // 마지막 라운드였으면 게임 결과 표시
       if (this.currentRound >= this.totalRounds) {
         this.finishGame();
@@ -789,16 +802,6 @@ export default {
       return regionMap[regionCode] || regionCode;
     },
 
-    checkMobile() {
-      const userAgent = navigator.userAgent;
-      const mobileRegex =
-        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
-
-      if (mobileRegex.test(userAgent)) {
-        this.isMobile = true;
-      }
-    },
-
     // 지도 토글 버튼 관련 메서드
     toggleMap() {
       this.isMapOpen = !this.isMapOpen;
@@ -806,7 +809,13 @@ export default {
       // 지도가 열릴 때 약간의 지연 후 리사이즈 적용
       if (this.isMapOpen && this.$refs.regionMap) {
         setTimeout(() => {
-          this.$refs.regionMap.resizeMap();
+          // Check if resizeMap method exists before calling it
+          if (
+            this.$refs.regionMap &&
+            typeof this.$refs.regionMap.resizeMap === "function"
+          ) {
+            this.$refs.regionMap.resizeMap();
+          }
         }, 300); // 트랜지션 완료 후 리사이즈
       }
     },
@@ -874,14 +883,11 @@ export default {
     if (this.hintTimer) {
       clearTimeout(this.hintTimer);
     }
-
-    // 이벤트 리스너 정리
-    window.removeEventListener("resize", this.checkMobile);
   },
 };
 </script>
-  
-  <style scoped>
+
+<style scoped>
 .photo-play-game {
   display: flex;
   flex-direction: column;
@@ -898,26 +904,8 @@ export default {
   background-color: #ffffff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   position: relative;
-}
-
-.correct-region-display {
-  transform: translateX(-50%);
-  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-  padding: 10px 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
-  z-index: 10;
-  animation: fadeIn 0.3s ease-out;
-  border-left: 4px solid #4caf50;
-  min-width: 200px;
-  text-align: center;
-}
-
-.correct-region-display span {
-  font-weight: 600;
-  color: #000;
-  font-size: 1rem;
-  letter-spacing: 0.5px;
+  flex-wrap: wrap;
+  row-gap: 5px;
 }
 
 .header-left {
@@ -1044,16 +1032,16 @@ export default {
 }
 
 .correct-region-display {
-  top: 0;
-  left: 0;
-  right: 0;
   padding: 10px;
-  background-color: #4caf50;
+  background-color: #10b981;
   color: white;
+  padding: 2px;
   font-weight: bold;
   text-align: center;
   z-index: 1;
   font-size: 15px;
+  border-radius: 4px;
+  margin-left: 10px;
 }
 
 .map-section {
@@ -1187,21 +1175,32 @@ export default {
   background: #2563eb;
   box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
-
 /* 반응형 스타일 */
 
 @media (max-width: 1024px) {
   .game-content {
     flex-direction: column;
+    position: relative;
+    padding: 10px;
   }
 
   .photo-section {
+    flex: 1;
+    width: 100%;
     margin-right: 0;
-    margin-bottom: 20px;
+    margin-bottom: 0;
+    padding-bottom: 60px; /* 다음 라운드 버튼을 위한 공간 확보 */
+    height: calc(100vh - 160px); /* 헤더와 푸터를 제외한 높이 */
+    overflow-y: auto; /* 스크롤 가능하게 */
   }
 
+  /* 헤더 간소화 */
   .header-center {
     display: none;
+  }
+
+  .button-text {
+    display: none; /* 모바일에서 버튼 텍스트 숨김 */
   }
 
   .game-footer {
@@ -1218,19 +1217,39 @@ export default {
     display: flex;
   }
 
-  /* 모바일에서 지도가 버튼으로 표시될 때 사진 영역 확장 */
-  .game-content {
+  /* 힌트 표시 영역 조정 */
+  .photo-mode-hint-display {
     position: relative;
-    flex-direction: column;
-    padding: 10px;
+    z-index: 5;
   }
 
-  .photo-section {
-    flex: 1;
-    width: 100%;
-    margin-right: 0;
-    margin-bottom: 0;
-    height: calc(100vh - 160px); /* 헤더와 푸터를 제외한 높이 */
+  /* 다음 라운드 버튼 위치 조정 */
+  .photo-mode-next-round-button {
+    position: absolute;
+    bottom: 10px;
+    left: 0;
+    right: 0;
+    z-index: 10;
+  }
+
+  /* 정답 지역 표시 조정 */
+  .correct-region-display {
+    padding: 5px;
+    font-size: 13px;
+    margin: 5px 0;
+    width: auto;
+    flex-basis: 100%;
+    order: 2;
+  }
+
+  .region-label {
+    display: none; /* 모바일에서 '정답 지역:' 레이블 숨김 */
+  }
+  
+  .header-right {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 
   .map-section {
