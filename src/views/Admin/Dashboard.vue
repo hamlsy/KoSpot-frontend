@@ -1,195 +1,89 @@
 <template>
-  <div class="admin-page">
-    <NavigationBar />
-    <div class="admin-content">
+  <div class="admin-page bg-gray-50 min-h-screen">
+    <TheHeader />
+    <div class="admin-content px-4 py-6 max-w-7xl mx-auto">
       <AdminPanel>
         <div class="admin-dashboard">
-          <h1 class="dashboard-title">관리자 대시보드</h1>
+          <h1 class="dashboard-title text-2xl font-bold text-gray-800 mb-6">관리자 대시보드</h1>
           
-          <div class="stats-container">
-            <div class="stat-card">
-              <div class="stat-icon">
-                <i class="fas fa-users"></i>
-              </div>
-              <div class="stat-content">
-                <h3>총 사용자</h3>
-                <p class="stat-value">{{ formatNumber(stats.totalUsers) }}</p>
-                <p class="stat-change" :class="stats.userChange >= 0 ? 'positive' : 'negative'">
-                  <i class="fas" :class="stats.userChange >= 0 ? 'fa-arrow-up' : 'fa-arrow-down'"></i> 
-                  {{ Math.abs(stats.userChange) }}%
-                </p>
-              </div>
-            </div>
-            
-            <div class="stat-card">
-              <div class="stat-icon">
-                <i class="fas fa-gamepad"></i>
-              </div>
-              <div class="stat-content">
-                <h3>활성 게임</h3>
-                <p class="stat-value">{{ formatNumber(stats.activeGames) }}</p>
-                <p class="stat-change" :class="stats.gameChange >= 0 ? 'positive' : 'negative'">
-                  <i class="fas" :class="stats.gameChange >= 0 ? 'fa-arrow-up' : 'fa-arrow-down'"></i> 
-                  {{ Math.abs(stats.gameChange) }}%
-                </p>
-              </div>
-            </div>
-            
-            <div class="stat-card">
-              <div class="stat-icon">
-                <i class="fas fa-user-plus"></i>
-              </div>
-              <div class="stat-content">
-                <h3>신규 가입</h3>
-                <p class="stat-value">{{ formatNumber(stats.newUsers) }}</p>
-                <p class="stat-change" :class="stats.newUserChange >= 0 ? 'positive' : 'negative'">
-                  <i class="fas" :class="stats.newUserChange >= 0 ? 'fa-arrow-up' : 'fa-arrow-down'"></i> 
-                  {{ Math.abs(stats.newUserChange) }}%
-                </p>
-              </div>
-            </div>
-            
-            <div class="stat-card">
-              <div class="stat-icon">
-                <i class="fas fa-coins"></i>
-              </div>
-              <div class="stat-content">
-                <h3>총 수익</h3>
-                <p class="stat-value">{{ formatNumber(stats.revenue) }}원</p>
-                <p class="stat-change" :class="stats.revenueChange >= 0 ? 'positive' : 'negative'">
-                  <i class="fas" :class="stats.revenueChange >= 0 ? 'fa-arrow-up' : 'fa-arrow-down'"></i> 
-                  {{ Math.abs(stats.revenueChange) }}%
-                </p>
-              </div>
+          <!-- 네비게이션 탭 -->
+          <div class="admin-nav mb-6">
+            <div class="flex border-b border-gray-200">
+              <button 
+                @click="activeSection = 'main'" 
+                class="px-4 py-2 text-sm font-medium transition-colors relative"
+                :class="activeSection === 'main' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
+              >
+                <i class="fas fa-tachometer-alt mr-2"></i>
+                <span>메인 대시보드</span>
+                <div 
+                  v-if="activeSection === 'main'" 
+                  class="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600"
+                ></div>
+              </button>
+              <button 
+                @click="activeSection = 'statistics'" 
+                class="px-4 py-2 text-sm font-medium transition-colors relative"
+                :class="activeSection === 'statistics' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
+              >
+                <i class="fas fa-chart-line mr-2"></i>
+                <span>상세 통계</span>
+                <div 
+                  v-if="activeSection === 'statistics'" 
+                  class="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600"
+                ></div>
+              </button>
+              <button 
+                @click="activeSection = 'settings'" 
+                class="px-4 py-2 text-sm font-medium transition-colors relative"
+                :class="activeSection === 'settings' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
+              >
+                <i class="fas fa-cog mr-2"></i>
+                <span>시스템 설정</span>
+                <div 
+                  v-if="activeSection === 'settings'" 
+                  class="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600"
+                ></div>
+              </button>
             </div>
           </div>
           
-          <div class="admin-sections">
-            <div class="recent-activities">
-              <div class="section-header">
-                <h2>최근 활동</h2>
-                <button class="view-all-btn">모두 보기</button>
-              </div>
-              <div class="activity-list">
-                <div v-for="(activity, index) in recentActivities" :key="index" class="activity-item">
-                  <div class="activity-icon" :class="activity.type">
-                    <i class="fas" :class="getActivityIcon(activity.type)"></i>
-                  </div>
-                  <div class="activity-content">
-                    <p class="activity-text">{{ activity.text }}</p>
-                    <p class="activity-time">{{ formatTime(activity.time) }}</p>
-                  </div>
-                </div>
-              </div>
+          <!-- 메인 대시보드 섹션 -->
+          <div v-if="activeSection === 'main'">
+            <!-- 통계 컴포넌트 -->
+            <DashboardStats :stats-data="stats" />
+            
+            <div class="admin-sections grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              <!-- 최근 활동 컴포넌트 -->
+              <RecentActivities :activities="recentActivities" />
+              
+              <!-- 빠른 작업 컴포넌트 -->
+              <QuickActions />
             </div>
             
-            <div class="quick-actions">
-              <h2>빠른 작업</h2>
-              <div class="action-buttons">
-                <router-link to="/admin/users" class="action-button">
-                  <i class="fas fa-user-cog"></i>
-                  <span>사용자 관리</span>
-                </router-link>
-                <button class="action-button">
-                  <i class="fas fa-gamepad"></i>
-                  <span>게임 관리</span>
-                </button>
-                <button class="action-button">
-                  <i class="fas fa-shopping-cart"></i>
-                  <span>상점 관리</span>
-                </button>
-                <button class="action-button">
-                  <i class="fas fa-chart-line"></i>
-                  <span>통계 보기</span>
-                </button>
-                <button class="action-button">
-                  <i class="fas fa-cog"></i>
-                  <span>설정</span>
-                </button>
-                <button class="action-button">
-                  <i class="fas fa-database"></i>
-                  <span>데이터 백업</span>
-                </button>
-              </div>
+            <!-- 시스템 상태 컴포넌트 -->
+            <div class="mt-6">
+              <SystemStatus />
+            </div>
+            
+            <!-- 게임 모드 관리 컴포넌트 -->
+            <div class="mt-6">
+              <GameModeManagement 
+                :initial-game-modes="gameModes" 
+                @toggle-mode="handleGameModeToggle" 
+                @open-settings="openGameModeSettings"
+              />
             </div>
           </div>
           
-          <div class="system-status">
-            <h2>시스템 상태</h2>
-            <div class="status-grid">
-              <div class="status-item">
-                <div class="status-icon">
-                  <i class="fas fa-server"></i>
-                </div>
-                <div class="status-content">
-                  <h3>서버 상태</h3>
-                  <p class="status-value online">정상</p>
-                </div>
-              </div>
-              
-              <div class="status-item">
-                <div class="status-icon">
-                  <i class="fas fa-database"></i>
-                </div>
-                <div class="status-content">
-                  <h3>데이터베이스</h3>
-                  <p class="status-value online">정상</p>
-                </div>
-              </div>
-              
-              <div class="status-item">
-                <div class="status-icon">
-                  <i class="fas fa-memory"></i>
-                </div>
-                <div class="status-content">
-                  <h3>메모리 사용량</h3>
-                  <p class="status-value">64%</p>
-                </div>
-              </div>
-              
-              <div class="status-item">
-                <div class="status-icon">
-                  <i class="fas fa-microchip"></i>
-                </div>
-                <div class="status-content">
-                  <h3>CPU 사용량</h3>
-                  <p class="status-value">23%</p>
-                </div>
-              </div>
-            </div>
+          <!-- 상세 통계 섹션 -->
+          <div v-if="activeSection === 'statistics'">
+            <DetailedStatistics />
           </div>
           
-          <!-- 게임 모드 관리 섹션 추가 -->
-          <div class="game-mode-management">
-            <h2>게임 모드 관리</h2>
-            <div class="game-modes-list">
-              <div v-for="mode in gameModes" :key="mode.id" class="game-mode-item">
-                <div class="mode-info">
-                  <div class="mode-icon" :class="mode.color">
-                    <i class="fas" :class="mode.icon"></i>
-                  </div>
-                  <div class="mode-details">
-                    <h3>{{ mode.name }}</h3>
-                    <p>{{ mode.description }}</p>
-                  </div>
-                </div>
-                <div class="mode-actions">
-                  <div class="mode-status" :class="{ 'active': mode.isActive }">
-                    {{ mode.isActive ? '활성화' : '비활성화' }}
-                  </div>
-                  <div class="mode-toggle">
-                    <label class="switch">
-                      <input 
-                        type="checkbox" 
-                        :checked="mode.isActive" 
-                        @change="toggleGameMode(mode)"
-                      >
-                      <span class="slider round"></span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <!-- 시스템 설정 섹션 -->
+          <div v-if="activeSection === 'settings'">
+            <SystemSettings />
           </div>
         </div>
       </AdminPanel>
@@ -197,140 +91,120 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, reactive } from 'vue';
 import AdminPanel from '@/components/admin/AdminPanel.vue';
-import NavigationBar from '@/components/common/NavigationBar.vue';
+import TheHeader from '@/components/layout/TheHeader.vue';
+import DashboardStats from './components/DashboardStats.vue';
+import RecentActivities from './components/RecentActivities.vue';
+import QuickActions from './components/QuickActions.vue';
+import SystemStatus from './components/SystemStatus.vue';
+import GameModeManagement from './components/GameModeManagement.vue';
+import DetailedStatistics from './components/DetailedStatistics.vue';
+import SystemSettings from './components/SystemSettings.vue';
 
-export default {
-  name: 'AdminDashboard',
-  components: {
-    AdminPanel,
-    NavigationBar
+// 통계 데이터
+const stats = reactive({
+  totalUsers: 5243,
+  userChange: 12,
+  activeGames: 143,
+  gameChange: -5,
+  newUsers: 278,
+  newUserChange: 23,
+  revenue: 1458000,
+  revenueChange: 8
+});
+
+// 게임 모드 데이터
+const gameModes = ref([
+  {
+    id: 'roadview',
+    name: '로드뷰 모드',
+    description: '실제 거리를 둘러보며 위치를 맞추는 게임',
+    icon: 'fa-street-view',
+    color: 'roadview-color',
+    isActive: true
   },
-  data() {
-    return {
-      stats: {
-        totalUsers: 5243,
-        userChange: 12,
-        activeGames: 143,
-        gameChange: -5,
-        newUsers: 278,
-        newUserChange: 23,
-        revenue: 1458000,
-        revenueChange: 8
-      },
-      gameModes: [
-        {
-          id: 'roadview',
-          name: '로드뷰 모드',
-          description: '실제 거리를 둘러보며 위치를 맞추는 게임',
-          icon: 'fa-street-view',
-          color: 'roadview-color',
-          isActive: true
-        },
-        {
-          id: 'photo',
-          name: '포토 모드',
-          description: '관광지 사진으로 지역을 맞히는 게임',
-          icon: 'fa-camera',
-          color: 'photo-color',
-          isActive: true
-        },
-        {
-          id: 'multiplayer',
-          name: '멀티플레이어 모드',
-          description: '다른 플레이어들과 함께 즐기는 게임',
-          icon: 'fa-users',
-          color: 'multiplayer-color',
-          isActive: true
-        },
-        {
-          id: 'special',
-          name: '특별 이벤트 모드',
-          description: '시즌별 특별 이벤트 게임',
-          icon: 'fa-star',
-          color: 'special-color',
-          isActive: false
-        }
-      ],
-      recentActivities: [
-        { 
-          type: 'user', 
-          text: '김민준님이 회원가입했습니다.', 
-          time: new Date(new Date().getTime() - 5 * 60000) 
-        },
-        { 
-          type: 'game', 
-          text: '새로운 멀티플레이어 게임이 시작되었습니다.', 
-          time: new Date(new Date().getTime() - 12 * 60000) 
-        },
-        { 
-          type: 'purchase', 
-          text: '이서연님이 프리미엄 아이템을 구매했습니다.', 
-          time: new Date(new Date().getTime() - 45 * 60000) 
-        },
-        { 
-          type: 'system', 
-          text: '시스템 업데이트가 완료되었습니다.', 
-          time: new Date(new Date().getTime() - 120 * 60000) 
-        },
-        { 
-          type: 'warning', 
-          text: '비정상적인 로그인 시도가 감지되었습니다.', 
-          time: new Date(new Date().getTime() - 180 * 60000) 
-        }
-      ]
-    }
+  {
+    id: 'photo',
+    name: '포토 모드',
+    description: '관광지 사진으로 지역을 맞히는 게임',
+    icon: 'fa-camera',
+    color: 'photo-color',
+    isActive: true
   },
-  methods: {
-    formatNumber(num) {
-      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    },
-    formatTime(time) {
-      const now = new Date();
-      const diff = Math.floor((now - time) / 60000); // 분 단위로 계산
-      
-      if (diff < 1) return '방금 전';
-      if (diff < 60) return `${diff}분 전`;
-      
-      const hours = Math.floor(diff / 60);
-      if (hours < 24) return `${hours}시간 전`;
-      
-      const days = Math.floor(hours / 24);
-      return `${days}일 전`;
-    },
-    getActivityIcon(type) {
-      switch(type) {
-        case 'user': return 'fa-user';
-        case 'game': return 'fa-gamepad';
-        case 'purchase': return 'fa-shopping-cart';
-        case 'system': return 'fa-cog';
-        case 'warning': return 'fa-exclamation-triangle';
-        default: return 'fa-bell';
-      }
-    },
-    
-    toggleGameMode(mode) {
-      // API에서 게임 모드 상태 변경 (실제 환경에서는 서버 API 호출)
-      mode.isActive = !mode.isActive;
-      
-      // 토스트 메시지로 상태 변경 알림
-      this.$toast.success(`${mode.name}이(가) ${mode.isActive ? '활성화' : '비활성화'}되었습니다.`);
-      
-      // 활동 기록 추가
-      this.recentActivities.unshift({
-        type: 'system',
-        text: `${mode.name}이(가) ${mode.isActive ? '활성화' : '비활성화'}되었습니다.`,
-        time: new Date()
-      });
-      
-      // 실제 환경에서는 최대 활동 기록 개수를 제한할 수 있습니다.
-      if (this.recentActivities.length > 10) {
-        this.recentActivities.pop();
-      }
-    }
+  {
+    id: 'multiplayer',
+    name: '멀티플레이어 모드',
+    description: '다른 플레이어들과 함께 즐기는 게임',
+    icon: 'fa-users',
+    color: 'multiplayer-color',
+    isActive: true
+  },
+  {
+    id: 'special',
+    name: '특별 이벤트 모드',
+    description: '시즌별 특별 이벤트 게임',
+    icon: 'fa-star',
+    color: 'special-color',
+    isActive: false
   }
-}
+]);
+
+// 최근 활동 데이터
+const recentActivities = ref([
+  { 
+    type: 'user', 
+    text: '김민준님이 회원가입했습니다.', 
+    time: new Date(new Date().getTime() - 5 * 60000) 
+  },
+  { 
+    type: 'game', 
+    text: '새로운 멀티플레이어 게임이 시작되었습니다.', 
+    time: new Date(new Date().getTime() - 12 * 60000) 
+  },
+  { 
+    type: 'purchase', 
+    text: '이서연님이 프리미엄 아이템을 구매했습니다.', 
+    time: new Date(new Date().getTime() - 45 * 60000) 
+  },
+  { 
+    type: 'system', 
+    text: '시스템 업데이트가 완료되었습니다.', 
+    time: new Date(new Date().getTime() - 120 * 60000) 
+  },
+  { 
+    type: 'warning', 
+    text: '비정상적인 로그인 시도가 감지되었습니다.', 
+    time: new Date(new Date().getTime() - 180 * 60000) 
+  }
+]);
+
+// 게임 모드 토글 핸들러
+const handleGameModeToggle = (mode) => {
+  // 실제 환경에서는 여기서 API 호출을 통해 서버에 상태 변경을 알림
+  
+  // 활동 기록 추가
+  recentActivities.value.unshift({
+    type: 'system',
+    text: `${mode.name}이(가) ${mode.isActive ? '활성화' : '비활성화'}되었습니다.`,
+    time: new Date()
+  });
+  
+  // 최대 활동 기록 개수 제한
+  if (recentActivities.value.length > 10) {
+    recentActivities.value.pop();
+  }
+};
+
+// 게임 모드 설정 열기
+const openGameModeSettings = (mode) => {
+  // 게임 모드별 설정 페이지로 이동하거나 모달 열기 등의 로직
+  console.log(`${mode.name} 설정 열기`);
+};
+
+// 활성 섹션 관리 (메인 대시보드, 상세 통계, 시스템 설정)
+const activeSection = ref('main');
 </script>
 
 <style scoped>
