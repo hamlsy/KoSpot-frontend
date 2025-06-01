@@ -1,70 +1,115 @@
 <template>
   <div class="game-mode-settings">
-    <h2 class="text-2xl font-bold mb-6">게임 모드 설정</h2>
-    
     <!-- 탭 네비게이션 -->
-    <div class="tabs mb-6">
-      <button 
-        @click="activeTab = 'roadview'" 
-        class="tab-button" 
-        :class="{ 'active': activeTab === 'roadview' }"
-      >
-        로드뷰 모드 설정
-      </button>
-      <button 
-        @click="activeTab = 'theme'" 
-        class="tab-button" 
-        :class="{ 'active': activeTab === 'theme' }"
-      >
-        테마 모드 설정
-      </button>
-      <button 
-        @click="activeTab = 'photo'" 
-        class="tab-button" 
-        :class="{ 'active': activeTab === 'photo' }"
-      >
-        포토 모드 설정
-      </button>
+    <div class="tabs-container mb-4 border-b border-gray-200">
+      <div class="flex overflow-x-auto">
+        <button 
+          @click="activeTab = 'roadview'" 
+          class="px-4 py-2 text-sm font-medium transition-colors relative whitespace-nowrap"
+          :class="activeTab === 'roadview' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
+        >
+          <i class="fas fa-street-view mr-2"></i>
+          <span>로드뷰 모드 설정</span>
+          <div 
+            v-if="activeTab === 'roadview'" 
+            class="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600"
+          ></div>
+        </button>
+        <button 
+          @click="activeTab = 'theme'" 
+          class="px-4 py-2 text-sm font-medium transition-colors relative whitespace-nowrap"
+          :class="activeTab === 'theme' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
+        >
+          <i class="fas fa-map-marked-alt mr-2"></i>
+          <span>테마 모드 설정</span>
+          <div 
+            v-if="activeTab === 'theme'" 
+            class="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600"
+          ></div>
+        </button>
+        <button 
+          @click="activeTab = 'photo'" 
+          class="px-4 py-2 text-sm font-medium transition-colors relative whitespace-nowrap"
+          :class="activeTab === 'photo' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
+        >
+          <i class="fas fa-camera mr-2"></i>
+          <span>포토 모드 설정</span>
+          <div 
+            v-if="activeTab === 'photo'" 
+            class="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600"
+          ></div>
+        </button>
+      </div>
     </div>
     
-    <!-- 로드뷰 모드 설정 -->
-    <div v-if="activeTab === 'roadview'" class="mode-settings-content">
-      <RoadviewModeSettings />
-    </div>
-    
-    <!-- 테마 모드 설정 -->
-    <div v-if="activeTab === 'theme'" class="mode-settings-content">
-      <ThemeModeSettings />
-    </div>
-    
-    <!-- 포토 모드 설정 -->
-    <div v-if="activeTab === 'photo'" class="mode-settings-content">
-      <PhotoModeSettings />
+    <!-- 설정 컴포넌트 -->
+    <div class="settings-content">
+      <RoadviewModeSettings 
+        v-if="activeTab === 'roadview'" 
+        :game-mode="activeTab"
+        @settings-change="handleSettingsChange"
+      />
+      <ThemeModeSettings 
+        v-else-if="activeTab === 'theme'" 
+        :game-mode="activeTab"
+        @settings-change="handleSettingsChange"
+      />
+      <PhotoModeSettings 
+        v-else-if="activeTab === 'photo'" 
+        :game-mode="activeTab"
+        @settings-change="handleSettingsChange"
+      />
     </div>
   </div>
 </template>
 
-<script>
-import { ref } from 'vue';
+<script setup>
+import { ref, onMounted, watch } from 'vue';
 import RoadviewModeSettings from './game-settings/RoadviewModeSettings.vue';
 import ThemeModeSettings from './game-settings/ThemeModeSettings.vue';
 import PhotoModeSettings from './game-settings/PhotoModeSettings.vue';
 
-export default {
-  name: 'GameModeSettings',
-  components: {
-    RoadviewModeSettings,
-    ThemeModeSettings,
-    PhotoModeSettings
-  },
-  setup() {
-    const activeTab = ref('roadview');
-    
-    return {
-      activeTab
-    };
+// Props 정의
+const props = defineProps({
+  gameMode: {
+    type: Object,
+    required: true
   }
-}
+});
+
+// Emits 정의
+const emit = defineEmits(['settings-change']);
+
+// 활성 탭 상태 관리
+const activeTab = ref('roadview');
+
+// 게임 모드 ID에 따라 초기 탭 설정
+onMounted(() => {
+  if (props.gameMode) {
+    switch(props.gameMode.id) {
+      case 'roadview':
+        activeTab.value = 'roadview';
+        break;
+      case 'photo':
+        activeTab.value = 'photo';
+        break;
+      case 'theme':
+      case 'special':
+        activeTab.value = 'theme';
+        break;
+      default:
+        activeTab.value = 'roadview';
+    }
+  }
+});
+
+// 설정 변경 처리 함수
+const handleSettingsChange = (mode, settings) => {
+  console.log(`${mode} 모드 설정 변경:`, settings);
+  // 상위 컴포넌트에 변경 사항 알림
+  emit('settings-change', mode, settings);
+};
+
 </script>
 
 <style scoped>

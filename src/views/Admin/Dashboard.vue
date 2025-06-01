@@ -142,6 +142,46 @@
           </div>
         </div>
       </AdminPanel>
+      
+      <!-- 게임 모드 설정 모달 -->
+      <div v-if="showSettingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-auto">
+          <div class="p-6 border-b border-gray-200">
+            <div class="flex justify-between items-center">
+              <h2 class="text-xl font-semibold text-gray-800">
+                {{ currentGameMode ? currentGameMode.name + ' 설정' : '게임 모드 설정' }}
+              </h2>
+              <button 
+                @click="closeSettingsModal" 
+                class="text-gray-400 hover:text-gray-500 transition-colors"
+              >
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+          <div class="p-6">
+            <GameModeSettings 
+              v-if="currentGameMode" 
+              :game-mode="currentGameMode" 
+              @settings-change="handleSettingsChange"
+            />
+          </div>
+          <div class="p-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
+            <button 
+              @click="closeSettingsModal" 
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              취소
+            </button>
+            <button 
+              @click="saveGameModeSettings()" 
+              class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              저장
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -160,6 +200,7 @@ import DetailedStatistics from './components/DetailedStatistics.vue';
 import SystemSettings from './components/SystemSettings.vue';
 import ShopManagement from './components/ShopManagement.vue';
 import UserManagement from './components/UserManagement.vue';
+import GameModeSettings from './components/GameModeSettings.vue';
 
 // 통계 데이터
 const stats = reactive({
@@ -255,10 +296,62 @@ const handleGameModeToggle = (mode) => {
   }
 };
 
+// 게임 모드 설정 모달 상태
+const showSettingsModal = ref(false);
+const currentGameMode = ref(null);
+const currentSettings = ref({});
+
 // 게임 모드 설정 열기
 const openGameModeSettings = (mode) => {
-  // 게임 모드별 설정 페이지로 이동하거나 모달 열기 등의 로직
+  currentGameMode.value = mode;
+  showSettingsModal.value = true;
+  // 실제 구현에서는 여기서 API를 통해 현재 설정을 가져옴
   console.log(`${mode.name} 설정 열기`);
+  
+  // 임시 데이터 - 실제로는 API에서 가져와야 함
+  currentSettings.value = {
+    timeLimit: 300,
+    roundCount: 5,
+    difficultyLevel: 'medium',
+    allowHints: true
+  };
+};
+
+// 게임 모드 설정 모달 닫기
+const closeSettingsModal = () => {
+  showSettingsModal.value = false;
+  currentSettings.value = {};
+};
+
+// 설정 변경 처리
+const handleSettingsChange = (mode, settings) => {
+  console.log(`설정 변경 감지:`, mode, settings);
+  currentSettings.value = { ...currentSettings.value, ...settings };
+};
+
+// 게임 모드 설정 저장
+const saveGameModeSettings = () => {
+  if (!currentGameMode.value) return;
+  
+  const mode = currentGameMode.value;
+  console.log(`${mode.id} 모드 설정 저장:`, currentSettings.value);
+  
+  // 여기서 API 호출을 통해 설정 저장
+  // 예: api.saveGameModeSettings(mode.id, currentSettings.value)
+  
+  // 활동 기록 추가
+  recentActivities.value.unshift({
+    type: 'system',
+    text: `${mode.name} 설정이 업데이트되었습니다.`,
+    time: new Date()
+  });
+  
+  // 최대 활동 기록 개수 제한
+  if (recentActivities.value.length > 10) {
+    recentActivities.value.pop();
+  }
+  
+  closeSettingsModal();
 };
 
 // 활성 섹션 상태
