@@ -93,28 +93,6 @@
           </div>
         </div>
 
-        <!-- 호스트 전용 컨트롤 섹션 -->
-        <div class="panel-section" v-if="isHost">
-          <h3 class="section-title">
-            <i class="fas fa-cog"></i> 호스트 컨트롤
-          </h3>
-
-          <div class="host-controls">
-            <button class="settings-button" @click="openRoomSettings">
-              <i class="fas fa-cog"></i>
-              설정
-            </button>
-            
-            <button 
-              class="start-game-button" 
-              :disabled="!canStartGame" 
-              @click="startGame"
-            >
-              <i class="fas fa-play"></i>
-              게임 시작
-            </button>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -187,6 +165,14 @@
       @close="closePlayerDetails"
       @kick="confirmKickPlayer"
     />
+    
+    <!-- 채팅 토글 버튼 (오른쪽 하단에 고정) -->
+    <button class="chat-toggle-button" @click="toggleChat">
+      <i class="fas fa-comments"></i>
+      <div class="notification-badge" v-if="unreadMessages > 0">
+        {{ unreadMessages > 9 ? '9+' : unreadMessages }}
+      </div>
+    </button>
   </div>
 </template>
 
@@ -298,9 +284,17 @@ const playerMessages = ref({});
 // DOM refs
 const chatMessagesRef = ref(null);
 
+// 로컬 상태 (props 복사)
+const localRoomData = ref({...props.roomData});
+
+// props가 변경되면 로컬 상태 업데이트
+watch(() => props.roomData, (newVal) => {
+  localRoomData.value = {...newVal};
+}, { deep: true });
+
 // Computed properties
 const isTeamMode = computed(() => {
-return props.roomData.gameMode === 'team';
+  return localRoomData.value.isTeamMode === true;
 });
 
 const gameModeName = computed(() => {
@@ -324,24 +318,33 @@ return icons[props.roomData.gameMode] || 'fas fa-question';
 });
 
 const canStartGame = computed(() => {
-// 최소 2명 이상의 플레이어가 있어야 시작 가능
-if (props.players.length < 2) return false;
+  // 최소 2명 이상의 플레이어가 있어야 시작 가능
+  if (props.players.length < 2) return false;
   
-// 팀 모드인 경우 각 팀에 최소 1명 이상의 플레이어가 있어야 함
-if (isTeamMode.value) {
-const teamCounts = {};
-props.players.forEach(player => {
-if (player.teamId) {
-teamCounts[player.teamId] = (teamCounts[player.teamId] || 0) + 1;
-}
-});
+  // 팀 모드인 경우 각 팀에 최소 1명 이상의 플레이어가 있어야 함
+  if (isTeamMode.value) {
+    const teamCounts = {};
+    props.players.forEach(player => {
+      if (player.teamId) {
+        teamCounts[player.teamId] = (teamCounts[player.teamId] || 0) + 1;
+      }
+    });
+    
+    // 최소 2개 이상의 팀에 플레이어가 있어야 함
+    const teamsWithPlayers = Object.keys(teamCounts).length;
+    if (teamsWithPlayers < 2) return false;
+    
+    // 각 팀에 최소 1명 이상의 플레이어가 있어야 함
+    for (const team of availableTeams.value) {
+      if (!teamCounts[team.id] || teamCounts[team.id] < 1) {
+        return false;
+      }
+    }
+    
+    return true;
+  }
   
-// 최소 2개 이상의 팀에 플레이어가 있어야 함
-const teamsWithPlayers = Object.keys(teamCounts).length;
-return teamsWithPlayers >= 2;
-}
-  
-return true;
+  return true;
 });
 
 const availableTeams = computed(() => {
@@ -354,7 +357,7 @@ return [
 });
 
 const maxPlayersPerTeam = computed(() => {
-return Math.floor(props.roomData.maxPlayers / availableTeams.value.length);
+  return 4; // 각 팀별 플레이어 제한은 4명으로 고정
 });
 
 // Methods
@@ -367,8 +370,15 @@ isRoomSettingsOpen.value = false;
 }
 
 const updateRoomSettings = (settings) => {
-emit('update-room-settings', settings);
-closeRoomSettings();
+  // 로컬 상태 업데이트 (UI 즉시 반영을 위해)
+  localRoomData.value = {
+    ...localRoomData.value,
+    ...settings
+  };
+  
+  // 부모 컴포넌트에 업데이트 알림
+  emit('update-room-settings', settings);
+  closeRoomSettings();
 };
 
 const toggleChat = () => {
@@ -449,7 +459,19 @@ const closePlayerDetails = () => {
 };
 
 const joinTeam = (teamId) => {
-  emit('join-team', teamId);
+  // 현재 사용자의 플레이어 객체 찾기
+  const currentPlayerIndex = props.players.findIndex(player => player.id === props.currentUserId);
+  if (currentPlayerIndex === -1) return;
+  
+  // 플레이어 객체 복사 및 팀 ID 업데이트
+  const updatedPlayers = [...props.players];
+  updatedPlayers[currentPlayerIndex] = {
+    ...updatedPlayers[currentPlayerIndex],
+    teamId: teamId
+  };
+  
+  // 부모 컴포넌트에 업데이트된 플레이어 목록 전달
+  emit('join-team', { teamId, updatedPlayers });
 };
 
 const getPlayerName = (playerId) => {
@@ -595,12 +617,6 @@ onMounted(() => {
   gap: 0.5rem;
 }
 
-/* Host controls styling */
-.host-controls {
-  display: flex;
-  gap: 1rem;
-  margin-top: 1rem;
-}
 
 .settings-button {
   padding: 0.75rem 1.5rem;
@@ -787,6 +803,51 @@ onMounted(() => {
   transform: scale(1.05);
 }
 
+/* 채팅 토글 버튼 스타일링 */
+.chat-toggle-button {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  z-index: 50;
+}
+
+.chat-toggle-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+}
+
+.chat-toggle-button i {
+  font-size: 1.5rem;
+}
+
+.chat-toggle-button .notification-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #ef4444;
+  color: white;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+}
+
 /* Responsive styling */
 @media (max-width: 1024px) {
   .room-content {
@@ -805,6 +866,13 @@ onMounted(() => {
 
   .chat-modal {
     width: 100%;
+  }
+  
+  .chat-toggle-button {
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 48px;
+    height: 48px;
   }
 }
 </style>

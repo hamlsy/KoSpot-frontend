@@ -39,26 +39,15 @@
           class="action-button settings-button" 
           @click="$emit('open-settings')"
           title="방 설정"
+          v-if="isHost"
         >
           <i class="fas fa-cog"></i>
           <span>설정</span>
         </button>
         
         <button 
-          class="action-button chat-button" 
-          @click="$emit('toggle-chat')"
-          title="채팅"
-        >
-          <i class="fas fa-comments"></i>
-          <span>채팅</span>
-          <div class="notification-badge" v-if="unreadMessages > 0">
-            {{ unreadMessages > 9 ? '9+' : unreadMessages }}
-          </div>
-        </button>
-        
-        <button 
           class="action-button leave-button" 
-          @click="$emit('leave-room')"
+          @click="leaveRoomWithConfirm"
           title="방 나가기"
         >
           <i class="fas fa-sign-out-alt"></i>
@@ -107,37 +96,45 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['open-settings', 'toggle-chat', 'leave-room', 'start-game']);
+const emit = defineEmits(['open-settings', 'leave-room', 'start-game']);
 
-// Computed properties
 const gameModeName = computed(() => {
-  const modes = {
-    'roadview': '로드뷰 모드',
-    'photo': '포토 모드',
-    'mixed': '믹스 모드'
-  };
-  return modes[props.roomData.gameMode] || '알 수 없음';
+  switch(props.roomData.gameMode) {
+    case 'roadview':
+      return '로드뷰';
+    case 'photo':
+      return '사진';
+    default:
+      return '게임';
+  }
 });
 
 const modeIcon = computed(() => {
-  const icons = {
-    'roadview': 'fas fa-street-view',
-    'photo': 'fas fa-camera',
-    'mixed': 'fas fa-random'
-  };
-  return icons[props.roomData.gameMode] || 'fas fa-question';
+  switch(props.roomData.gameMode) {
+    case 'roadview':
+      return 'fas fa-street-view';
+    case 'photo':
+      return 'fas fa-image';
+    default:
+      return 'fas fa-gamepad';
+  }
 });
 
-// Methods
 const copyRoomId = () => {
   navigator.clipboard.writeText(props.roomData.id)
     .then(() => {
-      // You could emit an event to show a toast notification
+      // TODO: Add toast notification
       console.log('Room ID copied to clipboard');
     })
     .catch(err => {
       console.error('Failed to copy room ID: ', err);
     });
+};
+
+const leaveRoomWithConfirm = () => {
+  if (confirm('정말 방을 나가시겠습니까?')) {
+    emit('leave-room');
+  }
 };
 </script>
 
@@ -145,9 +142,9 @@ const copyRoomId = () => {
 .room-header {
   background: white;
   border-radius: 16px;
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   position: relative;
   overflow: hidden;
 }
@@ -159,7 +156,7 @@ const copyRoomId = () => {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #6366f1 0%, #a855f7 100%);
+  background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
 }
 
 .header-content {
@@ -183,7 +180,7 @@ const copyRoomId = () => {
   padding: 0.4rem 0.8rem;
   border-radius: 20px;
   font-size: 0.8rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
@@ -220,26 +217,26 @@ const copyRoomId = () => {
 }
 
 .room-title {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-weight: 700;
   color: black;
-  margin: 0.5rem 0 1rem;
+  margin: 0.3rem 0 0.6rem;
   line-height: 1.2;
 }
 
 .room-badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .mode-badge, .privacy-badge, .team-badge {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.4rem 0.8rem;
+  padding: 0.3rem 0.6rem;
   border-radius: 20px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
@@ -272,7 +269,7 @@ const copyRoomId = () => {
 .header-buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .action-button {
@@ -280,10 +277,10 @@ const copyRoomId = () => {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.6rem 1.2rem;
+  padding: 0.5rem 1rem;
   border-radius: 12px;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   transition: all 0.2s ease;
   border: none;
   cursor: pointer;
@@ -298,33 +295,6 @@ const copyRoomId = () => {
 .settings-button:hover {
   background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
   color: #1f2937;
-}
-
-.chat-button {
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-  color: #3b82f6;
-  position: relative;
-}
-
-.chat-button:hover {
-  background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
-  color: #2563eb;
-}
-
-.notification-badge {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  background: #ef4444;
-  color: white;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  font-size: 0.7rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid white;
 }
 
 .leave-button {
@@ -354,20 +324,89 @@ const copyRoomId = () => {
   opacity: 0.7;
 }
 
+/* 중간 크기 화면에서의 스타일 조정 */
+@media (max-width: 992px) {
+  .room-info {
+    min-width: 220px;
+  }
+  
+  .room-title {
+    font-size: 1.2rem;
+    margin: 0.2rem 0 0.5rem;
+  }
+  
+  .action-button {
+    padding: 0.4rem 0.8rem;
+  }
+}
+
+/* 작은 화면에서의 스타일 조정 */
 @media (max-width: 768px) {
+  .room-header {
+    padding: 0.8rem;
+  }
+  
   .header-content {
-    flex-direction: column;
-    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .room-info {
+    width: 100%;
+  }
+  
+  .room-badges {
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .mode-badge, .privacy-badge, .team-badge {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
   }
   
   .header-buttons {
     width: 100%;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 0.4rem;
   }
   
   .action-button {
-    padding: 0.5rem 1rem;
-    font-size: 0.8rem;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
+    justify-content: center;
+    width: 100%;
+  }
+}
+
+/* 매우 작은 화면에서의 스타일 조정 */
+@media (max-width: 480px) {
+  .room-id-badge {
+    font-size: 0.7rem;
+    padding: 0.3rem 0.6rem;
+  }
+  
+  .room-title {
+    font-size: 1.1rem;
+    margin: 0.2rem 0 0.4rem;
+  }
+  
+  .room-badges {
+    flex-wrap: wrap;
+  }
+  
+  .action-button span {
+    display: none;
+  }
+  
+  .action-button {
+    padding: 0.4rem;
+    aspect-ratio: 1/1;
+  }
+  
+  .action-button i {
+    font-size: 1rem;
+    margin: 0;
   }
 }
 </style>
