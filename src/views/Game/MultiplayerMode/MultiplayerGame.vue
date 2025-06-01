@@ -233,7 +233,7 @@ import KakaoMap from '@/components/common/game/kakao/KakaoMap.vue';
 import IndividualChat from './components/gameplay/chat/IndividualChat.vue';
 import MultiplayerRoundResults from './components/results/MultiplayerRoundResults.vue';
 import MultiplayerGameResults from './components/results/MultiplayerGameResults.vue';
-import MultiplayerRoomWaiting from './components/room/MultiplayerRoomWaiting.vue';
+import MultiplayerRoomWaiting from './components/room/waiting/MultiplayerRoomWaiting.vue';
 import TeamChat from './components/gameplay/chat/TeamChat.vue';
 import MultiplayerTeamVotingModal from './components/results/MultiplayerTeamVotingModal.vue';
 import MultiplayerTeamGameResults from './components/results/MultiplayerTeamGameResults.vue';
