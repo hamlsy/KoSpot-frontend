@@ -338,7 +338,6 @@ export default {
 
 .multiplayer-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f0f4f8 0%, #d7e3fc 100%);
   padding-bottom: 40px;
   position: relative;
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
