@@ -38,7 +38,18 @@ const multiplayerRoutes = [
         component: IndividualRoadViewGame,
         props: { roomId: 'individual-test-123', isTeamMode: false }
     },
-    
+    {
+        path: '/testPhotoIndividual',
+        name: "TestPhotoIndividual",
+        component: () => import('@/views/Game/MultiplayerMode/components/gameplay/photo/MultiplayerPhotoGame.vue'),
+        props: { roomId: 'photo-individual-test', isTeamMode: false }
+    },
+    {
+        path: '/testPhotoTeam',
+        name: "TestPhotoTeam",
+        component: () => import('@/views/Game/MultiplayerMode/components/gameplay/photo/MultiplayerPhotoGame.vue'),
+        props: { roomId: 'photo-team-test', isTeamMode: true }
+    },
 ];
 
 export default multiplayerRoutes;

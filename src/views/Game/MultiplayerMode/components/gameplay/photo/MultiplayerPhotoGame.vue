@@ -101,6 +101,15 @@
       </div>
     </div>
     
+    <!-- 플레이어 마커 (아바타) 표시 영역 -->
+    <player-markers
+      ref="playerMarkers"
+      :players="gameStore.state.players"
+      :current-user-id="gameStore.state.currentUser.id"
+      :is-team-mode="isTeamMode"
+      :teams="gameStore.state.teams"
+    />
+    
     <!-- 게임 하단 영역 -->
     <div class="game-footer">
       <div class="guess-info" v-if="guessPosition">
@@ -218,6 +227,7 @@ import TeamChat from '@/views/Game/MultiplayerMode/components/gameplay/chat/Team
 import TeamVotingModal from '@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamVotingModal.vue';
 import TeamGameResults from '@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamGameResults.vue';
 import TeamRoundResults from '@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamRoundResults.vue';
+import PlayerMarkers from '@/views/Game/MultiplayerMode/components/gameplay/photo/MultiplayerPhotoPlayerMarkers.vue';
 import gameStore from '@/store/gameStore';
 import { getRandomLocation } from '@/views/Game/MultiplayerMode/MultiplayerGameTestData';
 
@@ -235,7 +245,8 @@ export default {
     TeamChat,
     TeamVotingModal,
     TeamGameResults,
-    TeamRoundResults
+    TeamRoundResults,
+    PlayerMarkers
   },
   
   props: {
@@ -459,6 +470,19 @@ export default {
       };
       
       gameStore.endRound();
+      
+      // 점수 애니메이션 표시 (테스트용)
+      if (this.$refs.playerMarkers) {
+        // 플레이어들에게 랜덤 점수 부여 (실제로는 서버에서 계산된 점수 사용)
+        gameStore.state.players.forEach((player, index) => {
+          if (player.hasSubmitted) {
+            const score = Math.floor(Math.random() * 1000) + 100;
+            setTimeout(() => {
+              this.showScoreAnimation(player.id, score);
+            }, index * 500); // 순차적으로 애니메이션 표시
+          }
+        });
+      }
     },
     
     closeRoundResults() {
@@ -491,16 +515,28 @@ export default {
       this.$router.push('/multiplayerLobby');
     },
     
-    sendChatMessage(message) {
-      if (!message.trim()) return;
-      gameStore.addChatMessage(message);
-    },
+  
     
     sendTeamMessage(data) {
       const { teamId, message } = data;
       
       if (!teamId || !message.trim()) return;
       gameStore.addTeamChatMessage(teamId, message);
+      
+      // 채팅 메시지를 플레이어 마커에도 표시
+      if (this.$refs.playerMarkers) {
+        this.$refs.playerMarkers.showChatMessage(gameStore.state.currentUser.id, message);
+      }
+    },
+    
+    sendChatMessage(message) {
+      if (!message.trim()) return;
+      gameStore.addChatMessage(message);
+      
+      // 채팅 메시지를 플레이어 마커에도 표시
+      if (this.$refs.playerMarkers) {
+        this.$refs.playerMarkers.showChatMessage(gameStore.state.currentUser.id, message);
+      }
     },
     
     getTeamColor(teamId) {
@@ -512,6 +548,13 @@ export default {
       };
       
       return colorMap[teamId] || 'blue';
+    },
+    
+    // 점수 획득 시 플레이어 마커에 애니메이션 표시
+    showScoreAnimation(playerId, score) {
+      if (this.$refs.playerMarkers) {
+        this.$refs.playerMarkers.showScoreAnimation(playerId, score);
+      }
     }
   }
 };
@@ -799,6 +842,25 @@ export default {
   
   .header-right {
     align-self: flex-end;
+  }
+}
+
+/* 플레이어 마커 관련 추가 스타일 */
+.player-markers-container {
+  z-index: 50; /* 맵보다 위에 표시되도록 z-index 설정 */
+}
+
+/* 맵이 확장되었을 때 플레이어 마커가 가려지지 않도록 */
+.map-container.expanded ~ .player-markers-container {
+  opacity: 0.8;
+  transform: translateY(-60px);
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* 모바일 화면에서 플레이어 마커 스타일 조정 */
+@media (max-width: 768px) {
+  .player-markers-container {
+    padding: 0.5rem;
   }
 }
 </style>
