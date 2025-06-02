@@ -8,10 +8,10 @@
             {{ motivationMessage }}
           </h2>
           <h2 v-else-if="step === 2" key="step2">{{ currentRound }}라운드</h2>
-          <div v-else-if="step === 3" class="countdown-container">
-            <span class="countdown-number">{{ countdown }}</span>
-          </div>
         </transition>
+        <div v-if="step === 3 && showCountdown" class="countdown-container">
+          <span class="countdown-number">{{ countdown }}</span>
+        </div>
       </div>
     </div>
   </transition>
@@ -64,6 +64,7 @@ export default {
       localStartTime: 0,
       timeOffset: 0,
       motivationMessage: "",
+      showCountdown: false,
       gameStore,
     };
   },
@@ -91,7 +92,14 @@ export default {
         const timer2 = setTimeout(() => {
           // 세 번째 단계: 카운트다운 "3, 2, 1"
           this.step = 3;
-          this.startCountdown();
+           // step 3의 텍스트가 사라지는 트랜지션 완료 후 0.5초 대기
+           setTimeout(() => {
+              // 카운트다운 표시
+              this.showCountdown = true;
+              
+              // 카운트다운 시작
+              this.startCountdown();
+            }, 500);
         }, 2000);
         this.stepTimers.push(timer2);
       }, 2000);
@@ -107,6 +115,7 @@ export default {
 
           if (this.countdown <= 0) {
             this.clearAllTimers();
+            this.showCountdown = false;
             this.$emit("intro-complete");
           }
         }, 1000);
@@ -175,6 +184,7 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
+  transition: none !important;
 }
 
 .countdown-number {
@@ -182,6 +192,7 @@ export default {
   font-weight: bold;
   color: black;
   transition: none; /* 트랜지션 효과 제거 */
+  transition: none !important;
 }
 
 /* 페이드 트랜지션 (오버레이 전체) */

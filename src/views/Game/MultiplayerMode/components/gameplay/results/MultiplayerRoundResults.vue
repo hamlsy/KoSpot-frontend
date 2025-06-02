@@ -362,6 +362,7 @@ export default {
     proceedToNextRound() {
       this.stopCountdown();
       console.log("다음 라운드로 진행 이벤트 발생");
+      this.playersWhoClickedNext = [];
       // next-round 이벤트로 통일
       this.$emit("next-round");
     },
