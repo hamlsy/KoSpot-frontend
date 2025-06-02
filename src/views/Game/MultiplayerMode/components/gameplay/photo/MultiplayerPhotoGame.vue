@@ -2,229 +2,193 @@
   <div class="multiplayer-photo-game">
     <!-- 게임 헤더 -->
     <div class="game-header">
-      <div class="header-left">
-        <button class="exit-button" @click="exitGame">
-          <i class="fas fa-door-open"></i>
-          나가기
-        </button>
-        <div class="room-info">
-          <h2 class="room-name">{{ gameStore.state.roomData.name }}</h2>
-          <div class="game-mode">
-            {{ gameStore.state.roomData.gameMode }} - {{ gameStore.state.roomData.region }}
-          </div>
-        </div>
-      </div>
-      
-      <div class="header-center">
-        <div class="round-info">
-          <span class="round-number">
-            라운드 {{ gameStore.state.currentRound }}/{{ gameStore.state.totalRounds }}
-          </span>
-          <div class="round-progress">
-            <div 
-              class="progress-bar" 
-              :style="{ width: `${(gameStore.state.currentRound / gameStore.state.totalRounds) * 100}%` }"
-            ></div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="header-right">
-        <game-timer 
-          :initialTime="gameStore.state.remainingTime"
-          :totalTime="120"
-          :warning-threshold="30"
-          :danger-threshold="10"
-        />
-      </div>
-    </div>
-    
-    <!-- 게임 메인 영역 -->
-    <div class="game-content">
-      <!-- 왼쪽 패널: 플레이어 목록 -->
-      <div class="left-panel">
-        <player-list 
-          :players="gameStore.state.players" 
-          :current-user-id="gameStore.state.currentUser.id"
-          :show-scores="gameStore.state.hasSubmittedGuess || gameStore.state.roundEnded"
-        />
-      </div>
-      
-      <!-- 중앙 패널: 게임 화면 -->
-      <div class="main-panel">
-        <div class="game-view">
-          <!-- 실제 포토뷰 컴포넌트 -->
-          <photo-view
-            :photo-url="currentPhotoUrl"
-            :prevent-interaction="gameStore.state.roundEnded"
-            @load-complete="onViewLoaded"
-          />
-        </div>
-        
-        <div class="map-container" :class="{ expanded: isMapExpanded }">
-          <kakao-map
-            ref="gameMap"
-            :center="mapCenter"
-            :marker-position="guessPosition"
-            :actual-position="gameStore.state.roundEnded ? gameStore.state.actualLocation : null"
-            :prevent-interaction="gameStore.state.roundEnded"
-            @marker-placed="onGuessPlaced"
-          />
-          <button 
-            class="expand-map-button"
-            @click="toggleMapExpansion"
-            :title="isMapExpanded ? '맵 축소' : '맵 확대'"
-          >
-            <i :class="isMapExpanded ? 'fas fa-compress-alt' : 'fas fa-expand-alt'"></i>
-          </button>
-        </div>
-      </div>
-      
-      <!-- 오른쪽 패널: 채팅 -->
-      <div class="right-panel">
-        <chat-window 
-          v-if="!isTeamMode"
-          :messages="gameStore.state.chatMessages"
-          @send-message="sendChatMessage"
-        />
-        
-        <!-- 팀 모드일 경우 팀 채팅 표시 -->
-        <team-chat
-          v-if="isTeamMode && currentUserTeam"
-          :team-id="gameStore.state.currentUser.teamId"
-          :team-name="currentUserTeam.name"
-          :team-color="getTeamColor(currentUserTeam.id)"
-          :team-messages="currentTeamMessages"
-          :current-user-id="gameStore.state.currentUser.id"
-          @send-team-message="sendTeamMessage"
-        />
-      </div>
-    </div>
-    
-    <!-- 플레이어 마커 (아바타) 표시 영역 -->
-    <player-markers
-      ref="playerMarkers"
-      :players="gameStore.state.players"
-      :current-user-id="gameStore.state.currentUser.id"
-      :is-team-mode="isTeamMode"
-      :teams="gameStore.state.teams"
-    />
-    
-    <!-- 게임 하단 영역 -->
-    <div class="game-footer">
-      <div class="guess-info" v-if="guessPosition">
-        <i class="fas fa-map-marker-alt"></i>
-        <span class="coords">
-          {{ formatCoords(guessPosition) }}
-        </span>
-      </div>
-      
-      <button 
-        class="submit-button"
-        @click="submitGuess"
-        :disabled="!canSubmit"
-      >
-        <template v-if="!gameStore.state.hasSubmittedGuess">
-          <i class="fas fa-check"></i>
-          위치 제출
-        </template>
-        <template v-else>
-          <i class="fas fa-clock"></i>
-          다른 플레이어 대기 중...
-        </template>
+    <div class="header-left">
+      <button class="exit-button" @click="exitGame">
+        <i class="fas fa-door-open"></i>
+        <span class="exit-text">나가기</span>
       </button>
+      <div class="room-info">
+        <h2 class="room-name">{{ gameStore.state.roomData.name }}</h2>
+        <div class="game-mode">
+          {{ gameStore.state.roomData.gameMode }} - {{ gameStore.state.roomData.region }}
+        </div>
+      </div>
     </div>
     
-    <!-- 모달 컴포넌트들 (로드뷰 게임과 동일) -->
-    <round-results
-      v-if="gameStore.state.showRoundResults && !isTeamMode"
-      :visible="gameStore.state.showRoundResults"
-      :players="gameStore.state.players"
-      :actual-location="gameStore.state.actualLocation"
-      :round="gameStore.state.currentRound"
-      :total-rounds="gameStore.state.totalRounds"
-      :current-user-id="gameStore.state.currentUser.id"
-      :location-name="gameStore.state.locationInfo.name"
-      :location-description="gameStore.state.locationInfo.description"
-      :location-image="gameStore.state.locationInfo.image"
-      :interesting-fact="gameStore.state.locationInfo.fact"
-      @close="closeRoundResults"
-      @next-round="startNextRound"
-      @finish-game="finishGame"
-    />
-
-    <team-round-results
-      v-if="gameStore.state.showRoundResults && isTeamMode"
-      :visible="gameStore.state.showRoundResults"
-      :teams="gameStore.state.teams"
-      :players="gameStore.state.players"
-      :actual-location="gameStore.state.actualLocation"
-      :round="gameStore.state.currentRound"
-      :total-rounds="gameStore.state.totalRounds"
-      :current-user-id="gameStore.state.currentUser.id"
-      :current-user-team="gameStore.state.currentUser.teamId"
-      :location-name="gameStore.state.locationInfo.name"
-      :location-description="gameStore.state.locationInfo.description"
-      :location-image="gameStore.state.locationInfo.image"
-      :interesting-fact="gameStore.state.locationInfo.fact"
-      @close="closeRoundResults"
-      @next-round="startNextRound"
-      @finish-game="finishGame"
-    />
+    <div class="header-center col-md-4">
+      <div class="round-info">
+        <span class="round-number">
+          라운드 {{ gameStore.state.currentRound }}/{{ gameStore.state.totalRounds }}
+        </span>
+        <div class="round-progress">
+          <div 
+            class="progress-bar" 
+            :style="{ width: `${(gameStore.state.currentRound / gameStore.state.totalRounds) * 100}%` }"
+          ></div>
+        </div>
+      </div>
+    </div>
     
-    <game-results
-      v-if="gameStore.state.showGameResults && !isTeamMode"
-      :visible="gameStore.state.showGameResults"
-      :players="gameStore.state.players"
-      :room-data="gameStore.state.roomData"
-      @play-again="restartGame"
-      @exit="exitToLobby"
-    />
-
-    <team-game-results
-      v-if="gameStore.state.showGameResults && isTeamMode"
-      :visible="gameStore.state.showGameResults"
-      :teams="gameStore.state.teams"
-      :players="gameStore.state.players"
-      :room-data="gameStore.state.roomData"
-      :chat-messages="gameStore.state.chatMessages"
-      @play-again="restartGame"
-      @exit="exitToLobby"
-      @send-chat-message="sendChatMessage"
-    />
-
-    <team-voting-modal
-      v-if="gameStore.state.showTeamVoting"
-      :visible="gameStore.state.showTeamVoting"
-      :initiator="gameStore.state.voteInitiator"
-      :guess-position="guessPosition"
-      :time-limit="20"
-      :map-preview-url="mapPreviewUrl"
-      :current-user-id="gameStore.state.currentUser.id"
-      @vote-submitted="handleVoteSubmission"
-      @voting-completed="handleVotingComplete"
-    />
-    
-    <!-- 로딩 오버레이 -->
-    <div v-if="isLoading" class="loading-overlay">
-      <div class="loading-spinner">
-        <i class="fas fa-spinner fa-spin"></i>
-        <p>로딩 중...</p>
+    <div class="header-right col-md-4">
+      <game-timer 
+        ref="gameTimer"
+        :initialTime="gameStore.state.remainingTime"
+        :totalTime="120"
+        :warning-threshold="30"
+        :danger-threshold="10"
+      />
+      <div v-if="showCorrectRegion" class="correct-region-display">
+        정답: {{ correctRegion }}
       </div>
     </div>
   </div>
+  
+  <!-- 게임 메인 영역 -->
+  <div class="game-content">
+    <!-- 사진 섹션 -->
+    <div class="photo-section">
+      <photo-mode-photo-grid
+        :photos="currentPhotos"
+        :show-incorrect-animation="showIncorrectAnimation"
+        :show-correct-animation="showCorrectAnimation"
+        :show-timeout-animation="showTimeoutAnimation"
+        :correct-region="correctRegion"
+        @photo-loaded="handlePhotoLoaded"
+      />
+    </div>
+    
+    <!-- 지도 섹션 -->
+    <div class="map-section" :class="{ 'map-open': isMapOpen }">
+      <region-map
+        ref="regionMap"
+        :show-region-names="true"
+        :correct-region="correctRegion"
+        :wrong-region="wrongRegion"
+        v-model:selectedRegion="selectedRegion"
+        v-model:selectedRegionEng="selectedRegionEng"
+        @submit-guess="submitGuess"
+      />
+    </div>
+    
+    <!-- 오른쪽 패널: 채팅 -->
+    <div class="right-panel">
+      <chat-window 
+        v-if="!isTeamMode"
+        :messages="gameStore.state.chatMessages"
+        @send-message="sendChatMessage"
+      />
+      
+      <!-- 팀 모드일 경우 팀 채팅 표시 -->
+      <team-chat
+        v-if="isTeamMode && currentUserTeam"
+        :team-id="gameStore.state.currentUser.teamId"
+        :team-name="currentUserTeam.name"
+        :team-color="getTeamColor(currentUserTeam.id)"
+        :team-messages="currentTeamMessages"
+        :current-user-id="gameStore.state.currentUser.id"
+        @send-team-message="sendTeamMessage"
+      />
+    </div>
+  </div>
+  
+  <!-- 모바일용 지도 토글 버튼 -->
+  <button class="toggle-map-button" @click="toggleMap">
+    <i :class="isMapOpen ? 'fas fa-map-marked-alt' : 'fas fa-map-marker-alt'"></i>
+    {{ isMapOpen ? '지도 닫기' : '지도 열기' }}
+  </button>
+  
+  <!-- 플레이어 마커 (아바타) 표시 영역 -->
+  <player-markers
+    ref="playerMarkers"
+    :players="gameStore.state.players"
+    :current-user-id="gameStore.state.currentUser.id"
+    :is-team-mode="isTeamMode"
+    :teams="gameStore.state.teams"
+  />
+  
+  <!-- 카운트다운 오버레이 -->
+  <countdown-overlay
+    v-if="showCountdown"
+    :initial-value="countdownValue"
+    @complete="onCountdownComplete"
+  />
+  
+  <!-- 모달 컴포넌트들 (로드뷰 게임과 동일) -->
+  <round-results
+    v-if="gameStore.state.showRoundResults && !isTeamMode"
+    :visible="gameStore.state.showRoundResults"
+    :players="gameStore.state.players"
+    :actual-location="gameStore.state.actualLocation"
+    :round="gameStore.state.currentRound"
+    :total-rounds="gameStore.state.totalRounds"
+    :current-user-id="gameStore.state.currentUser.id"
+    :location-name="gameStore.state.locationInfo.name"
+    :location-description="gameStore.state.locationInfo.description"
+    :location-image="gameStore.state.locationInfo.image"
+    :interesting-fact="gameStore.state.locationInfo.fact"
+    @close="closeRoundResults"
+    @next-round="startNextRound"
+    @finish-game="finishGame"
+  />
+
+  <team-round-results
+    v-if="gameStore.state.showRoundResults && isTeamMode"
+    :visible="gameStore.state.showRoundResults"
+    :teams="gameStore.state.teams"
+    :players="gameStore.state.players"
+    :actual-location="gameStore.state.actualLocation"
+    :round="gameStore.state.currentRound"
+    :total-rounds="gameStore.state.totalRounds"
+    :current-user-id="gameStore.state.currentUser.id"
+    :current-user-team="gameStore.state.currentUser.teamId"
+    :location-name="gameStore.state.locationInfo.name"
+    :location-description="gameStore.state.locationInfo.description"
+    :location-image="gameStore.state.locationInfo.image"
+    :interesting-fact="gameStore.state.locationInfo.fact"
+    @close="closeRoundResults"
+    @next-round="startNextRound"
+    @finish-game="finishGame"
+  />
+  
+  <game-results
+    v-if="gameStore.state.showGameResults && !isTeamMode"
+    :visible="gameStore.state.showGameResults"
+    :players="gameStore.state.players"
+    :room-data="gameStore.state.roomData"
+    @play-again="restartGame"
+    @exit="exitToLobby"
+  />
+
+  <team-game-results
+    v-if="gameStore.state.showGameResults && isTeamMode"
+    :visible="gameStore.state.showGameResults"
+    :teams="gameStore.state.teams"
+    :players="gameStore.state.players"
+    :room-data="gameStore.state.roomData"
+    :chat-messages="gameStore.state.chatMessages"
+    @play-again="restartGame"
+    @exit="exitToLobby"
+    @send-chat-message="sendChatMessage"
+  />
+  <!-- 로딩 오버레이 -->
+  <div v-if="isLoading" class="loading-overlay">
+    <div class="loading-spinner">
+      <i class="fas fa-spinner fa-spin fa-3x"></i>
+      <span>로딩 중...</span>
+    </div>
+  </div>
+</div>
 </template>
 
 <script>
 import GameTimer from '@/components/common/ui/game/BaseGameTimer.vue';
-import PlayerList from '@/views/Game/MultiplayerMode/components/gameplay/MultiplayerPlayerList.vue';
-import PhotoView from '@/components/game/photo/PhotoView.vue';
-import KakaoMap from '@/components/game/kakao/KakaoMapGame.vue';
+import PhotoModePhotoGrid from '@/views/Game/PhotoMode/components/gameplay/PhotoModePhotoGrid.vue';
+import RegionMap from '@/views/Game/PhotoMode/components/gameplay/PhotoModeRegionMap.vue';
+import CountdownOverlay from '@/components/common/ui/game/CountdownOverlay.vue';
 import ChatWindow from '@/views/Game/MultiplayerMode/components/lobby/chat/MultiplayerLobbyChatWindow.vue';
 import RoundResults from '@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerRoundResults.vue';
 import GameResults from '@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerGameResults.vue';
 import TeamChat from '@/views/Game/MultiplayerMode/components/gameplay/chat/TeamChat.vue';
-import TeamVotingModal from '@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamVotingModal.vue';
 import TeamGameResults from '@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamGameResults.vue';
 import TeamRoundResults from '@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamRoundResults.vue';
 import PlayerMarkers from '@/views/Game/MultiplayerMode/components/gameplay/photo/MultiplayerPhotoPlayerMarkers.vue';
@@ -236,14 +200,13 @@ export default {
   
   components: {
     GameTimer,
-    PlayerList,
-    PhotoView,
-    KakaoMap,
+    PhotoModePhotoGrid,
+    RegionMap,
+    CountdownOverlay,
     ChatWindow,
     RoundResults,
     GameResults,
     TeamChat,
-    TeamVotingModal,
     TeamGameResults,
     TeamRoundResults,
     PlayerMarkers
@@ -264,13 +227,20 @@ export default {
     return {
       gameStore,
       isLoading: false,
-      guessPosition: null,
-      isMapExpanded: false,
+      isMapOpen: false,
+      showCountdown: false,
+      countdownValue: 3,
+      selectedRegion: null,
+      selectedRegionEng: null,
+      correctRegion: null,
+      wrongRegion: null,
+      showCorrectAnimation: false,
+      showIncorrectAnimation: false,
+      showTimeoutAnimation: false,
+      showCorrectRegion: false,
       mapCenter: { lat: 36.5, lng: 127.5 },
       roundTimer: null,
-      mapPreviewUrl: '',
-      currentPhotoUrl: null,
-      photoUrls: [
+      currentPhotos: [
         '/assets/photos/seoul_1.jpg',
         '/assets/photos/busan_1.jpg',
         '/assets/photos/jeju_1.jpg',
@@ -336,9 +306,8 @@ export default {
         // 테스트 데이터에서 위치 가져오기
         const location = getRandomLocation();
         
-        // 위치에 대한 사진 설정 (실제로는 서버에서 가져오거나 매핑 필요)
-        const roundIndex = (gameStore.state.currentRound - 1) % this.photoUrls.length;
-        this.currentPhotoUrl = this.photoUrls[roundIndex];
+        // 현재 라운드에 해당하는 사진들 설정
+        this.currentPhotos = this.currentPhotos.slice(0, 3); // 최대 3개 사진만 사용
         
         gameStore.state.currentLocation = { lat: location.lat, lng: location.lng };
         gameStore.state.locationInfo = {
@@ -349,8 +318,18 @@ export default {
         };
         
         this.isLoading = false;
-        this.startRoundTimer();
+        this.showCountdown = true;
       }, 1500);
+    },
+    
+    onCountdownComplete() {
+      this.showCountdown = false;
+      this.startRoundTimer();
+    },
+    
+    handlePhotoLoaded() {
+      // 사진이 로드되면 호출되는 메소드
+      console.log('Photo loaded');
     },
     
     startRoundTimer() {
@@ -377,91 +356,66 @@ export default {
       // 포토뷰 로딩 완료 처리
     },
     
-    onGuessPlaced(position) {
-      this.guessPosition = position;
-    },
-    
-    toggleMapExpansion() {
-      this.isMapExpanded = !this.isMapExpanded;
-    },
-    
-    formatCoords(position) {
-      if (!position) return '';
-      
-      const lat = position.lat.toFixed(4);
-      const lng = position.lng.toFixed(4);
-      return `${lat}, ${lng}`;
+    toggleMap() {
+      this.isMapOpen = !this.isMapOpen;
     },
     
     submitGuess() {
-      if (!this.canSubmit) return;
+      if (!this.selectedRegion || !this.canSubmit) return;
       
-      if (this.isTeamMode) {
-        this.submitTeamGuess();
-        return;
+      // 정답 확인 (실제로는 서버에서 확인)
+      const correctRegionName = gameStore.state.locationInfo.name;
+      const isCorrect = this.selectedRegion === correctRegionName || this.selectedRegionEng === correctRegionName;
+      
+      if (isCorrect) {
+        this.correctRegion = this.selectedRegion;
+        this.showCorrectAnimation = true;
+        
+        // 점수 계산 및 애니메이션 표시
+        const score = this.isTeamMode ? 50 : 100; // 팀모드일 경우 점수 조정
+        gameStore.addPlayerScore(gameStore.state.currentUser.id, score);
+        
+        // 플레이어 마커에 점수 애니메이션 표시
+        if (this.$refs.playerMarkers) {
+          this.$refs.playerMarkers.showScoreAnimation(gameStore.state.currentUser.id, score);
+        }
+        
+        // 팀 모드일 경우 팀원들에게 채팅 메시지 전송
+        if (this.isTeamMode && gameStore.state.currentUser.teamId) {
+          gameStore.addTeamChatMessage(
+            gameStore.state.currentUser.teamId,
+            `${gameStore.state.currentUser.nickname}님이 정답을 맞췄습니다! +${score}점`,
+            true
+          );
+        }
+      } else {
+        this.wrongRegion = this.selectedRegion;
+        this.showIncorrectAnimation = true;
       }
       
-      gameStore.submitGuess();
+      // 플레이어 제출 상태 업데이트
+      gameStore.updatePlayerSubmission(gameStore.state.currentUser.id, true);
       
-      // 실제 구현에서는 서버로 제출
+      // 정답 지역 표시 (실제로는 서버에서 받아와야 함)
+      setTimeout(() => {
+        this.showCorrectRegion = true;
+        this.correctRegion = correctRegionName;
+      }, 1500);
+      
+      // 라운드 종료 처리
       setTimeout(() => {
         this.endRound();
-      }, 1000);
-    },
-    
-    submitTeamGuess() {
-      if (!this.canSubmit) return;
-      
-      // 팀 투표 시작
-      gameStore.startTeamVoting(gameStore.state.currentUser);
-      
-      // 시스템 메시지 추가
-      gameStore.addTeamChatMessage(
-        gameStore.state.currentUser.teamId,
-        `${gameStore.state.currentUser.nickname}님이 위치 제출을 제안했습니다. 투표해주세요!`,
-        true
-      );
-    },
-    
-    handleVoteSubmission(vote) {
-      gameStore.submitVote(vote.approved);
-      
-      // 모든 팀원이 투표했는지 확인
-      if (gameStore.state.votingResults.total >= this.teamMembers.length) {
-        this.finalizeTeamVoting();
-      }
-    },
-    
-    handleVotingComplete(result) {
-      this.finalizeTeamVoting(result.approved);
-    },
-    
-    finalizeTeamVoting(approved = null) {
-      const isApproved = gameStore.finalizeVoting(approved);
-      
-      if (isApproved) {
-        gameStore.addTeamChatMessage(
-          gameStore.state.currentUser.teamId,
-          '팀원들이 위치 제출에 동의했습니다!',
-          true
-        );
-        
-        gameStore.submitGuess();
-        
-        setTimeout(() => {
-          this.endRound();
-        }, 1000);
-      } else {
-        gameStore.addTeamChatMessage(
-          gameStore.state.currentUser.teamId,
-          '팀원들이 위치 제출을 거부했습니다. 다시 시도해주세요.',
-          true
-        );
-      }
+      }, 3000);
     },
     
     endRound() {
       this.clearTimer();
+      
+      // 애니메이션 초기화
+      this.showCorrectAnimation = false;
+      this.showIncorrectAnimation = false;
+      this.showTimeoutAnimation = false;
+      this.showCorrectRegion = false;
       
       // 실제 위치 설정 (테스트용)
       gameStore.state.actualLocation = {
@@ -478,11 +432,14 @@ export default {
           if (player.hasSubmitted) {
             const score = Math.floor(Math.random() * 1000) + 100;
             setTimeout(() => {
-              this.showScoreAnimation(player.id, score);
+              this.$refs.playerMarkers.showScoreAnimation(player.id, score);
             }, index * 500); // 순차적으로 애니메이션 표시
           }
         });
       }
+      
+      // 라운드 결과 표시
+      gameStore.showRoundResults();
     },
     
     closeRoundResults() {
@@ -491,7 +448,10 @@ export default {
     
     startNextRound() {
       gameStore.startNextRound();
-      this.guessPosition = null;
+      this.selectedRegion = null;
+      this.selectedRegionEng = null;
+      this.correctRegion = null;
+      this.wrongRegion = null;
       this.fetchRoundData();
     },
     
