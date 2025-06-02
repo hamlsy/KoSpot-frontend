@@ -27,19 +27,19 @@
         
         <!-- 채팅 말풍선 -->
         <div 
-          v-if="playerChatMessages.value[player.id]" 
+          v-if="playerChatMessages[player.id]" 
           class="chat-bubble"
-          :class="{ 'fade-out': playerChatMessages.value[player.id].fading }"
+          :class="{ 'fade-out': playerChatMessages[player.id].fading }"
         >
-          {{ playerChatMessages.value[player.id].message }}
+          {{ playerChatMessages[player.id].message }}
         </div>
         
         <!-- 점수 표시 애니메이션 -->
         <div 
-          v-if="playerScoreAnimations.value[player.id]" 
+          v-if="playerScoreAnimations[player.id]" 
           class="score-animation"
         >
-          +{{ playerScoreAnimations.value[player.id] }}
+          +{{ playerScoreAnimations[player.id] }}
         </div>
       </div>
     </div>
@@ -92,12 +92,12 @@ const getTeamColor = (teamId) => {
 // 채팅 메시지 표시
 const showChatMessage = (playerId, message) => {
   // 이전 타이머가 있으면 제거
-  if (playerChatMessages.value[playerId] && playerChatMessages.value[playerId].timerId) {
-    clearTimeout(playerChatMessages.value[playerId].timerId);
+  if (playerChatMessages[playerId] && playerChatMessages[playerId].timerId) {
+    clearTimeout(playerChatMessages[playerId].timerId);
   }
   
   // 새 메시지 설정
-  playerChatMessages.value[playerId] = {
+  playerChatMessages[playerId] = {
     message,
     fading: false,
     timerId: null
@@ -105,24 +105,24 @@ const showChatMessage = (playerId, message) => {
   
   // 5초 후 페이드아웃 시작
   const fadeTimerId = setTimeout(() => {
-    if (playerChatMessages.value[playerId]) {
-      playerChatMessages.value[playerId] = {
-        ...playerChatMessages.value[playerId],
+    if (playerChatMessages[playerId]) {
+      playerChatMessages[playerId] = {
+        ...playerChatMessages[playerId],
         fading: true
       };
       
       // 페이드아웃 후 제거
       setTimeout(() => {
-        if (playerChatMessages.value[playerId]) {
-          delete playerChatMessages.value[playerId];
+        if (playerChatMessages[playerId]) {
+          delete playerChatMessages[playerId];
         }
       }, 1000);
     }
   }, 5000);
   
   // 타이머 ID 저장
-  playerChatMessages.value[playerId] = {
-    ...playerChatMessages.value[playerId],
+  playerChatMessages[playerId] = {
+    ...playerChatMessages[playerId],
     timerId: fadeTimerId
   };
 };
@@ -130,11 +130,11 @@ const showChatMessage = (playerId, message) => {
 // 점수 애니메이션 표시
 const showScoreAnimation = (playerId, score) => {
   // 점수 애니메이션 설정
-  playerScoreAnimations.value[playerId] = score;
+  playerScoreAnimations[playerId] = score;
   
   // 2초 후 애니메이션 제거
   setTimeout(() => {
-    delete playerScoreAnimations.value[playerId];
+    delete playerScoreAnimations[playerId];
   }, 2000);
 };
 
