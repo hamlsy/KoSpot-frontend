@@ -1,16 +1,23 @@
 <template>
   <div class="player-markers-container">
-    <div class="player-markers">
+    <transition-group 
+      name="player-order" 
+      tag="div" 
+      class="player-markers"
+    >
       <div 
-        v-for="player in props.players" 
+        v-for="(player, index) in sortedPlayers" 
         :key="player.id" 
         class="player-marker"
         :class="{ 
           'current-user': player.id === props.currentUserId,
           'has-submitted': player.hasSubmitted,
-          'team-mode': props.isTeamMode
+          'correct-guess': playerCorrectGuess[player.id],
+          'wrong-guess': playerWrongGuess[player.id],
+          'team-mode': props.isTeamMode,
+          'first-place': index === 0
         }"
-        :style="props.isTeamMode ? { borderColor: getTeamColor(player.teamId) } : {}"
+        :style="getPlayerStyle(player)"
       >
         <!-- 플레이어 마커 이미지 -->
         <div class="marker-image">
@@ -20,9 +27,14 @@
           />
         </div>
         
-        <!-- 플레이어 닉네임 -->
-        <div class="marker-nickname">
-          {{ player.nickname }}
+        <!-- 플레이어 닉네임과 점수 -->
+        <div class="marker-info">
+          <div class="marker-nickname">
+            {{ player.nickname }}
+          </div>
+          <div class="marker-score">
+            {{ player.score || 0 }}점
+          </div>
         </div>
         
         <!-- 채팅 말풍선 -->
@@ -42,7 +54,7 @@
           +{{ playerScoreAnimations[player.id] }}
         </div>
       </div>
-    </div>
+    </transition-group>
   </div>
 </template>
 
@@ -68,8 +80,18 @@ const props = defineProps({
   }
 });
 
+// 플레이어를 점수 순으로 정렬
+const sortedPlayers = computed(() => {
+  return [...props.players].sort((a, b) => {
+    // 점수 내림차순 정렬
+    return (b.score || 0) - (a.score || 0);
+  });
+});
+
 const playerChatMessages = ref({}); // { playerId: { message, fading, timerId } }
 const playerScoreAnimations = ref({}); // { playerId: score }
+const playerCorrectGuess = ref({}); // { playerId: boolean }
+const playerWrongGuess = ref({}); // { playerId: boolean }
 
 // 팀 색상 가져오기
 const getTeamColor = (teamId) => {
@@ -87,6 +109,18 @@ const getTeamColor = (teamId) => {
   };
   
   return teamColors[team.color] || '#666';
+};
+
+// 플레이어 스타일 계산
+const getPlayerStyle = (player) => {
+  const style = {};
+  
+  // 팀 모드일 경우 팀 색상 적용
+  if (props.isTeamMode && player.teamId) {
+    style.borderColor = getTeamColor(player.teamId);
+  }
+  
+  return style;
 };
 
 // 채팅 메시지 표시
@@ -138,21 +172,45 @@ const showScoreAnimation = (playerId, score) => {
   }, 2000);
 };
 
+// 정답 애니메이션 표시
+const showCorrectGuessAnimation = (playerId) => {
+  // 정답 애니메이션 설정
+  playerCorrectGuess[playerId] = true;
+  
+  // 2초 후 애니메이션 제거
+  setTimeout(() => {
+    playerCorrectGuess[playerId] = false;
+  }, 2000);
+};
+
+// 오답 애니메이션 표시
+const showWrongGuessAnimation = (playerId) => {
+  // 오답 애니메이션 설정
+  playerWrongGuess[playerId] = true;
+  
+  // 2초 후 애니메이션 제거
+  setTimeout(() => {
+    playerWrongGuess[playerId] = false;
+  }, 2000);
+};
+
 // 외부로 메서드 노출
 defineExpose({
   showChatMessage,
-  showScoreAnimation
+  showScoreAnimation,
+  showCorrectGuessAnimation,
+  showWrongGuessAnimation
 });
 </script>
 
 <style scoped>
 .player-markers-container {
   position: fixed;
-  bottom: 0;
+  bottom: 70px; /* 채팅 입력 위에 위치 */
   left: 0;
   width: 100%;
   padding: 1rem;
-  z-index: 10;
+  z-index: 50;
   pointer-events: none; /* 마커 영역이 클릭을 방해하지 않도록 */
 }
 
@@ -164,6 +222,10 @@ defineExpose({
   max-width: 100%;
   overflow-x: auto;
   padding-bottom: 0.5rem;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.5), transparent);
+  padding: 1.5rem 1rem 1rem;
+  border-radius: 16px 16px 0 0;
+  backdrop-filter: blur(5px);
 }
 
 .player-marker {
@@ -171,29 +233,46 @@ defineExpose({
   flex-direction: column;
   align-items: center;
   position: relative;
-  transition: all 0.3s ease;
+  transition: all 0.5s ease;
   transform-origin: bottom center;
 }
 
 .player-marker.current-user .marker-image {
   border: 3px solid #4cd964;
-  box-shadow: 0 0 0 2px rgba(76, 217, 100, 0.3);
+  box-shadow: 0 0 0 2px rgba(76, 217, 100, 0.3), 0 0 15px rgba(76, 217, 100, 0.5);
 }
 
 .player-marker.has-submitted .marker-image {
   animation: pulse 2s infinite;
 }
 
+.player-marker.correct-guess .marker-image {
+  animation: correctGuess 1s ease-out;
+  border-color: #4cd964;
+  box-shadow: 0 0 20px rgba(76, 217, 100, 0.7);
+}
+
+.player-marker.wrong-guess .marker-image {
+  animation: wrongGuess 1s ease-out;
+  border-color: #ff3b30;
+  box-shadow: 0 0 20px rgba(255, 59, 48, 0.7);
+}
+
+.player-marker.first-place .marker-image {
+  border-color: #ffd700;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+}
+
 .marker-image {
-  width: 50px;
-  height: 50px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   background: white;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 3px solid #e2e8f0;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   transition: all 0.3s ease;
 }
@@ -204,9 +283,15 @@ defineExpose({
   object-fit: contain;
 }
 
-.marker-nickname {
+.marker-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   margin-top: 0.5rem;
-  font-size: 0.8rem;
+}
+
+.marker-nickname {
+  font-size: 0.85rem;
   font-weight: 600;
   color: white;
   background: rgba(0, 0, 0, 0.6);
@@ -217,25 +302,37 @@ defineExpose({
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-bottom: 0.25rem;
+}
+
+.marker-score {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 0.15rem 0.4rem;
+  border-radius: 10px;
+  text-align: center;
 }
 
 .chat-bubble {
   position: absolute;
-  top: -60px;
+  top: -70px;
   left: 50%;
   transform: translateX(-50%);
   background: white;
   color: #333;
   padding: 0.5rem 0.75rem;
   border-radius: 12px;
-  max-width: 150px;
-  font-size: 0.8rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-width: 180px;
+  font-size: 0.85rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
   word-break: break-word;
   text-align: center;
   pointer-events: none;
   opacity: 1;
   transition: opacity 1s ease;
+  z-index: 5;
 }
 
 .chat-bubble:after {
@@ -258,18 +355,36 @@ defineExpose({
   top: -40px;
   left: 50%;
   transform: translateX(-50%);
-  background: #4cd964;
+  background: linear-gradient(135deg, #4cd964, #34c759);
   color: white;
-  padding: 0.25rem 0.5rem;
+  padding: 0.3rem 0.6rem;
   border-radius: 8px;
   font-weight: bold;
-  font-size: 0.9rem;
+  font-size: 1rem;
   animation: scorePopup 2s ease-out;
   pointer-events: none;
+  box-shadow: 0 4px 12px rgba(76, 217, 100, 0.4);
+  z-index: 5;
 }
 
 .team-mode .marker-image {
   border-width: 4px;
+}
+
+/* 플레이어 순서 변경 애니메이션 */
+.player-order-move {
+  transition: transform 0.8s ease;
+}
+
+.player-order-enter-active,
+.player-order-leave-active {
+  transition: all 0.5s ease;
+}
+
+.player-order-enter-from,
+.player-order-leave-to {
+  opacity: 0;
+  transform: translateY(30px);
 }
 
 @keyframes pulse {
@@ -306,25 +421,71 @@ defineExpose({
   }
 }
 
+@keyframes correctGuess {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15) translateY(-10px);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes wrongGuess {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  50% {
+    transform: translateX(5px);
+  }
+  75% {
+    transform: translateX(-5px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
 /* 반응형 스타일 */
 @media (max-width: 768px) {
+  .player-markers-container {
+    bottom: 60px;
+  }
+  
   .player-markers {
     gap: 1rem;
+    padding: 1rem 0.5rem 0.5rem;
   }
   
   .marker-image {
-    width: 40px;
-    height: 40px;
+    width: 45px;
+    height: 45px;
   }
   
   .marker-nickname {
     font-size: 0.7rem;
     max-width: 80px;
+    margin-bottom: 0.15rem;
+  }
+  
+  .marker-score {
+    font-size: 0.65rem;
   }
   
   .chat-bubble {
     max-width: 120px;
     font-size: 0.75rem;
+    top: -60px;
+  }
+  
+  .score-animation {
+    font-size: 0.85rem;
+    padding: 0.2rem 0.4rem;
   }
 }
 </style>

@@ -1,7 +1,5 @@
 <template>
   <div class="multiplayer-photo-game">
-    <!-- 카운트다운 오버레이는 나중에 IntroOverlay와 NextRoundOverlay 컴포넌트로 대체 예정 -->
-
     <!-- 게임 헤더 컴포넌트 -->
     <multiplayer-game-header
       :roomData="gameStore.state.roomData"
@@ -16,20 +14,8 @@
 
     <!-- 게임 메인 영역 -->
     <div class="game-content">
-      <!-- 사진 섹션 -->
-      <div class="photo-section">
-        <photo-mode-photo-grid
-          :photos="currentPhotos"
-          :show-incorrect-animation="showIncorrectAnimation"
-          :show-correct-animation="showCorrectAnimation"
-          :show-timeout-animation="showTimeoutAnimation"
-          :correct-region="correctRegion"
-          @photo-loaded="handlePhotoLoaded"
-        />
-      </div>
-
-      <!-- 지도 섹션 -->
-      <div class="map-section" :class="{ 'map-open': isMapOpen }">
+      <!-- 왼쪽 패널 (지도) - PC에서만 표시 -->
+      <div class="left-panel" :class="{ 'map-open': isMapOpen }">
         <region-map
           v-if="mapReady"
           ref="regionMap"
@@ -41,40 +27,48 @@
           @submit-guess="submitGuess"
         />
       </div>
-
-      <!-- 오른쪽 패널 -->
-      <div class="right-panel">
-        <!-- 간단한 채팅 입력 영역 -->
-        <div class="chat-input-container">
-          <simple-chat-input
-            :disabled="
-              gameStore.state.hasSubmittedGuess || gameStore.state.roundEnded
-            "
-            @send-message="sendChatMessage"
+      
+      <!-- 사진 섹션 -->
+      <div class="photo-section">
+        <photo-mode-photo-grid
+          :photos="currentPhotos"
+          :show-incorrect-animation="showIncorrectAnimation"
+          :show-correct-animation="showCorrectAnimation"
+          :show-timeout-animation="showTimeoutAnimation"
+          :correct-region="correctRegion"
+          @photo-loaded="handlePhotoLoaded"
+        />
+        
+        <!-- 플레이어 마커 영역 -->
+        <div class="player-markers-wrapper">
+          <player-markers
+            ref="playerMarkers"
+            :players="gameStore.state.players"
+            :current-user-id="gameStore.state.currentUser.id"
+            :is-team-mode="isTeamMode"
+            :teams="gameStore.state.teams"
           />
         </div>
       </div>
     </div>
-
+    
+    <!-- 채팅 입력 영역 -->
+    <div class="chat-input-container">
+      <simple-chat-input
+        :disabled="
+          gameStore.state.hasSubmittedGuess || gameStore.state.roundEnded
+        "
+        @send-message="sendChatMessage"
+      />
+    </div>
+    
     <!-- 모바일용 지도 토글 버튼 -->
     <button class="toggle-map-button" @click="toggleMap">
-      <i
-        :class="isMapOpen ? 'fas fa-map-marked-alt' : 'fas fa-map-marker-alt'"
-      ></i>
+      <i :class="isMapOpen ? 'fas fa-times' : 'fas fa-map-marker-alt'"></i>
       {{ isMapOpen ? "지도 닫기" : "지도 열기" }}
     </button>
 
-    <!-- 플레이어 마커 (아바타) 표시 영역 -->
-    <player-markers
-      ref="playerMarkers"
-      :players="gameStore.state.players"
-      :current-user-id="gameStore.state.currentUser.id"
-      :is-team-mode="isTeamMode"
-      :teams="gameStore.state.teams"
-    />
-
-    <!-- 카운트다운 오버레이는 나중에 IntroOverlay와 NextRoundOverlay 컴포넌트로 대체 예정 -->
-    <!-- 모달 컴포넌트들 (로드뷰 게임과 동일) -->
+    <!-- 모달 컴포넌트들 -->
     <round-results
       v-if="gameStore.state.showRoundResults && !isTeamMode"
       :visible="gameStore.state.showRoundResults"
@@ -131,17 +125,16 @@
       @exit="exitToLobby"
       @send-chat-message="sendChatMessage"
     />
-   
   </div>
 </template>
 
 <script>
 import PhotoModePhotoGrid from "@/views/Game/PhotoMode/components/gameplay/PhotoModePhotoGrid.vue";
 import RegionMap from "@/views/Game/PhotoMode/components/gameplay/PhotoModeRegionMap.vue";
-import RoundResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerRoundResults.vue";
-import GameResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerGameResults.vue";
-import TeamGameResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamGameResults.vue";
-import TeamRoundResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamRoundResults.vue";
+import RoundResults from "@/views/Game/MultiplayerMode/components/results/RoundResults.vue";
+import GameResults from "@/views/Game/MultiplayerMode/components/results/GameResults.vue";
+import TeamGameResults from "@/views/Game/MultiplayerMode/components/results/TeamGameResults.vue";
+import TeamRoundResults from "@/views/Game/MultiplayerMode/components/results/TeamRoundResults.vue";
 import PlayerMarkers from "@/views/Game/MultiplayerMode/components/gameplay/photo/MultiplayerPhotoPlayerMarkers.vue";
 import MultiplayerGameHeader from "@/views/Game/MultiplayerMode/components/gameplay/common/MultiplayerGameHeader.vue";
 import SimpleChatInput from "@/views/Game/MultiplayerMode/components/gameplay/common/SimpleChatInput.vue";
@@ -177,7 +170,7 @@ export default {
   data() {
     return {
       gameStore,
-      isMapOpen: false,
+      isMapOpen: true,
       showCountdown: false,
       countdownValue: 3,
       selectedRegion: null,
@@ -258,28 +251,31 @@ export default {
 
   methods: {
     fetchRoundData() {
-
-      // 랜덤 사진 및 위치 가져오기
-      setTimeout(() => {
-        // 테스트 데이터에서 위치 가져오기
-        const location = getRandomLocation();
-
-        // 현재 라운드에 해당하는 사진들 설정
-        this.currentPhotos = this.currentPhotos.slice(0, 3); // 최대 3개 사진만 사용
-
-        gameStore.state.currentLocation = {
-          lat: location.lat,
-          lng: location.lng,
-        };
-        gameStore.state.locationInfo = {
-          name: location.name,
-          description: location.description,
-          image: location.image,
-          fact: location.fact,
-        };
-        this.showCountdown = true;
-      }, 1500);
+      // API 호출 대신 임시 데이터 사용
+      const location = getRandomLocation();
+      
+      // 게임 스토어 상태 업데이트
+      gameStore.state.currentLocation = location.name;
+      gameStore.state.correctRegion = location.region;
+      gameStore.state.correctRegionEng = location.regionEng;
+      gameStore.state.actualLocation = location.coordinates;
+      gameStore.state.locationInfo = {
+        name: location.name,
+        description: location.description,
+        image: location.image,
+        fact: location.fact,
+      };
+      
+      // 사진 로드
+      this.loadNewPhotos();
+      
+      // 지도 초기화
+      this.selectedRegion = "";
+      this.selectedRegionEng = "";
+      this.correctRegion = "";
+      this.wrongRegion = "";
     },
+
     handlePhotoLoaded() {
       this.photosLoaded++;
       // 모든 사진이 로드되면 라운드 시작 준비 완료
@@ -389,9 +385,42 @@ export default {
     },
 
     showScoreAnimation(playerId, score) {
-      // 플레이어 마커 컴포넌트에 점수 애니메이션 표시
+      // 플레이어 마커 컴포넌트에 점수 애니메이션 표시 메서드 호출
       if (this.$refs.playerMarkers) {
         this.$refs.playerMarkers.showScoreAnimation(playerId, score);
+      }
+    },
+    
+    // 채팅 메시지 전송 처리
+    sendChatMessage(message) {
+      if (!message.trim()) return;
+      
+      const chatMessage = {
+        id: Date.now().toString(),
+        playerId: gameStore.state.currentUser.id,
+        playerName: gameStore.state.currentUser.name,
+        message: message,
+        timestamp: new Date().toISOString(),
+        isSystemMessage: false
+      };
+      
+      // 채팅 메시지 저장
+      gameStore.state.chatMessages.push(chatMessage);
+      
+      // 플레이어 마커에 채팅 메시지 표시
+      if (this.$refs.playerMarkers) {
+        this.$refs.playerMarkers.showChatBubble(gameStore.state.currentUser.id, message);
+      }
+    },
+    
+    // 플레이어 점수에 따른 정렬
+    sortPlayersByScore() {
+      // 점수 내림차순으로 정렬
+      gameStore.state.players.sort((a, b) => b.score - a.score);
+      
+      // 플레이어 마커 순서 업데이트 애니메이션 표시
+      if (this.$refs.playerMarkers) {
+        this.$refs.playerMarkers.updatePlayerOrder();
       }
     },
 
@@ -400,42 +429,86 @@ export default {
     },
 
     submitGuess() {
-      if (!this.selectedRegion || gameStore.state.roundEnded) return;
-
-      // 정답 여부 확인 (테스트용)
-      const isCorrect = Math.random() > 0.5;
-
-      if (isCorrect) {
-        this.correctRegion = this.selectedRegion;
-        this.showCorrectAnimation = true;
-        this.showCorrectRegion = true;
-
-        // 점수 계산 및 표시 (테스트용)
-        const score = Math.floor(Math.random() * 1000) + 500;
-        this.showScoreAnimation(gameStore.state.currentUser.id, score);
-
-        // 정답 제출 처리
-        gameStore.submitCorrectGuess(score);
-      } else {
-        this.wrongRegion = this.selectedRegion;
-        this.showIncorrectAnimation = true;
+      // 이미 정답을 제출했거나 라운드가 끝났으면 무시
+      if (
+        gameStore.state.hasSubmittedGuess ||
+        gameStore.state.roundEnded ||
+        !this.selectedRegion
+      ) {
+        return;
       }
 
-      // 플레이어 제출 상태 업데이트
-      gameStore.updatePlayerSubmission(gameStore.state.currentUser.id, true);
+      // 정답 확인
+      const isCorrect =
+        this.selectedRegionEng.toLowerCase() ===
+        gameStore.state.correctRegionEng.toLowerCase();
 
-      // 지도 닫기
-      this.isMapOpen = false;
+      // 게임 스토어 상태 업데이트
+      gameStore.state.hasSubmittedGuess = true;
 
-      // 정답 지역 표시 (실제로는 서버에서 받아와야 함)
-      setTimeout(() => {
-        this.showCorrectRegion = true;
-      }, 1500);
+      if (isCorrect) {
+        // 정답인 경우
+        this.correctRegion = this.selectedRegion;
+        this.showCorrectAnimation = true;
+        setTimeout(() => {
+          this.showCorrectAnimation = false;
+        }, 2000);
 
-      // 라운드 종료 처리
-      setTimeout(() => {
-        this.endRound();
-      }, 3000);
+        // 점수 계산 (먼저 맞출수록 높은 점수)
+        const correctPlayers = gameStore.state.players.filter(
+          (p) => p.isCorrect
+        ).length;
+        let score = 0;
+
+        switch (correctPlayers) {
+          case 0: // 첫 번째로 맞춘 경우
+            score = 10;
+            break;
+          case 1: // 두 번째로 맞춘 경우
+            score = 8;
+            break;
+          case 2: // 세 번째로 맞춘 경우
+            score = 5;
+            break;
+          default: // 그 이후
+            score = 3;
+            break;
+        }
+
+        // 현재 사용자 점수 업데이트
+        const currentUser = gameStore.state.players.find(
+          (p) => p.id === gameStore.state.currentUser.id
+        );
+        if (currentUser) {
+          currentUser.score += score;
+          currentUser.isCorrect = true;
+          // 점수 애니메이션 표시
+          this.showScoreAnimation(currentUser.id, score);
+          
+          // 정답 맞춤 메시지 자동 전송
+          this.sendChatMessage(`${this.correctRegion} 정답! +${score}점 획득했어요!`);
+          
+          // 플레이어 순서 재정렬 (점수 기준)
+          this.sortPlayersByScore();
+        }
+      } else {
+        // 오답인 경우
+        this.wrongRegion = this.selectedRegion;
+        this.showIncorrectAnimation = true;
+        
+        // 플레이어 마커에 오답 애니메이션 표시
+        if (this.$refs.playerMarkers) {
+          this.$refs.playerMarkers.showWrongAnswerAnimation(gameStore.state.currentUser.id);
+        }
+        
+        // 오답 메시지 자동 전송
+        this.sendChatMessage(`${this.selectedRegion}? 아닌 것 같아요...`);
+        
+        setTimeout(() => {
+          this.showIncorrectAnimation = false;
+          this.wrongRegion = "";
+        }, 2000);
+      }
     },
 
     endRound() {
@@ -553,19 +626,6 @@ export default {
       }
     },
 
-    sendChatMessage(message) {
-      if (!message.trim()) return;
-      gameStore.addChatMessage(message);
-
-      // 채팅 메시지를 플레이어 마커에도 표시
-      if (this.$refs.playerMarkers) {
-        this.$refs.playerMarkers.showChatMessage(
-          gameStore.state.currentUser.id,
-          message
-        );
-      }
-    },
-
     getTeamColor(teamId) {
       const colorMap = {
         1: "red",
@@ -576,82 +636,79 @@ export default {
 
       return colorMap[teamId] || "blue";
     },
-  },
-};
+  }
+}
 </script>
 
 <style scoped>
-.multiplayer-photo-game {
+/* 게임 헤더 스타일 */
+.game-header {
   display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background-color: #f5f7fa;
-  overflow: hidden;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  z-index: 10;
+  position: relative;
 }
-
 
 .header-left {
   display: flex;
   align-items: center;
-  flex: 1;
 }
 
 .exit-button {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background-color: rgba(255, 255, 255, 0.1);
-  border: none;
-  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  background-color: #f44336;
   color: white;
+  border: none;
+  border-radius: 4px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
-}
-
-.exit-text {
-  display: inline-block;
+  transition: background-color 0.2s;
 }
 
 .exit-button:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: #d32f2f;
 }
 
 .room-info {
   margin-left: 1rem;
+  display: flex;
+  flex-direction: column;
 }
 
 .room-name {
-  font-size: 1.125rem;
   font-weight: 600;
-  margin-bottom: 0.25rem;
+  color: #1a5d1a;
+  font-size: 1.1rem;
 }
 
-.game-mode {
-  font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.7);
+.room-mode {
+  font-size: 0.85rem;
+  color: #666;
 }
 
 .header-center {
-  flex: 1;
+  flex: 0 1 400px;
   max-width: 400px;
-  margin: 0 1rem;
 }
 
 .round-info {
   text-align: center;
-}
-
-.round-number {
-  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
   font-weight: 500;
-  margin-bottom: 0.25rem;
+  color: #555;
 }
 
-.round-progress {
+.timer-bar {
   height: 8px;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(0, 0, 0, 0.1);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -691,72 +748,37 @@ export default {
 .photo-section {
   flex: 1;
   height: 100%;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   position: relative;
   background-color: #000;
 }
 
-/* 지도 섹션 스타일 */
-.map-section {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+/* 왼쪽 패널 (지도) 스타일 */
+.left-panel {
+  width: 300px;
   background-color: #f5f7fa;
   z-index: 20;
-  transform: translateY(100%);
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease-in-out;
 }
 
-.map-section.map-open {
-  transform: translateY(0);
-}
-
-/* 오른쪽 패널 스타일 */
-.right-panel {
-  width: 300px;
-  background-color: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
-  box-shadow: -2px 0 20px rgba(0, 0, 0, 0.05);
-  z-index: 5;
-  display: flex;
-  flex-direction: column;
-  border-left: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.game-info-panel {
-  padding: 1.5rem;
-  height: 100%;
-}
-
-.info-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1a5d1a;
-  margin-bottom: 1rem;
-  border-bottom: 2px solid rgba(26, 93, 26, 0.2);
-  padding-bottom: 0.5rem;
-}
-
-.info-content {
-  color: #333;
-  font-size: 0.95rem;
-  line-height: 1.6;
-}
-
-.location-hint {
-  margin-top: 1rem;
+/* 플레이어 마커 영역 스타일 */
+.player-markers-wrapper {
+  position: relative;
   padding: 1rem;
-  background: linear-gradient(
-    135deg,
-    rgba(26, 93, 26, 0.05),
-    rgba(76, 175, 80, 0.1)
-  );
-  border-radius: 8px;
-  border-left: 3px solid #4caf50;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.8));
+  min-height: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
 }
 
+/* 채팅 입력 영역 스타일 */
 .chat-input-container {
   position: fixed;
   bottom: 0;
@@ -766,9 +788,9 @@ export default {
   background-color: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(5px);
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
 }
 
-/* 지도 토글 버튼 스타일 */
 .toggle-map-button {
   position: fixed;
   bottom: 80px;
@@ -790,43 +812,56 @@ export default {
 
 .toggle-map-button:hover {
   background-color: #156415;
-  font-size: 1rem;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
 }
 
+/* 멀티플레이어 포토 게임 전체 스타일 */
+.multiplayer-photo-game {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa, #e4f2f0);
+  overflow: hidden;
+  position: relative;
+}
 
 /* 반응형 스타일 */
-@media (max-width: 1200px) {
-  .right-panel {
-    width: 250px;
+@media (min-width: 769px) {
+  /* PC 뷰 */
+  .left-panel {
+    transform: translateX(0);
   }
-
+  
   .toggle-map-button {
-    right: 270px;
-  }
-}
-
-@media (max-width: 992px) {
-  .game-content {
-    flex-direction: column;
-  }
-
-  .right-panel {
-    width: 100%;
-    height: 200px;
-    order: 2;
-  }
-
-  .photo-section {
-    height: calc(100% - 200px);
-  }
-
-  .toggle-map-button {
-    right: 20px;
-    bottom: 220px;
+    display: none;
   }
 }
 
 @media (max-width: 768px) {
+  /* 모바일 뷰 */
+  .game-content {
+    flex-direction: column;
+  }
+  
+  .left-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform: translateX(-100%);
+    z-index: 100;
+  }
+  
+  .left-panel.map-open {
+    transform: translateX(0);
+  }
+  
+  .toggle-map-button {
+    display: flex;
+  }
+  
   .game-header {
     flex-wrap: wrap;
     padding: 0.5rem;
@@ -859,41 +894,9 @@ export default {
     margin-left: 0.5rem;
   }
 
-  .photo-section {
-    height: calc(100% - 150px);
-  }
-
-  .right-panel {
-    height: 150px;
-  }
-
-  .toggle-map-button {
-    bottom: 170px;
+  .player-markers-wrapper {
+    padding: 0.5rem;
+    min-height: 80px;
   }
 }
-
-/* 플레이어 마커 스타일 */
-.player-markers {
-  position: fixed;
-  bottom: 70px;
-  left: 0;
-  right: 0;
-  z-index: 50;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
-  padding: 1rem;
-  display: flex;
-  justify-content: center;
-}
-
-/* 멀티플레이어 포토 게임 전체 스타일 */
-.multiplayer-photo-game {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa, #e4f2f0);
-  overflow: hidden;
-  position: relative;
-}
-
-
 </style>
