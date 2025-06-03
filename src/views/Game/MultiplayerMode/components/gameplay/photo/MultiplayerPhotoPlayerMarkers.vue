@@ -126,12 +126,12 @@ const getPlayerStyle = (player) => {
 // 채팅 메시지 표시
 const showChatMessage = (playerId, message) => {
   // 이전 타이머가 있으면 제거
-  if (playerChatMessages[playerId] && playerChatMessages[playerId].timerId) {
-    clearTimeout(playerChatMessages[playerId].timerId);
+  if (playerChatMessages.value[playerId]?.timerId) {
+    clearTimeout(playerChatMessages.value[playerId].timerId);
   }
   
   // 새 메시지 설정
-  playerChatMessages[playerId] = {
+  playerChatMessages.value[playerId] = {
     message,
     fading: false,
     timerId: null
@@ -139,59 +139,41 @@ const showChatMessage = (playerId, message) => {
   
   // 5초 후 페이드아웃 시작
   const fadeTimerId = setTimeout(() => {
-    if (playerChatMessages[playerId]) {
-      playerChatMessages[playerId] = {
-        ...playerChatMessages[playerId],
-        fading: true
-      };
+    if (playerChatMessages.value[playerId]) {
+      playerChatMessages.value[playerId].fading = true;
       
       // 페이드아웃 후 제거
       setTimeout(() => {
-        if (playerChatMessages[playerId]) {
-          delete playerChatMessages[playerId];
+        if (playerChatMessages.value[playerId]) {
+          delete playerChatMessages.value[playerId];
         }
       }, 1000);
     }
   }, 5000);
   
   // 타이머 ID 저장
-  playerChatMessages[playerId] = {
-    ...playerChatMessages[playerId],
-    timerId: fadeTimerId
-  };
+  playerChatMessages.value[playerId].timerId = fadeTimerId;
+};
+
+// 애니메이션 표시 함수
+const showAnimation = (animation, playerId, value, duration) => {
+  animation.value[playerId] = value;
+  setTimeout(() => delete animation.value[playerId], duration);
 };
 
 // 점수 애니메이션 표시
 const showScoreAnimation = (playerId, score) => {
-  // 점수 애니메이션 설정
-  playerScoreAnimations[playerId] = score;
-  
-  // 2초 후 애니메이션 제거
-  setTimeout(() => {
-    delete playerScoreAnimations[playerId];
-  }, 2000);
+  showAnimation(playerScoreAnimations, playerId, score, 2000);
 };
 
 // 정답 애니메이션 표시
 const showCorrectGuessAnimation = (playerId) => {
-  // 정답 애니메이션 설정
-  playerCorrectGuess[playerId] = true;
-  
-  // 2초 후 애니메이션 제거
-  setTimeout(() => {
-    playerCorrectGuess[playerId] = false;
-  }, 2000);
+  showAnimation(playerCorrectGuess, playerId, true, 1500);
 };
 
 // 오답 애니메이션 표시
 const showWrongGuessAnimation = (playerId) => {
-  // 오답 애니메이션 설정
-  playerWrongGuess[playerId] = true;
-  
-  // 2초 후 애니메이션 제거
-  setTimeout(() => {
-    playerWrongGuess[playerId] = false;
-  }, 2000);
+  showAnimation(playerWrongGuess, playerId, true, 1500);
 };
 
 // 외부로 메서드 노출
@@ -206,26 +188,23 @@ defineExpose({
 <style scoped>
 .player-markers-container {
   position: fixed;
-  bottom: 70px; /* 채팅 입력 위에 위치 */
+  bottom: 70px;
   left: 0;
   width: 100%;
-  padding: 1rem;
   z-index: 50;
-  pointer-events: none; /* 마커 영역이 클릭을 방해하지 않도록 */
 }
 
 .player-markers {
   display: flex;
   justify-content: center;
-  align-items: flex-end;
   gap: 1.5rem;
-  max-width: 100%;
+  padding: 1rem 1rem 0.5rem;
   overflow-x: auto;
-  padding-bottom: 0.5rem;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.5), transparent);
-  padding: 1.5rem 1rem 1rem;
-  border-radius: 16px 16px 0 0;
-  backdrop-filter: blur(5px);
+  scrollbar-width: none;
+}
+
+.player-markers::-webkit-scrollbar {
+  display: none;
 }
 
 .player-marker {
@@ -233,8 +212,7 @@ defineExpose({
   flex-direction: column;
   align-items: center;
   position: relative;
-  transition: all 0.5s ease;
-  transform-origin: bottom center;
+  transition: all 0.3s ease;
 }
 
 .player-marker.current-user .marker-image {
@@ -346,9 +324,7 @@ defineExpose({
   border-top: 8px solid white;
 }
 
-.chat-bubble.fade-out {
-  opacity: 0;
-}
+.chat-bubble.fade-out { opacity: 0; }
 
 .score-animation {
   position: absolute;
@@ -367,9 +343,7 @@ defineExpose({
   z-index: 5;
 }
 
-.team-mode .marker-image {
-  border-width: 4px;
-}
+.team-mode .marker-image { border-width: 4px; }
 
 /* 플레이어 순서 변경 애니메이션 */
 .player-order-move {
@@ -422,70 +396,27 @@ defineExpose({
 }
 
 @keyframes correctGuess {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.15) translateY(-10px);
-  }
-  100% {
-    transform: scale(1);
-  }
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15) translateY(-10px); }
+  100% { transform: scale(1); }
 }
 
 @keyframes wrongGuess {
-  0% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(-5px);
-  }
-  50% {
-    transform: translateX(5px);
-  }
-  75% {
-    transform: translateX(-5px);
-  }
-  100% {
-    transform: translateX(0);
-  }
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-5px); }
+  100% { transform: translateX(0); }
 }
 
 /* 반응형 스타일 */
 @media (max-width: 768px) {
-  .player-markers-container {
-    bottom: 60px;
-  }
-  
-  .player-markers {
-    gap: 1rem;
-    padding: 1rem 0.5rem 0.5rem;
-  }
-  
-  .marker-image {
-    width: 45px;
-    height: 45px;
-  }
-  
-  .marker-nickname {
-    font-size: 0.7rem;
-    max-width: 80px;
-    margin-bottom: 0.15rem;
-  }
-  
-  .marker-score {
-    font-size: 0.65rem;
-  }
-  
-  .chat-bubble {
-    max-width: 120px;
-    font-size: 0.75rem;
-    top: -60px;
-  }
-  
-  .score-animation {
-    font-size: 0.85rem;
-    padding: 0.2rem 0.4rem;
-  }
+  .player-markers-container { bottom: 60px; }
+  .player-markers { gap: 1rem; padding: 1rem 0.5rem 0.5rem; }
+  .marker-image { width: 45px; height: 45px; }
+  .marker-nickname { font-size: 0.7rem; max-width: 80px; margin-bottom: 0.15rem; }
+  .marker-score { font-size: 0.65rem; }
+  .chat-bubble { max-width: 120px; font-size: 0.75rem; top: -60px; }
+  .score-animation { font-size: 0.85rem; padding: 0.2rem 0.4rem; }
 }
 </style>
