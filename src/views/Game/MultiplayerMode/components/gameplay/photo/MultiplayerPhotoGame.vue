@@ -2,56 +2,17 @@
   <div class="multiplayer-photo-game">
     <!-- 카운트다운 오버레이는 나중에 IntroOverlay와 NextRoundOverlay 컴포넌트로 대체 예정 -->
 
-    <!-- 게임 헤더 -->
-    <div class="game-header">
-      <div class="header-left">
-        <button class="exit-button" @click="exitGame">
-          <i class="fas fa-door-open"></i>
-          <span class="exit-text">나가기</span>
-        </button>
-        <div class="room-info">
-          <h2 class="room-name">{{ gameStore.state.roomData.name }}</h2>
-          <div class="game-mode">
-            {{ gameStore.state.roomData.gameMode }} -
-            {{ gameStore.state.roomData.region }}
-          </div>
-        </div>
-      </div>
-
-      <div class="header-center col-md-4">
-        <div class="round-info">
-          <span class="round-number">
-            라운드 {{ gameStore.state.currentRound }}/{{
-              gameStore.state.totalRounds
-            }}
-          </span>
-          <div class="round-progress">
-            <div
-              class="progress-bar"
-              :style="{
-                width: `${
-                  (gameStore.state.currentRound / gameStore.state.totalRounds) *
-                  100
-                }%`,
-              }"
-            ></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="header-right col-md-4">
-        <game-timer
-          ref="gameTimer"
-          :initialTime="gameStore.state.remainingTime"
-          :totalTime="120"
-          :warning-threshold="30"
-          :danger-threshold="10"
-        />
-        <div v-if="showCorrectRegion" class="correct-region-display">
-          정답: {{ correctRegion }}
-        </div>
-      </div>
-    </div>
+    <!-- 게임 헤더 컴포넌트 -->
+    <multiplayer-game-header
+      :roomData="gameStore.state.roomData"
+      :currentRound="gameStore.state.currentRound"
+      :totalRounds="gameStore.state.totalRounds"
+      :remainingTime="gameStore.state.remainingTime"
+      :isTimerRunning="true"
+      :showCorrectRegion="showCorrectRegion"
+      :correctRegion="correctRegion"
+      @exit-game="exitGame"
+    />
 
     <!-- 게임 메인 영역 -->
     <div class="game-content">
@@ -81,24 +42,17 @@
         />
       </div>
 
-      <!-- 오른쪽 패널: 채팅 -->
+      <!-- 오른쪽 패널 -->
       <div class="right-panel">
-        <chat-window
-          v-if="!isTeamMode"
-          :messages="gameStore.state.chatMessages"
-          @send-message="sendChatMessage"
-        />
-
-        <!-- 팀 모드일 경우 팀 채팅 표시 -->
-        <team-chat
-          v-if="isTeamMode && currentUserTeam"
-          :team-id="gameStore.state.currentUser.teamId"
-          :team-name="currentUserTeam.name"
-          :team-color="getTeamColor(currentUserTeam.id)"
-          :team-messages="currentTeamMessages"
-          :current-user-id="gameStore.state.currentUser.id"
-          @send-team-message="sendTeamMessage"
-        />
+        <!-- 간단한 채팅 입력 영역 -->
+        <div class="chat-input-container">
+          <simple-chat-input
+            :disabled="
+              gameStore.state.hasSubmittedGuess || gameStore.state.roundEnded
+            "
+            @send-message="sendChatMessage"
+          />
+        </div>
       </div>
     </div>
 
@@ -177,27 +131,20 @@
       @exit="exitToLobby"
       @send-chat-message="sendChatMessage"
     />
-    <!-- 로딩 오버레이 -->
-    <div v-if="isLoading" class="loading-overlay">
-      <div class="loading-spinner">
-        <i class="fas fa-spinner fa-spin fa-3x"></i>
-        <span>로딩 중...</span>
-      </div>
-    </div>
+   
   </div>
 </template>
 
 <script>
-import GameTimer from "@/components/common/ui/game/BaseGameTimer.vue";
 import PhotoModePhotoGrid from "@/views/Game/PhotoMode/components/gameplay/PhotoModePhotoGrid.vue";
 import RegionMap from "@/views/Game/PhotoMode/components/gameplay/PhotoModeRegionMap.vue";
-import ChatWindow from "@/views/Game/MultiplayerMode/components/lobby/chat/MultiplayerLobbyChatWindow.vue";
 import RoundResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerRoundResults.vue";
 import GameResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerGameResults.vue";
-import TeamChat from "@/views/Game/MultiplayerMode/components/gameplay/chat/TeamChat.vue";
 import TeamGameResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamGameResults.vue";
 import TeamRoundResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamRoundResults.vue";
 import PlayerMarkers from "@/views/Game/MultiplayerMode/components/gameplay/photo/MultiplayerPhotoPlayerMarkers.vue";
+import MultiplayerGameHeader from "@/views/Game/MultiplayerMode/components/gameplay/common/MultiplayerGameHeader.vue";
+import SimpleChatInput from "@/views/Game/MultiplayerMode/components/gameplay/common/SimpleChatInput.vue";
 import gameStore from "@/store/gameStore";
 import { getRandomLocation } from "@/views/Game/MultiplayerMode/MultiplayerGameTestData";
 
@@ -205,16 +152,15 @@ export default {
   name: "MultiplayerPhotoGame",
 
   components: {
-    GameTimer,
     PhotoModePhotoGrid,
     RegionMap,
-    ChatWindow,
     RoundResults,
     GameResults,
-    TeamChat,
     TeamGameResults,
     TeamRoundResults,
     PlayerMarkers,
+    MultiplayerGameHeader,
+    SimpleChatInput,
   },
 
   props: {
@@ -231,7 +177,6 @@ export default {
   data() {
     return {
       gameStore,
-      isLoading: false,
       isMapOpen: false,
       showCountdown: false,
       countdownValue: 3,
@@ -313,7 +258,6 @@ export default {
 
   methods: {
     fetchRoundData() {
-      this.isLoading = true;
 
       // 랜덤 사진 및 위치 가져오기
       setTimeout(() => {
@@ -333,8 +277,6 @@ export default {
           image: location.image,
           fact: location.fact,
         };
-
-        this.isLoading = false;
         this.showCountdown = true;
       }, 1500);
     },
@@ -380,7 +322,7 @@ export default {
 
       // 카카오맵이 준비되었는지 확인
       if (!this.mapReady) {
-        console.log('카카오맵이 아직 준비되지 않았습니다. 잠시 기다립니다.');
+        console.log("카카오맵이 아직 준비되지 않았습니다. 잠시 기다립니다.");
         // 맵이 준비되지 않았으면 준비될 때까지 기다림
         const checkMapReady = setInterval(() => {
           if (this.mapReady) {
@@ -393,7 +335,7 @@ export default {
         this.openMapIfNeeded();
       }
     },
-    
+
     // 화면 크기에 따라 지도 열기
     openMapIfNeeded() {
       setTimeout(() => {
@@ -578,15 +520,15 @@ export default {
 
       // 초기에는 맵을 닫힌 상태로 유지
       this.isMapOpen = false;
-      
+
       // 카카오맵 초기화 준비 상태를 false로 설정
       this.mapReady = false;
-      
+
       // DOM이 완전히 렌더링된 후 맵 준비 상태를 true로 설정
       this.$nextTick(() => {
         setTimeout(() => {
           this.mapReady = true;
-          console.log('카카오맵 렌더링 준비 완료');
+          console.log("카카오맵 렌더링 준비 완료");
         }, 500);
       });
 
@@ -647,17 +589,6 @@ export default {
   overflow: hidden;
 }
 
-/* 게임 헤더 스타일 */
-.game-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 1.5rem;
-  background-color: #1a5d1a; /* 포토 게임 헤더 색상을 다르게 */
-  color: white;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  z-index: 10;
-}
 
 .header-left {
   display: flex;
@@ -785,66 +716,83 @@ export default {
 /* 오른쪽 패널 스타일 */
 .right-panel {
   width: 300px;
-  background-color: white;
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.05);
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  box-shadow: -2px 0 20px rgba(0, 0, 0, 0.05);
   z-index: 5;
   display: flex;
   flex-direction: column;
+  border-left: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.game-info-panel {
+  padding: 1.5rem;
+  height: 100%;
+}
+
+.info-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a5d1a;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid rgba(26, 93, 26, 0.2);
+  padding-bottom: 0.5rem;
+}
+
+.info-content {
+  color: #333;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.location-hint {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: linear-gradient(
+    135deg,
+    rgba(26, 93, 26, 0.05),
+    rgba(76, 175, 80, 0.1)
+  );
+  border-radius: 8px;
+  border-left: 3px solid #4caf50;
+}
+
+.chat-input-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(5px);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
 }
 
 /* 지도 토글 버튼 스타일 */
 .toggle-map-button {
   position: fixed;
   bottom: 80px;
-  right: 320px;
+  right: 20px;
   z-index: 30;
   padding: 0.75rem 1rem;
-  background-color: #1a5d1a;
+  background: linear-gradient(135deg, #1a5d1a, #4caf50);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 24px;
   font-weight: 500;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
 }
 
 .toggle-map-button:hover {
   background-color: #156415;
-}
-
-.toggle-map-button i {
   font-size: 1rem;
 }
 
-/* 로딩 오버레이 스타일 */
-.loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.loading-spinner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  color: white;
-}
-
-.loading-spinner i {
-  font-size: 3rem;
-}
 
 /* 반응형 스타일 */
 @media (max-width: 1200px) {
@@ -927,11 +875,25 @@ export default {
 /* 플레이어 마커 스타일 */
 .player-markers {
   position: fixed;
-  bottom: 0;
+  bottom: 70px;
   left: 0;
   right: 0;
   z-index: 50;
   background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
   padding: 1rem;
+  display: flex;
+  justify-content: center;
 }
+
+/* 멀티플레이어 포토 게임 전체 스타일 */
+.multiplayer-photo-game {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa, #e4f2f0);
+  overflow: hidden;
+  position: relative;
+}
+
+
 </style>
