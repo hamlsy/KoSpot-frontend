@@ -131,10 +131,10 @@
 <script>
 import PhotoModePhotoGrid from "@/views/Game/PhotoMode/components/gameplay/PhotoModePhotoGrid.vue";
 import RegionMap from "@/views/Game/PhotoMode/components/gameplay/PhotoModeRegionMap.vue";
-import RoundResults from "@/views/Game/MultiplayerMode/components/results/RoundResults.vue";
-import GameResults from "@/views/Game/MultiplayerMode/components/results/GameResults.vue";
-import TeamGameResults from "@/views/Game/MultiplayerMode/components/results/TeamGameResults.vue";
-import TeamRoundResults from "@/views/Game/MultiplayerMode/components/results/TeamRoundResults.vue";
+import RoundResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerRoundResults.vue";
+import GameResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerGameResults.vue";
+import TeamGameResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamGameResults.vue";
+import TeamRoundResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamRoundResults.vue";
 import PlayerMarkers from "@/views/Game/MultiplayerMode/components/gameplay/photo/MultiplayerPhotoPlayerMarkers.vue";
 import MultiplayerGameHeader from "@/views/Game/MultiplayerMode/components/gameplay/common/MultiplayerGameHeader.vue";
 import SimpleChatInput from "@/views/Game/MultiplayerMode/components/gameplay/common/SimpleChatInput.vue";
