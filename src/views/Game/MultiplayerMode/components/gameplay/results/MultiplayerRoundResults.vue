@@ -31,7 +31,7 @@
           <!-- 플레이어 마커 표시 영역 -->
           <div class="player-markers-container">
             <div 
-              v-for="(player) in playersWhoClickedNext" 
+              v-for="(player) in playersReadyDetails" 
               :key="player.id"
               class="player-marker-wrapper"
             >
@@ -49,18 +49,23 @@
             </div>
           </div>
 
+          <!-- 투표 현황 텍스트 -->
+          <div class="vote-info-text" v-if="isVoteTimerActive">
+            {{ numPlayersReady }} / {{ totalPlayersInRoom }} (과반수: {{ majorityThreshold }})
+          </div>
+
           <!-- 카운트다운 바 -->
-          <div class="countdown-bar">
+          <div class="countdown-bar" v-if="isVoteTimerActive">
             <div
               class="countdown-progress"
-              :style="{ width: `${countdownProgress}%` }"
+              :style="{ width: voteCountdownProgressPercentage + '%' }"
             ></div>
           </div>
 
           <button
             v-if="isLastRound"
             class="action-button finish-button"
-            @click="finishGame"
+            @click="$emit('finish-game')"
           >
             <i class="fas fa-trophy"></i>
             게임 결과 보기
@@ -68,8 +73,8 @@
           <button 
             v-else 
             class="action-button next-button" 
-            @click="nextRound"
-            :disabled="hasCurrentUserClickedNext"
+            @click="$emit('request-next-round')"
+            :disabled="currentUserHasVoted"
           >
             <i class="fas fa-arrow-right"></i>
             다음 라운드
@@ -136,6 +141,34 @@ export default {
       type: Object,
       default: () => ({}),
     },
+    numPlayersReady: {
+      type: Number,
+      default: 0,
+    },
+    totalPlayersInRoom: {
+      type: Number,
+      default: 0,
+    },
+    majorityThreshold: {
+      type: Number,
+      default: 0,
+    },
+    playersReadyDetails: { // Array of players who clicked next { id, nickname, equippedMarker }
+      type: Array,
+      default: () => [],
+    },
+    isVoteTimerActive: {
+      type: Boolean,
+      default: false,
+    },
+    voteTimeRemaining: { // In milliseconds
+      type: Number,
+      default: 15000, 
+    },
+    currentUserHasVoted: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   computed: {
@@ -154,6 +187,12 @@ export default {
         color: guess.color,
         playerName: guess.playerName,
       }));
+    },
+    voteCountdownProgressPercentage() {
+      if (!this.isVoteTimerActive || this.voteTimeRemaining === null) return 0;
+      const totalTime = 15000; // TODO: Make this configurable or pass as prop if different from base
+      const progress = Math.max(0, (this.voteTimeRemaining / totalTime) * 100);
+      return progress;
     },
   },
 
@@ -191,12 +230,10 @@ export default {
     return {
       gameStore,
       visible: true,
-      playersWhoClickedNext: [],
-      countdownDuration: 10000, // 10초
-      countdownStart: 0,
-      countdownProgress: 100,
-      countdownInterval: null,
-      hasCurrentUserClickedNext: false,
+      map: null,
+      countdownInterval: null, // This might still be used for local animations or can be removed if not needed
+      showLocationInfoModal: false,
+      currentLocationInfo: {},
     };
   },
 
@@ -208,48 +245,11 @@ export default {
         this.initMap();
       }, 300);
     });
-    
-    // 카운트다운 시작
-    this.startCountdown();
-    
-    // 소켓 이벤트 리스너 등록 - 실제 환경에서 활성화
-    if (this.$socket && typeof this.$socket.on === 'function') {
-      this.$socket.on('player-clicked-next', this.handlePlayerClickedNext);
-    }
-    
-    // 테스트용: 일정 간격으로 플레이어가 버튼을 누르는 시뮬레이션
-    this.simulatePlayersClickingNext();
-  },
-  
-  beforeUnmount() {
-    // 컴포넌트가 제거될 때 필요한 정리 작업
-    this.stopCountdown();
-    
-    // 실제 환경에서 활성화
-    if (this.$socket && typeof this.$socket.off === 'function') {
-      this.$socket.off('player-clicked-next', this.handlePlayerClickedNext);
-    }
-    
-    // 테스트 타이머 정리
-    if (this.testClickTimer) {
-      clearTimeout(this.testClickTimer);
-    }
   },
 
   methods: {
-    formatDistance(distance) {
-      if (distance === null || distance === undefined) return "?";
-
-      if (distance < 1) {
-        return `${(distance * 1000).toFixed(0)}m`;
-      } else {
-        return `${distance.toFixed(2)}km`;
-      }
-    },
-
-    formatNumber(num) {
-      if (num === null || num === undefined) return "0";
-      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    close() {
+      this.$emit("close");
     },
 
     initMap() {
@@ -271,131 +271,8 @@ export default {
       }
     },
 
-    close() {
-      this.$emit("close");
-    },
-
-    startCountdown() {
-      this.stopCountdown(); // 기존 카운트다운 중지
-      this.countdownStart = Date.now();
-      this.countdownProgress = 100;
-
-      this.countdownInterval = setInterval(() => {
-        const elapsed = Date.now() - this.countdownStart;
-        this.countdownProgress = 100 - (elapsed / this.countdownDuration) * 100;
-
-        if (this.countdownProgress <= 0) {
-          this.stopCountdown();
-          this.proceedToNextRound();
-        }
-      }, 50);
-    },
-
-    stopCountdown() {
-      if (this.countdownInterval) {
-        clearInterval(this.countdownInterval);
-        this.countdownInterval = null;
-      }
-    },
-
-    nextRound() {
-      if (this.hasCurrentUserClickedNext) return;
-      
-      this.hasCurrentUserClickedNext = true;
-      
-      // 현재 유저 정보 찾기
-      const currentPlayer = this.gameStore.state.currentUser;
-      console.log(currentPlayer);
-      
-      // 실제 환경에서 활성화
-      // 소켓 이벤트 발송
-      // if (this.$socket && typeof this.$socket.emit === 'function') {
-      //   this.$socket.emit('player-next-round-clicked', {
-      //     playerId: this.currentUserId,
-      //     playerName: currentPlayer.name,
-      //     playerColor: currentPlayer.color,
-      //     playerMarkerImage: currentPlayer.markerImage || '/images/markers/marker1.png',
-      //     roomId: this.$route.params && this.$route.params.roomId
-      //   });
-      // }
-      
-      // 로컬에도 추가
-      this.addPlayerToClickedList(currentPlayer);
-    },
-    
-    handlePlayerClickedNext(data) {
-      // 다른 플레이어가 다음 라운드 버튼을 클릭했을 때 처리
-      this.addPlayerToClickedList({
-        id: data.playerId,
-        name: data.playerName,
-        color: data.playerColor
-      });
-      
-      // 모든 플레이어가 클릭했는지 확인
-      this.checkAllPlayersClicked();
-    },
-    
-    addPlayerToClickedList(player) {
-      // 이미 추가된 플레이어인지 확인
-      if (!this.playersWhoClickedNext.some(p => p.id === player.id)) {
-        // 마커 이미지가 없는 경우 기본 이미지 사용
-        if (!player.equippedMarker) {
-          const randomIndex = Math.floor(Math.random() * this.defaultMarkerImages.length);
-          player.markerImage = this.defaultMarkerImages[randomIndex];
-        }
-        
-        // 플레이어 추가
-        this.playersWhoClickedNext.push(player);
-        
-        // 애니메이션 효과를 위해 약간의 지연 후 체크
-        setTimeout(() => this.checkAllPlayersClicked(), 300);
-      }
-    },
-    
-    checkAllPlayersClicked() {
-      // 모든 플레이어가 클릭했는지 확인
-      if (this.playersWhoClickedNext.length >= this.players.length) {
-        this.proceedToNextRound();
-      }
-    },
-    
-    proceedToNextRound() {
-      this.stopCountdown();
-      console.log("다음 라운드로 진행 이벤트 발생");
-      this.playersWhoClickedNext = [];
-      // next-round 이벤트로 통일
-      this.$emit("next-round");
-    },
-    
-    // 테스트용: 다른 플레이어들이 버튼을 누르는 것을 시뮬레이션
-    simulatePlayersClickingNext() {
-      const updatedTestPlayers = this.gameStore.state.players;
-      
-      // 첫 번째 플레이어는 1초 후에 클릭
-      setTimeout(() => {
-        if (updatedTestPlayers.length > 0) {
-          this.addPlayerToClickedList(updatedTestPlayers[0]);
-        }
-      }, 1000);
-      
-      // 두 번째 플레이어는 3초 후에 클릭
-      setTimeout(() => {
-        if (updatedTestPlayers.length > 1) {
-          this.addPlayerToClickedList(updatedTestPlayers[1]);
-        }
-      }, 3000);
-      
-      // 세 번째 플레이어는 5초 후에 클릭
-      setTimeout(() => {
-        if (updatedTestPlayers.length > 2) {
-          this.addPlayerToClickedList(updatedTestPlayers[2]);
-        }
-      }, 5000);
-      
-    
-    },
-
     finishGame() {
+      // this.stopCountdown(); // stopCountdown is removed
       this.$emit("finish-game");
     },
   },

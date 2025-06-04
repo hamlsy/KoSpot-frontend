@@ -8,6 +8,7 @@
     @round-ended="handleRoundEnded"
     @game-finished="handleGameFinished"
     @next-round-ready="handleNextRoundReady"
+    @end-overlay="handleEndOverlay"
     ref="baseGame"
   >
     <!-- 개인전용 플레이어 리스트 -->
@@ -43,8 +44,15 @@
         :location-name="gameStore.state.locationInfo.name"
         :player-guesses="gameStore.state.playerGuesses"
         :top-player="gameStore.state.topPlayer"
+        :num-players-ready="$refs.baseGame ? $refs.baseGame.numPlayersReadyForNextRound : 0"
+        :total-players-in-room="$refs.baseGame ? $refs.baseGame.totalPlayersInRoom : 0"
+        :majority-threshold="$refs.baseGame ? $refs.baseGame.majorityThreshold : 0"
+        :players-ready-details="getPlayersReadyDetails()"
+        :is-vote-timer-active="$refs.baseGame ? $refs.baseGame.isNextRoundVoteActive : false"
+        :vote-time-remaining="$refs.baseGame ? $refs.baseGame.nextRoundVoteRemainingTime : 15000"
+        :current-user-has-voted="$refs.baseGame ? $refs.baseGame.didCurrentUserVoteForNextRound : false"
         @close="closeRoundResults"
-        @next-round="handleNextRound"
+        @request-next-round="requestNextRound"
         @finish-game="finishGame"
       />
     </template>
@@ -112,14 +120,11 @@ export default {
   mounted() {
     // 게임 스토어의 상태 변화 감시
     this.$watch(
-      () => this.gameStore.state.actualLocation,
-      (newVal) => {
-        if (newVal && Object.keys(newVal).length > 0 && !this.simulationTriggered) {
-          this.simulationTriggered = true;
-          setTimeout(() => {
-            this.simulateOtherPlayersGuesses();
-          }, 2000); // 2초 후에 시뮬레이션 시작
-        }
+      () => this.simulationTriggered,
+      () => {
+        setTimeout(() => {
+          this.simulateOtherPlayersGuesses();
+        }, 10); 
       }
     );
 
@@ -138,9 +143,139 @@ export default {
   },
 
   methods: {
+    //overlay 끝났음을 알림
+    handleEndOverlay() {
+      this.simulationTriggered = true;
+    },
+
+    // 다음 라운드 요청 처리 (투표)
+    requestNextRound() {
+      if (!this.$refs.baseGame) return;
+      
+      // 베이스 게임 컴포넌트의 playersReadyForNextRound Set에 현재 사용자 ID 추가
+      const currentUserId = this.gameStore.state.currentUser?.id;
+      if (currentUserId) {
+        this.$refs.baseGame.playersReadyForNextRound.add(currentUserId);
+        
+        // WebSocket을 통해 서버에 다음 라운드 준비 완료 메시지 전송 (스켈레톤 코드)
+        this.sendNextRoundReadyToServer(currentUserId);
+        
+        // 다른 플레이어들의 투표 시뮬레이션 시작
+        this.simulateOtherPlayersVoting();
+        
+        // 과반수 확인 및 처리
+        this.checkMajorityForNextRound();
+      }
+    },
+  
+    // 다른 플레이어들의 다음 라운드 투표 시뮬레이션
+    simulateOtherPlayersVoting() {
+      if (!this.$refs.baseGame || !this.$refs.baseGame.isNextRoundVoteActive) return;
+      
+      const currentUserId = this.gameStore.state.currentUser?.id;
+      const otherPlayers = this.gameStore.state.players.filter(p => p.id !== currentUserId);
+      
+      // 이미 투표한 플레이어 제외
+      const nonVotedPlayers = otherPlayers.filter(p => 
+        !Array.from(this.$refs.baseGame.playersReadyForNextRound).includes(p.id)
+      );
+      
+      if (nonVotedPlayers.length === 0) return;
+      
+      console.log(`다른 플레이어 투표 시뮬레이션 시작: ${nonVotedPlayers.length}명 남음`);
+      
+      // 랜덤 플레이어 선택하여 투표 시뮬레이션
+      const randomIndex = Math.floor(Math.random() * nonVotedPlayers.length);
+      const randomPlayer = nonVotedPlayers[randomIndex];
+      
+      // 1~3초 사이 랜덤 시간 후 투표
+      setTimeout(() => {
+        // 투표 처리
+        this.handleOtherPlayerNextRoundReady(randomPlayer.id);
+        
+        // 아직 투표하지 않은 플레이어가 있으면 재귀적으로 호출
+        if (nonVotedPlayers.length > 1) {
+          this.simulateOtherPlayersVoting();
+        }
+      }, 1000 + Math.random() * 2000);
+    },
+    
+    // 과반수 확인 및 처리
+    checkMajorityForNextRound() {
+      if (!this.$refs.baseGame) return;
+      
+      const numReady = this.$refs.baseGame.playersReadyForNextRound.size;
+      const totalPlayers = this.$refs.baseGame.totalPlayersInRoom;
+      const majorityThreshold = this.$refs.baseGame.majorityThreshold;
+      
+      console.log(`다음 라운드 투표 현황: ${numReady}/${totalPlayers} (과반수: ${majorityThreshold})`);      
+      
+      // 과반수 이상이 준비되었으면 다음 라운드 시작
+      if (numReady >= majorityThreshold) {
+        // 타이머 취소
+        if (this.$refs.baseGame.nextRoundVoteTimerId) {
+          clearInterval(this.$refs.baseGame.nextRoundVoteTimerId);
+          this.$refs.baseGame.nextRoundVoteTimerId = null;
+        }
+        
+        // 다음 라운드 시작
+        this.$refs.baseGame.isNextRoundVoteActive = false;
+        this.handleNextRound();
+      }
+    },
+    
+    // WebSocket을 통해 서버에 다음 라운드 준비 완료 메시지 전송 (스켈레톤 코드)
+    sendNextRoundReadyToServer(userId) {
+      // 실제 구현 시 WebSocket으로 전송
+      console.log(`서버에 다음 라운드 준비 완료 메시지 전송: ${userId}`);      
+      
+      /* 실제 WebSocket 구현 예시
+      if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
+        this.webSocket.send(JSON.stringify({
+          type: 'NEXT_ROUND_READY',
+          payload: {
+            userId: userId,
+            roomId: this.roomId
+          }
+        }));
+      }
+      */
+    },
+    
+    // 다른 플레이어의 다음 라운드 준비 완료 메시지 처리 (WebSocket에서 호출)
+    handleOtherPlayerNextRoundReady(userId) {
+      if (!this.$refs.baseGame) return;
+      
+      // 베이스 게임 컴포넌트의 playersReadyForNextRound Set에 해당 플레이어 ID 추가
+      this.$refs.baseGame.playersReadyForNextRound.add(userId);
+      
+      // 과반수 확인 및 처리
+      this.checkMajorityForNextRound();
+    },
+    
+    // 플레이어 준비 상태 정보 가져오기
+    getPlayersReadyDetails() {
+      if (!this.$refs.baseGame) return [];
+      
+      const readyPlayerIds = Array.from(this.$refs.baseGame.playersReadyForNextRound);
+      return readyPlayerIds.map(playerId => {
+        const player = this.gameStore.state.players.find(p => p.id === playerId);
+        if (!player) return null;
+        
+        return {
+          id: player.id,
+          nickname: player.nickname,
+          equippedMarker: player.equippedMarker || null
+        };
+      }).filter(Boolean); // null 값 제거
+    },
+    
     // next-round 이벤트 처리
     handleNextRound() {
-      this.startNextRound();
+      console.log("다음 라운드 처리 시작");
+      // 베이스 게임 컴포넌트의 handleNextRound 호출
+      this.$refs.baseGame.handleNextRound();
+      // BaseMultiRoadViewGame에서 이미 gameStore.startNextRound()를 호출하므로 여기서는 호출하지 않음
     },
     
     // 이벤트 핸들러 메서드
@@ -174,6 +309,7 @@ export default {
 
     // 라운드 종료 메서드
     endRound() {
+      console.log("라운드 종료!");
       // 라운드 종료 처리
       this.clearTimer();
 
