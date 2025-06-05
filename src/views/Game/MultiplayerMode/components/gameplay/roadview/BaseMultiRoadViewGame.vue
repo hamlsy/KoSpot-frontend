@@ -293,7 +293,6 @@ export default {
   methods: {
     // 인트로 완료 처리
     handleIntroComplete() {
-      alert("인트로 완료");
       this.showIntroOverlay = false;
       this.handleEndOverlay();
     },

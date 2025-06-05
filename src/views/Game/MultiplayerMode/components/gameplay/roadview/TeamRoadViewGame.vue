@@ -1,5 +1,14 @@
 <template>
-  <base-multi-road-view-game :room-id="roomId" ref="baseGame">
+  <base-multi-road-view-game
+    :room-id="roomId"
+    :is-team-mode="true"
+    @guess-submitted="handleGuessSubmission"
+    @round-ended="handleRoundEnded"
+    @game-finished="handleGameFinished"
+    @next-round-ready="handleNextRoundReady"
+    @end-overlay="handleEndOverlay"
+    ref="baseGame">
+
     <!-- 맵 토글 버튼 오버라이드 -->
     <template #map-toggle>
       <button
@@ -9,7 +18,9 @@
       >
         <i class="fas fa-map-marked-alt"></i>
         지도
-        <span v-if="hasActiveVoting && !isMapOpen" class="vote-notification">!</span>
+        <span v-if="hasActiveVoting && !isMapOpen" class="vote-notification"
+          >!</span
+        >
       </button>
     </template>
     <!-- 팀 채팅창 -->
@@ -23,18 +34,9 @@
         @send-team-message="sendTeamMessage"
       />
     </template>
-    
+
     <!-- 메인 게임 영역 -->
     <template #main>
-      <!-- 라운드 진행 중일 때는 로드뷰 표시 -->
-      <road-view
-        v-if="!gameStore.state.roundEnded"
-        :position="gameStore.state.currentLocation"
-        :show-controls="true"
-        :prevent-mouse-events="gameStore.state.hasSubmittedGuess"
-        @load-complete="onViewLoaded"
-      />
-      
       <!-- 팀 투표 마커 -->
       <team-marker-vote
         v-if="gameStore.state.activeVotingMarker"
@@ -91,7 +93,7 @@
         @vote-submitted="handleVoteSubmission"
         @voting-completed="handleVotingComplete"
       />
-      
+
       <!-- 토스트 메시지 -->
       <div class="toast-container" v-if="showToastFlag">
         <div class="toast-message">
@@ -104,17 +106,16 @@
   
   <script>
 import BaseMultiRoadViewGame from "./BaseMultiRoadViewGame.vue";
-import ChatWindow from '@/views/Game/MultiplayerMode/components/gameplay/chat/IndividualChat.vue'
+import ChatWindow from "@/views/Game/MultiplayerMode/components/gameplay/chat/IndividualChat.vue";
 import TeamRoundResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamRoundResults.vue";
 import TeamGameResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamGameResults.vue";
 import TeamVotingModal from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamVotingModal.vue";
 import TeamMarkerVote from "./TeamMarkerVote.vue";
-import RoadView from '@/components/game/roadview/RoadView.vue'
 import gameStore from "@/store/gameStore";
 
 export default {
   name: "TeamRoadViewGame",
-  
+
   components: {
     BaseMultiRoadViewGame,
     ChatWindow,
@@ -122,7 +123,6 @@ export default {
     TeamGameResults,
     TeamVotingModal,
     TeamMarkerVote,
-    RoadView,
   },
 
   data() {
@@ -138,7 +138,7 @@ export default {
       toastMessage: "",
       showToastFlag: false,
       mapOffset: { x: 0, y: 0 }, // 마커 위치 조정을 위한 오프셋
-      isMapOpen: false // 맵 열림 상태 추적
+      isMapOpen: false, // 맵 열림 상태 추적
     };
   },
 
@@ -169,34 +169,36 @@ export default {
         []
       );
     },
-    
+
     // 팀 크기 계산
     teamSize() {
       if (!gameStore.state.currentUser.teamId) return 0;
       return gameStore.state.players.filter(
-        player => player.teamId === gameStore.state.currentUser.teamId
+        (player) => player.teamId === gameStore.state.currentUser.teamId
       ).length;
     },
-    
+
     // 제출 가능 여부
     canSubmit() {
-      return gameStore.state.canSubmitGuess && !gameStore.state.hasSubmittedGuess;
+      return (
+        gameStore.state.canSubmitGuess && !gameStore.state.hasSubmittedGuess
+      );
     },
-    
+
     // 활성화된 투표가 있는지 확인
     hasActiveVoting() {
       return this.gameStore.state.activeVotingMarker;
-    }
+    },
   },
 
   created() {
     // 팀 모드로 설정
     this.isTeamMode = true;
-    this.gameMode = 'team';
+    this.gameMode = "team";
     // 테스트 데이터 로드 및 게임 초기화
     this.gameStore.loadTestData(true);
     this.initGame();
-    
+
     // 투표 상태 변화 감지를 위한 watcher 설정
     this.$watch(
       () => this.gameStore.state.activeVotingMarker,
@@ -207,12 +209,12 @@ export default {
         }
       }
     );
-    
+
     // 반응형 모드에서 맵 상태 변화 감지
-    window.addEventListener('resize', this.checkResponsiveMode);
+    window.addEventListener("resize", this.checkResponsiveMode);
     this.checkResponsiveMode();
   },
-  
+
   beforeUnmount() {
     if (this.roundTimer) {
       clearInterval(this.roundTimer);
@@ -220,22 +222,56 @@ export default {
     if (this.toastTimeout) {
       clearTimeout(this.toastTimeout);
     }
-    window.removeEventListener('resize', this.checkResponsiveMode);
+    window.removeEventListener("resize", this.checkResponsiveMode);
   },
 
   methods: {
+    //overlay 끝났음을 알림
+    handleEndOverlay() {
+      this.simulationTriggered = true;
+    },
+    // 다음 라운드 준비 완료 처리
+    handleNextRoundReady() {
+      // 게임 상태 초기화
+      this.gameStore.state.hasSubmittedGuess = false;
+      this.gameStore.state.userGuess = null;
+      this.gameStore.state.playerGuesses = [];
+      
+      // 인트로 오버레이 표시 (기존 인트로 오버레이 사용)
+      this.gameStore.state.showIntroOverlay = true;
+      
+      // 다음 라운드 데이터 가져오기 준비
+      this.fetchRoundData();
+    },
+
+    handleGameFinished() {
+      console.log("게임이 종료되었습니다.");
+      // 게임 종료 처리 로직
+    },
+
+    // 이벤트 핸들러 메서드
+    handleRoundEnded() {
+      console.log("라운드가 종료되었습니다.");
+      // 라운드 종료 처리 로직
+      this.clearTimer();
+    },
+
     handleGuessSubmission(position) {
       // 위치 정보 유효성 검사
-      if (!position || position.lat === undefined || position.lng === undefined) {
-        console.error('유효하지 않은 위치 정보:', position);
+      if (
+        !position ||
+        position.lat === undefined ||
+        position.lng === undefined
+      ) {
+        console.error("유효하지 않은 위치 정보:", position);
         return;
       }
-      console.log('팀 게임에서 위치 제출:', position);
+      console.log("팀 게임에서 위치 제출:", position);
 
       // 팀 게임에서는 제출이 바로 완료되지 않고 투표 프로세스를 시작
       this.submitTeamGuess(position);
     },
-    
+
     submitTeamGuess(position) {
       if (!this.canSubmit) {
         this.showToast("다른 팀원의 제안에 투표 중입니다.");
@@ -243,8 +279,11 @@ export default {
       }
 
       // 팀 투표 시작
-      this.gameStore.startTeamVoting(this.gameStore.state.currentUser, position);
-      
+      this.gameStore.startTeamVoting(
+        this.gameStore.state.currentUser,
+        position
+      );
+
       // 지도 미리보기 URL 생성 (실제 구현에서는 카카오나 구글 지도 API를 통해 생성)
       this.mapPreviewUrl = `https://map-preview.example.com?lat=${position.lat}&lng=${position.lng}`;
 
@@ -254,41 +293,41 @@ export default {
         `${this.gameStore.state.currentUser.nickname}님이 위치 제출을 제안했습니다. 투표해주세요!`,
         true
       );
-      
+
       // 토스트 메시지 표시
       this.showToast("팀원들에게 투표 요청을 보냈습니다.");
     },
-    
+
     // 마커 위치 업데이트 (실제 구현에서는 맵 컴포넌트와 연동)
     updateMarkerPosition() {
       // 실제 구현에서는 맵 컴포넌트의 좌표 변환 함수를 사용해야 함
       // 여기서는 간단히 중앙에 표시
       this.mapOffset = { x: 0, y: 0 };
     },
-    
+
     // 맵 토글 메서드
     toggleMap() {
       if (this.$refs.baseGame) {
         this.$refs.baseGame.toggleMap();
         this.isMapOpen = !this.isMapOpen;
-        
+
         // 맵을 열었을 때 투표 알림이 있었다면 토스트 메시지 표시
         if (this.isMapOpen && this.gameStore.state.activeVotingMarker) {
           this.showToast("팀원의 위치 제안에 투표해주세요!");
         }
       }
     },
-    
+
     // 반응형 모드 체크
     checkResponsiveMode() {
       this.isResponsiveMode = window.innerWidth <= 992;
-      
+
       // 반응형 모드에서 맵 상태 확인
       if (this.$refs.baseGame) {
         this.isMapOpen = this.$refs.baseGame.isMapOpen;
       }
     },
-    
+
     // 투표 취소 처리
     handleVoteCancel() {
       this.gameStore.cancelVoting();
@@ -299,7 +338,7 @@ export default {
       );
       this.showToast("위치 제안이 취소되었습니다.");
     },
-    
+
     // 투표 시간 초과 처리
     handleVoteTimeout() {
       this.finalizeTeamVoting(false);
@@ -333,7 +372,7 @@ export default {
           "팀원들이 위치 제출에 동의했습니다!",
           true
         );
-        
+
         this.showToast("팀원들이 위치 제출에 동의했습니다!");
         this.submitGuess();
 
@@ -346,34 +385,34 @@ export default {
           "팀원들이 위치 제출을 거부했습니다. 다시 시도해주세요.",
           true
         );
-        
+
         this.showToast("팀원들이 위치 제출을 거부했습니다.");
       }
     },
-    
+
     // 토스트 메시지 표시 메서드
     showToast(message, duration = 3000) {
       this.toastMessage = message;
       this.showToastFlag = true;
-      
+
       if (this.toastTimeout) {
         clearTimeout(this.toastTimeout);
       }
-      
+
       this.toastTimeout = setTimeout(() => {
         this.showToastFlag = false;
       }, duration);
     },
-    
+
     // 최종 위치 제출 메서드
     submitGuess() {
       if (!this.gameStore.state.votingPosition) return;
-      
+
       const position = this.gameStore.state.votingPosition;
-      
+
       // 위치 제출 처리
       this.gameStore.submitGuess(position);
-      
+
       // 팀 채팅에 메시지 추가
       this.gameStore.addTeamChatMessage(
         this.gameStore.state.currentUser.teamId,
@@ -381,7 +420,7 @@ export default {
         true
       );
     },
-    
+
     // 타이머 시작 메서드
     startRoundTimer() {
       this.gameStore.state.remainingTime = 120; // 2분
@@ -395,7 +434,7 @@ export default {
         }
       }, 1000);
     },
-    
+
     // 타이머 정리 메서드
     clearTimer() {
       if (this.roundTimer) {
@@ -403,7 +442,7 @@ export default {
         this.roundTimer = null;
       }
     },
-    
+
     // 라운드 종료 메서드
     endRound() {
       // 라운드 종료 처리
@@ -418,26 +457,41 @@ export default {
 
       console.log("라운드 종료:", this.gameMode);
     },
-    
+
     // 게임 초기화 메서드
     initGame() {
       this.gameStore.initGame();
       this.fetchRoundData();
     },
-    
+
     // 라운드 데이터 가져오기
     fetchRoundData() {
       // 테스트 데이터에서 위치 가져오기
       setTimeout(() => {
         const getRandomLocation = () => {
           const locations = [
-            { lat: 37.5665, lng: 126.9780, name: "서울시청", description: "서울 중심부에 위치한 시청" },
-            { lat: 35.1796, lng: 129.0756, name: "부산 해운대", description: "부산의 유명한 해변" },
-            { lat: 33.4996, lng: 126.5312, name: "제주 성산일출봉", description: "제주도의 유명한 관광지" }
+            {
+              lat: 37.5665,
+              lng: 126.978,
+              name: "서울시청",
+              description: "서울 중심부에 위치한 시청",
+            },
+            {
+              lat: 35.1796,
+              lng: 129.0756,
+              name: "부산 해운대",
+              description: "부산의 유명한 해변",
+            },
+            {
+              lat: 33.4996,
+              lng: 126.5312,
+              name: "제주 성산일출봉",
+              description: "제주도의 유명한 관광지",
+            },
           ];
           return locations[Math.floor(Math.random() * locations.length)];
         };
-        
+
         const location = getRandomLocation();
 
         // 현재 위치와 실제 위치(정답 좌표) 모두 설정
@@ -460,33 +514,37 @@ export default {
         this.startRoundTimer();
       }, 1500);
     },
-    
+
     // 플레이어 점수 계산
     calculatePlayerScores() {
       // 각 플레이어의 점수 계산 (거리 기반)
       if (!this.gameStore.state.actualLocation) return;
-      
+
       const actualLat = this.gameStore.state.actualLocation.lat;
       const actualLng = this.gameStore.state.actualLocation.lng;
-      
-      this.gameStore.state.playerGuesses.forEach(guess => {
+
+      this.gameStore.state.playerGuesses.forEach((guess) => {
         const distance = this.calculateDistance(
-          actualLat, actualLng,
-          guess.position.lat, guess.position.lng
+          actualLat,
+          actualLng,
+          guess.position.lat,
+          guess.position.lng
         );
-        
+
         // 거리에 따른 점수 계산 (0~5000점)
         const score = Math.max(0, Math.floor(5000 - distance * 10));
         guess.score = score;
         guess.distance = distance.toFixed(2);
-        
+
         // 플레이어 정보 업데이트
-        const player = this.gameStore.state.players.find(p => p.id === guess.playerId);
+        const player = this.gameStore.state.players.find(
+          (p) => p.id === guess.playerId
+        );
         if (player) {
           // 누적 점수 계산
           if (!player.totalScore) player.totalScore = 0;
           player.totalScore += score;
-          
+
           // PlayerList 컴포넌트에서 사용하는 속성명으로 설정
           player.score = player.totalScore;
           player.lastScore = score;
@@ -494,17 +552,19 @@ export default {
           player.distanceToTarget = parseFloat(distance.toFixed(2));
         }
       });
-      
-      console.log('점수 계산 완료:', this.gameStore.state.players);
-      
+
+      console.log("점수 계산 완료:", this.gameStore.state.players);
+
       // 점수 기준으로 정렬
-      this.gameStore.state.players.sort((a, b) => (b.score || 0) - (a.score || 0));
+      this.gameStore.state.players.sort(
+        (a, b) => (b.score || 0) - (a.score || 0)
+      );
       this.gameStore.state.topPlayer = {
         playerName: this.gameStore.state.players[0].nickname,
-        distance: this.gameStore.state.players[0].distanceToTarget
-      }
+        distance: this.gameStore.state.players[0].distanceToTarget,
+      };
     },
-    
+
     // 거리 계산 함수 (Haversine 공식)
     calculateDistance(lat1, lon1, lat2, lon2) {
       const R = 6371; // 지구 반경 (km)
@@ -520,23 +580,9 @@ export default {
       const distance = R * c; // 거리 (km)
       return distance;
     },
-    
+
     deg2rad(deg) {
       return deg * (Math.PI / 180);
-    },
-    
-    // 토스트 메시지 표시
-    showToast(message) {
-      this.toastMessage = message;
-      this.showToastFlag = true;
-
-      if (this.toastTimeout) {
-        clearTimeout(this.toastTimeout);
-      }
-
-      this.toastTimeout = setTimeout(() => {
-        this.showToastFlag = false;
-      }, 3000);
     },
 
     sendTeamMessage(data) {
@@ -572,7 +618,9 @@ export default {
       });
 
       // 다음 라운드 시작
-      if (this.gameStore.state.currentRound < this.gameStore.state.totalRounds) {
+      if (
+        this.gameStore.state.currentRound < this.gameStore.state.totalRounds
+      ) {
         this.gameStore.state.currentRound++;
         this.gameStore.state.hasSubmittedGuess = false;
         this.gameStore.state.guessPosition = null;
@@ -625,8 +673,14 @@ export default {
 }
 
 @keyframes fadeInOut {
-  0% { opacity: 0; transform: translateY(20px); }
-  100% { opacity: 1; transform: translateY(0); }
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* 투표 알림 스타일 */
@@ -648,9 +702,15 @@ export default {
 }
 
 @keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* 맵 토글 버튼 스타일 오버라이드 */
