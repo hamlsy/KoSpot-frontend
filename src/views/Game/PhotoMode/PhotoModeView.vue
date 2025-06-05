@@ -429,14 +429,6 @@ const getRankIcon = (rank) => {
   box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
 }
 
-.practice-mode {
-  border-left: 4px solid #10b981;
-}
-
-.rank-mode {
-  border-left: 4px solid #f59e0b;
-}
-
 .game-mode-icon {
   width: 48px;
   height: 48px;

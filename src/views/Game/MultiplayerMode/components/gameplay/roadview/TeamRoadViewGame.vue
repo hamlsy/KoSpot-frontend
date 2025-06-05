@@ -1,5 +1,17 @@
 <template>
-  <base-multi-road-view-game :room-id="roomId">
+  <base-multi-road-view-game :room-id="roomId" ref="baseGame">
+    <!-- 맵 토글 버튼 오버라이드 -->
+    <template #map-toggle>
+      <button
+        class="map-toggle"
+        @click="toggleMap"
+        v-if="!gameStore.state.roundEnded"
+      >
+        <i class="fas fa-map-marked-alt"></i>
+        지도
+        <span v-if="hasActiveVoting && !isMapOpen" class="vote-notification">!</span>
+      </button>
+    </template>
     <!-- 팀 채팅창 -->
     <template #chat>
       <chat-window
@@ -21,6 +33,21 @@
         :show-controls="true"
         :prevent-mouse-events="gameStore.state.hasSubmittedGuess"
         @load-complete="onViewLoaded"
+      />
+      
+      <!-- 팀 투표 마커 -->
+      <team-marker-vote
+        v-if="gameStore.state.activeVotingMarker"
+        :position="gameStore.state.votingPosition"
+        :initiator="gameStore.state.votingInitiator"
+        :votes="gameStore.state.teamVotes"
+        :team-size="teamSize"
+        :current-user-id="gameStore.state.currentUser.id"
+        :is-active="gameStore.state.activeVotingMarker"
+        :map-offset="mapOffset"
+        @vote-submitted="handleVoteSubmission"
+        @vote-cancelled="handleVoteCancel"
+        @vote-timeout="handleVoteTimeout"
       />
     </template>
 
@@ -58,12 +85,19 @@
         v-if="gameStore.state.showVoting"
         :visible="gameStore.state.showVoting"
         :initiator="gameStore.state.votingInitiator"
-        :position="gameStore.state.votingPosition"
+        :guess-position="gameStore.state.votingPosition"
         :map-preview-url="mapPreviewUrl"
         :current-user-id="gameStore.state.currentUser.id"
         @vote-submitted="handleVoteSubmission"
         @voting-completed="handleVotingComplete"
       />
+      
+      <!-- 토스트 메시지 -->
+      <div class="toast-container" v-if="showToastFlag">
+        <div class="toast-message">
+          {{ toastMessage }}
+        </div>
+      </div>
     </template>
   </base-multi-road-view-game>
 </template>
@@ -74,6 +108,7 @@ import ChatWindow from '@/views/Game/MultiplayerMode/components/gameplay/chat/In
 import TeamRoundResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamRoundResults.vue";
 import TeamGameResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamGameResults.vue";
 import TeamVotingModal from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamVotingModal.vue";
+import TeamMarkerVote from "./TeamMarkerVote.vue";
 import RoadView from '@/components/game/roadview/RoadView.vue'
 import gameStore from "@/store/gameStore";
 
@@ -86,6 +121,7 @@ export default {
     TeamRoundResults,
     TeamGameResults,
     TeamVotingModal,
+    TeamMarkerVote,
     RoadView,
   },
 
@@ -100,7 +136,9 @@ export default {
       roundTimer: null, // 라운드 타이머
       toastTimeout: null, // 토스트 메시지 타이머
       toastMessage: "",
-      showToastFlag: false
+      showToastFlag: false,
+      mapOffset: { x: 0, y: 0 }, // 마커 위치 조정을 위한 오프셋
+      isMapOpen: false // 맵 열림 상태 추적
     };
   },
 
@@ -131,6 +169,24 @@ export default {
         []
       );
     },
+    
+    // 팀 크기 계산
+    teamSize() {
+      if (!gameStore.state.currentUser.teamId) return 0;
+      return gameStore.state.players.filter(
+        player => player.teamId === gameStore.state.currentUser.teamId
+      ).length;
+    },
+    
+    // 제출 가능 여부
+    canSubmit() {
+      return gameStore.state.canSubmitGuess && !gameStore.state.hasSubmittedGuess;
+    },
+    
+    // 활성화된 투표가 있는지 확인
+    hasActiveVoting() {
+      return this.gameStore.state.activeVotingMarker;
+    }
   },
 
   created() {
@@ -140,13 +196,31 @@ export default {
     // 테스트 데이터 로드 및 게임 초기화
     this.gameStore.loadTestData(true);
     this.initGame();
+    
+    // 투표 상태 변화 감지를 위한 watcher 설정
+    this.$watch(
+      () => this.gameStore.state.activeVotingMarker,
+      (newValue) => {
+        if (newValue && !this.isMapOpen) {
+          // 맵이 닫혀있고 새로운 투표가 시작되면 알림 표시
+          this.showToast("새로운 팀 투표가 시작되었습니다!");
+        }
+      }
+    );
+    
+    // 반응형 모드에서 맵 상태 변화 감지
+    window.addEventListener('resize', this.checkResponsiveMode);
+    this.checkResponsiveMode();
   },
   
   beforeUnmount() {
-    this.clearTimer();
+    if (this.roundTimer) {
+      clearInterval(this.roundTimer);
+    }
     if (this.toastTimeout) {
       clearTimeout(this.toastTimeout);
     }
+    window.removeEventListener('resize', this.checkResponsiveMode);
   },
 
   methods: {
@@ -163,7 +237,10 @@ export default {
     },
     
     submitTeamGuess(position) {
-      if (!this.canSubmit) return;
+      if (!this.canSubmit) {
+        this.showToast("다른 팀원의 제안에 투표 중입니다.");
+        return;
+      }
 
       // 팀 투표 시작
       this.gameStore.startTeamVoting(this.gameStore.state.currentUser, position);
@@ -177,6 +254,61 @@ export default {
         `${this.gameStore.state.currentUser.nickname}님이 위치 제출을 제안했습니다. 투표해주세요!`,
         true
       );
+      
+      // 토스트 메시지 표시
+      this.showToast("팀원들에게 투표 요청을 보냈습니다.");
+    },
+    
+    // 마커 위치 업데이트 (실제 구현에서는 맵 컴포넌트와 연동)
+    updateMarkerPosition() {
+      // 실제 구현에서는 맵 컴포넌트의 좌표 변환 함수를 사용해야 함
+      // 여기서는 간단히 중앙에 표시
+      this.mapOffset = { x: 0, y: 0 };
+    },
+    
+    // 맵 토글 메서드
+    toggleMap() {
+      if (this.$refs.baseGame) {
+        this.$refs.baseGame.toggleMap();
+        this.isMapOpen = !this.isMapOpen;
+        
+        // 맵을 열었을 때 투표 알림이 있었다면 토스트 메시지 표시
+        if (this.isMapOpen && this.gameStore.state.activeVotingMarker) {
+          this.showToast("팀원의 위치 제안에 투표해주세요!");
+        }
+      }
+    },
+    
+    // 반응형 모드 체크
+    checkResponsiveMode() {
+      this.isResponsiveMode = window.innerWidth <= 992;
+      
+      // 반응형 모드에서 맵 상태 확인
+      if (this.$refs.baseGame) {
+        this.isMapOpen = this.$refs.baseGame.isMapOpen;
+      }
+    },
+    
+    // 투표 취소 처리
+    handleVoteCancel() {
+      this.gameStore.cancelVoting();
+      this.gameStore.addTeamChatMessage(
+        this.gameStore.state.currentUser.teamId,
+        `${this.gameStore.state.votingInitiator.nickname}님이 위치 제안을 취소했습니다.`,
+        true
+      );
+      this.showToast("위치 제안이 취소되었습니다.");
+    },
+    
+    // 투표 시간 초과 처리
+    handleVoteTimeout() {
+      this.finalizeTeamVoting(false);
+      this.gameStore.addTeamChatMessage(
+        this.gameStore.state.currentUser.teamId,
+        "투표 시간이 초과되었습니다. 다시 시도해주세요.",
+        true
+      );
+      this.showToast("투표 시간이 초과되었습니다.");
     },
 
     handleVoteSubmission(vote) {
@@ -201,7 +333,8 @@ export default {
           "팀원들이 위치 제출에 동의했습니다!",
           true
         );
-
+        
+        this.showToast("팀원들이 위치 제출에 동의했습니다!");
         this.submitGuess();
 
         setTimeout(() => {
@@ -213,7 +346,40 @@ export default {
           "팀원들이 위치 제출을 거부했습니다. 다시 시도해주세요.",
           true
         );
+        
+        this.showToast("팀원들이 위치 제출을 거부했습니다.");
       }
+    },
+    
+    // 토스트 메시지 표시 메서드
+    showToast(message, duration = 3000) {
+      this.toastMessage = message;
+      this.showToastFlag = true;
+      
+      if (this.toastTimeout) {
+        clearTimeout(this.toastTimeout);
+      }
+      
+      this.toastTimeout = setTimeout(() => {
+        this.showToastFlag = false;
+      }, duration);
+    },
+    
+    // 최종 위치 제출 메서드
+    submitGuess() {
+      if (!this.gameStore.state.votingPosition) return;
+      
+      const position = this.gameStore.state.votingPosition;
+      
+      // 위치 제출 처리
+      this.gameStore.submitGuess(position);
+      
+      // 팀 채팅에 메시지 추가
+      this.gameStore.addTeamChatMessage(
+        this.gameStore.state.currentUser.teamId,
+        `${this.gameStore.state.currentUser.teamId} 팀이 위치를 제출했습니다.`,
+        true
+      );
     },
     
     // 타이머 시작 메서드
@@ -435,3 +601,79 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+/* 토스트 메시지 스타일 */
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  min-width: 250px;
+  max-width: 80%;
+}
+
+.toast-message {
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 1rem;
+  animation: fadeInOut 0.3s ease-in-out;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* 투표 알림 스타일 */
+.vote-notification {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: #ef4444;
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* 맵 토글 버튼 스타일 오버라이드 */
+.map-toggle {
+  position: relative;
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  z-index: 50;
+}
+
+.map-toggle:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+}
+</style>

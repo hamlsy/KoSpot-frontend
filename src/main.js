@@ -18,6 +18,7 @@ import "@fortawesome/fontawesome-free/js/all.js";
 import '@/assets/styles/index.css'
 // Vuex 스토어 가져오기 (Pinia로 마이그레이션 전까지 임시 사용)
 // import store from './store'; // 임시로 주석 처리
+import gameStore from "@/store/gameStore";
 
 //vue-number-animation
 import CountUp from 'vue-countup-v3';
@@ -26,6 +27,7 @@ import CountUp from 'vue-countup-v3';
 const app = createApp(App);
 
 app.component('CountUp', CountUp);
+app.component('gameStore', gameStore);
 
 // 전역 속성 설정 (Vue 3 방식으로 변경)
 app.config.globalProperties.$axios = axios;

@@ -1,18 +1,11 @@
 <template>
   <div class="multiplayer-roadview-game">
     <!-- 게임 헤더 -->
-    <div class="game-header">
-      <div class="header-left">
-        <button class="exit-button" @click="exitGame">
-          <i class="fas fa-door-open"></i>
-          <span class="exit-text">나가기</span>
-        </button>
+    <div class="game-header row">
+      <div class="header-left col-md-4">
         <div class="room-info">
-          <h2 class="room-name">{{ gameStore.state.roomData.name }}</h2>
-          <div class="game-mode">
-            {{ gameStore.state.roomData.gameMode }} -
-            {{ gameStore.state.roomData.region }}
-          </div>
+          <div class="room-name">{{ roomData?.name || "방 이름 없음" }}</div>
+          <div class="game-mode">{{ gameMode === "team" ? "팀전" : "개인전" }}</div>
         </div>
       </div>
 
@@ -127,7 +120,7 @@
       </div>
 
       <!-- 결과 모달 -->
-      <slot name="results"></slot>
+      <slot name="results" @request-next-round="handleRequestNextRound"></slot>
     </div>
 
     <!-- 휴대폰 프레임 -->
@@ -158,6 +151,10 @@ import PhoneFrame from "@/components/game/phone/PhoneFrame.vue";
 import MultiplayerIntroOverlay from "@/views/Game/MultiplayerMode/components/gameplay/intro/MultiplayerIntroOverlay.vue";
 import MultiplayNextRoundOverlay from "@/views/Game/MultiplayerMode/components/gameplay/intro/MultiplayNextRoundOverlay.vue";
 import gameStore from "@/store/gameStore";
+// import { Client } from '@stomp/stompjs'; // STOMP Placeholder: Uncomment when integrating
+// import SockJS from 'sockjs-client'; // STOMP Placeholder: Uncomment when integrating
+
+const NEXT_ROUND_VOTE_TIME_LIMIT_MS = 15000;
 
 export default {
   name: "BaseMultiRoadViewGame",
@@ -174,6 +171,7 @@ export default {
     roomId: {
       type: String,
       required: true,
+      default: "room1",
     },
     // 게임 모드에 따라 필요한 추가 props
     gameMode: {
@@ -209,13 +207,24 @@ export default {
   },
 
   data() {
+    // STOMP Placeholder: WebSocket client instance
+    // this.stompClient = null;
+    // this.stompSubscriptions = [];
+
     return {
+      //room
+      roomData: "asd",
       gameStore,
       isMapOpen: false,
       mapCenter: null,
       isChatOpen: false,
       isResponsiveMode: false,
       showToastFlag: false,
+      // Next Round Voting State
+      playersReadyForNextRound: new Set(),
+      nextRoundVoteTimerId: null,
+      isNextRoundVoteActive: false,
+      nextRoundVoteRemainingTime: NEXT_ROUND_VOTE_TIME_LIMIT_MS,
       toastMessage: "",
       toastTimeout: null,
       socket: null,
@@ -228,11 +237,32 @@ export default {
       showIntroOverlay: true,
       showNextRoundOverlay: false,
       userRank: 1,
-      totalPlayers: 1,
+      totalPlayers: 1
     };
   },
 
   computed: {
+    totalPlayersInRoom() {
+      return this.gameStore.state.players?.length || 0;
+    },
+    majorityThreshold() {
+      if (this.totalPlayersInRoom === 0) return 1; // Avoid division by zero, default to 1 if no players
+      return Math.ceil(this.totalPlayersInRoom / 2);
+    },
+    numPlayersReadyForNextRound() {
+      return this.playersReadyForNextRound.size;
+    },
+    didCurrentUserVoteForNextRound() {
+      return this.playersReadyForNextRound.has(this.gameStore.state.currentUser?.id);
+    },
+    nextRoundVoteStatusText() {
+      if (!this.isNextRoundVoteActive) return "";
+      return `${this.numPlayersReadyForNextRound} / ${this.totalPlayersInRoom}`;
+    },
+    // STOMP Placeholder: Websocket connection status
+    // isWebSocketConnected() { 
+    //   return this.stompClient && this.stompClient.connected;
+    // },
     canSubmit() {
       return (
         !this.gameStore.state.hasSubmittedGuess &&
@@ -263,18 +293,50 @@ export default {
   methods: {
     // 인트로 완료 처리
     handleIntroComplete() {
+      alert("인트로 완료");
       this.showIntroOverlay = false;
+      this.handleEndOverlay();
     },
 
     // 다음 라운드 인트로 완료 처리
     handleNextRoundComplete() {
       this.showNextRoundOverlay = false;
+      this.handleEndOverlay();
       this.$emit("next-round-ready");
+    },
+
+    handleEndOverlay() {
+      this.$emit("end-overlay");
+    },
+
+    // 다음 라운드 요청 처리 (슬롯에서 전달된 이벤트)
+    handleRequestNextRound() {
+      console.log("BaseMultiRoadViewGame: 다음 라운드 요청 받음");
+      // 부모 컴포넌트로 이벤트 전달
+      this.$emit("request-next-round");
     },
 
     // 슬롯에서 발생하는 next-round 이벤트 처리
     handleNextRound() {
+      console.log("BaseMultiRoadViewGame: 다음 라운드 처리");
+      // 이벤트 발생
       this.$emit("next-round");
+      
+      // 다음 라운드 투표 타이머 취소
+      if (this.nextRoundVoteTimerId) {
+        clearInterval(this.nextRoundVoteTimerId);
+        this.nextRoundVoteTimerId = null;
+      }
+      
+      // 투표 상태 초기화
+      this.isNextRoundVoteActive = false;
+      this.playersReadyForNextRound.clear();
+      
+      // 게임 스토어의 다음 라운드 시작 메서드 호출
+      this.gameStore.startNextRound();
+      
+      // 다음 라운드 데이터 가져오기 준비
+      this.fetchRoundData();
     },
 
     // 다음 라운드 시작
@@ -366,10 +428,33 @@ export default {
     toggleMap() {
       // 라운드가 끝났을 때는 결과 지도 표시/숨김 토글
       if (this.gameStore.state.roundEnded) {
+      
         this.showResultMap = !this.showResultMap;
+        this.initiateNextRoundVoting(); // Start voting when round results are shown
       } else {
         this.isMapOpen = !this.isMapOpen;
       }
+    },
+
+    initiateNextRoundVoting() {
+      this.isNextRoundVoteActive = true;
+      this.playersReadyForNextRound.clear();
+      this.nextRoundVoteRemainingTime = NEXT_ROUND_VOTE_TIME_LIMIT_MS;
+      this.nextRoundVoteTimerId = setInterval(() => {
+        this.nextRoundVoteRemainingTime -= 1000;
+        if (this.nextRoundVoteRemainingTime <= 0) {
+          clearInterval(this.nextRoundVoteTimerId);
+          this.isNextRoundVoteActive = false;
+          
+          // 다음 라운드 시작 메서드 호출
+          this.gameStore.startNextRound();
+          
+          // 다음 라운드 데이터 가져오기
+          this.fetchRoundData();
+          
+          console.log("타이머 종료로 다음 라운드 시작", this.gameStore.state.currentRound);
+        }
+      }, 1000);
     },
 
     // ...
@@ -610,7 +695,9 @@ export default {
     },
 
     exitToLobby() {
-      this.clearTimer();
+      this.clearTimers();
+      // STOMP Placeholder: Disconnect WebSocket
+      // this.disconnectWebSocket();
       this.$router.push("/multiplayerLobby");
     },
   },
