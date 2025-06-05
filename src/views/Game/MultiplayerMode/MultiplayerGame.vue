@@ -226,7 +226,7 @@
 
 <script>
 import GameTimer from '@/components/ui/GameTimer.vue';
-import MultiplayerPlayerList from './components/gameplay/MultiplayerPlayerList.vue';
+import MultiplayerPlayerList from './components/gameplay/roadview/components/IndividualPlayerList.vue';
 import RoadView from '@/components/common/game/roadview/RoadView.vue';
 import PhotoView from '@/components/common/game/photo/PhotoView.vue';
 import KakaoMap from '@/components/common/game/kakao/KakaoMap.vue';

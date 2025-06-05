@@ -814,6 +814,10 @@ export default {
   background-color: white;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
   z-index: 5;
+  overflow-y: auto;
+  max-height: calc(100vh - 140px);
+  display: flex;
+  flex-direction: column;
 }
 
 .main-panel {

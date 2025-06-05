@@ -77,7 +77,7 @@ import ChatWindow from "@/views/Game/MultiplayerMode/components/gameplay/chat/In
 import RoundResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerRoundResults.vue";
 import GameResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerGameResults.vue";
 import gameStore from "@/store/gameStore";
-import PlayerList from "@/views/Game/MultiplayerMode/components/gameplay/MultiplayerPlayerList.vue";
+import PlayerList from "@/views/Game/MultiplayerMode/components/gameplay/roadview/components/IndividualPlayerList.vue";
 
 export default {
   name: "IndividualRoadViewGame",
