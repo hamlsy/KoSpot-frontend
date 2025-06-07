@@ -12,16 +12,8 @@
     <!-- 팀 플레이어 리스트 -->  
     <template #player-list>
       <team-players-list
-        :teams="gameStore.state.teams"
-        :players="gameStore.state.players"
         :current-user-id="gameStore.state.currentUser.id"
-        :is-host="gameStore.state.currentUser.isHost"
-        :player-messages="gameStore.state.playerMessages"
-        :show-team-scores="true"
-        :show-multiplay-stats="true"
-        :show-scores="true"
-        @show-player-details="handlePlayerDetails"
-        @kick-player="handleKickPlayer"
+        :max-players-per-team="4"
       />
     </template>
 
@@ -171,7 +163,7 @@ export default {
     currentTeamMessages() {
       // 현재 팀의 채팅 메시지 필터링
       const currentTeamId = this.gameStore.state.currentUser.teamId;
-      return this.gameStore.state.teamMessages[currentTeamId] || [];
+      return this.gameStore.state.teamChatMessages[currentTeamId] || [];
     },
 
     // 팀 크기 계산

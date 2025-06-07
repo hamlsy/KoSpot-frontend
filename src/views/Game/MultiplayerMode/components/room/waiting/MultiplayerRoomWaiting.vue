@@ -179,8 +179,8 @@
 <script setup>
 import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import RoomHeader from './components/RoomHeader.vue';
-import TeamPlayersList from './components/TeamPlayersList.vue';
-import IndividualPlayersList from './components/IndividualPlayersList.vue';
+import TeamPlayersList from './components/TeamWaitingList.vue';
+import IndividualPlayersList from './components/IndividualWaitingList.vue';
 import CountdownOverlay from './components/CountdownOverlay.vue';
 import KickConfirmationModal from './components/KickConfirmationModal.vue';
 import PlayerDetailsModal from './components/PlayerDetailsModal.vue';

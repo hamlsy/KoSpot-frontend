@@ -234,7 +234,7 @@ export default {
       isTeamMode: false,
       userGuessPosition: null,
       userHasSubmitted: false,
-      showIntroOverlay: true,
+      showIntroOverlay: false,
       showNextRoundOverlay: false,
       userRank: 1,
       totalPlayers: 1
