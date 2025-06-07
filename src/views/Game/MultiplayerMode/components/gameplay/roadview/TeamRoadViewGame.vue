@@ -131,59 +131,54 @@ export default {
   data() {
     return {
       gameStore,
-      mapPreviewUrl: "",
-      submittedPlayersCount: 0,
-      allPlayersSubmitted: false,
-      roomId: "team-room-1", // 테스트용 방 ID
-      gameMode: "team",
-      roundTimer: null, // 라운드 타이머
-      toastTimeout: null, // 토스트 메시지 타이머
-      toastMessage: "",
+      roomId: "team-game-1", // 실제로는 라우트 파라미터나 props로 받아옴
       showToastFlag: false,
-      mapOffset: { x: 0, y: 0 }, // 마커 위치 조정을 위한 오프셋
-      isMapOpen: false, // 맵 열림 상태 추적
+      toastMessage: "",
+      isResponsiveMode: false,
+      allPlayersSubmitted: false,
+      submittedPlayersCount: 0,
+      playerReadyStates: {}, // 플레이어 준비 상태
+      teamReadyStates: {}, // 팀 준비 상태
     };
   },
 
   computed: {
     currentUserTeam() {
-      // 현재 사용자의 팀 정보 가져오기
-      const currentTeamId = this.gameStore.state.currentUser.teamId;
-      return this.gameStore.state.teams.find((team) => team.id === currentTeamId);
-    },
-
-    teamMembers() {
-      // 현재 사용자와 같은 팀인 플레이어들 필터링
-      const currentTeamId = this.gameStore.state.currentUser.teamId;
-      return this.gameStore.state.players.filter(
-        (player) => player.teamId === currentTeamId
+      return gameStore.state.teams.find(
+        (team) => team.id === gameStore.state.currentUser?.teamId
       );
     },
-
-    currentTeamMessages() {
-      // 현재 팀의 채팅 메시지 필터링
-      const currentTeamId = this.gameStore.state.currentUser.teamId;
-      return this.gameStore.state.teamChatMessages[currentTeamId] || [];
+    
+    // 현재 사용자가 투표 발의자인지 확인
+    isCurrentUserInitiator() {
+      return gameStore.state.votingInitiator === gameStore.state.currentUser?.id;
     },
-
-    // 팀 크기 계산
-    teamSize() {
-      const currentTeamId = this.gameStore.state.currentUser.teamId;
-      return this.gameStore.state.players.filter(
-        (player) => player.teamId === currentTeamId
-      ).length;
+    
+    // 맵이 열려있는지 확인
+    isMapOpen() {
+      return this.$refs.baseGame?.isMapOpen || false;
     },
-
-    // 제출 가능 여부
-    canSubmit() {
-      return (
-        !this.gameStore.state.activeVotingMarker && !this.gameStore.state.showVoting
-      );
-    },
-
-    // 활성화된 투표가 있는지 확인
-    hasActiveVoting() {
-      return this.gameStore.state.activeVotingMarker || this.gameStore.state.showVoting;
+    
+    // 투표 진행 상황 계산
+    votingProgress() {
+      if (!gameStore.state.showVoting) return { yes: 0, no: 0, total: 0, needed: 0 };
+      
+      const teamId = gameStore.state.votingTeamId;
+      const teamVotes = gameStore.state.teamVotes[teamId] || {};
+      const teamSize = this.teamSize;
+      
+      let yes = 0;
+      let no = 0;
+      
+      Object.values(teamVotes).forEach(vote => {
+        if (vote.approved) yes++;
+        else if (vote.approved === false) no++;
+      });
+      
+      // 과반수 계산 (올림)
+      const needed = Math.ceil(teamSize / 2);
+      
+      return { yes, no, total: yes + no, needed };
     },
   },
 
@@ -367,47 +362,163 @@ export default {
     },
 
     handleGuessSubmission(position) {
-      // 위치 정보 유효성 검사
-      if (
-        !position ||
-        position.lat === undefined ||
-        position.lng === undefined
-      ) {
-        console.error("유효하지 않은 위치 정보:", position);
+    // 팀 모드에서는 팀 제출 로직을 사용
+    if (gameStore.state.roomData.matchType === 'team') {
+      // 투표 진행 중이면 무시
+      if (gameStore.state.showVoting) {
+        this.showToast('이미 투표가 진행 중입니다.');
         return;
       }
-      console.log("팀 게임에서 위치 제출:", position);
-
-      // 팀 게임에서는 제출이 바로 완료되지 않고 투표 프로세스를 시작
       this.submitTeamGuess(position);
-    },
+    } else {
+      console.error('팀 모드가 아닌데 팀 게임 컴포넌트가 사용됨');
+    }
+  },
 
     submitTeamGuess(position) {
-      if (!this.canSubmit) {
-        this.showToast("다른 팀원의 제안에 투표 중입니다.");
+      // 투표 진행 중이면 무시
+      if (gameStore.state.showVoting) {
+        this.showToast('이미 투표가 진행 중입니다.');
         return;
       }
-
+      
       // 팀 투표 시작
-      this.gameStore.startTeamVoting(
-        this.gameStore.state.currentUser,
-        position
-      );
-
-      // 지도 미리보기 URL 생성 (실제 구현에서는 카카오나 구글 지도 API를 통해 생성)
-      this.mapPreviewUrl = `https://map-preview.example.com?lat=${position.lat}&lng=${position.lng}`;
-
-      // 시스템 메시지 추가
-      this.gameStore.addTeamChatMessage(
-        this.gameStore.state.currentUser.teamId,
-        `${this.gameStore.state.currentUser.nickname}님이 위치 제출을 제안했습니다. 투표해주세요!`,
-        true
-      );
-
-      // 토스트 메시지 표시
-      this.showToast("팀원들에게 투표 요청을 보냈습니다.");
+      const userId = gameStore.state.currentUser.id;
+      const teamId = gameStore.state.currentUser.teamId;
+      
+      // 투표 시작 처리
+      gameStore.startTeamVoting({
+        initiatorId: userId,
+        teamId: teamId,
+        position: position
+      });
+      
+      // 자동으로 발의자는 찬성 투표
+      gameStore.submitVote({
+        playerId: userId,
+        teamId: teamId,
+        approved: true
+      });
+      
+      // 투표 시작 메시지 전송
+      this.sendTeamMessage({
+        content: '위치 제출 투표를 시작했습니다.',
+        type: 'system'
+      });
+      
+      // 마커 활성화
+      gameStore.state.activeVotingMarker = true;
     },
 
+    // 투표 취소 처리
+    handleVoteCancel() {
+      // 투표 취소는 발의자만 가능
+      if (!this.isCurrentUserInitiator) return;
+      
+      const teamId = gameStore.state.currentUser.teamId;
+      
+      // 투표 취소 처리
+      gameStore.cancelVoting(teamId);
+      
+      // 투표 취소 메시지 전송
+      this.sendTeamMessage({
+        content: '위치 제출 투표가 취소되었습니다.',
+        type: 'system'
+      });
+      
+      // 마커 비활성화
+      gameStore.state.activeVotingMarker = false;
+    },
+    
+    // 투표 제출 처리
+    handleVoteSubmission(vote) {
+      // 이미 투표했으면 무시
+      if (this.hasUserVoted()) return;
+      
+      const userId = gameStore.state.currentUser.id;
+      const teamId = gameStore.state.currentUser.teamId;
+      
+      // 투표 제출
+      gameStore.submitVote({
+        playerId: userId,
+        teamId: teamId,
+        approved: vote.approved
+      });
+      
+      // 투표 메시지 전송
+      const voteMessage = vote.approved ? '찬성' : '반대';
+      this.sendTeamMessage({
+        content: `${voteMessage} 투표를 제출했습니다.`,
+        type: 'system'
+      });
+      
+      // 과반수 찬성이면 자동으로 투표 완료
+      if (this.votingProgress.yes >= this.votingProgress.needed) {
+        this.finalizeVoting();
+      }
+      // 과반수 반대면 자동으로 투표 취소
+      else if (this.votingProgress.no >= this.votingProgress.needed) {
+        this.handleVoteCancel();
+      }
+    },
+    
+    // 투표 완료 처리
+    finalizeVoting() {
+      const teamId = gameStore.state.currentUser.teamId;
+      const position = gameStore.state.votingPosition;
+      
+      if (!position) return;
+      
+      // 투표 완료 처리
+      gameStore.finalizeVoting(teamId);
+      
+      // 팀원들의 제출 상태 업데이트
+      this.teamMembers.forEach(member => {
+        const player = gameStore.state.players.find(p => p.id === member.id);
+        if (player) player.hasSubmitted = true;
+      });
+      
+      // 팀 제출 상태 업데이트
+      const team = gameStore.state.teams.find(team => team.id === teamId);
+      if (team) team.hasSubmitted = true;
+      
+      // 모든 팀이 제출했는지 확인
+      const allTeamsSubmitted = gameStore.state.teams.every(team => team.hasSubmitted);
+      
+      // 투표 완료 메시지 전송
+      this.sendTeamMessage({
+        content: '투표가 완료되어 위치가 제출되었습니다.',
+        type: 'system'
+      });
+      
+      // 마커 비활성화
+      gameStore.state.activeVotingMarker = false;
+      
+      if (allTeamsSubmitted) {
+        // 모든 팀이 제출했으면 라운드 종료 처리
+        setTimeout(() => {
+          gameStore.calculateRoundResults();
+        }, 1000);
+      }
+    },
+    
+    // 현재 사용자가 투표 발의자인지 확인
+    isCurrentUserVotingInitiator() {
+      return gameStore.state.votingInitiator === gameStore.state.currentUser?.id;
+    },
+    
+    getMarkerVoteBubbleStyle() {
+      // 투표 마커 버블 위치 계산 (실제로는 마커 위치에 따라 동적으로 계산)
+      return {
+        position: 'absolute',
+        left: '50%',
+        bottom: '50%',
+        transform: 'translate(-50%, -120%)',
+        minWidth: '120px',
+        zIndex: 1000
+      };
+    },
+    
     // 마커 위치 업데이트 (실제 구현에서는 맵 컴포넌트와 연동)
     updateMarkerPosition() {
       // 실제 구현에서는 맵 컴포넌트의 좌표 변환 함수를 사용해야 함
@@ -437,30 +548,6 @@ export default {
         this.isMapOpen = this.$refs.baseGame.isMapOpen;
       }
     },
-
-    // 투표 취소 처리
-    // 마커 투표 버블 위치 계산
-    getMarkerVoteBubbleStyle() {
-      // 맵 오프셋 기준으로 위치 계산 (실제 구현에서는 맵 컴포넌트와 연동)
-      // 여기서는 간단히 중앙 상단에 표시
-      const top = '40%';
-      const left = '50%';
-      
-      return {
-        position: 'absolute',
-        top,
-        left,
-        transform: 'translate(-50%, -120%)' // 마커 위에 위치하도록 조정
-      };
-    },
-    
-    // 현재 사용자가 투표 제안자인지 확인
-    isCurrentUserVotingInitiator() {
-      return this.gameStore.state.votingInitiator && 
-             this.gameStore.state.votingInitiator.id === this.gameStore.state.currentUser.id;
-    },
-    
-
     
     // 투표 완료 확인 및 처리
     checkVotingComplete() {
@@ -488,61 +575,7 @@ export default {
       
       return approvalCount + 1 > totalNeeded; // +1은 제안자 자신
     },
-    
-    // 투표 결과 처리
-    finalizeVoting() {
-      const votes = this.gameStore.state.teamVotes;
-      const approvalCount = Object.values(votes).filter(v => v === true).length;
-      const rejectionCount = Object.values(votes).filter(v => v === false).length;
-      
-      // 과반수 이상 동의한 경우 제출 처리
-      if (approvalCount > rejectionCount) {
-        // 팀 추측 제출 처리
-        this.gameStore.finalizeTeamGuess(this.gameStore.state.votingPosition);
-        
-        // 시스템 메시지 추가
-        this.gameStore.addTeamChatMessage(
-          this.gameStore.state.currentUser.teamId,
-          `팀의 위치가 제출되었습니다!`,
-          true
-        );
-        
-        this.showToast("팀의 위치가 제출되었습니다!");
-      } else {
-        // 거절된 경우
-        this.gameStore.cancelVoting();
-        
-        // 시스템 메시지 추가
-        this.gameStore.addTeamChatMessage(
-          this.gameStore.state.currentUser.teamId,
-          `위치 제안이 거절되었습니다.`,
-          true
-        );
-        
-        this.showToast("위치 제안이 거절되었습니다.");
-      }
-    },
-    
-    // 투표 제출 처리
-    handleVoteSubmission(vote) {
-      // 투표 정보 저장
-      this.gameStore.submitVote(this.gameStore.state.currentUser.id, vote.approved);
-      
-      // 시스템 메시지 추가
-      const voteMessage = vote.approved ? '동의했습니다' : '거절했습니다';
-      this.gameStore.addTeamChatMessage(
-        this.gameStore.state.currentUser.teamId,
-        `${this.gameStore.state.currentUser.nickname}님이 위치 제안에 ${voteMessage}.`,
-        true
-      );
-      
-      // 토스트 메시지 표시
-      this.showToast(`위치 제안에 ${voteMessage}.`);
-      
-      // 투표 완료 확인 및 처리
-      this.checkVotingComplete();
-    },
-    
+
     // 투표 타임아웃 처리
     handleVoteTimeout() {
       // 투표 시간이 초과된 경우 처리
@@ -556,20 +589,6 @@ export default {
       
       this.showToast("투표 시간이 초과되었습니다.");
     },
-    
-
-    
-    // 투표 취소 처리
-    handleVoteCancel() {
-      this.gameStore.cancelVoting();
-      this.gameStore.addTeamChatMessage(
-        this.gameStore.state.currentUser.teamId,
-        `${this.gameStore.state.votingInitiator.nickname}님이 위치 제안을 취소했습니다.`,
-        true
-      );
-      this.showToast("위치 제안이 취소되었습니다.");
-    },
-
 
     handleVotingComplete(result) {
       this.finalizeTeamVoting(result.approved);

@@ -16,6 +16,39 @@
       {{ actionButtonText }}
     </button>
     
+    <!-- 팀 투표 알림 배지 (맵 토글 버튼에 표시) -->
+    <div 
+      v-if="showVotingBadge" 
+      class="voting-badge"
+      :class="`team-${gameStore.state.votingTeamId}-badge`"
+    >
+      <i class="fas fa-vote-yea"></i>
+    </div>
+    
+    <!-- 팀 투표 마커 -->
+    <div v-if="gameStore.state.activeVotingMarker && gameStore.state.votingPosition" class="voting-marker-container">
+      <team-voting-marker
+        :position="gameStore.state.votingPosition"
+        :team-id="gameStore.state.votingTeamId"
+        :is-active="gameStore.state.showVoting"
+        @vote="handleVote"
+        @cancel="cancelVoting"
+        @complete="completeVoting"
+      />
+    </div>
+    
+    <!-- 다른 플레이어 마커 표시 (실시간 위치) -->
+    <div v-for="(marker, index) in teamPlayerMarkers" :key="index" class="team-player-marker">
+      <div 
+        class="player-marker" 
+        :class="`team-${marker.teamId}-marker`"
+        :style="{ left: `${marker.x}px`, top: `${marker.y}px` }"
+        :title="marker.playerName"
+      >
+        <img :src="marker.playerImage || '/assets/default-marker.png'" :alt="marker.playerName" />
+      </div>
+    </div>
+    
     <div class="loading-overlay" v-if="isLoading">
       <div class="loading-spinner">
         <i class="fas fa-spinner fa-spin"></i>
@@ -26,8 +59,15 @@
 </template>
 
 <script>
+import { computed, ref } from 'vue';
+import TeamVotingMarker from './TeamVotingMarker.vue';
+import gameStore from '@/store/gameStore';
+
 export default {
   name: 'KakaoMapGame',
+  components: {
+    TeamVotingMarker
+  },
   props: {
     isOpen: {
       type: Boolean,
@@ -85,7 +125,10 @@ export default {
       isLoading: true,
       isInitialized: false,
       markerImage: null,
-      hasMarker: false
+      hasMarker: false,
+      teamPlayerMarkers: [],
+      showVotingBadge: false,
+      gameStore: gameStore
     };
   },
   
@@ -100,6 +143,26 @@ export default {
       
       // 1km 이상이면 소수점 1자리까지 표시
       return `${this.distance.toFixed(1)}km`;
+    },
+    
+    // 현재 사용자의 팀 ID
+    currentTeamId() {
+      return gameStore.state.currentUser?.teamId;
+    },
+    
+    // 현재 팀의 투표 상태
+    teamVotingActive() {
+      return gameStore.state.showVoting && gameStore.state.votingTeamId === this.currentTeamId;
+    },
+    
+    // 현재 사용자가 투표 제안자인지 확인
+    isVotingInitiator() {
+      return gameStore.state.votingInitiator?.id === gameStore.state.currentUser?.id;
+    },
+    
+    // 맵이 닫혀있을 때 투표 배지 표시 여부
+    shouldShowVotingBadge() {
+      return !this.isOpen && gameStore.state.showVoting && gameStore.state.votingTeamId === this.currentTeamId;
     }
   },
   
@@ -115,12 +178,25 @@ export default {
           }
         });
       }
+      
+      // 맵이 닫혀있을 때 투표 배지 표시 여부 업데이트
+      this.updateVotingBadge();
     },
     
     actualLocation(newLocation) {
       if (newLocation && this.marker && this.map) {
         this.calculateDistance();
       }
+    },
+    
+    // 투표 상태 변경 감시
+    'gameStore.state.showVoting'(newValue) {
+      this.updateVotingBadge();
+    },
+    
+    // 투표 팀 ID 변경 감시
+    'gameStore.state.votingTeamId'(newValue) {
+      this.updateVotingBadge();
     }
   },
   
@@ -351,19 +427,112 @@ export default {
         ));
       }
     },
-    
     closeMap() {
       this.$emit('close');
     },
     
     submitAnswer() {
-      if (!this.marker || !this.map) return;
+      if (!this.marker) return;
       
       const position = this.marker.getPosition();
-      this.$emit('check-answer', {
-        lat: position.getLat(),
-        lng: position.getLng()
-      });
+      const lat = position.getLat();
+      const lng = position.getLng();
+      
+      // 팀 모드인 경우 투표 시작
+      if (gameStore.state.roomData?.matchType === 'team' && !gameStore.state.hasSubmittedGuess) {
+        this.startTeamVoting({ lat, lng });
+      } else {
+        this.$emit('submit-answer', { lat, lng });
+      }
+    },
+    
+    // 팀 투표 시작
+    startTeamVoting(position) {
+      // 이미 진행 중인 투표가 있는 경우 무시
+      if (gameStore.state.showVoting) return;
+      
+      // 투표 시작
+      gameStore.startTeamVoting(gameStore.state.currentUser, position);
+      
+      // 투표 배지 업데이트
+      this.updateVotingBadge();
+      
+      // 투표 시작 알림
+      const teamName = this.getTeamName(gameStore.state.currentUser.teamId);
+      gameStore.addTeamChatMessage(
+        gameStore.state.currentUser.teamId,
+        `${gameStore.state.currentUser.nickname}님이 위치 투표를 시작했습니다.`,
+        true
+      );
+    },
+    
+    // 투표 처리
+    handleVote(isApproved) {
+      gameStore.submitVote(isApproved);
+      
+      // 투표 메시지 추가
+      const voteMessage = isApproved ? '찬성' : '반대';
+      gameStore.addTeamChatMessage(
+        gameStore.state.currentUser.teamId,
+        `${gameStore.state.currentUser.nickname}님이 ${voteMessage} 투표했습니다.`,
+        true
+      );
+      
+      // 과반수 찬성 시 자동으로 완료 처리
+      const teamSize = gameStore.getTeamSize(gameStore.state.votingTeamId);
+      if (gameStore.state.votingResults.yes > (teamSize / 2)) {
+        this.completeVoting(true);
+      }
+    },
+    
+    // 투표 취소
+    cancelVoting() {
+      gameStore.cancelVoting();
+      this.updateVotingBadge();
+      
+      // 취소 메시지 추가
+      gameStore.addTeamChatMessage(
+        gameStore.state.currentUser.teamId,
+        `${gameStore.state.currentUser.nickname}님이 투표를 취소했습니다.`,
+        true
+      );
+    },
+    
+    // 투표 완료
+    completeVoting(isApproved) {
+      const result = gameStore.finalizeVoting(isApproved);
+      this.updateVotingBadge();
+      
+      // 결과 메시지 추가
+      const resultMessage = result ? '승인되었습니다' : '거부되었습니다';
+      gameStore.addTeamChatMessage(
+        gameStore.state.currentUser.teamId,
+        `팀 위치 투표가 ${resultMessage}.`,
+        true
+      );
+      
+      // 승인된 경우 위치 제출
+      if (result) {
+        this.$emit('submit-answer', gameStore.state.guessPosition);
+      }
+    },
+    
+    // 투표 배지 업데이트
+    updateVotingBadge() {
+      this.showVotingBadge = !this.isOpen && 
+                            gameStore.state.showVoting && 
+                            gameStore.state.votingTeamId === this.currentTeamId;
+    },
+    
+    // 팀 이름 가져오기
+    getTeamName(teamId) {
+      const teamColors = {
+        'blue': '파랑팀',
+        'red': '빨강팀',
+        'green': '초록팀',
+        'purple': '보라팀'
+      };
+      return teamColors[teamId] || `팀 ${teamId}`;
     },
     
     // 마커 위치 반환하는 메서드 추가
@@ -612,6 +781,107 @@ export default {
   
   .action-button {
     bottom: 20px;
+  }
+}
+.voting-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #ff5722;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  animation: pulse-badge 1.5s infinite;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* 팀별 배지 색상 */
+.team-blue-badge {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+.team-red-badge {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+.team-green-badge {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+}
+
+.team-purple-badge {
+  background: linear-gradient(135deg, #9b59b6, #8e44ad);
+}
+
+/* 플레이어 마커 스타일 */
+.team-player-marker {
+  position: absolute;
+  z-index: 5;
+}
+
+.player-marker {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid #3498db;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transform: translate(-50%, -50%);
+}
+
+.player-marker img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 팀별 마커 테두리 색상 */
+.team-blue-marker {
+  border-color: #3498db;
+}
+
+.team-red-marker {
+  border-color: #e74c3c;
+}
+
+.team-green-marker {
+  border-color: #2ecc71;
+}
+
+.team-purple-marker {
+  border-color: #9b59b6;
+}
+
+/* 투표 마커 컨테이너 */
+.voting-marker-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* 배지 펄스 애니메이션 */
+@keyframes pulse-badge {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
   }
 }
 </style> 

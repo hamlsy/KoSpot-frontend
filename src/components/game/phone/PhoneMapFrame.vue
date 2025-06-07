@@ -36,10 +36,23 @@
       <button 
         v-if="!disabled && showSpotButton" 
         class="phone-spot-button"
+        :class="{'disabled': spotButtonDisabled, 'submitted': isTeamMode && gameStore.state.hasSubmittedGuess}"
         @click="checkSpotAnswer"
+        :disabled="spotButtonDisabled"
       >
-        <i class="fas fa-crosshairs"></i> Spot!
+        <i class="fas fa-crosshairs"></i> {{ spotButtonText }}
       </button>
+      
+      <!-- 투표 알림 배지 (맵이 닫혀있을 때) -->
+      <div 
+        v-if="!isOpen && isVotingActive" 
+        class="voting-notification"
+        :class="`team-${gameStore.state.votingTeamId}-notification`"
+        @click="$emit('open')"
+      >
+        <i class="fas fa-vote-yea"></i>
+        <span>팀 투표 진행 중</span>
+      </div>
     </div>
     <div class="phone-footer">
       <div class="home-button" @click="$emit('close')"></div>
@@ -49,12 +62,51 @@
 
 <script>
 import KakaoMapGame from '@/components/game/kakao/KakaoMapGame.vue';
+import gameStore from '@/store/gameStore';
 
 export default {
   name: 'PhoneMapFrame',
   
   components: {
     KakaoMapGame
+  },
+  
+  data() {
+    return {
+      gameStore: gameStore
+    };
+  },
+  
+  computed: {
+    // 팀 모드인지 확인
+    isTeamMode() {
+      return gameStore.state.roomData?.matchType === 'team';
+    },
+    
+    // 현재 사용자의 팀 ID
+    currentTeamId() {
+      return gameStore.state.currentUser?.teamId;
+    },
+    
+    // 투표 진행 중인지 확인
+    isVotingActive() {
+      return gameStore.state.showVoting && gameStore.state.votingTeamId === this.currentTeamId;
+    },
+    
+    // Spot 버튼 비활성화 여부
+    spotButtonDisabled() {
+      return this.disabled || 
+             (this.isTeamMode && !gameStore.state.canSubmitGuess) || 
+             (this.isTeamMode && gameStore.state.hasSubmittedGuess);
+    },
+    
+    // Spot 버튼 텍스트
+    spotButtonText() {
+      if (this.isTeamMode && gameStore.state.hasSubmittedGuess) {
+        return '제출 완료';
+      }
+      return 'Spot!';
+    }
   },
   
   props: {
@@ -126,6 +178,9 @@ export default {
     
     // Spot 버튼 클릭 시 마커 위치 확인
     checkSpotAnswer() {
+      // 버튼이 비활성화된 경우 무시
+      if (this.spotButtonDisabled) return;
+      
       if (!this.$refs.phoneMapGame) {
         this.$emit('error', '지도가 준비되지 않았습니다. 다시 시도해주세요.');
         return;
@@ -135,14 +190,19 @@ export default {
       this.$refs.phoneMapGame.getMarkerPosition()
         .then(markerPosition => {
           if (markerPosition) {
-            this.$emit('check-answer', markerPosition);
+            // 팀 모드인 경우 투표 시작
+            if (this.isTeamMode && !gameStore.state.hasSubmittedGuess) {
+              // KakaoMapGame에서 처리하므로 여기서는 이벤트만 발생
+              this.$emit('check-answer', markerPosition);
+            } else {
+              this.$emit('check-answer', markerPosition);
+            }
           } else {
             this.$emit('error', '위치를 선택해주세요!');
           }
         })
         .catch(() => {
           this.$emit('error', '위치를 선택해주세요!');
-          
         });
     }
   }
@@ -369,6 +429,73 @@ export default {
   .phone-spot-button {
     padding: 8px 16px;
     font-size: 0.85rem;
+  }
+}
+/* 투표 알림 배지 */
+.voting-notification {
+  position: absolute;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(52, 152, 219, 0.4);
+  transition: all 0.3s ease;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: pulse 1.5s infinite alternate;
+}
+
+.voting-notification:hover {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 6px 12px rgba(52, 152, 219, 0.6);
+}
+
+/* 팀별 알림 색상 */
+.team-blue-notification {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+.team-red-notification {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+.team-green-notification {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+}
+
+.team-purple-notification {
+  background: linear-gradient(135deg, #9b59b6, #8e44ad);
+}
+
+/* Spot 버튼 상태 */
+.phone-spot-button.disabled {
+  background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.phone-spot-button.submitted {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 1;
   }
 }
 </style> 
