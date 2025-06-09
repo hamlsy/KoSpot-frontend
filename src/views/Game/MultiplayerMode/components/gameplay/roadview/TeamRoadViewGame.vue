@@ -71,23 +71,7 @@
 
     <!-- 팀전 결과 모달 -->
     <template #results>
-      <team-round-results
-        v-if="gameStore.state.showRoundResults"
-        :visible="gameStore.state.showRoundResults"
-        :teams="gameStore.state.teams"
-        :players="gameStore.state.players"
-        :actual-location="gameStore.state.actualLocation"
-        :round="gameStore.state.currentRound"
-        :total-rounds="gameStore.state.totalRounds"
-        :current-user-id="gameStore.state.currentUser.id"
-        :location-name="gameStore.state.locationInfo.name"
-        :location-description="gameStore.state.locationInfo.description"
-        :location-image="gameStore.state.locationInfo.image"
-        :interesting-fact="gameStore.state.locationInfo.fact"
-        @close="closeRoundResults"
-        @next-round="startNextRound"
-        @finish-game="finishGame"
-      />
+      
 
       <team-game-results
         v-if="gameStore.state.showGameResults"
@@ -99,6 +83,34 @@
         @exit="exitToLobby"
       />
 
+      <!-- 라운드 결과 화면 -->
+      <round-results
+        v-if="gameStore.state.roundEnded"
+        :players="gameStore.state.players"
+        :actual-location="
+          gameStore.state.actualLocation || { lat: 37.5665, lng: 126.978 }
+        "
+        :round="gameStore.state.currentRound"
+        :total-rounds="gameStore.state.totalRounds"
+        :current-user-id="gameStore.state.currentUser.id"
+        :location-name="gameStore.state.locationInfo.name"
+        :player-guesses="gameStore.state.playerGuesses"
+        :top-player="gameStore.state.topPlayer"
+        :num-players-ready="$refs.baseGame ? $refs.baseGame.numPlayersReadyForNextRound : 0"
+        :total-players-in-room="$refs.baseGame ? $refs.baseGame.totalPlayersInRoom : 0"
+        :majority-threshold="$refs.baseGame ? $refs.baseGame.majorityThreshold : 0"
+        :players-ready-details="getPlayersReadyDetails()"
+        :is-vote-timer-active="$refs.baseGame ? $refs.baseGame.isNextRoundVoteActive : false"
+        :vote-time-remaining="$refs.baseGame ? $refs.baseGame.nextRoundVoteRemainingTime : 15000"
+        :current-user-has-voted="$refs.baseGame ? $refs.baseGame.didCurrentUserVoteForNextRound : false"
+        :is-team-mode="true"
+        :teams="gameStore.state.teams"
+        :team-messages="teamMessages"
+        @close="closeRoundResults"
+        @request-next-round="requestNextRound"
+        @finish-game="finishGame"
+      />
+      
       <!-- 토스트 메시지 -->
       <div class="toast-container" v-if="showToastFlag">
         <div class="toast-message">
@@ -114,6 +126,7 @@ import BaseMultiRoadViewGame from "./BaseMultiRoadViewGame.vue";
 import ChatWindow from "@/views/Game/MultiplayerMode/components/gameplay/chat/IndividualChat.vue";
 import TeamGameResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamGameResults.vue";
 import TeamPlayersList from "./components/TeamPlayersList.vue";
+import RoundResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerRoundResults.vue";
 import gameStore from "@/store/gameStore";
 
 export default {
@@ -124,6 +137,7 @@ export default {
     ChatWindow,
     TeamGameResults,
     TeamPlayersList,
+    RoundResults,
   },
 
   data() {
@@ -137,6 +151,7 @@ export default {
       submittedPlayersCount: 0,
       playerReadyStates: {}, // 플레이어 준비 상태
       teamReadyStates: {}, // 팀 준비 상태
+      teamMessages: {}, // 팀별 최신 메시지
     };
   },
 
@@ -145,6 +160,12 @@ export default {
       return gameStore.state.teams.find(
         (team) => team.id === gameStore.state.currentUser?.teamId
       );
+    },
+    
+    // 현재 팀의 메시지 가져오기
+    currentTeamMessages() {
+      const teamId = gameStore.state.currentUser?.teamId;
+      return teamId !== undefined ? this.teamMessages[teamId] || [] : [];
     },
     
     // 현재 사용자가 투표 발의자인지 확인
@@ -186,6 +207,9 @@ export default {
     
     // 게임 초기화
     this.initGame();
+    
+    // 테스트용 팀 메시지 설정
+    this.setupTestTeamMessages();
   },
 
   created() {
@@ -221,6 +245,66 @@ export default {
   },
 
   methods: {
+    // 준비된 플레이어 상세 정보 가져오기
+    getPlayersReadyDetails() {
+      const readyPlayers = [];
+      
+      // 팀별로 준비된 플레이어 정보 수집
+      gameStore.state.players.forEach(player => {
+        if (this.playerReadyStates[player.id]) {
+          readyPlayers.push(player);
+        }
+      });
+      
+      return readyPlayers;
+    },
+    
+    // 다음 라운드 요청 처리
+    requestNextRound() {
+      // 현재 사용자가 다음 라운드 준비 상태로 설정
+      this.playerReadyStates[gameStore.state.currentUser.id] = true;
+      
+      // 기본 게임 컴포넌트에 다음 라운드 준비 이벤트 발생
+      this.$refs.baseGame.handleNextRoundVote();
+      
+      // 토스트 메시지 표시
+      this.showToast("다음 라운드 준비 완료!");
+    },
+    
+    // 게임 종료 요청 처리
+    finishGame() {
+      // 게임 종료 로직 구현
+      this.$refs.baseGame.handleFinishGame();
+    },
+    
+    // 라운드 결과 닫기
+    closeRoundResults() {
+      gameStore.state.roundEnded = false;
+    },
+    
+    // 테스트용 팀 메시지 설정
+    setupTestTeamMessages() {
+      this.teamMessages = {
+        0: [
+          { id: 'msg1', playerId: 'player1', nickname: '블루팀원1', message: '여기가 맞는 것 같아요!', timestamp: Date.now() - 120000 },
+          { id: 'msg2', playerId: 'player2', nickname: '블루팀원2', message: '저도 동의합니다', timestamp: Date.now() - 60000 },
+          { id: 'msg3', playerId: 'player3', nickname: '블루팀원3', message: '좋은 위치인 것 같네요', timestamp: Date.now() - 30000 },
+        ],
+        1: [
+          { id: 'msg4', playerId: 'player4', nickname: '레드팀원1', message: '이 위치가 정답일 거예요', timestamp: Date.now() - 45000 },
+          { id: 'msg5', playerId: 'player5', nickname: '레드팀원2', message: '확실해요!', timestamp: Date.now() - 15000 },
+        ],
+        2: [
+          { id: 'msg6', playerId: 'player6', nickname: '그린팀원1', message: '여기가 맞을 것 같아요', timestamp: Date.now() - 90000 },
+          { id: 'msg7', playerId: 'player8', nickname: '그린팀원3', message: '동의합니다', timestamp: Date.now() - 20000 },
+        ],
+        3: [
+          { id: 'msg8', playerId: 'player10', nickname: '퍼플팀원1', message: '이 근처인 것 같아요', timestamp: Date.now() - 60000 },
+          { id: 'msg9', playerId: 'player11', nickname: '퍼플팀원2', message: '네, 여기가 맞을 거예요', timestamp: Date.now() - 10000 },
+        ],
+      };
+    },
+    
     // 테스트 데이터 설정
     setupTestData() {
       // 테스트용 플레이어 데이터 생성
@@ -826,10 +910,7 @@ export default {
       return colors[teamId % colors.length];
     },
 
-    closeRoundResults() {
-      this.gameStore.state.showRoundResults = false;
-    },
-
+   
     startNextRound() {
       // 라운드 결과 닫기
       this.gameStore.state.showRoundResults = false;
@@ -860,9 +941,7 @@ export default {
         }});
     },
 
-    finishGame() {
-      this.gameStore.finishGame();
-    },
+   
 
     restartGame() {
       this.gameStore.state.showGameResults = false;

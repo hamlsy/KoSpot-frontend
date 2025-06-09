@@ -17,10 +17,11 @@
           :prevent-interaction="false"
           :show-marker-hint="false"
           :zoom-level="5"
-          :player-guesses="playerGuesses"
+          :player-guesses="playerMarkers"
           :show-distance-lines="true"
           :fitAllMarkers="true"
           :top-player="topPlayer"
+          :is-team-mode="isTeamMode"
           ref="resultMap"
         />
       </div>
@@ -30,23 +31,50 @@
         <div class="next-button-container">
           <!-- 플레이어 마커 표시 영역 -->
           <div class="player-markers-container">
-            <div 
-              v-for="(player) in playersReadyDetails" 
-              :key="player.id"
-              class="player-marker-wrapper"
-            >
+            <!-- 팀 모드일 때 -->
+            <template v-if="isTeamMode">
               <div 
-                class="player-marker" 
-                :style="{ 
-                  backgroundImage: player.equippedMarker ? `url(${player.equippedMarker})` : 'none',
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
-                }"
-                :title="player.nickname"
+                v-for="(team, index) in teamsReadyDetails" 
+                :key="team.id"
+                class="team-marker-wrapper"
               >
-                <span class="marker-tooltip">{{ player.nickname }}</span>
+                <div 
+                  class="team-marker" 
+                  :style="{ 
+                    backgroundColor: team.color || getTeamColor(index),
+                    backgroundImage: team.representativeMarker ? `url(${team.representativeMarker})` : 'none',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center'
+                  }"
+                  :title="team.name"
+                >
+                  <span class="marker-tooltip team-tooltip">{{ team.name }}</span>
+                </div>
+                <div v-if="teamMessages[team.id]" class="team-chat-bubble">
+                  {{ teamMessages[team.id] }}
+                </div>
               </div>
-            </div>
+            </template>
+            <!-- 개인 모드일 때 -->
+            <template v-else>
+              <div 
+                v-for="(player) in playersReadyDetails" 
+                :key="player.id"
+                class="player-marker-wrapper"
+              >
+                <div 
+                  class="player-marker" 
+                  :style="{ 
+                    backgroundImage: player.equippedMarker ? `url(${player.equippedMarker})` : 'none',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center'
+                  }"
+                  :title="player.nickname"
+                >
+                  <span class="marker-tooltip">{{ player.nickname }}</span>
+                </div>
+              </div>
+            </template>
           </div>
 
           <!-- 투표 현황 텍스트 -->
@@ -100,6 +128,14 @@ export default {
     players: {
       type: Array,
       default: () => [],
+    },
+    teams: {
+      type: Array,
+      default: () => [],
+    },
+    isTeamMode: {
+      type: Boolean,
+      default: false,
     },
     actualLocation: {
       type: Object,
@@ -169,6 +205,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    teamMessages: {
+      type: Object,
+      default: () => ({}),
+    },
   },
 
   computed: {
@@ -180,14 +220,81 @@ export default {
       return this.round === this.totalRounds;
     },
 
+    // 팀 모드에서 준비된 팀 정보 계산
+    teamsReadyDetails() {
+      if (!this.isTeamMode || !this.teams.length) return [];
+      
+      // 팀별로 준비된 플레이어 정보 그룹화
+      const teamsReady = [];
+      const teamMap = new Map();
+      
+      // 팀 정보 초기화
+      this.teams.forEach(team => {
+        teamMap.set(team.id, {
+          id: team.id,
+          name: team.name,
+          color: team.color,
+          members: [],
+          isReady: false,
+          representativeMarker: null
+        });
+      });
+      
+      // 준비된 플레이어 정보로 팀 정보 업데이트
+      this.playersReadyDetails.forEach(player => {
+        const playerTeam = this.players.find(p => p.id === player.id)?.teamId;
+        if (playerTeam && teamMap.has(playerTeam)) {
+          const team = teamMap.get(playerTeam);
+          team.members.push(player);
+          team.isReady = true;
+          // 첫 번째 준비된 플레이어의 마커를 팀 대표 마커로 사용
+          if (!team.representativeMarker && player.equippedMarker) {
+            team.representativeMarker = player.equippedMarker;
+          }
+        }
+      });
+      
+      // 준비된 팀만 필터링하여 반환
+      teamMap.forEach(team => {
+        if (team.isReady) {
+          teamsReady.push(team);
+        }
+      });
+      
+      return teamsReady;
+    },
+
     // 플레이어 추측 위치에 대한 마커 정보 계산
     playerMarkers() {
-      return this.playerGuesses.map((guess) => ({
-        position: guess.position,
-        color: guess.color,
-        playerName: guess.playerName,
-      }));
+      if (!this.isTeamMode) {
+        return this.playerGuesses.map((guess) => ({
+          position: guess.position,
+          color: guess.color,
+          playerName: guess.playerName,
+        }));
+      } else {
+        // 팀 모드일 때는 팀별로 대표 마커만 표시
+        const teamGuesses = [];
+        const teamMap = new Map();
+        
+        this.playerGuesses.forEach(guess => {
+          const playerTeam = this.players.find(p => p.id === guess.playerId)?.teamId;
+          if (playerTeam && !teamMap.has(playerTeam)) {
+            const team = this.teams.find(t => t.id === playerTeam);
+            teamMap.set(playerTeam, true);
+            teamGuesses.push({
+              position: guess.position,
+              color: team?.color || '#FF5722',
+              playerName: team?.name || '팀',
+              teamId: playerTeam
+            });
+          }
+        });
+        
+        return teamGuesses;
+      }
     },
+    
     voteCountdownProgressPercentage() {
       if (!this.isVoteTimerActive || this.voteTimeRemaining === null) return 0;
       const totalTime = 15000; // TODO: Make this configurable or pass as prop if different from base
@@ -269,6 +376,21 @@ export default {
           }
         }, 500);
       }
+    },
+
+    // 팀 색상 가져오기 - 팀 색상이 없을 때 기본 색상 배열에서 선택
+    getTeamColor(index) {
+      const colors = [
+        '#FF5722', // 주황색
+        '#2196F3', // 파랑
+        '#4CAF50', // 초록
+        '#9C27B0', // 보라
+        '#FFC107', // 노랑
+        '#795548', // 갈색
+        '#607D8B', // 청회색
+        '#E91E63'  // 핑크
+      ];
+      return colors[index % colors.length];
     },
 
     finishGame() {
@@ -363,6 +485,83 @@ export default {
   color: #555;
   margin-bottom: 1rem;
   line-height: 1.5;
+}
+
+/* 팀 마커 스타일 */
+.team-marker-wrapper {
+  position: relative;
+  margin: 0 5px;
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.team-marker {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  border: 2px solid white;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  z-index: 1001;
+}
+
+.team-marker:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.team-tooltip {
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  position: absolute;
+  bottom: 45px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  opacity: 0;
+  transition: all 0.2s ease;
+  z-index: 1000;
+}
+
+.team-marker:hover .team-tooltip {
+  opacity: 1;
+}
+
+.team-chat-bubble {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border-radius: 15px;
+  padding: 5px 10px;
+  font-size: 12px;
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 900;
+}
+
+.team-chat-bubble:after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid white;
 }
 
 /* 확장된 지도 컨테이너 */

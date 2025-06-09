@@ -83,6 +83,10 @@ export default {
     topPlayer: {
       type: Object,
       default: null
+    },
+    isTeamMode: {
+      type: Boolean,
+      default: false
     }
   },
   

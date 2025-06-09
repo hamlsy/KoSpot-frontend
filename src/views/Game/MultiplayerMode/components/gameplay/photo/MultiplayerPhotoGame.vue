@@ -91,25 +91,6 @@
       @finish-game="finishGame"
     />
 
-    <team-round-results
-      v-if="gameStore.state.showRoundResults && isTeamMode"
-      :visible="gameStore.state.showRoundResults"
-      :teams="gameStore.state.teams"
-      :players="gameStore.state.players"
-      :actual-location="gameStore.state.actualLocation"
-      :round="gameStore.state.currentRound"
-      :total-rounds="gameStore.state.totalRounds"
-      :current-user-id="gameStore.state.currentUser.id"
-      :current-user-team="gameStore.state.currentUser.teamId"
-      :location-name="gameStore.state.locationInfo.name"
-      :location-description="gameStore.state.locationInfo.description"
-      :location-image="gameStore.state.locationInfo.image"
-      :interesting-fact="gameStore.state.locationInfo.fact"
-      @close="closeRoundResults"
-      @next-round="startNextRound"
-      @finish-game="finishGame"
-    />
-
     <game-results
       v-if="gameStore.state.showGameResults && !isTeamMode"
       :visible="gameStore.state.showGameResults"
@@ -139,7 +120,6 @@ import RegionMap from "@/views/Game/PhotoMode/components/gameplay/PhotoModeRegio
 import RoundResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerRoundResults.vue";
 import GameResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerGameResults.vue";
 import TeamGameResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamGameResults.vue";
-import TeamRoundResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamRoundResults.vue";
 import PlayerMarkers from "@/views/Game/MultiplayerMode/components/gameplay/photo/MultiplayerPhotoPlayerMarkers.vue";
 import MultiplayerGameHeader from "@/views/Game/MultiplayerMode/components/gameplay/common/MultiplayerGameHeader.vue";
 import SimpleChatInput from "@/views/Game/MultiplayerMode/components/gameplay/common/SimpleChatInput.vue";
@@ -155,7 +135,6 @@ export default {
     RoundResults,
     GameResults,
     TeamGameResults,
-    TeamRoundResults,
     PlayerMarkers,
     MultiplayerGameHeader,
     SimpleChatInput,
