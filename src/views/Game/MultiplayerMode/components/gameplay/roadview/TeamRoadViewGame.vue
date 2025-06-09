@@ -112,7 +112,6 @@
 <script>
 import BaseMultiRoadViewGame from "./BaseMultiRoadViewGame.vue";
 import ChatWindow from "@/views/Game/MultiplayerMode/components/gameplay/chat/IndividualChat.vue";
-import TeamRoundResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamRoundResults.vue";
 import TeamGameResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamGameResults.vue";
 import TeamPlayersList from "./components/TeamPlayersList.vue";
 import gameStore from "@/store/gameStore";
@@ -123,7 +122,6 @@ export default {
   components: {
     BaseMultiRoadViewGame,
     ChatWindow,
-    TeamRoundResults,
     TeamGameResults,
     TeamPlayersList,
   },
