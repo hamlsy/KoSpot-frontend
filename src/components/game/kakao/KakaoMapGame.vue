@@ -16,27 +16,6 @@
       {{ actionButtonText }}
     </button>
     
-    <!-- 팀 투표 알림 배지 (맵 토글 버튼에 표시) -->
-    <div 
-      v-if="showVotingBadge" 
-      class="voting-badge"
-      :class="`team-${gameStore.state.votingTeamId}-badge`"
-    >
-      <i class="fas fa-vote-yea"></i>
-    </div>
-    
-    <!-- 팀 투표 마커 -->
-    <div v-if="gameStore.state.activeVotingMarker && gameStore.state.votingPosition" class="voting-marker-container">
-      <team-voting-marker
-        :position="gameStore.state.votingPosition"
-        :team-id="gameStore.state.votingTeamId"
-        :is-active="gameStore.state.showVoting"
-        @vote="handleVote"
-        @cancel="cancelVoting"
-        @complete="completeVoting"
-      />
-    </div>
-    
     <!-- 다른 플레이어 마커 표시 (실시간 위치) -->
     <div v-for="(marker, index) in teamPlayerMarkers" :key="index" class="team-player-marker">
       <div 
@@ -60,13 +39,12 @@
 
 <script>
 import { computed, ref } from 'vue';
-import TeamVotingMarker from './TeamVotingMarker.vue';
 import gameStore from '@/store/gameStore';
 
 export default {
   name: 'KakaoMapGame',
   components: {
-    TeamVotingMarker
+    
   },
   props: {
     isOpen: {
