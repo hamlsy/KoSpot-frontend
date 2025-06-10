@@ -127,7 +127,7 @@ export default {
     currentTeamId() {
       return gameStore.state.currentUser?.teamId;
     },
-    
+
     // 현재 팀의 투표 상태
     teamVotingActive() {
       return gameStore.state.showVoting && gameStore.state.votingTeamId === this.currentTeamId;
@@ -191,6 +191,11 @@ export default {
   },
   
   methods: {
+     //투표 시작
+     onVoteAnswer() {
+      return NaN;
+    },
+    
     initMap() {
       console.log(this.isInitialized)
       // 이미 초기화되어 있는 경우 리턴

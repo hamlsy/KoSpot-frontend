@@ -1,7 +1,7 @@
 <template>
   <base-multi-road-view-game
     :room-id="roomId"
-    :is-team-mode="true"
+    :isTeamMode="true"
     @guess-submitted="handleGuessSubmission"
     @round-ended="handleRoundEnded"
     @game-finished="handleGameFinished"

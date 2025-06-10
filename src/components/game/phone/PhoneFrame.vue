@@ -15,20 +15,32 @@
         :showActionButton="showActionButton"
         @close="$emit('close')"
         @check-answer="onCheckAnswer"
+        @vote-answer="onVoteAnswer"
         ref="phoneMapGame"
         class="phone-map"
       />
-      
+
       <!-- 슬롯으로 추가 버튼 제공 -->
       <slot name="buttons"></slot>
-      
+
       <!-- Spot 버튼 (휴대폰 프레임 내부) -->
-      <button v-if="!disabled" 
+      <button
+        v-if="!disabled && !isTeamMode"
         class="phone-spot-button"
         @click="checkSpotAnswer"
       >
         <i class="fas fa-crosshairs"></i> Spot!
       </button>
+
+      <!-- Team 전용 Spot 버튼 (휴대폰 프레임 내부) -->
+      <button
+        v-if="!disabled && isTeamMode"
+        class="phone-spot-button"
+        @click="voteSpotAnswer"
+      >
+        <i class="fas fa-crosshairs"></i> Vote!
+      </button>
+
     </div>
     <div class="phone-footer">
       <div class="home-button" @click="$emit('close')"></div>
@@ -42,72 +54,99 @@ import KakaoMapGame from "@/components/game/kakao/KakaoMapGame.vue";
 export default {
   name: "PhoneFrame",
   components: {
-    KakaoMapGame
+    KakaoMapGame,
   },
   props: {
     centerLocation: {
       type: Object,
-      required: true
+      required: true,
     },
     actualLocation: {
       type: Object,
-      required: true
+      required: true,
     },
     showHintCircles: {
       type: Boolean,
-      default: false
+      default: false,
     },
     disabled: {
       type: Boolean,
-      default: false
+      default: false,
     },
     showDistance: {
       type: Boolean,
-      default: false
+      default: false,
     },
     showActionButton: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
+
+    isTeamMode: {
+      type: Boolean,
+      default: false,
+    },
   },
   methods: {
     onCheckAnswer(location) {
-      this.$emit('check-answer', location);
+      this.$emit("check-answer", location);
     },
-    
+
     checkSpotAnswer() {
       if (!this.$refs.phoneMapGame) {
-        this.$emit('error', '지도가 준비되지 않았습니다. 다시 시도해주세요.');
+        this.$emit("error", "지도가 준비되지 않았습니다. 다시 시도해주세요.");
         return;
       }
-      
+
       // 현재 마커 위치를 얻기 위해 KakaoMapGame에서 마커 위치 데이터 요청
-      this.$refs.phoneMapGame.getMarkerPosition()
-        .then(markerPosition => {
+      this.$refs.phoneMapGame
+        .getMarkerPosition()
+        .then((markerPosition) => {
           if (markerPosition) {
-            this.$emit('spot-answer', markerPosition);
+            this.$emit("spot-answer", markerPosition);
           } else {
-            this.$emit('error', '위치를 선택해주세요!');
+            this.$emit("error", "위치를 선택해주세요!");
           }
         })
         .catch(() => {
-          this.$emit('error', '위치를 선택해주세요!');
+          this.$emit("error", "위치를 선택해주세요!");
         });
     },
-    
+
+    voteSpotAnswer() {
+      if (!this.$refs.phoneMapGame) {
+        this.$emit("error", "지도가 준비되지 않았습니다. 다시 시도해주세요.");
+        return;
+      }
+
+      // 현재 마커 위치를 얻기 위해 KakaoMapGame에서 마커 위치 데이터 요청
+      this.$refs.phoneMapGame
+        .getMarkerPosition()
+        .then((markerPosition) => {
+          if (markerPosition) {
+            this.$emit("vote-answer", markerPosition);
+          } else {
+            this.$emit("error", "위치를 선택해주세요!");
+          }
+        })
+        .catch(() => {
+          this.$emit("error", "위치를 선택해주세요!");
+        });
+    },
+
     // 맵 인스턴스 노출
     getMapInstance() {
       return this.$refs.phoneMapGame ? this.$refs.phoneMapGame.map : null;
     },
-    
+
     // 마커 위치 가져오기
     getMarkerPosition() {
       if (!this.$refs.phoneMapGame) {
-        return Promise.reject('지도가 준비되지 않았습니다.');
+        return Promise.reject("지도가 준비되지 않았습니다.");
       }
       return this.$refs.phoneMapGame.getMarkerPosition();
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -123,9 +162,8 @@ export default {
   background-color: #111;
   border-radius: 40px;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 
-              inset 0 0 10px rgba(255, 255, 255, 0.1),
-              0 0 0 8px #333;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5),
+    inset 0 0 10px rgba(255, 255, 255, 0.1), 0 0 0 8px #333;
   z-index: 15;
 }
 
@@ -156,7 +194,7 @@ export default {
 }
 
 .phone-notch:before {
-  content: '';
+  content: "";
   position: absolute;
   width: 8px;
   height: 8px;
@@ -167,7 +205,7 @@ export default {
 }
 
 .phone-notch:after {
-  content: '';
+  content: "";
   position: absolute;
   width: 50px;
   height: 6px;
@@ -213,7 +251,7 @@ export default {
 }
 
 .home-button:before {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -283,7 +321,7 @@ export default {
     width: 300px;
     height: 600px;
   }
-  
+
   .phone-spot-button {
     padding: 8px 16px;
     font-size: 0.85rem;

@@ -134,6 +134,7 @@
       :disabled="gameStore.state.roundEnded"
       :showDistance="false"
       :showMarker="true"
+      :isTeamMode="isTeamMode"
       @spot-answer="handlePhoneMapGuess"
     />
 
@@ -183,6 +184,10 @@ export default {
       type: Number,
       default: 1,
     },
+    isTeamMode: {
+      type: Boolean,
+      default: false
+    }
   },
 
   provide() {
@@ -231,7 +236,6 @@ export default {
       socketConnected: false,
       socketRetryCount: 0,
       socketRetryInterval: null,
-      isTeamMode: false,
       userGuessPosition: null,
       userHasSubmitted: false,
       showIntroOverlay: false,
