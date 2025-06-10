@@ -154,7 +154,7 @@
 // Vue 3 Composition API 방식으로 변경
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import AppLogo from "@/components/common/ui/BaseAppLogo.vue";
+import AppLogo from "@/core/components/BaseAppLogo.vue";
 import useGame from '@/composables/useGame';
 import GameModeCard from "@/components/common/ui/GameModeCard.vue";
 import useAuth from '@/composables/useAuth';

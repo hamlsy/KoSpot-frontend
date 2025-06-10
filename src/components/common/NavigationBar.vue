@@ -100,7 +100,7 @@
 
 
 <script>
-import AppLogo from '@/components/common/AppLogo.vue'; 
+import AppLogo from '@/core/components/AppLogo.vue'; 
 
 export default {
   name: 'NavigationBar',

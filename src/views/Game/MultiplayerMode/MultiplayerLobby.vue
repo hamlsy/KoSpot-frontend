@@ -78,7 +78,7 @@
 import MultiplayerRoomList from './components/lobby/room/MultiplayerRoomList.vue';
 import MultiplayerLobbyChatWindow from './components/lobby/chat/MultiplayerLobbyChatWindow.vue';
 import MultiplayerCreateRoomModal from './components/lobby/room/MultiplayerCreateRoomModal.vue';
-import AppLogo from '@/components/common/AppLogo.vue'; // AppLogo 컴포넌트 추가
+import AppLogo from '@/core/components/AppLogo.vue'; // AppLogo 컴포넌트 추가
 
 export default {
   name: "MultiplayerLobby",
