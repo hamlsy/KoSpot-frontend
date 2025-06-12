@@ -5,7 +5,15 @@ module.exports = defineConfig({
   transpileDependencies: true,
   devServer: {
     hot: true,
-    port: 3000, // 포트 3000으로 변경
+    port: 3000, // 포트 3000으로 변경,
+    publicPath: process.env.NODE_ENV === 'production' ? '/app/' : '/',
+    proxy: {
+      '/api': {
+        target: process.env.VUE_APP_API_BASE_URL,
+        changeOrigin: true,
+        pathRewrite: { '^/api': '' }  // api 접두사 제거 기능 todo 추후 서버에 api접두사 추가 후 이 줄은 제거
+      }
+    }
   },
   configureWebpack: {
     resolve: {

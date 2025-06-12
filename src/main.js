@@ -8,8 +8,8 @@ import App from './App.vue';
 import router from './router';
 import axios from 'axios';
 
-// 카카오 맵 플러그인 가져오기
-// import { KakaoMapsPlugin } from '@/plugins/kakaoMaps';
+// local api 경로 분기
+axios.defaults.baseURL = process.env.VUE_APP_API_BASE_URL;
 
 import "@fortawesome/fontawesome-free/css/all.css";
 import "@fortawesome/fontawesome-free/js/all.js";
