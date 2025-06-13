@@ -1,4 +1,4 @@
-import MultiplayerLobby from '@/views/Game/MultiplayerMode/MultiplayerLobby.vue';
+import MultiplayerLobby from '@/features/game/multiplayer/lobby/views/MultiplayerLobby.vue';
 import IndividualRoadViewGame from '@/views/Game/MultiplayerMode/components/gameplay/roadview/IndividualRoadViewGame.vue';
 import TeamRoadViewGame from '@/views/Game/MultiplayerMode/components/gameplay/roadview/TeamRoadViewGame.vue';
 import TestVoting from '@/views/Game/MultiplayerMode/components/gameplay/TestVoting.vue';

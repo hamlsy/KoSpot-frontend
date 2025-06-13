@@ -169,8 +169,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import AppLogo from "@/core/components/AppLogo.vue";
-import ThemeModePopup from "./components/gameplay/ThemeModePopup.vue";
-import GameModeCard from "@/components/common/ui/GameModeCard.vue";
+import ThemeModePopup from "../components/Theme/ThemeModePopup.vue";
+import GameModeCard from "@/features/game/shared/components/Common/GameModeCard.vue";
 
 // 라우터 설정
 const router = useRouter();

@@ -91,7 +91,7 @@
 <script>
 
 import PurchaseModal from 'src/components/user/shop/PurchaseModal.vue'
-import NavigationBar from 'src/components/common/NavigationBar.vue'
+import NavigationBar from '@/core/components/NavigationBar.vue'
 
 export default {
   name: 'ShopMain',

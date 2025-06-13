@@ -16,7 +16,7 @@
 
 <script setup>
 import { defineProps, defineEmits } from 'vue';
-import BasePlayersList from '@/components/common/ui/game/BasePlayersList.vue';
+import BasePlayersList from '@/features/game/shared/components/Player/List.vue';
 
 const props = defineProps({
   players: {

@@ -49,7 +49,7 @@
 
 <script setup>
 import { defineProps, defineEmits, computed } from 'vue';
-import BasePlayerCard from '@/components/common/ui/game/BasePlayerCard.vue';
+import BasePlayerCard from '@/features/game/shared/components/Player/Card.vue';
 
 const props = defineProps({
   teams: {

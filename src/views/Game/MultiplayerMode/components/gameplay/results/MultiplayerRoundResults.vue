@@ -114,7 +114,7 @@
 </template>
 
 <script>
-import KakaoMap from "@/components/game/kakao/KakaoMap.vue";
+import KakaoMap from "@/features/game/shared/components/Kakao/KakaoMap.vue";
 import gameStore from "@/store/gameStore";
 
 export default {

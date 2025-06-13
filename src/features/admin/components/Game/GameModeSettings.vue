@@ -65,9 +65,9 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue';
-import RoadviewModeSettings from './game-settings/RoadviewModeSettings.vue';
-import ThemeModeSettings from './game-settings/ThemeModeSettings.vue';
-import PhotoModeSettings from './game-settings/PhotoModeSettings.vue';
+import RoadviewModeSettings from './RoadviewModeSettings.vue';
+import ThemeModeSettings from './ThemeModeSettings.vue';
+import PhotoModeSettings from './PhotoModeSettings.vue';
 
 // Props 정의
 const props = defineProps({

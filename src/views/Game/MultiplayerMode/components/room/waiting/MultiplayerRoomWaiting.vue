@@ -178,14 +178,14 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, nextTick } from 'vue';
-import RoomHeader from './components/RoomHeader.vue';
+import RoomHeader from '../../../../../../features/game/multiplayer/room/components/header/RoomHeader.vue';
 import TeamPlayersList from './components/TeamWaitingList.vue';
 import IndividualPlayersList from './components/IndividualWaitingList.vue';
 import CountdownOverlay from './components/CountdownOverlay.vue';
 import KickConfirmationModal from './components/KickConfirmationModal.vue';
 import PlayerDetailsModal from './components/PlayerDetailsModal.vue';
 import RoomSettingsModal from './components/RoomSettingsModal.vue';
-import ChatMessage from './components/ChatMessage.vue';
+import ChatMessage from '../../../../../../features/game/multiplayer/chat/components/Room/ChatMessage.vue';
 
 // Props
 const props = defineProps({

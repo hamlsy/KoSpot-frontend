@@ -121,8 +121,8 @@ import RoundResults from "@/views/Game/MultiplayerMode/components/gameplay/resul
 import GameResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerGameResults.vue";
 import TeamGameResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamGameResults.vue";
 import PlayerMarkers from "@/views/Game/MultiplayerMode/components/gameplay/photo/MultiplayerPhotoPlayerMarkers.vue";
-import MultiplayerGameHeader from "@/views/Game/MultiplayerMode/components/gameplay/common/MultiplayerGameHeader.vue";
-import SimpleChatInput from "@/views/Game/MultiplayerMode/components/gameplay/common/SimpleChatInput.vue";
+import MultiplayerGameHeader from "@/features/game/multiplayer/shared/components/header/GameHeader.vue";
+import SimpleChatInput from "@/features/game/multiplayer/chat/components/SimpleChatInput.vue";
 import gameStore from "@/store/gameStore";
 import { getRandomLocation } from "@/views/Game/MultiplayerMode/MultiplayerGameTestData";
 

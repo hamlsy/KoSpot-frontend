@@ -197,12 +197,12 @@ import {
 import { useRouter } from "vue-router";
 import ProgressTimer from "src/views/Game/PhotoMode/components/gameplay/PhotoModeProgressTimer.vue";
 import RegionMap from "src/views/Game/PhotoMode/components/gameplay/PhotoModeRegionMap.vue";
-import GameResult from "@/views/Game/PhotoMode/components/results/PhotoModeGameResult.vue";
-import PhotoModePhotoGrid from "./PhotoModePhotoGrid.vue";
-import PhotoModeHintDisplay from "./PhotoModeHintDisplay.vue";
-import PhotoModeNextRoundButton from "./PhotoModeNextRoundButton.vue";
-import IntroOverlay from "@/components/game/intro/IntroOverlay.vue";
-import CountdownOverlay from "@/components/game/countdown/CountdownOverlay.vue";
+import GameResult from "@/features/game/single/photo/components/Result/GameResult.vue";
+import PhotoModePhotoGrid from "../Photo/PhotoGrid.vue";
+import PhotoModeHintDisplay from "../Hint/HintDisplay.vue";
+import PhotoModeNextRoundButton from "../Common/NextRoundButton.vue";
+import IntroOverlay from "@/features/game/shared/components/Common/IntroOverlay.vue";
+import CountdownOverlay from "@/features/game/shared/components/Common/CountdownOverlay.vue";
 import useGame from "@/composables/useGame";
 import gameService from "@/api/services/game.service";
 import Color from "@/constants/colors";

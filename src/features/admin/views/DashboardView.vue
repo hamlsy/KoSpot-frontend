@@ -189,18 +189,18 @@
 <script setup>
 import { ref, reactive, onMounted, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
-import AdminPanel from './components/AdminPanel.vue';
+import AdminPanel from '../components/AdminPanel.vue';
 import TheHeader from '@/components/layout/TheHeader.vue';
-import DashboardStats from './components/DashboardStats.vue';
-import RecentActivities from './components/RecentActivities.vue';
-import QuickActions from './components/QuickActions.vue';
-import SystemStatus from './components/SystemStatus.vue';
-import GameModeManagement from './components/GameModeManagement.vue';
-import DetailedStatistics from './components/DetailedStatistics.vue';
-import SystemSettings from './components/SystemSettings.vue';
-import ShopManagement from './components/ShopManagement.vue';
-import UserManagement from './components/UserManagement.vue';
-import GameModeSettings from './components/GameModeSettings.vue';
+import DashboardStats from '../components/Statistic/DashboardStats.vue';
+import RecentActivities from '../components/Statistic/RecentActivities.vue';
+import QuickActions from '../components/Statistic/QuickActions.vue';
+import SystemStatus from '../components/System/SystemStatus.vue';
+import GameModeManagement from '../components/Game/GameModeManagement.vue';
+import DetailedStatistics from '../components/Statistic/DetailedStatistics.vue';
+import SystemSettings from '../components/System/SystemSettings.vue';
+import ShopManagement from '../components/Shop/ShopManagement.vue';
+import UserManagement from '../components/User/UserManagement.vue';
+import GameModeSettings from '../components/Game/GameModeSettings.vue';
 
 // 통계 데이터
 const stats = reactive({

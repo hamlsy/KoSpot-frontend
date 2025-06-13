@@ -10,7 +10,7 @@
 
 <script>
 import { defineComponent } from 'vue';
-import PhotoModeGame from './components/gameplay/PhotoModeGame.vue';
+import PhotoModeGame from '../../../../../views/Game/PhotoMode/components/gameplay/PhotoModeGame.vue';
 import useGame from '@/composables/useGame';
 import useAuth from '@/composables/useAuth';
 

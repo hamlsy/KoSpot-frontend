@@ -1,4 +1,4 @@
-import Dashboard from '@/views/Admin/Dashboard.vue'
+import Dashboard from '@/features/admin/views/DashboardView.vue'
 
 const adminRoutes = [
     {

@@ -1,6 +1,6 @@
-import PhotoModeView from '@/views/Game/PhotoMode/PhotoModeView.vue'
-import PhotoModePractice from '@/views/Game/PhotoMode/PhotoModePractice.vue'
-import PhotoModeRank from '@/views/Game/PhotoMode/PhotoModeRank.vue'
+import PhotoModeView from '@/features/game/single/main/views/PhotoModeView.vue'
+import PhotoModePractice from '@/features/game/single/photo/views/PhotoModePractice.vue'
+import PhotoModeRank from '@/features/game/single/photo/views/PhotoModeRank.vue'
 
 const photoModeRoutes = [
     {

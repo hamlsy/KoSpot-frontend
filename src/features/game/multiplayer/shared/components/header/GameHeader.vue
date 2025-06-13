@@ -47,7 +47,7 @@
 
 <script setup>
 import { ref, defineProps, defineEmits } from 'vue';
-import GameTimer from "@/components/common/ui/game/BaseGameTimer.vue";
+import GameTimer from "@/features/game/shared/components/Common/Timer.vue";
 
 const props = defineProps({
   roomData: {

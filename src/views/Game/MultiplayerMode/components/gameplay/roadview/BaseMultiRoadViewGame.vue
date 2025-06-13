@@ -146,11 +146,11 @@
 </template>
 
 <script>
-import GameTimer from "@/components/common/ui/game/BaseGameTimer.vue";
+import GameTimer from "@/features/game/shared/components/Common/Timer.vue";
 import RoadView from "@/components/game/roadview/RoadView.vue";
 import PhoneFrame from "@/components/game/phone/PhoneFrame.vue";
-import MultiplayerIntroOverlay from "@/views/Game/MultiplayerMode/components/gameplay/intro/MultiplayerIntroOverlay.vue";
-import MultiplayNextRoundOverlay from "@/views/Game/MultiplayerMode/components/gameplay/intro/MultiplayNextRoundOverlay.vue";
+import MultiplayerIntroOverlay from "@/features/game/multiplayer/shared/components/intro/IntroOverlay.vue";
+import MultiplayNextRoundOverlay from "@/features/game/multiplayer/shared/components/intro/NextRoundOverlay.vue";
 import gameStore from "@/store/gameStore";
 // import { Client } from '@stomp/stompjs'; // STOMP Placeholder: Uncomment when integrating
 // import SockJS from 'sockjs-client'; // STOMP Placeholder: Uncomment when integrating

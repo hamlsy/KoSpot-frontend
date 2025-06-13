@@ -28,7 +28,7 @@
 </template>
 
 <script>
-import ChatWindow from '../../lobby/chat/MultiplayerLobbyChatWindow.vue';
+import ChatWindow from '../Lobby/ChatWindow.vue';
 
 export default {
   name: 'MultiplayerRoomChat',

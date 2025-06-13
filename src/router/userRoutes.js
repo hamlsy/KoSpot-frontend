@@ -1,8 +1,8 @@
-import Shop from '@/views/User/Shop.vue'
-import Inventory from '@/views/User/Inventory.vue'
-import Profile from '@/views/User/Profile.vue'
-import FriendsList from '@/views/User/components/mypage/FriendsList.vue'
-import AccountSettings from '@/views/User/components/mypage/AccountSettings.vue'
+import Shop from '@/features/shop/views/ShopView.vue'
+import Inventory from '@/features/user/components/Inventory.vue'
+import Profile from '@/features/user/view/ProfileView.vue'
+import FriendsList from '@/features/user/components/FriendsList.vue'
+import AccountSettings from '@/features/user/components/AccountSettings.vue'
 
 const userRoutes = [
     {

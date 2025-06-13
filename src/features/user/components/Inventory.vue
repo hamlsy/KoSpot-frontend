@@ -153,7 +153,7 @@
 </template>
 
 <script>
-import NavigationBar from '@/components/common/NavigationBar.vue';
+import NavigationBar from '@/core/components/NavigationBar.vue';
 
 export default {
   name: 'InventoryMain',

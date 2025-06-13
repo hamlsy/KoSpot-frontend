@@ -196,10 +196,10 @@
 </template>
 
 <script>
-import RoadViewGame from "@/views/Game/RoadViewMode/components/gameplay/RoadViewGame.vue";
+import RoadViewGame from "@/features/game/single/roadview/components/gameplay/RoadViewGame.vue";
 import PhoneFrame from "@/components/game/phone/PhoneFrame.vue";
-import CountdownOverlay from "@/components/game/countdown/CountdownOverlay.vue";
-import IntroOverlay from "@/components/game/intro/IntroOverlay.vue";
+import CountdownOverlay from "@/features/game/shared/components/Common/CountdownOverlay.vue";
+import IntroOverlay from "@/features/game/shared/components/Common/IntroOverlay.vue";
 
 export default {
   name: "RoadViewPractice",
