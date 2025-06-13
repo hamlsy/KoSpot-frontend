@@ -1,6 +1,6 @@
-import RoadViewModeView from '@/features/game/single/main/views/RoadViewModeView.vue'
-import RoadViewPractice from '@/features/game/single/roadview/views/RoadViewPractice.vue'
-import RoadViewRank from '@/features/game/single/roadview/views/RoadViewRank.vue'
+import RoadViewModeView from '@/features/game/single/main/views/RoadViewMainView.vue'
+import RoadViewPractice from '@/features/game/single/roadview/views/PracticeView.vue'
+import RoadViewRank from '@/features/game/single/roadview/views/RankView.vue'
 
 const roadViewRoutes = [
     {

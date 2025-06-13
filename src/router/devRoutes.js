@@ -1,19 +1,19 @@
-import TempPage from '@/components/dummy/TempPage.vue'
-import TestMapPage from '@/components/dummy/TestMapPage.vue'
-import CoordData from '@/components/dummy/coordData.vue'
-import KakaoMapTest from '@/components/dummy/KakaoMapTest.vue'
-import EncryptTest from '@/components/dummy/EncryptTest.vue'
+import tempPage from '@/dummy/TempPage.vue'
+import testMapPage from '@/dummy/TestMapPage.vue'
+import CoordData from '@/dummy/coordData.vue'
+import kakaoMapTest from '@/dummy/KakaoMapTest.vue'
+import EncryptTest from 'src/dummy/EncryptTest.vue'
 
 const devRoutes = [
     {
         path: '/tempPage',
         name: "TempPage",
-        component: TempPage
+        component: tempPage
     },
     {
         path: '/testMapPage',
         name: "TestMapPage",
-        component: TestMapPage
+        component: testMapPage
     },
     {
         path: '/coordData',
@@ -23,7 +23,7 @@ const devRoutes = [
     {
         path: '/kakaoMapTest',
         name: "KakaoMapTest",
-        component: KakaoMapTest
+        component: kakaoMapTest
     },
     {
         path: '/encryptTest',
