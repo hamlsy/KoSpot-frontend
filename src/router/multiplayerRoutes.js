@@ -24,19 +24,19 @@ const multiplayerRoutes = [
     {
         path: '/game/photo/:roomId',
         name: "PhotoGame",
-        component: () => import('@/views/Game/MultiplayerMode/components/gameplay/photo/MultiplayerPhotoGame.vue'),
+        component: () => import('@/features/game/multiplayer/photo/views/MultiplayerPhotoGame.vue'),
         props: true
     },
     {
         path: '/testPhotoIndividual',
         name: "TestPhotoIndividual",
-        component: () => import('@/views/Game/MultiplayerMode/components/gameplay/photo/MultiplayerPhotoGame.vue'),
+        component: () => import('@/features/game/multiplayer/photo/views/MultiplayerPhotoGame.vue'),
         props: { roomId: 'test-individual', isTeamMode: false }
     },
     {
         path: '/testPhotoTeam',
         name: "TestPhotoTeam",
-        component: () => import('@/views/Game/MultiplayerMode/components/gameplay/photo/MultiplayerPhotoGame.vue'),
+        component: () => import('@/features/game/multiplayer/photo/views/MultiplayerPhotoGame.vue'),
         props: { roomId: 'test-team', isTeamMode: true }
     },
     {
@@ -54,13 +54,13 @@ const multiplayerRoutes = [
     {
         path: '/testPhotoIndividual',
         name: "TestPhotoIndividual",
-        component: () => import('@/views/Game/MultiplayerMode/components/gameplay/photo/MultiplayerPhotoGame.vue'),
+        component: () => import('@/features/game/multiplayer/photo/views/MultiplayerPhotoGame.vue'),
         props: { roomId: 'photo-individual-test', isTeamMode: false }
     },
     {
         path: '/testPhotoTeam',
         name: "TestPhotoTeam",
-        component: () => import('@/views/Game/MultiplayerMode/components/gameplay/photo/MultiplayerPhotoGame.vue'),
+        component: () => import('@/features/game/multiplayer/photo/views/MultiplayerPhotoGame.vue'),
         props: { roomId: 'photo-team-test', isTeamMode: true }
     },
     {

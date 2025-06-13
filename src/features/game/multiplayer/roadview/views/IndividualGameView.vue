@@ -72,7 +72,7 @@
 </template>
 
 <script>
-import BaseMultiRoadViewGame from "./BaseMultiRoadViewGame.vue";
+import BaseMultiRoadViewGame from "./BaseGameView.vue";
 import ChatWindow from "@/views/Game/MultiplayerMode/components/gameplay/chat/IndividualChat.vue";
 import RoundResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerRoundResults.vue";
 import GameResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerGameResults.vue";
