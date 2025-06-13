@@ -4,12 +4,12 @@ import PhotoModeRank from '@/features/game/single/photo/views/Rank.vue'
 
 const photoModeRoutes = [
     {
-        path: '/photoModeView',
+        path: '/photo/main',
         name: "PhotoModeView",
         component: PhotoModeView
     },
     {
-        path: '/photoModePractice',
+        path: '/photo/practice',
         name: "PhotoModePractice",
         component: PhotoModePractice,
         props: route => ({
