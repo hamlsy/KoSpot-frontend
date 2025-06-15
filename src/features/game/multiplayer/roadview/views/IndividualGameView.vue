@@ -74,10 +74,14 @@
 <script>
 import BaseMultiRoadViewGame from "./BaseGameView.vue";
 import ChatWindow from "@/views/Game/MultiplayerMode/components/gameplay/chat/IndividualChat.vue";
-import RoundResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerRoundResults.vue";
-import GameResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerGameResults.vue";
-import gameStore from "@/store/gameStore";
-import PlayerList from "@/views/Game/MultiplayerMode/components/gameplay/roadview/components/IndividualPlayerList.vue";
+
+//results
+import RoundResults from 'src/features/game/multiplayer/roadview/components/results/RoundResults.vue'
+import GameResults from 'src/features/game/multiplayer/shared/components/results/IndividualGameResults.vue'
+
+
+import gameStore from 'src/store/gameStore.js'
+import PlayerList from 'src/features/game/multiplayer/roadview/components/playerlist/IndividualPlayerList.vue'
 
 export default {
   name: "IndividualRoadViewGame",
