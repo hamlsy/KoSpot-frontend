@@ -1,4 +1,4 @@
-import authService from '@/api/services/auth.service';
+import authService from 'src/features/auth/services/auth.service.js'
 import router from '@/router';
 
 // 인증 상태 관리 스토어 모듈
