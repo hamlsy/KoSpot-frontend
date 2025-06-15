@@ -12,7 +12,7 @@ const multiplayerRoutes = [
     {
         path: '/gameRoom/:roomId',
         name: "GameRoomWaiting",
-        component: () => import('@/views/Game/MultiplayerMode/components/room/waiting/MultiplayerRoomWaiting.vue'),
+        component: () => import('@/features/game/multiplayer/room/views/MultiplayerRoomWaiting.vue'),
         props: true
     },
     {

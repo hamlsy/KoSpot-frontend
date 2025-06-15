@@ -178,14 +178,14 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, nextTick } from 'vue';
-import RoomHeader from '../../../../../../features/game/multiplayer/room/components/header/RoomHeader.vue';
-import TeamPlayersList from './components/TeamWaitingList.vue';
-import IndividualPlayersList from './components/IndividualWaitingList.vue';
-import CountdownOverlay from './components/CountdownOverlay.vue';
-import KickConfirmationModal from './components/KickConfirmationModal.vue';
-import PlayerDetailsModal from './components/PlayerDetailsModal.vue';
-import RoomSettingsModal from './components/RoomSettingsModal.vue';
-import ChatMessage from '../../../../../../features/game/multiplayer/chat/components/Room/ChatMessage.vue';
+import RoomHeader from '../components/header/RoomHeader.vue';
+import TeamPlayersList from '../../../../../views/Game/MultiplayerMode/components/room/waiting/components/TeamWaitingList.vue';
+import IndividualPlayersList from '../../../../../views/Game/MultiplayerMode/components/room/waiting/components/IndividualWaitingList.vue';
+import CountdownOverlay from '../../../../../views/Game/MultiplayerMode/components/room/waiting/components/CountdownOverlay.vue';
+import KickConfirmationModal from '../../../../../views/Game/MultiplayerMode/components/room/waiting/components/KickConfirmationModal.vue';
+import PlayerDetailsModal from '../../../../../views/Game/MultiplayerMode/components/room/waiting/components/PlayerDetailsModal.vue';
+import RoomSettingsModal from '../../../../../views/Game/MultiplayerMode/components/room/waiting/components/RoomSettingsModal.vue';
+import ChatMessage from '../../chat/components/Room/ChatMessage.vue';
 
 // Props
 const props = defineProps({

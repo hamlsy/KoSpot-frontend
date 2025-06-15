@@ -75,9 +75,9 @@
 </template>
 
 <script>
-import MultiplayerRoomList from '../../../../../views/Game/MultiplayerMode/components/lobby/room/MultiplayerRoomList.vue';
+import MultiplayerRoomList from '../components/RoomList.vue';
 import MultiplayerLobbyChatWindow from '../../chat/components/Lobby/ChatWindow.vue';
-import MultiplayerCreateRoomModal from '../../../../../views/Game/MultiplayerMode/components/lobby/room/MultiplayerCreateRoomModal.vue';
+import MultiplayerCreateRoomModal from '../components/CreateRoomModal.vue';
 import AppLogo from '@/core/components/AppLogo.vue'; // AppLogo 컴포넌트 추가
 
 export default {

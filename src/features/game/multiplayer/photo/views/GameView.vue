@@ -124,7 +124,7 @@ import PlayerMarkers from "@/views/Game/MultiplayerMode/components/gameplay/phot
 import MultiplayerGameHeader from "@/features/game/multiplayer/shared/components/header/GameHeader.vue";
 import SimpleChatInput from "@/features/game/multiplayer/chat/components/SimpleChatInput.vue";
 import gameStore from "@/store/gameStore";
-import { getRandomLocation } from "@/views/Game/MultiplayerMode/MultiplayerGameTestData";
+import { getRandomLocation } from "@/features/game/multiplayer/room/composables/MultiplayerGameTestData";
 
 export default {
   name: "MultiplayerPhotoGame",
