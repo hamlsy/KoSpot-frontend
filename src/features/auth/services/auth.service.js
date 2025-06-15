@@ -1,4 +1,4 @@
-import apiClient from 'src/core/api/client.js'
+import apiClient from 'src/core/api/apiClient.js'
 
 /**
  * 인증 관련 API 서비스

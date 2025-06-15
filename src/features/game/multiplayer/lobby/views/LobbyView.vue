@@ -334,7 +334,7 @@ export default {
 </script>
 
 <style scoped>
-@import url("@/assets/styles/common/header.css");
+@import url("@/shared/assets/styles/common/header.css");
 
 .multiplayer-container {
   min-height: 100vh;

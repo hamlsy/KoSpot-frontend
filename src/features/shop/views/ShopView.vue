@@ -89,8 +89,7 @@
 </template>
 
 <script>
-
-import PurchaseModal from 'src/components/user/shop/PurchaseModal.vue'
+import PurchaseModal from "@/features/shop/components/PurchaseModal.vue"
 import NavigationBar from '@/core/components/NavigationBar.vue'
 
 export default {

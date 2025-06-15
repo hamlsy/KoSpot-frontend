@@ -197,7 +197,7 @@
 
 <script>
 import RoadViewGame from 'src/features/game/single/roadview/components/gameplay/RoadViewGame.vue'
-import PhoneFrame from 'src/features/game/shared/components/Phone/Frame.vue'
+import PhoneFrame from 'src/features/game/shared/components/Phone/PhoneFrame.vue'
 import CountdownOverlay from "@/features/game/shared/components/Common/CountdownOverlay.vue";
 import IntroOverlay from "@/features/game/shared/components/Common/IntroOverlay.vue";
 

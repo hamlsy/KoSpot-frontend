@@ -1,7 +1,7 @@
 // core/composables/useAuth.js
 import { ref, computed, reactive } from 'vue'
 import apiClient from 'src/core/api/apiClient.js'
-import { API_ENDPOINTS } from '../api/endpoints.js'
+import { API_ENDPOINTS } from '@/core/api/endPoint.js'
 import { useRouter } from 'vue-router'
 
 // 전역 상태 관리
