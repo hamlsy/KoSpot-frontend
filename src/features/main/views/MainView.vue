@@ -285,9 +285,9 @@ import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 // 스토어 경로 수정 (임시로 주석 처리)
 // import store from '@/store';
-import NavigationBar from "@/components/layout/TheHeader.vue";
-import UserLoginCard from "@/components/main/UserLoginCard.vue";
-import useAuth from '@/composables/useAuth';
+import NavigationBar from 'src/core/components/NavigationBar.vue'
+import UserLoginCard from 'src/features/main/components/UserLoginCard.vue'
+import useAuth from 'src/core/composables/useAuth.js'
 
 // 라우터 설정
 const router = useRouter();
@@ -427,8 +427,8 @@ function showLockedMessage() {
 </script>
 
 <style scoped>
-@import url("@/assets/styles/main_page/notice-section/notice.css");
-@import url("@/assets/styles/main_page/banner/main-banner.css");
+@import url("@/shared/assets/styles/main_page/notice-section/notice.css");
+@import url("@/shared/assets/styles/main_page/banner/main-banner.css");
 
 .app-container {
   min-height: 100vh;

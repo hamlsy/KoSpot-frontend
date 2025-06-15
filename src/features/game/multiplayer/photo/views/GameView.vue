@@ -115,15 +115,26 @@
 </template>
 
 <script>
+//todo 모드별(팀, 개인전) 컴포넌트 분리
+
+//game grid
 import PhotoModePhotoGrid from "@/views/Game/PhotoMode/components/gameplay/PhotoModePhotoGrid.vue";
 import RegionMap from "@/views/Game/PhotoMode/components/gameplay/PhotoModeRegionMap.vue";
+
+//results
 import RoundResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerRoundResults.vue";
 import GameResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerGameResults.vue";
 import TeamGameResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamGameResults.vue";
-import PlayerMarkers from "@/views/Game/MultiplayerMode/components/gameplay/photo/MultiplayerPhotoPlayerMarkers.vue";
+
+//header
 import MultiplayerGameHeader from "@/features/game/multiplayer/shared/components/header/GameHeader.vue";
+
+//player
+import PlayerMarkers from 'src/features/game/multiplayer/photo/components/PlayerMarkers.vue'
 import SimpleChatInput from "@/features/game/multiplayer/chat/components/SimpleChatInput.vue";
-import gameStore from "@/store/gameStore";
+
+//gameStore
+import gameStore from 'src/store/gameStore.js'
 import { getRandomLocation } from "@/features/game/multiplayer/room/composables/MultiplayerGameTestData";
 
 export default {

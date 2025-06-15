@@ -1,6 +1,6 @@
 // core/composables/useAuth.js
 import { ref, computed, reactive } from 'vue'
-import { apiClient } from '../api/client.js'
+import apiClient from 'src/core/api/apiClient.js'
 import { API_ENDPOINTS } from '../api/endpoints.js'
 import { useRouter } from 'vue-router'
 

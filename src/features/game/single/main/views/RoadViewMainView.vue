@@ -169,7 +169,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import AppLogo from "@/core/components/AppLogo.vue";
-import ThemeModePopup from "../components/Theme/ThemeModePopup.vue";
+import ThemeModePopup from 'src/features/game/single/main/components/Theme/ThemeModePopup.vue'
 import GameModeCard from "@/features/game/shared/components/Common/GameModeCard.vue";
 
 // 라우터 설정
@@ -411,8 +411,8 @@ function startThemeGame(gameData) {
 </script>
 
 <style scoped>
-@import url("@/assets/styles/common/header.css");
-@import url("@/assets/styles/common/footer.css");
-@import url("@/assets/styles/common/slide-menu/slide-menu.css");
-@import url("@/assets/styles/game/roadView/roadview-main.css");
+@import url("@/shared/assets/styles/common/header.css");
+@import url("@/shared/assets/styles/common/footer.css");
+@import url("@/shared/assets/styles/common/slide-menu/slide-menu.css");
+@import url("@/shared/assets/styles/game/roadView/roadview-main.css");
 </style>

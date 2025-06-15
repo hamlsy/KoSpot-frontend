@@ -139,14 +139,6 @@
     />
 
     <!-- 카운트다운 오버레이 -->
-    <CountdownOverlay
-      :is-active="isCountdownActive"
-      :countdown="countdown"
-      :message="countdownMessage"
-      :is-host="isHost"
-      :can-cancel="canCancelCountdown"
-      @cancel="cancelCountdown"
-    />
 
     <!-- 강퇴 확인 모달 -->
     <KickConfirmationModal
@@ -178,14 +170,16 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, nextTick } from 'vue';
-import RoomHeader from '../components/header/RoomHeader.vue';
-import TeamPlayersList from '../../../../../views/Game/MultiplayerMode/components/room/waiting/components/TeamWaitingList.vue';
-import IndividualPlayersList from '../../../../../views/Game/MultiplayerMode/components/room/waiting/components/IndividualWaitingList.vue';
-import CountdownOverlay from '../../../../../views/Game/MultiplayerMode/components/room/waiting/components/CountdownOverlay.vue';
-import KickConfirmationModal from '../../../../../views/Game/MultiplayerMode/components/room/waiting/components/KickConfirmationModal.vue';
-import PlayerDetailsModal from '../../../../../views/Game/MultiplayerMode/components/room/waiting/components/PlayerDetailsModal.vue';
-import RoomSettingsModal from '../../../../../views/Game/MultiplayerMode/components/room/waiting/components/RoomSettingsModal.vue';
-import ChatMessage from '../../chat/components/Room/ChatMessage.vue';
+import RoomHeader from 'src/features/game/multiplayer/room/components/header/RoomHeader.vue'
+//waiting list
+import TeamWaitingList from 'src/features/game/multiplayer/room/components/list/TeamWaitingList.vue'
+import IndividualWaitingList from 'src/features/game/multiplayer/room/components/list/IndividualWaitingList.vue'
+
+//modal
+import KickConfirmationModal from 'src/features/game/multiplayer/room/components/player/KickConfirmationModal.vue'
+import PlayerDetailsModal from 'src/features/game/multiplayer/room/components/player/PlayerDetailsModal.vue'
+import RoomSettingsModal from 'src/features/game/multiplayer/room/components/settings/RoomSettingsModal.vue'
+import ChatMessage from 'src/features/game/multiplayer/chat/components/Room/ChatMessage.vue'
 
 // Props
 const props = defineProps({

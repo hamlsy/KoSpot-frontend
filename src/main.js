@@ -15,10 +15,10 @@ import "@fortawesome/fontawesome-free/css/all.css";
 import "@fortawesome/fontawesome-free/js/all.js";
 
 // 전역 스타일 가져오기
-import '@/assets/styles/index.css'
+import '@/shared/assets/styles/index.css'
 // Vuex 스토어 가져오기 (Pinia로 마이그레이션 전까지 임시 사용)
 // import store from './store'; // 임시로 주석 처리
-import gameStore from "@/store/gameStore";
+import gameStore from 'src/store/gameStore.js'
 
 //vue-number-animation
 import CountUp from 'vue-countup-v3';

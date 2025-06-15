@@ -101,11 +101,11 @@
 </template>
 
 <script>
-import RoadViewGame from "../components/gameplay/RoadViewGame.vue";
-import PhoneFrame from "@/components/game/phone/PhoneFrame.vue";
+import RoadViewGame from 'src/features/game/single/roadview/components/gameplay/RoadViewGame.vue'
+import PhoneFrame from 'src/features/game/shared/components/Phone/Frame.vue'
 import CountdownOverlay from "@/features/game/shared/components/Common/CountdownOverlay.vue";
 import IntroOverlay from "@/features/game/shared/components/Common/IntroOverlay.vue";
-import ResultOverlay from "../components/Result/ResultOverlay.vue";
+import ResultOverlay from 'src/features/game/single/roadview/components/Result/ResultOverlay.vue';
 
 export default {
   name: "RoadViewRank",
