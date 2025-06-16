@@ -86,7 +86,7 @@
           'timeout-highlight': showTimeoutAnimation,
         }"
       >
-        <photo-mode-photo-grid
+        <photo-grid
           :photos="currentPhotos"
           :show-incorrect-animation="showIncorrectAnimation"
           :show-correct-animation="showCorrectAnimation"
@@ -195,17 +195,14 @@ import {
   defineComponent,
 } from "vue";
 import { useRouter } from "vue-router";
-import ProgressTimer from "src/views/Game/PhotoMode/components/gameplay/PhotoModeProgressTimer.vue";
-import RegionMap from "src/views/Game/PhotoMode/components/gameplay/PhotoModeRegionMap.vue";
+import ProgressTimer from 'src/features/game/single/photo/components/Common/ProgressTimer.vue'
+import RegionMap from 'src/features/game/shared/components/Region/RegionMap.vue'
 import GameResult from "@/features/game/single/photo/components/Result/GameResult.vue";
-import PhotoModePhotoGrid from "../Photo/PhotoGrid.vue";
+import PhotoGrid from 'src/features/game/single/photo/components/Photo/PhotoGrid.vue'
 import PhotoModeHintDisplay from "../Hint/HintDisplay.vue";
-import PhotoModeNextRoundButton from "../Common/NextRoundButton.vue";
+import PhotoModeNextRoundButton from 'src/features/game/single/photo/components/Common/NextRoundButton.vue'
 import IntroOverlay from "@/features/game/shared/components/Common/IntroOverlay.vue";
 import CountdownOverlay from "@/features/game/shared/components/Common/CountdownOverlay.vue";
-import useGame from "@/composables/useGame";
-import gameService from "@/api/services/game.service";
-import Color from "@/constants/colors";
 
 export default {
   name: "PhotoModeGame",
@@ -213,7 +210,7 @@ export default {
     ProgressTimer,
     RegionMap,
     GameResult,
-    PhotoModePhotoGrid,
+    PhotoGrid,
     PhotoModeHintDisplay,
     PhotoModeNextRoundButton,
     IntroOverlay,
@@ -264,51 +261,51 @@ export default {
       allPhotos: [
         {
           id: 1,
-          photoUrl: require("@/assets/photo/seoul/seoul_63building.jpg"),
+          photoUrl: require("@/shared/assets/images/photo/seoul/seoul_63building.jpg"),
           locationName: "서울 63빌딩",
           region: "Seoul",
           fact: "63빌딩은 63개 층으로 이루어져 있으며, 1985년에 완공되었습니다.",
         },
         {
           id: 2,
-          photoUrl: require("@/assets/photo/seoul/seoul_cheonggyecheon.jpg"),
+          photoUrl: require("@/shared/assets/images/photo/seoul/seoul_cheonggyecheon.jpg"),
           locationName: "청계천",
           region: "Seoul",
           fact: "청계천은 2003년부터 2005년까지 복원 공사가 진행되었으며, 현재는 서울의 대표적인 관광지입니다.",
         },
         {
           id: 3,
-          photoUrl: require("@/assets/photo/seoul/seoul_cheonggyecheon1.jpg"),
+          photoUrl: require("@/shared/assets//images/photo/seoul/seoul_cheonggyecheon1.jpg"),
           locationName: "청계천 광장",
           region: "Seoul",
         },
         {
           id: 4,
-          photoUrl: require("@/assets/photo/seoul/seoul_olympicPark.jpg"),
+          photoUrl: require("@/shared/assets/images/photo/seoul/seoul_olympicPark.jpg"),
           locationName: "올림픽 공원",
           region: "Seoul",
         },
         {
           id: 5,
-          photoUrl: require("@/assets/photo/seoul/seoul_seoulCityHall.jpg"),
+          photoUrl: require("@/shared/assets/images/photo/seoul/seoul_seoulCityHall.jpg"),
           locationName: "서울시청",
           region: "Seoul",
         },
         {
           id: 6,
-          photoUrl: require("@/assets/photo/seoul/seoul_yeouidoPark.jpg"),
+          photoUrl: require("@/shared/assets/images/photo/seoul/seoul_yeouidoPark.jpg"),
           locationName: "여의도 공원",
           region: "Seoul",
         },
         {
           id: 7,
-          photoUrl: require("@/assets/photo/seoul/seoul_yeouidoPark1.jpg"),
+          photoUrl: require("@/shared/assets/images/photo/seoul/seoul_yeouidoPark1.jpg"),
           locationName: "여의도 한강공원",
           region: "Seoul",
         },
         {
           id: 8,
-          photoUrl: require("@/assets/banner/Seoul-Dongdaemun-Gate.jpg"),
+          photoUrl: require("@/shared/assets/images/banner/Seoul-Dongdaemun-Gate.jpg"),
           locationName: "동대문",
           region: "Seoul",
         },

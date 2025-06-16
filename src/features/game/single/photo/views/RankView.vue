@@ -10,9 +10,9 @@
 
 <script>
 import { defineComponent } from 'vue';
-import PhotoModeGame from '../../../../../views/Game/PhotoMode/components/gameplay/PhotoModeGame.vue';
-import useGame from '@/composables/useGame';
-import useAuth from '@/composables/useAuth';
+import PhotoModeGame from 'src/features/game/single/photo/components/gameplay/PhotoModeGame.vue'
+// import useGame from '@/composables/useGame';
+// import useAuth from '@/composables/useAuth';
 
 export default defineComponent({
   name: 'PhotoModeRank',
@@ -33,21 +33,21 @@ export default defineComponent({
       default: 5
     }
   },
-  setup(props) {
-    // 인증 관련 composable 사용
-    const { isLoggedIn } = useAuth();
+  // setup(props) {
+  //   // 인증 관련 composable 사용
+  //   const { isLoggedIn } = useAuth();
     
-    // 게임 관련 composable 사용
-    const { gameState, startGame } = useGame({
-      totalRounds: props.totalRounds,
-      gameMode: 'photo'
-    });
+  //   // 게임 관련 composable 사용
+  //   const { gameState, startGame } = useGame({
+  //     totalRounds: props.totalRounds,
+  //     gameMode: 'photo'
+  //   });
     
-    return {
-      isLoggedIn,
-      gameState
-    };
-  }
+  //   return {
+  //     isLoggedIn,
+  //     gameState
+  //   };
+  // }
 });
 </script>
 

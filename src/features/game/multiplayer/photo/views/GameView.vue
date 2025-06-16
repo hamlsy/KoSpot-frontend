@@ -16,7 +16,7 @@
     <div class="game-content">
       <!-- 왼쪽 영역 - 사진 섹션 -->
       <div class="photo-section">
-        <photo-mode-photo-grid
+        <photo-grid
           :photos="currentPhotos"
           :show-incorrect-animation="showIncorrectAnimation"
           :show-correct-animation="showCorrectAnimation"
@@ -91,7 +91,7 @@
       @finish-game="finishGame"
     />
 
-    <game-results
+    <individual-game-results
       v-if="gameStore.state.showGameResults && !isTeamMode"
       :visible="gameStore.state.showGameResults"
       :players="gameStore.state.players"
@@ -118,20 +118,20 @@
 //todo 모드별(팀, 개인전) 컴포넌트 분리
 
 //game grid
-import PhotoModePhotoGrid from "@/views/Game/PhotoMode/components/gameplay/PhotoModePhotoGrid.vue";
-import RegionMap from "@/views/Game/PhotoMode/components/gameplay/PhotoModeRegionMap.vue";
+import PhotoGrid from 'src/features/game/single/photo/components/Photo/PhotoGrid.vue'
+import RegionMap from 'src/features/game/shared/components/Region/RegionMap.vue'
 
 //results
-import RoundResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerRoundResults.vue";
-import GameResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerGameResults.vue";
-import TeamGameResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamGameResults.vue";
+import RoundResults from 'src/features/game/multiplayer/roadview/components/results/RoundResults.vue'
+import IndividualGameResults from 'src/features/game/multiplayer/shared/components/results/IndividualGameResults.vue'
+import TeamGameResults from 'src/features/game/multiplayer/shared/components/results/TeamGameResults.vue'
 
 //header
 import MultiplayerGameHeader from "@/features/game/multiplayer/shared/components/header/GameHeader.vue";
 
 //player
 import PlayerMarkers from 'src/features/game/multiplayer/photo/components/PlayerMarkers.vue'
-import SimpleChatInput from "@/features/game/multiplayer/chat/components/SimpleChatInput.vue";
+import SimpleChatInput from 'src/features/game/multiplayer/chat/components/SimpleChatInput.vue'
 
 //gameStore
 import gameStore from 'src/store/gameStore.js'
@@ -141,10 +141,10 @@ export default {
   name: "MultiplayerPhotoGame",
 
   components: {
-    PhotoModePhotoGrid,
+    PhotoGrid,
     RegionMap,
     RoundResults,
-    GameResults,
+    IndividualGameResults,
     TeamGameResults,
     PlayerMarkers,
     MultiplayerGameHeader,

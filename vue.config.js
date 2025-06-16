@@ -20,7 +20,6 @@ module.exports = defineConfig({
       alias: {
         '@': path.resolve(__dirname, 'src'),
         'src': path.resolve(__dirname, 'src'),
-        'features': path.resolve(__dirname, 'src/features'),
       },
       extensions: ['.js', '.vue', '.json']
     }

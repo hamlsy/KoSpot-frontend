@@ -33,7 +33,7 @@
 </template>
 
 <script>
-import RoadView from '@/components/game/roadview/RoadView.vue';
+import RoadView from 'src/features/game/shared/components/roadview/RoadView.vue'
 
 export default {
   name: 'RoadViewGame',

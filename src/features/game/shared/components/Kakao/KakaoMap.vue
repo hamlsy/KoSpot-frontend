@@ -37,7 +37,7 @@
 </template>
 
 <script>
-import colors from '@/constants/colors';
+import colors from 'src/core/constants/colors.js'
 
 export default {
   name: 'KakaoMap',

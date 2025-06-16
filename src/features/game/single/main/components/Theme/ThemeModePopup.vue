@@ -202,10 +202,10 @@
 </template>
 
 <script>
-import InstagramHotPlace from "@/assets/theme/instgram-hot-place-theme.png";
-import KMovie from "@/assets/theme/k-movie-theme.png";
-import NightMarket from "@/assets/theme/night-market-theme.webp";
-import KPopMusicVideo from "@/assets/theme/k-pop-music-video-theme.jpg";
+import InstagramHotPlace from "@/shared/assets/images/theme/instgram-hot-place-theme.png";
+import KMovie from "@/shared/assets/images/theme/k-movie-theme.png";
+import NightMarket from "@/shared/assets/images/theme/night-market-theme.webp";
+import KPopMusicVideo from "@/shared/assets/images/theme/k-pop-music-video-theme.jpg";
 
 export default {
   name: "ThemeModePopup",

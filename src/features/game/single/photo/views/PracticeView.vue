@@ -11,7 +11,7 @@
 <script>
 import { defineComponent } from 'vue';
 import PhotoModeGame from '@/views/Game/PhotoMode/components/gameplay/PhotoModeGame.vue';
-import useGame from '@/composables/useGame';
+// import useGame from '@/composables/useGame';
 
 export default defineComponent({
   name: 'PhotoModePractice',
@@ -32,18 +32,18 @@ export default defineComponent({
       default: 5
     }
   },
-  setup(props) {
-    // 게임 관련 composable 사용
-    const { gameState, startGame } = useGame({
-      totalRounds: props.totalRounds,
-      gameMode: 'photo'
+  // setup(props) {
+  //   // 게임 관련 composable 사용
+  //   const { gameState, startGame } = useGame({
+  //     totalRounds: props.totalRounds,
+  //     gameMode: 'photo'
       
-    });
+  //   });
     
-    return {
-      gameState
-    };
-  }
+  //   return {
+  //     gameState
+  //   };
+  // }
 });
 
 </script>
