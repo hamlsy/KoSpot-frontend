@@ -134,7 +134,7 @@
 </template>
 
 <script>
-import PhotoView from '../photo/PhotoView.vue';
+import PhotoView from './PhotoDisplay.vue';
 import TeamChat from '../../multiplayerMode/gameplayScreen/TeamChat.vue';
 
 export default {

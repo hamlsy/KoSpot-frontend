@@ -29,33 +29,33 @@
 // import sidoPolygons from '@/assets/map/sido_kakao.json';
 
 //수도권
-import seoulPolygons from '@/assets/map/seoul.json';
-import gyeonggiPolygons from '@/assets/map/gyeonggi.json';
-import incheonPolygons from '@/assets/map/incheon.json';
+import seoulPolygons from '@/shared/assets/polygons/seoul.json';
+import gyeonggiPolygons from '@/shared/assets/polygons/gyeonggi.json';
+import incheonPolygons from '@/shared/assets/polygons/incheon.json';
 
 //충청
-import chungnamPolygons from '@/assets/map/chungnam.json';
-import chungbukPolygons from '@/assets/map/chungbuk.json';
-import daejeonPolygons from '@/assets/map/daejeon.json';
-import sejongPolygons from '@/assets/map/sejong.json';
+import chungnamPolygons from '@/shared/assets/polygons/chungnam.json';
+import chungbukPolygons from '@/shared/assets/polygons/chungbuk.json';
+import daejeonPolygons from '@/shared/assets/polygons/daejeon.json';
+import sejongPolygons from '@/shared/assets/polygons/sejong.json';
 
 //전라
-import jeonnamPolygons from '@/assets/map/jeonnam.json';
-import jeonbukPolygons from '@/assets/map/jeonbuk.json';
-import gwangjuPolygons from '@/assets/map/gwangju.json';
+import jeonnamPolygons from '@/shared/assets/polygons/jeonnam.json';
+import jeonbukPolygons from '@/shared/assets/polygons/jeonbuk.json';
+import gwangjuPolygons from '@/shared/assets/polygons/gwangju.json';
 
 //강원
-import gangwonPolygons from '@/assets/map/gangwon.json';
+import gangwonPolygons from '@/shared/assets/polygons/gangwon.json';
 
 //경상
-import daeguPolygons from '@/assets/map/daegu.json';
-import busanPolygons from '@/assets/map/busan.json';
-import ulsanPolygons from '@/assets/map/ulsan.json';
-import gyeongnamPolygons from '@/assets/map/gyeongnam.json';
-import gyeongbukPolygons from '@/assets/map/gyeongbuk.json';
+import daeguPolygons from '@/shared/assets/polygons/daegu.json';
+import busanPolygons from '@/shared/assets/polygons/busan.json';
+import ulsanPolygons from '@/shared/assets/polygons/ulsan.json';
+import gyeongnamPolygons from '@/shared/assets/polygons/gyeongnam.json';
+import gyeongbukPolygons from '@/shared/assets/polygons/gyeongbuk.json';
 
 //제주
-import jejuPolygons from '@/assets/map/jeju.json';
+import jejuPolygons from '@/shared/assets/polygons/jeju.json';
 
 export default {
   name: 'RegionMap',

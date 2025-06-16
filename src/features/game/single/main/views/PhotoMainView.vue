@@ -157,11 +157,11 @@ import { useRouter } from 'vue-router';
 import AppLogo from "@/core/components/BaseAppLogo.vue";
 import useGame from '@/composables/useGame';
 import GameModeCard from "@/features/game/shared/components/Common/GameModeCard.vue";
-import useAuth from '@/composables/useAuth';
+// import useAuth from '@/composables/useAuth';
 
 // 라우터 및 컴포지션 API 사용
 const router = useRouter();
-const { user, isLoggedIn } = useAuth();
+// const { user, isLoggedIn } = useAuth();
 const { gameState, startGame: initGame } = useGame();
 
 // 상태 정의

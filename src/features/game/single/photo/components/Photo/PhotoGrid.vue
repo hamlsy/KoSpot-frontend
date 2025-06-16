@@ -5,7 +5,7 @@
     'timeout-highlight': showTimeoutAnimation
   }]">
     <div v-for="(photo, index) in photos" :key="index" class="photo-item">
-      <photo-display 
+      <photo-display
         :photo-url="photo" 
         :show-zoom-controls="true"
         @loaded="$emit('photo-loaded')"
@@ -19,7 +19,7 @@
 </template>
 
 <script>
-import PhotoDisplay from '@/components/game/photo/PhotoView.vue';
+import PhotoDisplay from 'src/features/game/shared/components/photo/PhotoDisplay.vue'
 
 export default {
   name: 'PhotoModePhotoGrid',
