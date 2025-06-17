@@ -73,7 +73,7 @@
 
 <script>
 import BaseMultiRoadViewGame from "./BaseGameView.vue";
-import ChatWindow from "@/views/Game/MultiplayerMode/components/gameplay/chat/IndividualChat.vue";
+import ChatWindow from 'src/features/game/multiplayer/chat/components/Lobby/ChatWindow.vue'
 
 //results
 import RoundResults from 'src/features/game/multiplayer/roadview/components/results/RoundResults.vue'

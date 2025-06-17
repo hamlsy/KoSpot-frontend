@@ -123,10 +123,10 @@
 
 <script>
 import BaseMultiRoadViewGame from "./BaseGameView.vue";
-import ChatWindow from "@/views/Game/MultiplayerMode/components/gameplay/chat/IndividualChat.vue";
-import TeamGameResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerTeamGameResults.vue";
-import TeamPlayersList from "./components/TeamPlayersList.vue";
-import RoundResults from "@/views/Game/MultiplayerMode/components/gameplay/results/MultiplayerRoundResults.vue";
+import ChatWindow from 'src/features/game/multiplayer/chat/components/Lobby/ChatWindow.vue'
+import TeamGameResults from 'src/features/game/multiplayer/shared/components/results/TeamGameResults.vue'
+import TeamPlayersList from 'src/features/game/multiplayer/roadview/components/playerlist/TeamPlayersList.vue'
+import RoundResults from 'src/features/game/multiplayer/roadview/components/results/RoundResults.vue'
 import gameStore from "@/store/gameStore";
 
 export default {
