@@ -15,20 +15,20 @@
       </div>
       
       <div class="modal-body" v-if="player">
-        <!-- Player profile section -->
+        <!-- Player profile section (more compact) -->
         <div class="player-profile">
-          <div class="profile-background" :style="profileGradient"></div>
-          
-          <div class="profile-avatar">
-            <img :src="player.profileImage || '/assets/default-avatar.png'" :alt="player.nickname">
-            <div class="host-badge" v-if="player.isHost">
-              <i class="fas fa-crown"></i>
+          <div class="profile-content">
+            <div class="profile-avatar">
+              <img :src="player.profileImage || '/assets/default-avatar.png'" :alt="player.nickname">
+              <div class="host-badge" v-if="player.isHost">
+                <i class="fas fa-crown"></i>
+              </div>
             </div>
-          </div>
-          
-          <div class="profile-info">
-            <h4 class="profile-name">{{ player.nickname }}</h4>
-            <div class="profile-level">Lv. {{ player.level }}</div>
+            
+            <div class="profile-info">
+              <h4 class="profile-name">{{ player.nickname }}</h4>
+              <div class="profile-level">Lv. {{ player.level }}</div>
+            </div>
           </div>
         </div>
         
@@ -84,71 +84,71 @@
           <h5 class="section-title">게임 모드 랭크</h5>
           
           <div class="rank-cards">
-            <div class="rank-card roadview">
-              <div class="rank-header">
-                <div class="rank-icon">
-                  <i class="fas fa-street-view"></i>
-                </div>
-                <div class="rank-title">로드뷰 모드</div>
-              </div>
-              
-              <div class="rank-details">
-                <div class="rank-badge" :class="getRankClass(player.roadviewRank)">
-                  <i :class="getRankIcon(player.roadviewRank)"></i>
-                  <span>{{ formatRank(player.roadviewRank) }}</span>
+            <!-- Horizontal layout for rank cards -->
+            <div class="rank-row">
+              <!-- Roadview Mode Card -->
+              <div class="rank-card roadview">
+                <div class="rank-header">
+                  <div class="rank-icon">
+                    <i class="fas fa-street-view"></i>
+                  </div>
+                  <div class="rank-title">로드뷰 모드</div>
+                  <div 
+                    class="rank-mini-badge" 
+                    :class="getRankClass(player.roadviewRank)"
+                    v-tooltip="formatRank(player.roadviewRank)"
+                  >
+                    <i :class="getRankIcon(player.roadviewRank)"></i>
+                    <span>{{ getRankLevel(player.roadviewRank) }}</span>
+                  </div>
                 </div>
                 
-                <div class="rank-stats">
-                  <div class="rank-stat">
-                    <div class="stat-label">정확도</div>
-                    <div class="stat-value">{{ player.roadviewAccuracy || 0 }}%</div>
-                  </div>
-                  <div class="rank-stat">
-                    <div class="stat-label">평균 점수</div>
-                    <div class="stat-value">{{ player.roadviewAvgScore || 0 }}</div>
+                <div class="rank-details">
+                  <div class="rank-stats">
+                    <div class="rank-stat">
+                      <div class="stat-label">정확도</div>
+                      <div class="stat-value">{{ player.roadviewAccuracy || 0 }}%</div>
+                    </div>
+                    <div class="rank-stat">
+                      <div class="stat-label">평균 점수</div>
+                      <div class="stat-value">{{ player.roadviewAvgScore || 0 }}</div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-            
-            <div class="rank-card photo">
-              <div class="rank-header">
-                <div class="rank-icon">
-                  <i class="fas fa-camera"></i>
-                </div>
-                <div class="rank-title">포토 모드</div>
               </div>
               
-              <div class="rank-details">
-                <div class="rank-badge" :class="getRankClass(player.photoRank)">
-                  <i :class="getRankIcon(player.photoRank)"></i>
-                  <span>{{ formatRank(player.photoRank) }}</span>
+              <!-- Photo Mode Card -->
+              <div class="rank-card photo">
+                <div class="rank-header">
+                  <div class="rank-icon">
+                    <i class="fas fa-camera"></i>
+                  </div>
+                  <div class="rank-title">포토 모드</div>
+                  <div 
+                    class="rank-mini-badge" 
+                    :class="getRankClass(player.photoRank)"
+                    v-tooltip="formatRank(player.photoRank)"
+                  >
+                    <i :class="getRankIcon(player.photoRank)"></i>
+                    <span>{{ getRankLevel(player.photoRank) }}</span>
+                  </div>
                 </div>
                 
-                <div class="rank-stats">
-                  <div class="rank-stat">
-                    <div class="stat-label">정확도</div>
-                    <div class="stat-value">{{ player.photoAccuracy || 0 }}%</div>
-                  </div>
-                  <div class="rank-stat">
-                    <div class="stat-label">평균 점수</div>
-                    <div class="stat-value">{{ player.photoAvgScore || 0 }}</div>
+                <div class="rank-details">
+                  <div class="rank-stats">
+                    <div class="rank-stat">
+                      <div class="stat-label">정확도</div>
+                      <div class="stat-value">{{ player.photoAccuracy || 0 }}%</div>
+                    </div>
+                    <div class="rank-stat">
+                      <div class="stat-label">평균 점수</div>
+                      <div class="stat-value">{{ player.photoAvgScore || 0 }}</div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-        
-        <!-- Actions section (only for host) -->
-        <div class="actions-section" v-if="isHost && !isSelf">
-          <button 
-            class="kick-button"
-            @click="$emit('kick', player)"
-          >
-            <i class="fas fa-user-times"></i>
-            <span>강퇴하기</span>
-          </button>
         </div>
       </div>
     </div>
@@ -195,32 +195,6 @@ const formatJoinDate = computed(() => {
   }
 });
 
-const profileGradient = computed(() => {
-  if (!props.player) return '';
-  
-  if (props.player.isHost) {
-    return {
-      background: 'linear-gradient(135deg, #fef3c7 0%, #fbbf24 100%)'
-    };
-  }
-  
-  if (props.player.teamId) {
-    const teamColors = {
-      'blue': 'linear-gradient(135deg, #dbeafe 0%, #3b82f6 100%)',
-      'red': 'linear-gradient(135deg, #fee2e2 0%, #ef4444 100%)',
-      'green': 'linear-gradient(135deg, #d1fae5 0%, #10b981 100%)',
-      'yellow': 'linear-gradient(135deg, #fef3c7 0%, #f59e0b 100%)'
-    };
-    
-    return {
-      background: teamColors[props.player.teamId] || 'linear-gradient(135deg, #f3f4f6 0%, #9ca3af 100%)'
-    };
-  }
-  
-  return {
-    background: 'linear-gradient(135deg, #f3f4f6 0%, #9ca3af 100%)'
-  };
-});
 
 // Methods
 const getRankClass = (rank) => {
@@ -231,6 +205,12 @@ const getRankClass = (rank) => {
 
 const getRankIcon = (rank) => {
   return 'fas fa-medal';
+};
+
+const getRankLevel = (rank) => {
+  if (!rank) return 'I';
+  const [, level] = rank.split('-');
+  return level || 'I';
 };
 
 const formatRank = (rank) => {
@@ -339,10 +319,7 @@ const formatRank = (rank) => {
 /* Player profile section */
 .player-profile {
   position: relative;
-  padding: 2rem 1.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  padding: 1.25rem;
   overflow: hidden;
 }
 
@@ -356,16 +333,23 @@ const formatRank = (rank) => {
   z-index: 0;
 }
 
+.profile-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+}
+
 .profile-avatar {
   position: relative;
-  width: 100px;
-  height: 100px;
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   overflow: hidden;
-  border: 4px solid white;
+  border: 3px solid white;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 1;
-  margin-bottom: 1rem;
+  margin-right: 1.5rem;
+  flex-shrink: 0;
 }
 
 .profile-avatar img {
@@ -378,8 +362,8 @@ const formatRank = (rank) => {
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
   border-radius: 50%;
   display: flex;
@@ -391,43 +375,43 @@ const formatRank = (rank) => {
 }
 
 .host-badge i {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: white;
 }
 
 .profile-info {
-  text-align: center;
-  z-index: 1;
+  text-align: left;
 }
 
 .profile-name {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 700;
   color: black;
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.3rem;
 }
 
 .profile-level {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #6b7280;
   background: rgba(255, 255, 255, 0.8);
-  padding: 0.3rem 0.8rem;
+  padding: 0.2rem 0.6rem;
   border-radius: 20px;
   display: inline-block;
 }
 
 /* Stats section */
 .stats-section, .rank-section {
-  padding: 1.5rem;
+  padding: 0.35rem 1rem;
   border-top: 1px solid #f3f4f6;
+  margin: 1rem;
 }
 
 .section-title {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
   color: black;
-  margin: 0 0 1rem;
+  margin: 0 0 0.75rem;
 }
 
 .stats-grid {
@@ -478,113 +462,93 @@ const formatRank = (rank) => {
 .rank-cards {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
+}
+
+.rank-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
 }
 
 .rank-card {
   background: white;
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
   border: 1px solid #f3f4f6;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .rank-card.roadview .rank-header {
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(30, 58, 138, 0.1) 100%);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(30, 58, 138, 0.08) 100%);
   color: #2563eb;
-  border-bottom: 1px solid rgba(37, 99, 235, 0.2);
+  border-bottom: 1px solid rgba(37, 99, 235, 0.15);
 }
 
 .rank-card.photo .rank-header {
-  background: linear-gradient(135deg, rgba(22, 163, 74, 0.1) 0%, rgba(20, 83, 45, 0.1) 100%);
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.08) 0%, rgba(20, 83, 45, 0.08) 100%);
   color: #16a34a;
-  border-bottom: 1px solid rgba(22, 163, 74, 0.2);
+  border-bottom: 1px solid rgba(22, 163, 74, 0.15);
 }
 
 .rank-header {
   display: flex;
   align-items: center;
-  padding: 1rem;
+  padding: 0.75rem;
+  position: relative;
 }
 
 .rank-icon {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 0.75rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-right: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .rank-title {
   font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.rank-mini-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  margin-left: auto;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  cursor: help;
 }
 
 .rank-details {
-  padding: 1rem;
+  padding: 0.75rem;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.rank-badge {
-  display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-weight: 600;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.rank-bronze {
-  background: linear-gradient(135deg, rgba(205, 127, 50, 0.1) 0%, rgba(205, 127, 50, 0.2) 100%);
-  color: #CD7F32;
-  border: 1px solid rgba(205, 127, 50, 0.3);
-}
-
-.rank-silver {
-  background: linear-gradient(135deg, rgba(192, 192, 192, 0.1) 0%, rgba(192, 192, 192, 0.2) 100%);
-  color: #808080;
-  border: 1px solid rgba(192, 192, 192, 0.3);
-}
-
-.rank-gold {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 215, 0, 0.2) 100%);
-  color: #FFD700;
-  border: 1px solid rgba(255, 215, 0, 0.3);
-}
-
-.rank-platinum {
-  background: linear-gradient(135deg, rgba(0, 206, 209, 0.1) 0%, rgba(0, 206, 209, 0.2) 100%);
-  color: #00CED1;
-  border: 1px solid rgba(0, 206, 209, 0.3);
-}
-
-.rank-diamond {
-  background: linear-gradient(135deg, rgba(185, 242, 255, 0.1) 0%, rgba(185, 242, 255, 0.2) 100%);
-  color: #50C8FF;
-  border: 1px solid rgba(185, 242, 255, 0.3);
-}
-
-.rank-master {
-  background: linear-gradient(135deg, rgba(147, 112, 219, 0.1) 0%, rgba(147, 112, 219, 0.2) 100%);
-  color: #9370DB;
-  border: 1px solid rgba(147, 112, 219, 0.3);
-}
-
-.rank-admin {
-  background: linear-gradient(135deg, rgba(255, 86, 117, 0.1) 0%, rgba(255, 86, 117, 0.2) 100%);
-  color: #FF5675;
-  border: 1px solid rgba(255, 86, 117, 0.3);
+  flex: 1;
 }
 
 .rank-stats {
   display: flex;
   gap: 1rem;
+  width: 100%;
+  justify-content: space-around;
+}
+
+.rank-stat {
+  text-align: center;
 }
 
 .rank-stat .stat-label {
@@ -600,7 +564,7 @@ const formatRank = (rank) => {
 
 /* Actions section */
 .actions-section {
-  padding: 1.5rem;
+  padding: 1rem;
   border-top: 1px solid #f3f4f6;
   display: flex;
   justify-content: center;
@@ -644,19 +608,33 @@ const formatRank = (rank) => {
   background: #9ca3af;
 }
 
-@media (max-width: 480px) {
-  .stats-grid {
+@media (max-width: 640px) {
+  .rank-row {
     grid-template-columns: 1fr;
   }
   
-  .rank-details {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
   
-  .rank-badge {
-    align-self: center;
+  .profile-content {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .profile-avatar {
+    margin-right: 0;
+    margin-bottom: 0.75rem;
+  }
+  
+  .profile-info {
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

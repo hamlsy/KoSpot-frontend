@@ -96,7 +96,7 @@
 
           <div
             class="mode-card multiplayer"
-            @click="navigateTo('multiplayerLobby')"
+            @click="navigateTo('lobby')"
           >
             <div class="mode-background"></div>
             <div class="mode-icon">

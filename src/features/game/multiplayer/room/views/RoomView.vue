@@ -28,7 +28,7 @@
           </h3>
 
           <!-- 팀 모드인 경우 팀별로 플레이어 목록 표시 -->
-          <TeamPlayersList
+          <TeamWaitingList
             v-if="isTeamMode"
             :teams="availableTeams"
             :players="players"
@@ -42,7 +42,7 @@
           />
 
           <!-- 개인 모드인 경우 플레이어 목록 표시 -->
-          <IndividualPlayersList
+          <IndividualWaitingList
             v-else
             :players="players"
             :current-user-id="currentUserId"
