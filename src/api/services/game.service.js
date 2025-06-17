@@ -1,4 +1,4 @@
-import apiClient from '../apiClient';
+import apiClient from 'src/core/api/apiClient.js'
 
 /**
  * 게임 관련 API 서비스

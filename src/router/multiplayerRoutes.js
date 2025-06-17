@@ -1,44 +1,76 @@
-import MultiplayerLobby from '@/views/Game/MultiplayerMode/MultiplayerLobby.vue';
-import IndividualRoadViewGame from '@/views/Game/MultiplayerMode/components/gameplay/roadview/IndividualRoadViewGame.vue';
-import TeamRoadViewGame from '@/views/Game/MultiplayerMode/components/gameplay/roadview/TeamRoadViewGame.vue';
+import LobbyView from 'src/features/game/multiplayer/lobby/views/LobbyView.vue'
+
+//roadview
+import IndividualRoadViewGameView from 'src/features/game/multiplayer/roadview/views/IndividualGameView.vue'
+import TeamRoadViewGameView from 'src/features/game/multiplayer/roadview/views/TeamGameView.vue'
+
+//photo
+import PhotoGameView from 'src/features/game/multiplayer/photo/views/GameView.vue'
+
+//room
+import RoomView from 'src/features/game/multiplayer/room/views/RoomView.vue'
 
 const multiplayerRoutes = [
     {
-        path: '/multiplayerLobby',
+        path: '/lobby',
         name: "MultiplayerLobby",
-        component: MultiplayerLobby
+        component: LobbyView
     },
     {
         path: '/gameRoom/:roomId',
-        name: "GameRoomWaiting",
-        component: () => import('@/views/Game/MultiplayerMode/components/room/MultiplayerRoomWaiting.vue'),
+        name: "RoomView",
+        component: RoomView,
         props: true
     },
     {
         path: '/game/roadview/:roomId/individual',
-        name: "RoadViewGame",
-        component: IndividualRoadViewGame,
+        name: "IndividualRoadViewGameView",
+        component: IndividualRoadViewGameView,
         props: true
     },
     {
         path: '/game/photo/:roomId',
-        name: "PhotoGame",
-        component: () => import('@/views/Game/MultiplayerMode/components/gameplay/photo/MultiplayerPhotoGame.vue'),
+        name: "PhotoGameView",
+        component: PhotoGameView,
         props: true
+    },
+    {
+        path: '/testPhotoIndividual',
+        name: "TestPhotoIndividual",
+        component: PhotoGameView,
+        props: { roomId: 'test-individual', isTeamMode: false }
+    },
+    {
+        path: '/testPhotoTeam',
+        name: "TestPhotoTeam",
+        component: PhotoGameView,
+        props: { roomId: 'test-team', isTeamMode: true }
     },
     {
         path: '/testTeamGame',
         name: "TestTeamGame",
-        component: TeamRoadViewGame,
+        component: TeamRoadViewGameView,
         props: { roomId: 'team-test-123', isTeamMode: true }
     },
     {
         path: '/testIndividualGame',
         name: "TestIndividualGame",
-        component: IndividualRoadViewGame,
+        component: IndividualRoadViewGameView,
         props: { roomId: 'individual-test-123', isTeamMode: false }
     },
-    
+    {
+        path: '/testPhotoIndividual',
+        name: "TestPhotoIndividual",
+        component: PhotoGameView,
+        props: { roomId: 'photo-individual-test', isTeamMode: false }
+    },
+    {
+        path: '/testPhotoTeam',
+        name: "TestPhotoTeam",
+        component: PhotoGameView,
+        props: { roomId: 'photo-team-test', isTeamMode: true }
+    },
+  
 ];
 
 export default multiplayerRoutes;

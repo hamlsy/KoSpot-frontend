@@ -13,7 +13,7 @@ onMounted(() => {
 </script>
 
 <style>
-@import url("@/assets/styles/common/reset.css");
+@import url("@/shared/assets/styles/common/reset.css");
 @import url('https://use.fontawesome.com/releases/v5.15.4/css/all.css');
 
 :root {

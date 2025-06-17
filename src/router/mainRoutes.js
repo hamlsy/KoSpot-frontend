@@ -1,20 +1,20 @@
-import Home from '@/views/Home/Home.vue'
-import Login from '@/views/Home/Login.vue'
+import MainView from 'src/features/main/views/MainView.vue'
+import LoginView from '@/features/auth/views/LoginView.vue'
 
 const mainRoutes = [
     {
         path:'/',
-        redirect: "/home",
+        redirect: "/main",
     },
     {
-        path:'/home',
-        name: "Home",
-        component: Home
+        path:'/main',
+        name: "MainView",
+        component: MainView
     },
     {
         path: '/loginPage',
         name: "loginPage",
-        component: Login
+        component: LoginView
     }
 ];
 

@@ -1,17 +1,11 @@
-import Dashboard from '@/views/Admin/Dashboard.vue'
-import UserManagement from '@/views/Admin/UserManagement.vue'
+import DashboardView from '@/features/admin/views/DashboardView.vue'
 
 const adminRoutes = [
     {
         path: '/admin',
         name: "Dashboard",
-        component: Dashboard
+        component: DashboardView
     },
-    {
-        path: '/admin/users',
-        name: "UserManagement",
-        component: UserManagement
-    }
 ];
 
 export default adminRoutes;

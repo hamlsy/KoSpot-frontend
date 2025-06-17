@@ -1,4 +1,4 @@
-import userService from '@/api/services/user.service';
+import userService from 'src/features/user/services/user.service.js'
 
 // 사용자 상태 관리 스토어 모듈
 export default {

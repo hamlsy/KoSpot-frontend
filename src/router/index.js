@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 // Import route modules
 import mainRoutes from './mainRoutes.js';
 import multiplayerRoutes from './multiplayerRoutes.js';
-import photoModeRoutes from './photoModeRoutes.js';
+import photoModeRoutes from './photoRoutes.js';
 import roadViewRoutes from './roadViewRoutes.js';
 import userRoutes from './userRoutes.js';
 import devRoutes from './devRoutes.js';

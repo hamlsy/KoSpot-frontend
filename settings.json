@@ -1,5 +1,18 @@
 {
+    // 파일 이동 시 import 경로 자동 업데이트
     "javascript.updateImportsOnFileMove.enabled": "always",
-  "typescript.updateImportsOnFileMove.enabled": "always",
-  "vue.updateImportsOnFileMove.enabled": true 
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    // 자동 import 제안
+    "javascript.suggest.autoImports": true,
+    "editor.formatOnSave": true,  // 저장 시 자동 포맷
+    "vue.updateImportsOnFileMove.enabled": true,
+    "files.associations": {
+        "*.js": "javascriptreact",
+        "*.jsx": "javascriptreact",
+        "*.vue": "vue"
+    },
+    "emmet.includeLanguages": {
+      "vue-html": "html",
+      "vue": "html"
+    }
 }
