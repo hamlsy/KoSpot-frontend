@@ -617,7 +617,7 @@
         ]
       },
       "properties": {
-        "SIG_CD": "41117",
+        "SIG_CD": "41110",
         "SIG_ENG_NM": "Suwon-si",
         "SIG_KOR_NM": "수원시"
       }
@@ -679,7 +679,7 @@
         ]
       },
       "properties": {
-        "SIG_CD": "41135",
+        "SIG_CD": "41130",
         "SIG_ENG_NM": "Seongnam-si",
         "SIG_KOR_NM": "성남시"
       }
@@ -835,7 +835,7 @@
         ]
       },
       "properties": {
-        "SIG_CD": "41173",
+        "SIG_CD": "41170",
         "SIG_ENG_NM": "Anyang-si",
         "SIG_KOR_NM": "안양시"
       }
@@ -1826,7 +1826,7 @@
         ]
       },
       "properties": {
-        "SIG_CD": "41273",
+        "SIG_CD": "41270",
         "SIG_ENG_NM": "Ansan-si",
         "SIG_KOR_NM": "안산시"
       }
@@ -1916,7 +1916,7 @@
         ]
       },
       "properties": {
-        "SIG_CD": "41287",
+        "SIG_CD": "41280",
         "SIG_ENG_NM": "Goyang-si",
         "SIG_KOR_NM": "고양시"
       }
@@ -3107,7 +3107,7 @@
         ]
       },
       "properties": {
-        "SIG_CD": "41465",
+        "SIG_CD": "41460",
         "SIG_ENG_NM": "Yongin-si",
         "SIG_KOR_NM": "용인시"
       }

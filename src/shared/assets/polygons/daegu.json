@@ -239,6 +239,7 @@
       },
       "properties": {
         "CTPRVN_CD": "27",
+        "SIG_CD": "27000",
         "CTP_ENG_NM": "Daegu",
         "SIG_KOR_NM": "대구"
       }

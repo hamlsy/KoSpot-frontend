@@ -327,6 +327,7 @@
       },
       "properties": {
         "CTPRVN_CD": "26",
+        "SIG_CD": "26000",
         "CTP_ENG_NM": "Busan",
         "SIG_KOR_NM": "부산"
       }

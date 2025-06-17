@@ -77,6 +77,7 @@
       },
       "properties": {
         "CTPRVN_CD": "30",
+        "SIG_CD": "30000",
         "CTP_ENG_NM": "Daejeon",
         "SIG_KOR_NM": "대전"
       }

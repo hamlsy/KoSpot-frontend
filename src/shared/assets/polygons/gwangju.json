@@ -128,6 +128,7 @@
       },
       "properties": {
         "CTPRVN_CD": "29",
+        "SIG_CD": "29000",
         "CTP_ENG_NM": "Gwangju",
         "SIG_KOR_NM": "광주"
       }
