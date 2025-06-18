@@ -380,6 +380,7 @@ export default {
       wrongRegion: null,
       selectedRegion: null,
       selectedRegionEng: null,
+      selectedRegionCode: null,
       currentPhoto: null,
       gamePhotos: [],
       score: 0,
