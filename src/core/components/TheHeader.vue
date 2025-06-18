@@ -102,7 +102,7 @@
 <script setup>
 // Vue 3 Composition API 방식으로 변경
 import { ref } from 'vue';
-import AppLogo from '@/core/components/BaseAppLogo.vue'; 
+import AppLogo from '@/core/components/AppLogo.vue'; 
 
 // 반응형 상태 정의
 const showProfileMenu = ref(false);

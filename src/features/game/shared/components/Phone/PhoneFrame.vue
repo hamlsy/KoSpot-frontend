@@ -15,7 +15,6 @@
         :showActionButton="showActionButton"
         @close="$emit('close')"
         @check-answer="onCheckAnswer"
-        @vote-answer="onVoteAnswer"
         ref="phoneMapGame"
         class="phone-map"
       />

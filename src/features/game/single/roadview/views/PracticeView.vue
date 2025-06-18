@@ -145,26 +145,6 @@
 
           <!-- 결과 지도 -->
           <div class="result-map" ref="resultMapElement"></div>
-
-          <!-- 랭크 점수 변화 (랭크 모드만) -->
-          <div v-if="isRankMode" class="rank-change">
-            <div class="rank-icon">
-              <i
-                class="fas"
-                :class="rankPointChange >= 0 ? 'fa-arrow-up' : 'fa-arrow-down'"
-              ></i>
-            </div>
-            <div
-              class="rank-value"
-              :class="rankPointChange >= 0 ? 'positive' : 'negative'"
-            >
-              {{ rankPointChange >= 0 ? "+" : "" }}{{ rankPointChange }} 포인트
-            </div>
-            <div class="rank-current">
-              현재 랭크 포인트: {{ currentRankPoints }}
-            </div>
-          </div>
-
           <!-- 결과 버튼 -->
           <div class="result-buttons">
             <button class="restart-btn" @click="nextRound">다시하기</button>
@@ -760,12 +740,12 @@ export default {
     exitGame() {
       // 타이머 정리
       this.clearTimer();
-      this.$router.push("/roadViewModeView");
+      this.$router.push("/roadView/main");
     },
 
     // 게임 종료 확인
     confirmExit() {
-      this.$router.push("/roadViewModeView");
+      this.$router.push("/roadView/main");
     },
 
     // 지역 선택 변경

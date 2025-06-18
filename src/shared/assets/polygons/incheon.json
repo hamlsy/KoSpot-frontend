@@ -131,6 +131,7 @@
       },
       "properties": {
         "CTPRVN_CD": "28",
+        "SIG_CD": "28000",
         "CTP_ENG_NM": "Incheon",
         "SIG_KOR_NM": "인천"
       }

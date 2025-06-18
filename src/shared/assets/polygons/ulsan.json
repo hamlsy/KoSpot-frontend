@@ -81,6 +81,7 @@
       },
       "properties": {
         "CTPRVN_CD": "31",
+        "SIG_CD": "31000",
         "CTP_ENG_NM": "Ulsan",
         "SIG_KOR_NM": "울산"
       }

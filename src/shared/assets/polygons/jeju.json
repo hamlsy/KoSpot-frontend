@@ -52,6 +52,7 @@
       },
       "properties": {
         "CTPRVN_CD": "50",
+        "SIG_CD": "50000",
         "CTP_ENG_NM": "Jeju-do",
         "SIG_KOR_NM": "제주"
       }

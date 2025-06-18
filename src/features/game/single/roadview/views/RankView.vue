@@ -219,6 +219,8 @@ export default {
       this.distance = null;
       this.score = 0;
       this.elapsedTime = 0;
+      
+      this.showCountdown  = true;
 
       // 게임 위치 데이터 요청
       this.fetchGameLocationData();
@@ -475,12 +477,12 @@ export default {
     exitGame() {
       // 타이머 정리
       this.clearAllTimers();
-      this.$router.push("/roadViewMode");
+      this.$router.push("/roadView/main");
     },
 
     // 게임 종료 확인
     confirmExit() {
-      this.$router.push("/roadViewModeMain");
+      this.$router.push("/roadView/main");
     },
 
     // 로드뷰 로드 완료 이벤트 핸들러

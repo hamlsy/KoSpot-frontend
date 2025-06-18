@@ -76,6 +76,10 @@ export default {
       type: String,
       default: null
     },
+    selectedRegionCode: {
+      type: String,
+      default: null
+    },
     correctRegion: {
       type: String,
       default: null
@@ -88,7 +92,7 @@ export default {
   emits: ['update:selectedRegion', 'submit-guess', 'update:selectedRegionEng'],
   data() {
     return {
-      hoveredRegion: null,
+      hoveredRegionCode: null,
       zoomLevel: 3,
       map: null,
       polygons: [], // 시도별 폴리곤 객체
@@ -226,17 +230,6 @@ export default {
         }, 1000);
       }
     },
-    // loadPolygons() {
-    //   // GeoJSON 데이터 로드
-    //   this.polygons = sidoPolygons.features.map(f => {
-    //     const name = f.properties.SIG_KOR_NM || f.properties.CTP_KOR_NM || f.properties.CTP_ENG_NM || '지역';
-    //     return {
-    //       name,
-    //       coordinates: f.geometry.coordinates[0], // 단일 폴리곤만 사용
-    //       properties: f.properties,
-    //     };
-    //   });
-    // },
     loadRegionPolygons(polygonData, regionName) {
       const features = polygonData.features;
       const regionSetting = this.regionSettings[regionName];
@@ -256,6 +249,7 @@ export default {
         
         const kor_name = feature.properties.SIG_KOR_NM;
         const eng_name = feature.properties.CTP_ENG_NM || feature.properties.SIG_ENG_NM; 
+        const sig_cd = feature.properties.SIG_CD;
         
         // 다중 폴리곤 처리 (coordinates가 3차원 배열인 경우)
         if (feature.geometry.type === 'MultiPolygon') {
@@ -265,6 +259,7 @@ export default {
               this.polygons.push({
                 kor_name: kor_name,
                 eng_name: eng_name,
+                sig_cd: sig_cd,
                 coordinates: coords,
                 properties: feature.properties,
                 region: regionSetting.region // 지역 구분을 위한 속성 추가
@@ -277,6 +272,7 @@ export default {
             this.polygons.push({
               kor_name: kor_name,
               eng_name: eng_name,
+              sig_cd: sig_cd,
               coordinates: coords,
               properties: feature.properties,
               region: regionSetting.region // 지역 구분을 위한 속성 추가
@@ -383,8 +379,8 @@ export default {
         
         // 폴리곤 마우스오버 이벤트
         kakao.maps.event.addListener(polygon, 'mouseover', () => {
-          const hoverName = region.kor_name;
-          this.hoverRegion(hoverName);
+          const hoverCode = region.sig_cd;
+          this.hoverRegion(hoverCode);
         });
         
         // 폴리곤 마우스아웃 이벤트
@@ -397,6 +393,7 @@ export default {
           polygon,
           kor_name: region.kor_name,
           eng_name: region.eng_name,
+          sig_cd: region.sig_cd,
           region: region.region
         });
       });
@@ -427,6 +424,7 @@ export default {
         if (polygon.polygon instanceof kakao.maps.Polygon) {
           const regionName = polygon.kor_name;
           const effectiveName = regionName; 
+          const sig_cd = polygon.sig_cd; // 시군구 코드로 비교
           const region = polygon.region || '기본';
           
           // 지역별 기본 색상 가져오기
@@ -439,7 +437,7 @@ export default {
           let fillOpacity = 0.7;
           
           // 선택된 지역
-          if (this.selectedRegion === effectiveName) {
+          if (this.selectedRegionCode === sig_cd) {
             strokeColor = '#3b82f6';
             strokeWeight = 3;
             fillColor = '#60a5fa';
@@ -448,7 +446,7 @@ export default {
           }
           
           // 정답 지역
-          if (this.correctRegion === effectiveName) {
+          if (this.correctRegionCode === sig_cd) {
             strokeColor = '#10b981';
             strokeWeight = 3;
             fillColor = '#34d399';
@@ -456,7 +454,7 @@ export default {
           }
           
           // 오답 지역
-          if (this.wrongRegion === effectiveName) {
+          if (this.wrongRegionCode === sig_cd) {
             strokeColor = '#ef4444';
             strokeWeight = 3;
             fillColor = '#f87171';
@@ -464,7 +462,7 @@ export default {
           }
           
           // 호버된 지역
-          if (this.hoveredRegion === effectiveName && !this.selectedRegion && !this.disabled) {
+          if (this.hoveredRegionCode === sig_cd && !this.selectedRegionCode && !this.disabled) {
             strokeColor = '#3b82f6';
             strokeWeight = 3;
             fillColor = regionColor.fill; // 지역 색상 유지하면서 약간 밝게
@@ -491,6 +489,7 @@ export default {
     selectRegion(region) {
       this.$emit('update:selectedRegion', region.kor_name);
       this.$emit('update:selectedRegionEng', region.eng_name);
+      this.$emit('update:selectedRegionCode', region.sig_cd);
       
       // 선택한 지역의 중심점에 마커 표시
       this.showMarkerAtRegion(region.kor_name);
@@ -534,12 +533,12 @@ export default {
         });
       }
     },
-    hoverRegion(regionName) {
-      this.hoveredRegion = regionName;
+    hoverRegion(regionCode) {
+      this.hoveredRegionCode = regionCode;
       this.updatePolygonStyles();
     },
     clearHover() {
-      this.hoveredRegion = null;
+      this.hoveredRegionCode = null;
       this.updatePolygonStyles();
     },
     reset() {
@@ -547,7 +546,7 @@ export default {
     },
     submitGuess() {
     // selectedRegionEng을 인자로 전달
-    this.$emit('submit-guess', this.selectedRegionEng);
+    this.$emit('submit-guess', this.selectedRegionCode);
   },
     zoomIn() {
       if (this.map) {
