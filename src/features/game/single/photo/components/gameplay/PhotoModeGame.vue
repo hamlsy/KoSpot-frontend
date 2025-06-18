@@ -125,6 +125,7 @@
           :wrong-region="wrongRegion"
           v-model:selectedRegion="selectedRegion"
           v-model:selectedRegionEng="selectedRegionEng"
+          v-model:selectedRegionCode="selectedRegionCode"
           @submit-guess="submitGuess"
           ref="regionMap"
         />
@@ -264,6 +265,7 @@ export default {
           photoUrl: require("@/shared/assets/images/photo/seoul/seoul_63building.jpg"),
           locationName: "서울 63빌딩",
           region: "Seoul",
+          sigCode: "11000",
           fact: "63빌딩은 63개 층으로 이루어져 있으며, 1985년에 완공되었습니다.",
         },
         {
@@ -271,12 +273,14 @@ export default {
           photoUrl: require("@/shared/assets/images/photo/seoul/seoul_cheonggyecheon.jpg"),
           locationName: "청계천",
           region: "Seoul",
+          sigCode: "11000",
           fact: "청계천은 2003년부터 2005년까지 복원 공사가 진행되었으며, 현재는 서울의 대표적인 관광지입니다.",
         },
         {
           id: 3,
           photoUrl: require("@/shared/assets//images/photo/seoul/seoul_cheonggyecheon1.jpg"),
-          locationName: "청계천 광장",
+          locationName: "계천 광장",
+          sigCode: "11000",
           region: "Seoul",
         },
         {
@@ -284,30 +288,35 @@ export default {
           photoUrl: require("@/shared/assets/images/photo/seoul/seoul_olympicPark.jpg"),
           locationName: "올림픽 공원",
           region: "Seoul",
+          sigCode: "11000",
         },
         {
           id: 5,
           photoUrl: require("@/shared/assets/images/photo/seoul/seoul_seoulCityHall.jpg"),
           locationName: "서울시청",
           region: "Seoul",
+          sigCode: "11000",
         },
         {
           id: 6,
           photoUrl: require("@/shared/assets/images/photo/seoul/seoul_yeouidoPark.jpg"),
           locationName: "여의도 공원",
           region: "Seoul",
+          sigCode: "11000",
         },
         {
           id: 7,
           photoUrl: require("@/shared/assets/images/photo/seoul/seoul_yeouidoPark1.jpg"),
           locationName: "여의도 한강공원",
           region: "Seoul",
+          sigCode: "11000",
         },
         {
           id: 8,
           photoUrl: require("@/shared/assets/images/banner/Seoul-Dongdaemun-Gate.jpg"),
           locationName: "동대문",
           region: "Seoul",
+          sigCode: "11000",
         },
         // 여기에 더 많은 사진 데이터 추가 가능
       ],
@@ -622,33 +631,31 @@ export default {
       }
     },
 
-    submitGuess(region) {
+    submitGuess(regionCode) {
       if (!this.roundStarted) return;
 
       // 지역이 정의되지 않은 경우 선택된 지역 사용
-      if (!region && this.selectedRegion) {
+      if (!regionCode && this.selectedRegionCode) {
         console.log(
-          "전달받은 region이 없어서 this.selectedRegion 사용:",
-          this.selectedRegion
+          "전달받은 regionCode가 없어서 this.selectedRegionCode 사용:",
+          this.selectedRegionCode
         );
-        region = this.selectedRegion;
+        regionCode = this.selectedRegionCode;
       }
 
       // 여전히 지역이 없는 경우 실행 취소
-      if (!region) {
+      if (!regionCode) {
         console.log("선택된 지역이 없습니다.");
         return;
       }
 
-      const isCorrect =
-        region.toLowerCase().split("-")[0] ===
-        this.currentPhoto.region.toLowerCase();
+      const isCorrect = regionCode === this.currentPhoto.sigCode;
 
       if (isCorrect) {
-        this.handleCorrectGuess(region);
+        this.handleCorrectGuess(regionCode);
       } else {
         // 오답인 경우 - 라운드가 끝나지 않음
-        this.wrongRegion = region;
+        this.wrongRegion = regionCode;
         this.showIncorrectAnimation = true;
 
         // 잠시 후 오답 표시 제거

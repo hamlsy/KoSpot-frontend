@@ -76,6 +76,10 @@ export default {
       type: String,
       default: null
     },
+    selectedRegionCode: {
+      type: String,
+      default: null
+    },
     correctRegion: {
       type: String,
       default: null
@@ -226,17 +230,6 @@ export default {
         }, 1000);
       }
     },
-    // loadPolygons() {
-    //   // GeoJSON 데이터 로드
-    //   this.polygons = sidoPolygons.features.map(f => {
-    //     const name = f.properties.SIG_KOR_NM || f.properties.CTP_KOR_NM || f.properties.CTP_ENG_NM || '지역';
-    //     return {
-    //       name,
-    //       coordinates: f.geometry.coordinates[0], // 단일 폴리곤만 사용
-    //       properties: f.properties,
-    //     };
-    //   });
-    // },
     loadRegionPolygons(polygonData, regionName) {
       const features = polygonData.features;
       const regionSetting = this.regionSettings[regionName];
@@ -256,6 +249,7 @@ export default {
         
         const kor_name = feature.properties.SIG_KOR_NM;
         const eng_name = feature.properties.CTP_ENG_NM || feature.properties.SIG_ENG_NM; 
+        const sig_cd = feature.properties.SIG_CD;
         
         // 다중 폴리곤 처리 (coordinates가 3차원 배열인 경우)
         if (feature.geometry.type === 'MultiPolygon') {
@@ -265,6 +259,7 @@ export default {
               this.polygons.push({
                 kor_name: kor_name,
                 eng_name: eng_name,
+                sig_cd: sig_cd,
                 coordinates: coords,
                 properties: feature.properties,
                 region: regionSetting.region // 지역 구분을 위한 속성 추가
@@ -491,6 +486,7 @@ export default {
     selectRegion(region) {
       this.$emit('update:selectedRegion', region.kor_name);
       this.$emit('update:selectedRegionEng', region.eng_name);
+      this.$emit('update:selectedRegionCode', region.sig_cd);
       
       // 선택한 지역의 중심점에 마커 표시
       this.showMarkerAtRegion(region.kor_name);
