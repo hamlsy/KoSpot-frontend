@@ -1,6 +1,16 @@
 <template>
   <div class="kakao-map-game" :class="{ 'map-open': isOpen }">
     <div id="map-container" ref="mapContainer"></div>
+    <!-- 투표 오버레이 컴포넌트 -->
+    <kakao-map-voting
+      v-if="map"
+      :map="map"
+      @vote-started="handleVoteStarted"
+      @vote-submitted="handleVoteSubmitted"
+      @vote-cancelled="handleVoteCancelled"
+      @vote-finalized="handleVoteFinalized"
+      ref="mapVoting"
+    ></kakao-map-voting>
     
     <div v-if="!disabled && showDistance" class="distance-info" v-show="distance !== null">
       <span class="distance-value">{{ formattedDistance }}</span>
@@ -44,7 +54,6 @@ import gameStore from '@/store/gameStore';
 export default {
   name: 'KakaoMapGame',
   components: {
-    
   },
   props: {
     isOpen: {
@@ -106,7 +115,8 @@ export default {
       hasMarker: false,
       teamPlayerMarkers: [],
       showVotingBadge: false,
-      gameStore: gameStore
+      gameStore,
+      voteOverlay: null
     };
   },
   
@@ -197,7 +207,7 @@ export default {
     },
     
     initMap() {
-      console.log(this.isInitialized)
+      console.log("Initializing KakaoMap:", this.isInitialized);
       // 이미 초기화되어 있는 경우 리턴
       if (this.isInitialized && this.map) {
         this.resizeMap();
@@ -238,9 +248,11 @@ export default {
         this.isInitialized = true;
         
         // 지도 로드 완료 이벤트 발생
-        this.$emit('map-loaded');
+        this.$emit('map-loaded', this.map);
       } else {
         console.error('Kakao Maps API가 로드되지 않았습니다.');
+        // API가 로드되지 않은 경우 500ms 후에 다시 시도
+        setTimeout(() => this.initMap(), 500);
         this.isLoading = false;
       }
     },
@@ -431,22 +443,13 @@ export default {
     
     // 팀 투표 시작
     startTeamVoting(position) {
-      // 이미 진행 중인 투표가 있는 경우 무시
-      if (gameStore.state.showVoting) return;
+      if (!this.map || !this.$refs.mapVoting) return;
       
-      // 투표 시작
-      gameStore.startTeamVoting(gameStore.state.currentUser, position);
+      // KakaoMapVoting 컴포넌트를 통해 투표 시작
+      this.$refs.mapVoting.startVote(position);
       
       // 투표 배지 업데이트
       this.updateVotingBadge();
-      
-      // 투표 시작 알림
-      const teamName = this.getTeamName(gameStore.state.currentUser.teamId);
-      gameStore.addTeamChatMessage(
-        gameStore.state.currentUser.teamId,
-        `${gameStore.state.currentUser.nickname}님이 위치 투표를 시작했습니다.`,
-        true
-      );
     },
     
     // 투표 처리
@@ -532,6 +535,22 @@ export default {
           lng: position.getLng()
         });
       });
+    },
+    
+    handleVoteStarted() {
+      console.log('투표 시작');
+    },
+    
+    handleVoteSubmitted() {
+      console.log('투표 제출');
+    },
+    
+    handleVoteCancelled() {
+      console.log('투표 취소');
+    },
+    
+    handleVoteFinalized() {
+      console.log('투표 완료');
     }
   }
 };
@@ -546,7 +565,7 @@ export default {
   left: 0;
   background: white;
   z-index: 1000;
-  display: none;
+  display: flex;
   flex-direction: column;
 }
 

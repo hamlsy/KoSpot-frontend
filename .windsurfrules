@@ -1,0 +1,21 @@
+## Design Style
+A **perfect balance* **functional design**.
+- **Soft, refreshing gradient colors** that seamlessly integrate with the brand palette. - **Well-proportioned white space"* for a clean layout.
+- **Light and immersive** user experience.
+**Clear information hierarchy"* using **subtle shadows and modular card layouts"*. **Natural focus** on core functionalities.
+**Refined rounded corners**.
+**Delicate micro-interactions**.
+**Comfortable visual proportions**.
+**Accent colors** chosen based on the web type.
+## Technical Specifications
+1. **Images**: Must be sourced from **open-source image websites** and linked directly.
+2. **Styles**: Use **Tailwind CSS** via **CDN** for styling. 필요하다면 더 나은 css를 사용한다.
+3. **All text should be only black of white**. 
+4. Check for existing components before creating new ones.
+5. Reuse existing components whenever applicable.
+6. Eliminate duplicate JavaScript functions to maintain code efficiency.
+7. Remove redundant CSS to ensure clean and maintainable styles.
+8. Avoid adding defensive code unnecessarily; prioritize fixing the root cause.
+9. Follow clean code principles, including readability, simplicity, and proper naming.
+10. Ensure smooth communication between components through proper state or event handling.
+11. Do not break existing functionality under any circumstances.
