@@ -2,6 +2,7 @@ import tempPage from '@/dummy/TempPage.vue'
 import CoordData from '@/dummy/coordData.vue'
 import kakaoMapTest from '@/dummy/KakaoMapTest.vue'
 import EncryptTest from 'src/dummy/EncryptTest.vue'
+import ComponentTest from 'src/dummy/ComponentTest.vue'
 
 const devRoutes = [
     {
@@ -23,6 +24,11 @@ const devRoutes = [
         path: '/encryptTest',
         name: "EncryptTest",
         component: EncryptTest
+    },
+    {
+        path: '/componentTest',
+        name: "ComponentTest",
+        component: ComponentTest
     }
 ];
 
