@@ -21,20 +21,20 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(process.env.VUE_APP_BASE_URL),
   routes,
   scrollBehavior() {
     return { x: 0, y: 0 };
   }
 });
 
-// const requireComponent = require.context('./', true, /index\.vue$/)
-// const components = {}
+const requireComponent = require.context('./', true, /index\.vue$/)
+const components = {}
 
-// requireComponent.keys().forEach(fileName => {
-//   const componentConfig = requireComponent(fileName)
-//   const componentName = fileName.split('/')[1]
-//   components[componentName] = componentConfig.default || componentConfig
-// })
+requireComponent.keys().forEach(fileName => {
+  const componentConfig = requireComponent(fileName)
+  const componentName = fileName.split('/')[1]
+  components[componentName] = componentConfig.default || componentConfig
+})
 
 export default router;
