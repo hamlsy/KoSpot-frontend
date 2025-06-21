@@ -20,24 +20,21 @@ const routes = [
   ...devRoutes
 ];
 
-// Vue 3에서는 createRouter 함수를 사용하여 라우터를 생성합니다.
 const router = createRouter({
-  // history 모드는 createWebHistory로 변경되었습니다.
-  history: createWebHistory(process.env.BASE_URL),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes,
   scrollBehavior() {
     return { x: 0, y: 0 };
   }
 });
 
-//컴포넌트 자동 등록
-const requireComponent = require.context('./', true, /index\.vue$/)
-const components = {}
+// const requireComponent = require.context('./', true, /index\.vue$/)
+// const components = {}
 
-requireComponent.keys().forEach(fileName => {
-  const componentConfig = requireComponent(fileName)
-  const componentName = fileName.split('/')[1]
-  components[componentName] = componentConfig.default || componentConfig
-})
+// requireComponent.keys().forEach(fileName => {
+//   const componentConfig = requireComponent(fileName)
+//   const componentName = fileName.split('/')[1]
+//   components[componentName] = componentConfig.default || componentConfig
+// })
 
 export default router;

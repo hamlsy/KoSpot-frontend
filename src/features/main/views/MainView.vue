@@ -287,7 +287,7 @@ import { useRouter } from 'vue-router';
 // import store from '@/store';
 import NavigationBar from 'src/core/components/NavigationBar.vue'
 import UserLoginCard from 'src/features/main/components/UserLoginCard.vue'
-import useAuth from 'src/core/composables/useAuth.js'
+// import useAuth from 'src/core/composables/useAuth.js'
 
 // 라우터 설정
 const router = useRouter();
