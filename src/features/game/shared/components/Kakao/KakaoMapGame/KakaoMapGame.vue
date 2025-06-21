@@ -38,6 +38,8 @@
 </template>
 
 <script setup>
+import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { useKakaoMapState } from './composables/useKakaoMapState';
 import { useKakaoMapControls } from './composables/useKakaoMapControls';
 import { useKakaoMapMarkers } from './composables/useKakaoMapMarkers';
 import { useKakaoMapDistance } from './composables/useKakaoMapDistance';
