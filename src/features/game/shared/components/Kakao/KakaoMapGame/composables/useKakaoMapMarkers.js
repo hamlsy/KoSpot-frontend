@@ -58,7 +58,6 @@ export function useKakaoMapMarkers(props, emit) {
       marker.value.setMap(null);
       marker.value = null;
       hasMarker.value = false;
-      distance.value = null;
     }
   };
   

@@ -1,6 +1,7 @@
 // src/shared/composables/kakao/useKakaoMapControls.js
 import { onMounted, onBeforeUnmount } from 'vue';
 import { useKakaoMapState } from './useKakaoMapState';
+import { useKakaoMapDistance } from './useKakaoMapDistance';
 
 export function useKakaoMapControls(props, emit) {
   const {
@@ -9,9 +10,12 @@ export function useKakaoMapControls(props, emit) {
     isLoading,
     isInitialized,
     markerImage,
-    hasMarker
+    hasMarker,
+    clickListener,
   } = useKakaoMapState();
-  
+
+  const { calculateDistance } = useKakaoMapDistance(props);
+
   const initMap = () => {
     console.log("Initializing KakaoMap:", isInitialized.value);
     // 이미 초기화되어 있는 경우 리턴
@@ -19,7 +23,10 @@ export function useKakaoMapControls(props, emit) {
       resizeMap();
       return;
     }
-    
+    console.log('isLoading:', isLoading);
+console.log('typeof isLoading:', typeof isLoading);
+console.log('isRef?', isLoading.value !== undefined); 
+  
     isLoading.value = true;
     
     if (window.kakao && window.kakao.maps) {
@@ -50,6 +57,7 @@ export function useKakaoMapControls(props, emit) {
       
       // 지도 로드 완료 이벤트 발생
       emit('map-loaded', map.value);
+    
     } else {
       console.error('Kakao Maps API가 로드되지 않았습니다.');
       // API가 로드되지 않은 경우 500ms 후에 다시 시도
@@ -101,19 +109,73 @@ export function useKakaoMapControls(props, emit) {
   const closeMap = () => {
     emit('close');
   };
+
+  const addClickListener = () => {
+    if (!map.value) return;
+    
+    // 기존 리스너 제거
+    removeClickListener();
+    
+    // 새 리스너 추가
+    clickListener.value = kakao.maps.event.addListener(map.value, 'click', (mouseEvent) => {
+      // 비활성화 상태에서는 마커 설정 불가
+      if (props.disabled) return;
+      
+      // 기존 마커 제거
+      removeMarker();
+      
+      // 클릭한 위치에 마커 생성
+      const latlng = mouseEvent.latLng;
+      marker.value = new kakao.maps.Marker({
+        position: latlng,
+        map: map.value
+      });
+      
+      hasMarker.value = true;
+      
+      // 거리 계산
+      calculateDistance();
+      
+      // 클릭 이벤트 발생
+      emit('map-clicked', {
+        lat: latlng.getLat(),
+        lng: latlng.getLng()
+      });
+    });
+  };
   
+  const removeClickListener = () => {
+    if (clickListener.value) {
+      kakao.maps.event.removeListener(clickListener.value);
+      clickListener.value = null;
+    }
+  };
+
+  const removeMarker = () => {
+    if (marker.value) {
+      marker.value.setMap(null);
+      marker.value = null;
+      hasMarker.value = false;
+    }
+  };
+
   onMounted(() => {
     if (props.isOpen) {
       initMap();
     }
   });
   
+
+
   return {
     initMap,
     resizeMap,
     zoomIn,
     zoomOut,
     resetZoom,
-    closeMap
+    closeMap,
+    addClickListener,
+    removeClickListener,
+    removeMarker
   };
 }

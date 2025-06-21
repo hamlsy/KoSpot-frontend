@@ -135,7 +135,7 @@ export default {
 
     // 맵 인스턴스 노출
     getMapInstance() {
-      return this.$refs.phoneMapGame ? this.$refs.phoneMapGame.map : null;
+      return this.$refs.phoneMapGame ? this.$refs.phoneMapGame.map.value : null;
     },
 
     // 마커 위치 가져오기

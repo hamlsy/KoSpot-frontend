@@ -1,19 +1,21 @@
 import { ref, computed } from 'vue';
 import gameStore from '@/store/gameStore';
 
+// 상태 정의
+const map = ref(null);
+const marker = ref(null);
+const clickListener = ref(null);
+const circles = ref([]);
+const showHints = ref(false);
+const distance = ref(null);
+const isLoading = ref(true);
+const isInitialized = ref(false);
+const markerImage = ref(null);
+const hasMarker = ref(false);
+const voteOverlay = ref(null);
+
 export function useKakaoMapState() {
-  // 상태 정의
-  const map = ref(null);
-  const marker = ref(null);
-  const clickListener = ref(null);
-  const circles = ref([]);
-  const showHints = ref(false);
-  const distance = ref(null);
-  const isLoading = ref(true);
-  const isInitialized = ref(false);
-  const markerImage = ref(null);
-  const hasMarker = ref(false);
-  const voteOverlay = ref(null);
+  
   
   // computed 속성
   const formattedDistance = computed(() => {

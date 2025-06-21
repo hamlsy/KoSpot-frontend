@@ -149,11 +149,11 @@ watch(() => props.isOpen, (newValue) => {
   if (newValue) {
     if (!isInitialized.value) {
       initMap();
+      
     } else {
       resizeMap();
     }
   }
-  updateVotingBadge();
 });
 
 watch(() => props.actualLocation, (newLocation) => {
@@ -162,18 +162,12 @@ watch(() => props.actualLocation, (newLocation) => {
   }
 });
 
-watch(() => gameStore.state.showVoting, () => {
-  updateVotingBadge();
-});
-
-watch(() => gameStore.state.votingTeamId, () => {
-  updateVotingBadge();
-});
 
 // 라이프사이클 훅
 onMounted(() => {
   if (props.isOpen) {
     initMap();
+  
   }
   
   if (props.showHintCircles && props.actualLocation) {
