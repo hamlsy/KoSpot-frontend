@@ -17,7 +17,7 @@
     </button>
     
     <!-- 다른 플레이어 마커 표시 (실시간 위치) -->
-    <div v-for="(marker, index) in teamPlayerMarkers" :key="index" class="team-player-marker">
+    <div v-for="(marker, index) in teamVotes" :key="index" class="team-player-marker">
       <div 
         class="player-marker" 
         :class="`team-${marker.teamId}-marker`"

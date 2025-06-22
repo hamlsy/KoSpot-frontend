@@ -5,14 +5,18 @@ import { useKakaoMapState } from './useKakaoMapState';
 export function useKakaoMapTeamVote(props) {
     const { map, marker, teamVotes, voteOverlays } = useKakaoMapState();
 
-    const createVoteOverlay = () => {
+    const createVoteOverlay = (playerInfo) => {
         if (!map.value) return;
+        
+        marker.value.playerName = playerInfo.nickname || 'None';
+        marker.value.playerId = playerInfo.id;
+        marker.value.teamId = playerInfo.teamId;
 
         //해당 팀원이 만든 오버레이만 제거
+        removeVoteOverlay(playerInfo.id);
         
         // 새 오버레이 추가
-        // 이 오버레이는 같은 팀에게만 보여야하며, 한 팀원은 하나의 투표만 가능
-        voteOverlays.value.push(new kakao.maps.CustomOverlay({
+        const overlay = new kakao.maps.CustomOverlay({
             position: marker.value.getPosition(),
             content: `
                 <div class="vote-overlay">
@@ -22,13 +26,35 @@ export function useKakaoMapTeamVote(props) {
                     </div>
                 </div>
             `,
+            // content는 @VoteOverlay.vue를 사용
             map: map.value,
             xAnchor: 0.5,
             yAnchor: 0.5
-        }));
+        });
+
+        // 오버레이에도 플레이어 정보 저장
+        overlay.playerName = playerInfo.nickname;
+        overlay.playerId = playerInfo.id;
+        overlay.teamId = playerInfo.teamId;
+        
+        // 마커에 오버레이 참조 저장
+        marker.value.overlay = overlay;
+        
+        voteOverlays.value.push(overlay);
+
+        return overlay;
+    };
+
+    const removeVoteOverlay = (playerId) => {
+        const overlay = teamVotes.value.find(v => v.playerId === playerId);
+        if (overlay) {
+            overlay.setMap(null);
+            teamVotes.value = teamVotes.value.filter(v => v.playerId !== playerId);
+        }
     };
 
     return {
         createVoteOverlay,
+        removeVoteOverlay
     };
 }
