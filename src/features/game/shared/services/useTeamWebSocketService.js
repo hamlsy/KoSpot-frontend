@@ -1,4 +1,4 @@
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onBeforeUnmount, readOnly } from 'vue';
 import SockJS from 'sockjs-client';
 import { Stomp } from '@stomp/stompjs';
 
@@ -6,11 +6,12 @@ import { Stomp } from '@stomp/stompjs';
  * 팀 WebSocket 서비스
  * 팀 기반 기능을 위한 실시간 통신 처리
  */
+// WebSocket 연결 상태
+const stompClient = ref(null);
+const isConnected = ref(false);
+const useDummyData = ref(true);
+
 export function useTeamWebSocketService() {
-    // WebSocket 연결 상태
-    const stompClient = ref(null);
-    const isConnected = ref(false);
-    const useDummyData = ref(true);
     
     // 현재 플레이어 정보
     const currentPlayer = ref({
@@ -176,8 +177,8 @@ export function useTeamWebSocketService() {
     
     return {
         // 상태
-        stompClient,
-        isConnected,
+        stompClient: readOnly(stompClient),
+        isConnected: readOnly(isConnected),
         useDummyData,
         currentPlayer,
         
