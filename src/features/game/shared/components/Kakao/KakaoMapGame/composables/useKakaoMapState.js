@@ -13,9 +13,8 @@ const isInitialized = ref(false);
 const markerImage = ref(null);
 const hasMarker = ref(false);
 
-//team vote
-const teamVotes = ref([]); // team vote data
-const voteOverlays = ref([]); // custom overlays
+//team
+const teamMarkers = ref([]); // team marker(vote) data
 
 
 export function useKakaoMapState() {
@@ -50,7 +49,6 @@ export function useKakaoMapState() {
     formattedDistance,
 
     //team vote
-    teamVotes,
-    voteOverlays
+    teamMarkers
   };
 }
