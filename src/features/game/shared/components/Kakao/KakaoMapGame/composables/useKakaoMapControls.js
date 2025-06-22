@@ -23,10 +23,7 @@ export function useKakaoMapControls(props, emit) {
       resizeMap();
       return;
     }
-    console.log('isLoading:', isLoading);
-console.log('typeof isLoading:', typeof isLoading);
-console.log('isRef?', isLoading.value !== undefined); 
-  
+    
     isLoading.value = true;
     
     if (window.kakao && window.kakao.maps) {
@@ -40,7 +37,7 @@ console.log('isRef?', isLoading.value !== undefined);
       };
       
       map.value = new kakao.maps.Map(container, options);
-      
+
       // 마커 이미지 설정
       const imageSrc = "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
       const imageSize = new kakao.maps.Size(24, 35);

@@ -133,9 +133,8 @@ export default {
         });
     },
 
-    // 맵 인스턴스 노출
     getMapInstance() {
-      return this.$refs.phoneMapGame ? this.$refs.phoneMapGame.map.value : null;
+      return this.$refs.phoneMapGame ? this.$refs.phoneMapGame.getMapInstance() : null;
     },
 
     // 마커 위치 가져오기

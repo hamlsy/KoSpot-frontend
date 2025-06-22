@@ -12,11 +12,13 @@ const isLoading = ref(true);
 const isInitialized = ref(false);
 const markerImage = ref(null);
 const hasMarker = ref(false);
-const voteOverlay = ref(null);
+
+//team vote
+const teamVotes = ref([]); // team vote data
+const voteOverlays = ref([]); // custom overlays
+
 
 export function useKakaoMapState() {
-  
-  
   // computed 속성
   const formattedDistance = computed(() => {
     if (distance.value === null) return '';
@@ -42,10 +44,13 @@ export function useKakaoMapState() {
     isInitialized,
     markerImage,
     hasMarker,
-    voteOverlay,
     gameStore,
     
     // computed
     formattedDistance,
+
+    //team vote
+    teamVotes,
+    voteOverlays
   };
 }

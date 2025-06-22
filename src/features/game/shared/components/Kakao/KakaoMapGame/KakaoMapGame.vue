@@ -28,7 +28,7 @@
       </div>
     </div>
     
-    <div class="loading-overlay" v-if="isLoading">
+    <div class="loading-overlay" v-if="isLoading.value">
       <div class="loading-spinner">
         <i class="fas fa-spinner fa-spin"></i>
         <p>지도 로딩 중...</p>
@@ -143,6 +143,16 @@ const {
   onVoteAnswer,
   updateVotingBadge
 } = useKakaoMapGame(props, emit);
+
+const getMapInstance = () => {
+  return map.value;
+};
+
+// defineExpose를 사용하여 메서드 노출
+defineExpose({
+  getMapInstance,
+  getMarkerPosition
+});
 
 // 감시자 설정
 watch(() => props.isOpen, (newValue) => {
