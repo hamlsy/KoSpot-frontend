@@ -28,12 +28,13 @@ KoSpot의 팀 투표 시스템은 실시간으로 팀원들의 위치를 공유�
 ### 1. 초기화 단계
 ```mermaid
 flowchart TD
-    A[KakaoMapGame.vue 마운트] --> B[useKakaoMapTeamVote 초기화]
-    B --> C[useTeamWebSocketService 초기화]
-    C --> D{useDummyData?}
+    A[KakaoMapGame.vue 마운트] --> B[WebSocket 연결 시도]
+    A --> C[useKakaoMapTeamVote 초기화]
+    B --> D{useDummyData?}
     D -->|Yes| E[더미 팀원 데이터 생성]
-    D -->|No| F[WebSocket 연결 시도]
+    D -->|No| F[WebSocket 연결 설정]
     E --> G[더미 데이터로 마커 시뮬레이션 시작]
+    F --> H[useKakaoMapTeamVote.initTeamVoting 호출]
 ```
 
 ### 2. WebSocket 연결 프로세스
@@ -45,13 +46,13 @@ sequenceDiagram
     participant WS as WebSocket 서버
     
     KakaoMapGame->>TeamVote: mounted()
-    TeamVote->>TeamVote: initTeamVoting()
-    TeamVote->>WSService: connectWebSocket()
+    KakaoMapGame->>WSService: connectWebSocket()
     WSService->>WS: SockJS 연결 요청
     WS-->>WSService: 연결 성공 (onConnect)
     WSService->>WS: STOMP 연결 요청
     WS-->>WSService: STOMP 연결 성공 (onStompConnect)
     WSService-->>TeamVote: onConnect 콜백 실행
+    TeamVote->>TeamVote: initTeamVoting()
     TeamVote->>WSService: subscribeToTeamMarkers(teamId, callback)
     WSService->>WS: /topic/team/{teamId} 구독
     WS-->>WSService: 구독 확인 (onSubscribe)
@@ -79,9 +80,10 @@ flowchart LR
 ```
 KakaoMapGame mounted()
   ↓
+connectWebSocket()
+  ↓
 useKakaoMapTeamVote()
   ├─ initTeamVoting()
-  │  ├─ connectWebSocket()
   │  ├─ subscribeToTeamMarkers()
   │  └─ updateTeamMarkerOnMap()
   └─ setupEventListeners()

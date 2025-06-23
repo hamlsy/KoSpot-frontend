@@ -2,9 +2,14 @@ import { h, onMounted, onBeforeUnmount, render, ref, watch } from 'vue';
 import { useKakaoMapState } from './useKakaoMapState';
 import VoteOverlay from 'src/features/game/shared/components/Kakao/VoteOverlay.vue';
 import { useTeamWebSocketService } from 'src/features/game/shared/services/useTeamWebSocketService';
+import { webSocketManager } from 'src/features/game/shared/services/useWebSocketManager';
 
 export function useKakaoMapTeamVote(props, emit) {
     const { map, marker, teamMarkers } = useKakaoMapState();
+    
+    // 투표 상태 관리를 위한 ref 변수들
+    const approvedVotes = ref([]);
+    const rejectedVotes = ref([]);
     
     // Use the WebSocket service
     const {
@@ -176,14 +181,30 @@ export function useKakaoMapTeamVote(props, emit) {
         return overlay;
     }
 
-    // 팀 마커 채널 구독 설정 및 콜백 연결
+    /**
+     * 팀 마커 채널 구독 설정 및 콜백 연결
+     * 게임 시작 시 호출되며, 대기실에서 이미 연결된 웹소켓을 재사용하거나 새로 연결합니다.
+     * 팀 채널에만 구독하여 팀원 간에만 마커 정보가 공유되도록 합니다.
+     */
     const setupTeamMarkerSubscription = () => {
-        // WebSocket 서비스가 연결되고 팀 채널을 구독할 때 호출됨
-        // 팀 채널 구독 설정
-        if (props.teamId) {
-            connectWebSocket('/ws', props.teamId);
-        } else if (currentPlayer.value.teamId) {
-            connectWebSocket('/ws', currentPlayer.value.teamId);
+        // 팀 ID 결정 (props에서 우선적으로 가져오고, 없으면 현재 플레이어의 팀 ID 사용)
+        const teamId = props.teamId || currentPlayer.value.teamId;
+        
+        // 팀 ID가 없으면 구독 불가능
+        if (!teamId) {
+            console.warn('팀 ID가 없어 마커 구독을 설정할 수 없습니다. 팀 정보를 확인해주세요.');
+            return;
+        }
+        
+        // 전역 WebSocketManager가 이미 연결되어 있는지 확인 (대기실에서 연결된 상태일 수 있음)
+        if (webSocketManager.isConnected.value) {
+            console.log('기존 웹소켓 연결을 재사용하여 팀 채널 구독을 시작합니다.');
+            // 연결되어 있다면 팀 채널만 구독 (새 연결 생성 없음)
+            subscribeToTeamMarkers(teamId);
+        } else {
+            console.log('새로운 웹소켓 연결을 생성하고 팀 채널 구독을 시작합니다.');
+            // 연결되어 있지 않다면 연결 후 구독
+            connectWebSocket('/ws', teamId);
         }
     };
     
@@ -289,45 +310,204 @@ export function useKakaoMapTeamVote(props, emit) {
         });
     };
     
-    // 라이프사이클 훅 설정
+    /**
+     * 컴포넌트 마운트 시 실행되는 후
+     * 1. 웹소켓 연결 및 팀 채널 구독 설정
+     * 2. 더미 데이터 모드 초기화 (테스트용)
+     * 3. 플레이어 상태 변경 감지 설정
+     */
     onMounted(() => {
-        // WebSocket 구독 설정
+        console.log('팀 지도 투표 컴포넌트 초기화 시작');
+        
+        // 1. 웹소켓 구독 설정 - 대기실에서 연결된 웹소켓을 재사용하거나 새로 연결
         setupTeamMarkerSubscription();
         
-        // 더미 데이터 모드인 경우 초기화
+        // 2. 더미 데이터 모드인 경우 초기화 (개발 및 테스트 환경용)
         if (useDummyData.value) {
+            console.log('더미 데이터 모드 활성화 - 테스트용 더미 마커 생성');
+            
+            // 지도가 로드될 때까지 약간 대기 후 더미 데이터 초기화
             setTimeout(() => {
+                // 더미 팀원 마커 생성
                 initDummyData();
                 
-                // Periodically update dummy markers
+                // 더미 마커 위치 주기적 업데이트 (5초마다)
                 const dummyUpdateInterval = setInterval(updateDummyMarkers, 5000);
                 
-                // Clean up interval on unmount
+                // 컴포넌트 언마운트 시 인터벌 정리
                 onBeforeUnmount(() => {
+                    console.log('더미 데이터 업데이트 인터벌 정리');
                     clearInterval(dummyUpdateInterval);
                 });
-            }, 1000); // Wait for map to be ready
+            }, 1000); // 지도 로드를 위해 1초 대기
         }
+        
+        // 3. 플레이어 상태 변경 감지 설정 (입장/퇴장, 팀 변경 등)
+        // 전역 웹소켓 관리자에서 플레이어 상태 변경 이벤트 구독
+        const playerStatusTopic = '/topic/game/players/status';
+        webSocketManager.subscribe(playerStatusTopic, handlePlayerStatusChange);
     });
     
-    // WebSocket 서비스는 onBeforeUnmount에서 자체적으로 연결 해제를 처리함
-    
-    // 지도 변경 감지하여 더미 데이터 초기화
-    watch(map, (newMap) => {
-        if (newMap && useDummyData.value) {
-            initDummyData();
-        }
-    });
+    /**
+     * 플레이어 상태 변경 이벤트 처리
+     * 입장, 퇴장, 팀 변경 등의 이벤트를 처리합니다.
+     * 
+     * @param {Object} message - 서버에서 수신한 플레이어 상태 메시지
+     */
+    const handlePlayerStatusChange = (message) => {
+        if (!message || !message.body) return;
+        
+        try {
+            const data = JSON.parse(message.body);
+            console.log('플레이어 상태 변경 이벤트 수신:', data);
+            
+            // 이벤트 유형에 따른 처리
+            switch (data.eventType) {
+                case 'JOIN': // 플레이어 입장
+                    console.log(`플레이어 ${data.player.nickname} 입장`);
+                    // 현재 플레이어의 팀원이면 팀 마커에 추가
+                    if (data.player.teamId === currentPlayer.value.teamId) {
+                        // 팀원 마커 추가 로직 추가 가능
+                    }
+                    break;
+                    
+                case 'LEAVE': // 플레이어 퇴장
+                    console.log(`플레이어 ${data.player.nickname} 퇴장`);
+                    // 팀 마커에서 제거
+                    const leaveIndex = teamMarkers.value.findIndex(m => m.playerId === data.player.id);
+                    if (leaveIndex !== -1) {
+                        // 마커와 오버레이 제거
+                        if (teamMarkers.value[leaveIndex].marker) {
+                            teamMarkers.value[leaveIndex].marker.setMap(null);
+                        }
+                        if (teamMarkers.value[leaveIndex].overlay) {
+                            teamMarkers.value[leaveIndex].overlay.setMap(null);
+                        }
+                        // 배열에서 제거
+                        teamMarkers.value.splice(leaveIndex, 1);
+                    }
+                    break;
+                    
+                case 'TEAM_CHANGE': // 플레이어 팀 변경
+                    console.log(`플레이어 ${data.player.nickname} 팀 변경: ${data.previousTeamId} -> ${data.player.teamId}`);
+                    // 현재 플레이어의 팀원이 되었다면 팀 마커에 추가
+                    if (data.player.teamId === currentPlayer.value.teamId) {
+                        // 팀원 마커 추가 로직 추가 가능
+                    } 
+                    // 현재 플레이어의 팀원이 아니게 되었다면 팀 마커에서 제거
+                    else if (data.previousTeamId === currentPlayer.value.teamId) {
+                        const changeIndex = teamMarkers.value.findIndex(m => m.playerId === data.player.id);
+                        if (changeIndex !== -1) {
+                            // 마커와 오버레이 제거
+                            if (teamMarkers.value[changeIndex].marker) {
+                                teamMarkers.value[changeIndex].marker.setMap(null);
+                            }
+                            if (teamMarkers.value[changeIndex].overlay) {
+                                teamMarkers.value[changeIndex].overlay.setMap(null);
+                            }
+                            // 배열에서 제거
+                            teamMarkers.value.splice(changeIndex, 1);
+                        }
+                    }
+                    break;
+                    
+                case 'GAME_START': // 게임 시작
+                    console.log('게임 시작 이벤트 수신');
+                    // 게임 시작 시 필요한 처리 추가 가능
+                    break;
+                    
+                case 'GAME_END': // 게임 종료
+                    console.log('게임 종료 이벤트 수신');
+                    // 게임 종료 시 필요한 처리 추가 가능
+                    break;
+            }
+            
+            // 이벤트 전파 (부모 컴포넌트에서 추가 처리 가능하도록)
+            emit('playerStatusChange', data);
+        
+    } catch (error) {
+        console.error('플레이어 상태 변경 메시지 처리 오류:', error);
+    }
+};
 
-    return {
-        startTeamVote,
-        createVoteOverlay,
-        addTeamMarker,
-        shareTeamMarker,
-        isConnected,
-        currentPlayer,
-        useDummyData,
-        initDummyData,
-        updateDummyMarkers
+/**
+ * 컴포넌트 언마운트 시 자원 정리
+ * 1. 플레이어 상태 구독 해제
+ * 2. 팀 채널 구독 해제
+ * 3. 마커와 오버레이 제거
+ */
+onBeforeUnmount(() => {
+    console.log('팀 지도 투표 컴포넌트 자원 정리 시작');
+    
+    // 1. 플레이어 상태 구독 해제
+    const playerStatusTopic = '/topic/game/players/status';
+    webSocketManager.unsubscribe(playerStatusTopic);
+    
+    // 2. 팀 채널 구독 해제 (전체 연결은 유지)
+    disconnectWebSocket();
+    
+    // 3. 마커와 오버레이 제거
+    teamMarkers.value.forEach(m => {
+        if (m.marker) m.marker.setMap(null);
+        if (m.overlay) m.overlay.setMap(null);
+    });
+    teamMarkers.value = [];
+    
+    console.log('팀 지도 투표 컴포넌트 자원 정리 완료');
+});
+
+// 지도 변경 감지하여 더미 데이터 초기화
+watch(map, (newMap) => {
+    if (newMap && useDummyData.value) {
+        initDummyData();
+    }
+});
+
+/**
+ * 채팅 메시지 전송 함수
+ * 팀 채팅 또는 전체 채팅에 메시지를 전송합니다.
+ * 
+ * @param {String} message - 전송할 메시지 내용
+ * @param {Boolean} isTeamChat - 팀 채팅 여부 (기본값: true)
+ */
+const sendChatMessage = (message, isTeamChat = true) => {
+    if (!message || !currentPlayer.value) return;
+    
+    const destination = isTeamChat 
+        ? `/app/game/team/${currentPlayer.value.teamId}/chat` // 팀 채팅
+        : '/app/game/chat'; // 전체 채팅
+    
+    const chatMessage = {
+        playerId: currentPlayer.value.id,
+        playerName: currentPlayer.value.nickname,
+        teamId: currentPlayer.value.teamId,
+        content: message,
+        timestamp: new Date().toISOString()
     };
+    
+    // 웹소켓 관리자를 통해 메시지 전송
+    webSocketManager.publish(destination, JSON.stringify(chatMessage));
+    
+    console.log(`채팅 메시지 전송 (${isTeamChat ? '팀' : '전체'}): ${message}`);
+} // Added a closing curly brace here
+
+return {
+    // 팀 마커 관련 함수
+    startTeamVote,
+    createVoteOverlay,
+    addTeamMarker,
+    shareTeamMarker,
+    
+    // 채팅 관련 함수
+    sendChatMessage,
+    handlePlayerStatusChange,
+    
+    // 상태 변수
+    isConnected,
+    currentPlayer,
+    useDummyData,
+    teamMarkers,
+    approvedVotes,
+    rejectedVotes
+};
 }
