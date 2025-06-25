@@ -90,7 +90,7 @@ const setupGameSubscriptions = () => {
 
 export {
     // 상태 (읽기 전용)
-    gameState: readonly(gameState),
+    gameState,
     
     // 메서드
     handleGameStateChange,

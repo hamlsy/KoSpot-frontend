@@ -45,7 +45,7 @@ const handlePlayerStatusChange = (playerEvent) => {
             createSystemMessage(`${player.nickname || '새 플레이어'}님이 입장하셨습니다.`);
             break;
             
-        case 'LEAVE': // 플레이어 퇴장
+        case 'LEAVE': { // 플레이어 퇴장
             // 플레이어 목록에서 제거
             const leaveIndex = activePlayers.value.findIndex(p => p.id === player.id);
             if (leaveIndex !== -1) {
@@ -62,6 +62,7 @@ const handlePlayerStatusChange = (playerEvent) => {
             
             // 시스템 메시지 추가 (퇴장 알림)
             createSystemMessage(`${player.nickname || '플레이어'}님이 퇴장하셨습니다.`);
+        }
             break;
             
         case 'TEAM_CHANGE': // 플레이어 팀 변경
@@ -86,9 +87,11 @@ const handlePlayerStatusChange = (playerEvent) => {
             }
             
             // 활성 플레이어 목록에서도 팀 정보 업데이트
-            const playerIndex = activePlayers.value.findIndex(p => p.id === player.id);
-            if (playerIndex !== -1) {
-                activePlayers.value[playerIndex].teamId = player.teamId;
+            {
+                const playerIndex = activePlayers.value.findIndex(p => p.id === player.id);
+                if (playerIndex !== -1) {
+                    activePlayers.value[playerIndex].teamId = player.teamId;
+                }
             }
             
             // 시스템 메시지 추가 (팀 변경 알림)
@@ -116,8 +119,8 @@ const setupPlayerSubscriptions = () => {
 
 export {
     // 상태 (읽기 전용)
-    activePlayers: readonly(activePlayers),
-    teamPlayers: readonly(teamPlayers),
+    activePlayers,
+    teamPlayers,
     
     // 메서드
     handlePlayerStatusChange,

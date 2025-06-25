@@ -227,8 +227,8 @@ const addConnectionCallback = (callback) => {
 
 export {
     // 상태 (읽기 전용)
-    isConnected: readonly(isConnected),
-    useDummyData: readonly(useDummyData),
+    isConnected,
+    useDummyData,
     
     // 메서드
     connect,

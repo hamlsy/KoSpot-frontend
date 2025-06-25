@@ -1,6 +1,6 @@
 import { ref, onMounted, onBeforeUnmount, readonly } from 'vue';
 import { webSocketManager } from './useWebSocketManager';
-import { stompClient } from './websocket/core';
+import { isConnected } from './websocket/core';
 
 /**
  * 팀 WebSocket 서비스 컴포저블
@@ -302,8 +302,6 @@ export function useTeamWebSocketService() {
     // 외부로 노출할 값과 메서드
     return {
         // 상태 (읽기 전용으로 노출)
-        /** @type {import('vue').Ref<Object>} STOMP 클라이언트 인스턴스 */
-        stompClient: readonly(stompClient),
         /** @type {import('vue').Ref<boolean>} WebSocket 연결 상태 */
         isConnected: readonly(isConnected),
         /** @type {import('vue').Ref<boolean>} 더미 데이터 사용 여부 */

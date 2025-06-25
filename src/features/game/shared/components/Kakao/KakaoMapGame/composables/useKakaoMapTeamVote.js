@@ -20,7 +20,8 @@ export function useKakaoMapTeamVote(props, emit) {
         disconnectWebSocket,
         sendTeamMarker,
         simulateSendMarker,
-        getDummyTeamMembers
+        getDummyTeamMembers,
+        subscribeToTeamMarkers
     } = useTeamWebSocketService();
     
     // Set team ID if provided in props
@@ -30,7 +31,7 @@ export function useKakaoMapTeamVote(props, emit) {
 
     const startTeamVote = async (playerInfo) => {
         if(!map.value || !marker.value) return;
-
+        console.log("투표 시작")
         try {
             // 현재 마커 위치 가져오기 (useKakaoMapMarkers에서 설정된 marker 활용)
             const position = marker.value.getPosition();
@@ -374,17 +375,19 @@ export function useKakaoMapTeamVote(props, emit) {
                 case 'LEAVE': // 플레이어 퇴장
                     console.log(`플레이어 ${data.player.nickname} 퇴장`);
                     // 팀 마커에서 제거
-                    const leaveIndex = teamMarkers.value.findIndex(m => m.playerId === data.player.id);
-                    if (leaveIndex !== -1) {
-                        // 마커와 오버레이 제거
-                        if (teamMarkers.value[leaveIndex].marker) {
-                            teamMarkers.value[leaveIndex].marker.setMap(null);
+                    {
+                        const leaveIndex = teamMarkers.value.findIndex(m => m.playerId === data.player.id);
+                        if (leaveIndex !== -1) {
+                            // 마커와 오버레이 제거
+                            if (teamMarkers.value[leaveIndex].marker) {
+                                teamMarkers.value[leaveIndex].marker.setMap(null);
+                            }
+                            if (teamMarkers.value[leaveIndex].overlay) {
+                                teamMarkers.value[leaveIndex].overlay.setMap(null);
+                            }
+                            // 배열에서 제거
+                            teamMarkers.value.splice(leaveIndex, 1);
                         }
-                        if (teamMarkers.value[leaveIndex].overlay) {
-                            teamMarkers.value[leaveIndex].overlay.setMap(null);
-                        }
-                        // 배열에서 제거
-                        teamMarkers.value.splice(leaveIndex, 1);
                     }
                     break;
                     

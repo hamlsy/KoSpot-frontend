@@ -1,6 +1,7 @@
 // src/shared/composables/kakao/useKakaoMapGame.js
 import { useKakaoMapState } from './useKakaoMapState';
 import { useKakaoMapMarkers } from './useKakaoMapMarkers';
+import { useKakaoMapTeamVote } from './useKakaoMapTeamVote';
 
 export function useKakaoMapGame(props, emit) {
   const { 
@@ -8,6 +9,9 @@ export function useKakaoMapGame(props, emit) {
   } = useKakaoMapState();
   
   const { getMarkerPosition } = useKakaoMapMarkers(props, emit);
+  
+  // 팀 투표 기능 사용
+  const teamVote = useKakaoMapTeamVote(props, emit);
   
   const submitAnswer = async () => {
     if (!marker.value) return;
@@ -20,7 +24,36 @@ export function useKakaoMapGame(props, emit) {
     }
   };
   
+  // 팀 투표 시작 함수
+  const startTeamVoting = async (playerInfo) => {
+    if (!marker.value) return;
+    
+    try {
+      // useKakaoMapTeamVote의 startTeamVote 함수 호출
+      const overlay = await teamVote.startTeamVote(playerInfo);
+      return overlay;
+    } catch (error) {
+      console.error('팀 투표 시작 중 오류 발생:', error);
+      return null;
+    }
+  };
+
+  // 투표에 응답하는 함수
+  const onVoteAnswer = (voteId, isApproved) => {
+    // 투표 응답 처리 로직 추가 가능
+    emit('vote-response', { voteId, isApproved });
+  };
+
+  // 투표 배지 업데이트 함수
+  const updateVotingBadge = (count) => {
+    // 투표 배지 업데이트 로직 추가 가능
+    emit('update-voting-badge', count);
+  };
+
   return {
-    submitAnswer
+    submitAnswer,
+    startTeamVoting,
+    onVoteAnswer,
+    updateVotingBadge
   };
 }
