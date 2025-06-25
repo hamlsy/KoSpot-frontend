@@ -97,7 +97,7 @@ export default {
   },
   data() {
     return {
-      isExpanded: false,
+      isExpanded: true,
       lastVoteCount: 0,
       hasNewVotes: false
     }
@@ -133,7 +133,7 @@ export default {
   z-index: 1000;
   left: 50%; /* 중앙 정렬을 위해 추가 */
   transform: translateX(-50%); /* 중앙 정렬을 위해 추가 */
-  bottom: 100%; /* 마커 위에 위치하도록 설정 */
+  bottom: 110%; /* 마커 위에 위치하도록 설정 */
   margin-bottom: 5px; /* 마커와의 간격 */
 }
 
