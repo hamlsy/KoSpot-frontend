@@ -37,7 +37,7 @@
         class="phone-spot-button team-vote-button"
         @click="voteSpotAnswer"
       >
-        <i class="fas fa-vote-yea"></i> 팀 투표 시작
+        <i class="fas fa-vote-yea"></i> Vote!
       </button>
 
     </div>

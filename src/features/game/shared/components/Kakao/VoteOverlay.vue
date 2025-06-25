@@ -7,12 +7,13 @@
       class="vote-icon-button"
       :class="{ 'pulse-animation': hasNewVotes }"
     >
-    <svg class="vote-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <!-- <svg class="vote-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M20 11.08V8l-6-6H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V11.08z"></path>
       <path d="M18 8h-6V2"></path>
       <circle cx="12" cy="14" r="2"></circle>
       <path d="M14 17.5v1a1.5 1.5 0 0 1-3 0v-1"></path>
-    </svg>
+    </svg> -->
+    <i class="fas fa-vote-yea"></i>
       <span class="vote-count">{{ approvedVotes.length }}/{{ totalTeamMembers }}</span>
     </button>
 
@@ -127,10 +128,13 @@ export default {
 
 <style scoped>
 .vote-overlay-wrapper {
-  position: relative;
+  position: absolute; /* relative에서 absolute로 변경 */
   width: 150px;
   z-index: 1000;
-  margin: 0 auto;
+  left: 50%; /* 중앙 정렬을 위해 추가 */
+  transform: translateX(-50%); /* 중앙 정렬을 위해 추가 */
+  bottom: 100%; /* 마커 위에 위치하도록 설정 */
+  margin-bottom: 5px; /* 마커와의 간격 */
 }
 
 /* 투표 아이콘 버튼 스타일 */
@@ -208,22 +212,25 @@ export default {
 }
 
 .vote-overlay {
-  position: relative;
+  position: absolute; /* relative에서 absolute로 변경 */
   width: 180px;
   background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(248,248,248,0.98));
   border-radius: 16px;
   padding: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
   z-index: 1000;
+  left: 50%; /* 중앙 정렬 */
+  bottom: 100%; /* 마커 위에 위치 */
+  transform: translateX(-50%); /* 중앙 정렬 */
+  margin-bottom: 10px; /* 마커와의 간격 */
   animation: popIn 0.3s ease-out;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-top: 10px;
 }
 
 .vote-overlay:after {
-  content: '';
+  /* content: '';
   position: absolute;
   bottom: -8px;
   left: 50%;
@@ -232,7 +239,7 @@ export default {
   height: 0;
   border-left: 8px solid transparent;
   border-right: 8px solid transparent;
-  border-top: 8px solid rgba(240,240,240,0.95);
+  border-top: 8px solid rgba(240,240,240,0.95); */
 }
 
 .vote-header {
@@ -320,14 +327,14 @@ export default {
 @keyframes popIn {
   0% {
     opacity: 0;
-    transform: translate(-50%, -10px) scale(0.8);
+    transform: translate(-50%) scale(0.8);
   }
   70% {
-    transform: translate(-50%, -25px) scale(1.03);
+    transform: translate(-50%) scale(1.03);
   }
   100% {
     opacity: 1;
-    transform: translate(-50%, -20px) scale(1);
+    transform: translate(-50%) scale(1);
   }
 }
 </style>

@@ -130,6 +130,9 @@ export function useKakaoMapTeamVote(props, emit) {
 
     const createCustomOverlay = (position, playerInfo, isInitiator = false) => {
         const overlayContainer = document.createElement('div');
+        // 투표 참여자 목록 (실제 데이터로 대체 필요)
+        const approvedVotes = playerInfo.approvedVotes || [];
+
         // VoteOverlay 컴포넌트 props
         const voteProps = {
             approvedVotes,
@@ -137,9 +140,7 @@ export function useKakaoMapTeamVote(props, emit) {
             isInitiator
         };
 
-         // 투표 참여자 목록 (실제 데이터로 대체 필요)
-         const approvedVotes = playerInfo.approvedVotes || [];
-
+        
          // 이벤트 핸들러
         const handleApproveVote = () => {
             console.log(`${playerInfo.nickname || '플레이어'}의 투표를 승인했습니다`);
@@ -172,7 +173,7 @@ export function useKakaoMapTeamVote(props, emit) {
             content: overlayContainer,
             map: map.value,
             xAnchor: 0.5,
-            yAnchor: 1.0 // 오버레이가 마커 위에 표시되도록 조정
+            yAnchor: 1.5 // 오버레이가 마커 위에 표시되도록 조정
         });
         
         // 오버레이에 메타데이터 저장
