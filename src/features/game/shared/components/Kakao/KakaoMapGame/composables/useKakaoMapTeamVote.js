@@ -2,7 +2,7 @@ import { h, onMounted, onBeforeUnmount, render, ref, watch } from 'vue';
 import { useKakaoMapState } from './useKakaoMapState';
 import VoteOverlay from 'src/features/game/shared/components/Kakao/VoteOverlay.vue';
 import { useTeamWebSocketService } from 'src/features/game/shared/services/useTeamWebSocketService';
-import { webSocketManager } from 'src/features/game/shared/services/useWebSocketManager';
+import webSocketManager from 'src/features/game/shared/services/websocket';
 
 export function useKakaoMapTeamVote(props, emit) {
     const { map, marker, teamMarkers } = useKakaoMapState();
@@ -188,23 +188,26 @@ export function useKakaoMapTeamVote(props, emit) {
      * 팀 채널에만 구독하여 팀원 간에만 마커 정보가 공유되도록 합니다.
      */
     const setupTeamMarkerSubscription = () => {
-        // 팀 ID 결정 (props에서 우선적으로 가져오고, 없으면 현재 플레이어의 팀 ID 사용)
-        const teamId = props.teamId || currentPlayer.value.teamId;
-        
-        // 팀 ID가 없으면 구독 불가능
-        if (!teamId) {
-            console.warn('팀 ID가 없어 마커 구독을 설정할 수 없습니다. 팀 정보를 확인해주세요.');
+        // 싱글 게임 모드인 경우 WebSocket 연결을 설정하지 않음
+        if (props.gameMode === 'single') {
+            console.log('싱글 게임 모드: WebSocket 연결 건너뜀');
             return;
         }
         
+        const teamId = currentPlayer.value.teamId;
+        if (!teamId) {
+            console.warn('팀 ID가 설정되지 않아 마커 구독을 설정할 수 없습니다.');
+            return;
+        }
+        
+        console.log(`팀 마커 구독 설정 시작: 팀 ID ${teamId}, 게임 모드: ${props.gameMode}`);
+        
         // 전역 WebSocketManager가 이미 연결되어 있는지 확인 (대기실에서 연결된 상태일 수 있음)
         if (webSocketManager.isConnected.value) {
-            console.log('기존 웹소켓 연결을 재사용하여 팀 채널 구독을 시작합니다.');
-            // 연결되어 있다면 팀 채널만 구독 (새 연결 생성 없음)
+            console.log('기존 WebSocket 연결 재사용');
             subscribeToTeamMarkers(teamId);
         } else {
-            console.log('새로운 웹소켓 연결을 생성하고 팀 채널 구독을 시작합니다.');
-            // 연결되어 있지 않다면 연결 후 구독
+            console.log('새 WebSocket 연결 시도');
             connectWebSocket('/ws', teamId);
         }
     };
@@ -464,6 +467,19 @@ watch(map, (newMap) => {
     if (newMap && useDummyData.value) {
         initDummyData();
     }
+});
+
+// 컴포넌트 마운트 시 게임 모드에 따라 WebSocket 연결 설정
+onMounted(() => {
+    // 싱글 게임 모드인 경우 WebSocket 연결을 설정하지 않음
+    if (props.gameMode === 'single') {
+        console.log('싱글 게임 모드: WebSocket 연결을 설정하지 않습니다.');
+        return;
+    }
+    
+    // 멀티 게임 모드(team, individual)인 경우에만 WebSocket 연결 설정
+    console.log(`멀티 게임 모드(${props.gameMode}): WebSocket 연결을 설정합니다.`);
+    setupTeamMarkerSubscription();
 });
 
 /**

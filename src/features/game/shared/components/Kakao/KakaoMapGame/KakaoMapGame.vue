@@ -88,6 +88,11 @@ const props = defineProps({
   showActionButton: {
     type: Boolean,
     default: true
+  },
+  gameMode: {
+    type: String,
+    default: 'single',
+    validator: (value) => ['single', 'team', 'individual'].includes(value)
   }
 });
 
@@ -178,12 +183,14 @@ watch(() => props.actualLocation, (newLocation) => {
 onMounted(() => {
   if (props.isOpen) {
     initMap();
-  
   }
   
   if (props.showHintCircles && props.actualLocation) {
     createHintCircles();
   }
+  
+  // gameMode가 'single'이 아닌 경우(team, individual)에만 WebSocket 연결 설정
+  console.log(`게임 모드: ${props.gameMode}`);
 });
 
 onBeforeUnmount(() => {

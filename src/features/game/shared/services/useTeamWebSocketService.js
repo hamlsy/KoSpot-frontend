@@ -1,5 +1,6 @@
 import { ref, onMounted, onBeforeUnmount, readonly } from 'vue';
-import { webSocketManager } from './useWebSocketManager';
+import useWebSocketManager from './useWebSocketManager';
+import webSocketManager from './websocket';
 import { isConnected } from './websocket/core';
 
 /**
