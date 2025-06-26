@@ -41,10 +41,10 @@
 import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useKakaoMapState } from './composables/useKakaoMapState';
 import { useKakaoMapControls } from './composables/useKakaoMapControls';
-import { useKakaoMapMarkers } from './composables/useKakaoMapMarkers';
 import { useKakaoMapDistance } from './composables/useKakaoMapDistance';
 import { useKakaoMapHintCircles } from './composables/useKakaoMapHintCircles';
 import { useKakaoMapGame } from './composables/useKakaoMapGame';
+
 const props = defineProps({
   isOpen: {
     type: Boolean,
@@ -118,16 +118,12 @@ const {
   zoomIn,
   zoomOut,
   resetZoom,
-  closeMap
-} = useKakaoMapControls(props, emit);
-
-// 마커 관리
-const {
+  closeMap,
   addClickListener,
   removeClickListener,
   removeMarker,
   getMarkerPosition
-} = useKakaoMapMarkers(props, emit);
+} = useKakaoMapControls(props, emit);
 
 // 거리 계산
 const {

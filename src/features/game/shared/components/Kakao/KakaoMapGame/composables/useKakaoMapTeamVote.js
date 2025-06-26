@@ -36,7 +36,7 @@ export function useKakaoMapTeamVote(props, emit) {
         isVoteInProgress.value = true;
 
         try {
-            // 현재 마커 위치 가져오기 (useKakaoMapMarkers에서 설정된 marker 활용)
+            // 현재 마커 위치 가져오기 (useKakaoMapControls에서 설정된 marker 활용)
             const position = marker.value.getPosition();
             
             // 투표 오버레이 생성
@@ -130,8 +130,6 @@ export function useKakaoMapTeamVote(props, emit) {
         return overlay;
     };
 
-  
-
     const createCustomOverlay = (position, playerInfo, isInitiator = false) => {
         const overlayContainer = document.createElement('div');
         // 투표 참여자 목록 (실제 데이터로 대체 필요)
@@ -158,7 +156,6 @@ export function useKakaoMapTeamVote(props, emit) {
         
         const handleCancelVote = () => {
             console.log(`${playerInfo.nickname || '플레이어'}의 투표를 취소했습니다`);
-            // removeVoteOverlay(playerInfo.id);
             isVoteInProgress.value = false;
 
             if(overlay) {

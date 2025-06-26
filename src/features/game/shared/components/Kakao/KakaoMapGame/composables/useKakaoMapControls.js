@@ -1,5 +1,5 @@
 // src/shared/composables/kakao/useKakaoMapControls.js
-import { onMounted, onBeforeUnmount } from 'vue';
+import { onMounted, onBeforeUnmount, watch } from 'vue';
 import { useKakaoMapState } from './useKakaoMapState';
 import { useKakaoMapDistance } from './useKakaoMapDistance';
 
@@ -12,6 +12,7 @@ export function useKakaoMapControls(props, emit) {
     markerImage,
     hasMarker,
     clickListener,
+    isVoteInProgress,
   } = useKakaoMapState();
 
   const { calculateDistance } = useKakaoMapDistance(props);
@@ -115,8 +116,17 @@ export function useKakaoMapControls(props, emit) {
     
     // 새 리스너 추가
     clickListener.value = kakao.maps.event.addListener(map.value, 'click', (mouseEvent) => {
+      console.log("isVoteInProgress: " + isVoteInProgress.value);
+      
       // 비활성화 상태에서는 마커 설정 불가
       if (props.disabled) return;
+      
+      // 투표 진행 중일 때 마커 이동 제한
+      if (isVoteInProgress.value) {
+        console.log("투표 진행 중에는 마커 위치를 변경할 수 없습니다.");
+        // emit('vote-in-progress'); // 필요시 상위 컴포넌트에 알림
+        return;
+      }
       
       // 기존 마커 제거
       removeMarker();
@@ -138,6 +148,11 @@ export function useKakaoMapControls(props, emit) {
         lat: latlng.getLat(),
         lng: latlng.getLng()
       });
+    });
+    
+    // 디버깅용: 투표 상태 변경 감시
+    watch(() => isVoteInProgress.value, (newValue) => {
+      console.log("🔍 투표 상태 변경 감지:", newValue);
     });
   };
   
@@ -164,6 +179,22 @@ export function useKakaoMapControls(props, emit) {
   
 
 
+  // 마커 위치 반환하는 메서드
+  const getMarkerPosition = () => {
+    return new Promise((resolve, reject) => {
+      if (!marker.value || !map.value) {
+        reject("마커가 설정되지 않았습니다.");
+        return;
+      }
+
+      const position = marker.value.getPosition();
+      resolve({
+        lat: position.getLat(),
+        lng: position.getLng(),
+      });
+    });
+  };
+
   return {
     initMap,
     resizeMap,
@@ -173,6 +204,7 @@ export function useKakaoMapControls(props, emit) {
     closeMap,
     addClickListener,
     removeClickListener,
-    removeMarker
+    removeMarker,
+    getMarkerPosition
   };
 }

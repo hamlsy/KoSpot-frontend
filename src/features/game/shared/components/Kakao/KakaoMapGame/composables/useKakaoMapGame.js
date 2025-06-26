@@ -1,6 +1,6 @@
 // src/shared/composables/kakao/useKakaoMapGame.js
 import { useKakaoMapState } from './useKakaoMapState';
-import { useKakaoMapMarkers } from './useKakaoMapMarkers';
+import { useKakaoMapControls } from './useKakaoMapControls';
 import { useKakaoMapTeamVote } from './useKakaoMapTeamVote';
 
 export function useKakaoMapGame(props, emit) {
@@ -8,7 +8,7 @@ export function useKakaoMapGame(props, emit) {
     marker, 
   } = useKakaoMapState();
   
-  const { getMarkerPosition } = useKakaoMapMarkers(props, emit);
+  const { getMarkerPosition } = useKakaoMapControls(props, emit);
   
   // 팀 투표 기능 사용
   const teamVote = useKakaoMapTeamVote(props, emit);
