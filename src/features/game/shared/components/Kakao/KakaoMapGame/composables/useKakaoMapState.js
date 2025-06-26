@@ -15,7 +15,7 @@ const hasMarker = ref(false);
 
 //team
 const teamMarkers = ref([]); // team marker(vote) data
-
+const isVoteInProgress = ref(false);
 
 export function useKakaoMapState() {
   // computed 속성
@@ -49,6 +49,7 @@ export function useKakaoMapState() {
     formattedDistance,
 
     //team vote
-    teamMarkers
+    teamMarkers,
+    isVoteInProgress,
   };
 }

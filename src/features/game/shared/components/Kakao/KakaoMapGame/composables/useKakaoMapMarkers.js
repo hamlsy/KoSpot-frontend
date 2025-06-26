@@ -1,58 +1,71 @@
 // src/shared/composables/kakao/useKakaoMapMarkers.js
-import { useKakaoMapState } from './useKakaoMapState';
-import { useKakaoMapDistance } from './useKakaoMapDistance';
+import { useKakaoMapState } from "./useKakaoMapState";
+import { useKakaoMapDistance } from "./useKakaoMapDistance";
 
 export function useKakaoMapMarkers(props, emit) {
   const {
     map,
     marker,
     clickListener,
-    hasMarker
+    hasMarker,
+    //team vote
+    isVoteInProgress,
   } = useKakaoMapState();
-  
+
   const { calculateDistance } = useKakaoMapDistance(props);
-  
+
   const addClickListener = () => {
     if (!map.value) return;
-    
+
     // 기존 리스너 제거
     removeClickListener();
-    
     // 새 리스너 추가
-    clickListener.value = kakao.maps.event.addListener(map.value, 'click', (mouseEvent) => {
-      // 비활성화 상태에서는 마커 설정 불가
-      if (props.disabled) return;
-      
-      // 기존 마커 제거
-      removeMarker();
-      
-      // 클릭한 위치에 마커 생성
-      const latlng = mouseEvent.latLng;
-      marker.value = new kakao.maps.Marker({
-        position: latlng,
-        map: map.value
-      });
-      
-      hasMarker.value = true;
-      
-      // 거리 계산
-      calculateDistance();
-      
-      // 클릭 이벤트 발생
-      emit('map-clicked', {
-        lat: latlng.getLat(),
-        lng: latlng.getLng()
-      });
-    });
+    clickListener.value = kakao.maps.event.addListener(
+      map.value,
+      "click",
+      (mouseEvent) => {
+
+        // 비활성화 상태에서는 마커 설정 불가
+        if (props.disabled) return;
+
+        // 투표 진행 중이고 현재 사용자가 투표 시작자인 경우 마커 이동 제한
+        if (isVoteInProgress.value) {
+          console.log("투표 진행 중에는 마커 위치를 변경할 수 없습니다.");
+          // emit('vote-in-progress'); // 필요시 상위 컴포넌트에 알림
+          return;
+        }
+
+        // 기존 마커 제거
+        removeMarker();
+
+        // 클릭한 위치에 마커 생성
+        const latlng = mouseEvent.latLng;
+        marker.value = new kakao.maps.Marker({
+          position: latlng,
+          map: map.value,
+        });
+
+        hasMarker.value = true;
+
+        // 거리 계산
+        calculateDistance();
+
+        // 클릭 이벤트 발생
+        emit("map-clicked", {
+          lat: latlng.getLat(),
+          lng: latlng.getLng(),
+        });
+      }
+    );
   };
-  
+
   const removeClickListener = () => {
     if (clickListener.value) {
       kakao.maps.event.removeListener(clickListener.value);
       clickListener.value = null;
     }
   };
-  
+
   const removeMarker = () => {
     if (marker.value) {
       marker.value.setMap(null);
@@ -60,27 +73,27 @@ export function useKakaoMapMarkers(props, emit) {
       hasMarker.value = false;
     }
   };
-  
+
   // 마커 위치 반환하는 메서드
   const getMarkerPosition = () => {
     return new Promise((resolve, reject) => {
       if (!marker.value || !map.value) {
-        reject('마커가 설정되지 않았습니다.');
+        reject("마커가 설정되지 않았습니다.");
         return;
       }
-      
+
       const position = marker.value.getPosition();
       resolve({
         lat: position.getLat(),
-        lng: position.getLng()
+        lng: position.getLng(),
       });
     });
   };
-  
+
   return {
     addClickListener,
     removeClickListener,
     removeMarker,
-    getMarkerPosition
+    getMarkerPosition,
   };
 }

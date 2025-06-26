@@ -5,7 +5,7 @@ import { useTeamWebSocketService } from 'src/features/game/shared/services/useTe
 import webSocketManager from 'src/features/game/shared/services/websocket';
 
 export function useKakaoMapTeamVote(props, emit) {
-    const { map, marker, teamMarkers } = useKakaoMapState();
+    const { map, marker, teamMarkers, isVoteInProgress, voteInitiatorId } = useKakaoMapState();
     
     // 투표 상태 관리를 위한 ref 변수들
     const approvedVotes = ref([]);
@@ -32,6 +32,9 @@ export function useKakaoMapTeamVote(props, emit) {
     const startTeamVote = async (playerInfo) => {
         if(!map.value || !marker.value) return;
         console.log("투표 시작")
+
+        isVoteInProgress.value = true;
+
         try {
             // 현재 마커 위치 가져오기 (useKakaoMapMarkers에서 설정된 marker 활용)
             const position = marker.value.getPosition();
@@ -59,6 +62,7 @@ export function useKakaoMapTeamVote(props, emit) {
             });
             return overlay;
         } catch (error) {
+            isVoteInProgress.value = false;
             console.error('팀 투표 시작 중 오류 발생:', error);
             return null;
         }
@@ -155,6 +159,16 @@ export function useKakaoMapTeamVote(props, emit) {
         const handleCancelVote = () => {
             console.log(`${playerInfo.nickname || '플레이어'}의 투표를 취소했습니다`);
             // removeVoteOverlay(playerInfo.id);
+            isVoteInProgress.value = false;
+
+            if(overlay) {
+                overlay.setMap(null);
+            }
+
+            const markerIndex = teamMarkers.value.findIndex(m => m.playerId === playerInfo.id);
+            if (markerIndex !== -1) {
+                teamMarkers.value.splice(markerIndex, 1);
+            }
         };
 
         // Vue 컴포넌트 렌더링
