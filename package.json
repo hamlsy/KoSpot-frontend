@@ -9,12 +9,14 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.7.1",
+    "@stomp/stompjs": "^7.1.1",
     "axios": "^1.7.9",
     "chart.js": "^4.4.9",
     "core-js": "^3.8.3",
     "crypto-js": "^4.2.0",
     "pinia": "^2.1.7",
-    "vue": "^3.2.39",
+    "sockjs-client": "^1.6.1",
+    "vue": "^3.5.17",
     "vue-countup-v3": "^1.4.2",
     "vue-router": "^4.5.1",
     "xlsx": "^0.18.5"
@@ -22,16 +24,18 @@
   "devDependencies": {
     "@babel/core": "^7.24.0",
     "@babel/eslint-parser": "^7.24.0",
-    "@vue/cli-plugin-babel": "~5.0.8",
-    "@vue/cli-plugin-eslint": "~5.0.8",
-    "@vue/cli-service": "~5.0.8",
+    "@storybook/vue3": "^9.0.12",
+    "@vue/cli-plugin-babel": "^5.0.8",
+    "@vue/cli-plugin-eslint": "^5.0.8",
+    "@vue/cli-plugin-router": "^5.0.8",
+    "@vue/cli-service": "^5.0.8",
     "@vue/compiler-sfc": "^3.5.14",
     "autoprefixer": "^10.4.16",
     "eslint": "^7.32.0",
+    "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-vue": "^9.19.2",
     "postcss": "^8.4.38",
-    "sass": "^1.69.5",
-    "sass-loader": "^10.5.2"
+    "sass": "^1.69.5"
   },
   "eslintConfig": {
     "root": true,

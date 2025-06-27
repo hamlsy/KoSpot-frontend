@@ -34,10 +34,10 @@
       <!-- Team 전용 Spot 버튼 (휴대폰 프레임 내부) -->
       <button
         v-if="!disabled && isTeamMode"
-        class="phone-spot-button"
+        class="phone-spot-button team-vote-button"
         @click="voteSpotAnswer"
       >
-        <i class="fas fa-crosshairs"></i> Vote!
+        <i class="fas fa-vote-yea"></i> Vote!
       </button>
 
     </div>
@@ -48,7 +48,7 @@
 </template>
 
 <script>
-import KakaoMapGame from "@/features/game/shared/components/Kakao/KakaoMapGame.vue";
+import KakaoMapGame from "@/features/game/shared/components/Kakao/KakaoMapGame/KakaoMapGame.vue";
 
 export default {
   name: "PhoneFrame",
@@ -118,24 +118,31 @@ export default {
         return;
       }
 
-      // 현재 마커 위치를 얻기 위해 KakaoMapGame에서 마커 위치 데이터 요청
-      this.$refs.phoneMapGame
-        .getMarkerPosition()
-        .then((markerPosition) => {
-          if (markerPosition) {
-            this.$emit("vote-answer", markerPosition);
+      // 현재 사용자 정보 (실제 구현에서는 사용자 상태 관리에서 가져와야 함)
+      const playerInfo = {
+        id: this.$store?.state?.user?.id || 'user-' + Math.random().toString(36).substr(2, 9),
+        nickname: this.$store?.state?.user?.nickname || '사용자',
+        teamId: this.$store?.state?.game?.teamId || 'team-1',
+        profileImage: this.$store?.state?.user?.profileImage || '/assets/default-profile.png'
+      };
+
+      // KakaoMapGame 컴포넌트의 startTeamVoting 함수 호출
+      this.$refs.phoneMapGame.startTeamVoting?.(playerInfo)
+        .then(overlay => {
+          if (overlay) {
+            this.$emit("vote-started", { playerId: playerInfo.id, overlay });
           } else {
-            this.$emit("error", "위치를 선택해주세요!");
+            this.$emit("error", "투표를 시작할 수 없습니다.");
           }
         })
-        .catch(() => {
-          this.$emit("error", "위치를 선택해주세요!");
+        .catch(error => {
+          console.error("투표 시작 중 오류:", error);
+          this.$emit("error", "투표를 시작할 수 없습니다.");
         });
     },
 
-    // 맵 인스턴스 노출
     getMapInstance() {
-      return this.$refs.phoneMapGame ? this.$refs.phoneMapGame.map : null;
+      return this.$refs.phoneMapGame ? this.$refs.phoneMapGame.getMapInstance() : null;
     },
 
     // 마커 위치 가져오기
