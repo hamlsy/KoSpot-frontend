@@ -116,8 +116,6 @@ export function useKakaoMapControls(props, emit) {
     
     // 새 리스너 추가
     clickListener.value = kakao.maps.event.addListener(map.value, 'click', (mouseEvent) => {
-      console.log("isVoteInProgress: " + isVoteInProgress.value);
-      
       // 비활성화 상태에서는 마커 설정 불가
       if (props.disabled) return;
       

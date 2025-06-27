@@ -31,8 +31,6 @@ export function useKakaoMapTeamVote(props, emit) {
 
     const startTeamVote = async (playerInfo) => {
         if(!map.value || !marker.value) return;
-        console.log("투표 시작")
-
         isVoteInProgress.value = true;
 
         try {

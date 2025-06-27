@@ -7,12 +7,7 @@
       class="vote-icon-button"
       :class="{ 'pulse-animation': hasNewVotes }"
     >
-    <!-- <svg class="vote-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M20 11.08V8l-6-6H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V11.08z"></path>
-      <path d="M18 8h-6V2"></path>
-      <circle cx="12" cy="14" r="2"></circle>
-      <path d="M14 17.5v1a1.5 1.5 0 0 1-3 0v-1"></path>
-    </svg> -->
+    
     <i class="fas fa-vote-yea"></i>
       <span class="vote-count">{{ approvedVotes.length }}/{{ totalTeamMembers }}</span>
     </button>
@@ -128,13 +123,12 @@ export default {
 
 <style scoped>
 .vote-overlay-wrapper {
-  position: absolute; /* relative에서 absolute로 변경 */
+  position: absolute;
   width: 150px;
   z-index: 1000;
   left: 50%; /* 중앙 정렬을 위해 추가 */
   transform: translateX(-50%); /* 중앙 정렬을 위해 추가 */
-  bottom: 110%; /* 마커 위에 위치하도록 설정 */
-  margin-bottom: 5px; /* 마커와의 간격 */
+  margin-bottom: 0; /* 간격 유지 */
 }
 
 /* 투표 아이콘 버튼 스타일 */
@@ -155,6 +149,22 @@ export default {
   transition: all 0.2s ease;
   position: relative;
   margin: 0 auto;
+  bottom: 70px;
+}
+
+/* 접힌 상태의 말풍선 꼬리 */
+.vote-icon-button::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid #1d4ed8; /* 그라데이션의 어두운 쪽 색상과 일치 */
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.1)); /* 그림자 효과 추가 */
 }
 
 .vote-icon-button:hover {
@@ -220,9 +230,9 @@ export default {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
   z-index: 1000;
   left: 50%; /* 중앙 정렬 */
-  bottom: 100%; /* 마커 위에 위치 */
+  bottom: 50px; /* 마커 위쪽으로 위치 - 더 높은 위치로 조정 */
   transform: translateX(-50%); /* 중앙 정렬 */
-  margin-bottom: 10px; /* 마커와의 간격 */
+  margin-bottom: 0; /* 간격 유지 */
   animation: popIn 0.3s ease-out;
   display: flex;
   flex-direction: column;
@@ -230,16 +240,18 @@ export default {
 }
 
 .vote-overlay:after {
-  /* content: '';
+  content: '';
   position: absolute;
-  bottom: -8px;
+  bottom: -10px;
   left: 50%;
   transform: translateX(-50%);
   width: 0;
   height: 0;
   border-left: 8px solid transparent;
   border-right: 8px solid transparent;
-  border-top: 8px solid rgba(240,240,240,0.95); */
+  border-top: 10px solid rgba(248,248,248,0.98); /* 배경 그라데이션의 밝은 색상과 일치 */
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.1)); /* 말풍선 꼬리에 그림자 효과 추가 */
+  z-index: 999; /* 마커 위에 표시되도록 z-index 설정 */
 }
 
 .vote-header {
