@@ -1,7 +1,7 @@
 import { ref, onMounted, onBeforeUnmount, readonly } from 'vue';
-import useWebSocketManager from 'src/features/game/shared/services/websocket/useWebSocketManager.js'
-import webSocketManager from './websocket';
-import { isConnected } from 'src/features/game/shared/services/websocket/core';
+import useWebSocketManager from '../../shared/services/websocket/useWebSocketManager.js'
+import webSocketManager from '@/features/game/multiplayer/shared/services/websocket/composables';
+import { isConnected } from '../../shared/services/websocket/composables/core';
 
 /**
  * 팀 WebSocket 서비스 컴포저블

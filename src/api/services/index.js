@@ -1,7 +1,7 @@
-import authService from './auth.service';
-import gameService from './game.service';
+import authService from '../../store/modules/auth';
+import gameService from '../../store/modules/game';
 import multiplayerService from './multiplayer.service';
-import userService from './user.service';
+import userService from '../../store/modules/user';
 
 /**
  * API 서비스 모듈

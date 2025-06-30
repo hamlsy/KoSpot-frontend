@@ -1,5 +1,5 @@
 import { ref, computed, reactive } from 'vue';
-import gameService from '@/api/services/game.service';
+import gameService from '../store/modules/game';
 
 /**
  * 게임 관련 기능을 제공하는 컴포저블

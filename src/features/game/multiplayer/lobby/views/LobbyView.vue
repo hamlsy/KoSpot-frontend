@@ -78,9 +78,9 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import useGlobalLobbyWebSocketService from '../services/useGlobalLobbyWebSocketService';
-import MultiplayerRoomList from '../components/RoomList.vue';
-import MultiplayerLobbyChatWindow from '../../chat/components/Lobby/ChatWindow.vue';
-import MultiplayerCreateRoomModal from '../components/CreateRoomModal.vue';
+import GameRoomList from '../components/RoomList.vue';
+import ChatWindow from '../../chat/components/Lobby/ChatWindow.vue';
+import CreateRoomModal from '../components/CreateRoomModal.vue';
 import AppLogo from '@/core/components/AppLogo.vue';
 
 // Vue Router
@@ -125,10 +125,10 @@ const initializeData = async () => {
   try {
     // 사용자 정보 설정 (실제 구현에서는 로그인 정보에서 가져옴)
     lobbyService.setCurrentUser({
-      id: 'user123',
-      nickname: '김코스팟',
-      level: 23,
-      profileImage: '/assets/default-profile.png'
+        id: 'user123',
+        nickname: '김코스팟',
+        level: 23,
+        profileImage: '/assets/default-profile.png'
     });
     
     // WebSocket 연결 및 채팅 서비스 시작
@@ -138,11 +138,11 @@ const initializeData = async () => {
     await fetchRooms();
     
     isInitialized.value = true;
-    
-    // 30초마다 방 목록 갱신
+      
+      // 30초마다 방 목록 갱신
     refreshInterval.value = setInterval(() => {
       fetchRooms();
-    }, 30000);
+      }, 30000);
     
   } catch (error) {
     console.error('로비 초기화 중 오류:', error);
@@ -154,77 +154,77 @@ const initializeData = async () => {
 const fetchRooms = async () => {
   if (!isInitialized.value) {
     isLoading.value = true;
-  }
-  
-  try {
-    // 실제 구현에서는 API 호출로
-    // const response = await axios.get('/api/multiplayer/rooms');
+      }
+      
+      try {
+        // 실제 구현에서는 API 호출로
+        // const response = await axios.get('/api/multiplayer/rooms');
     // rooms.value = response.data.rooms;
-    
+        
     // 테스트용 즉시 데이터 설정
     rooms.value = [
-      {
-        id: 'room1',
-        name: '방 제목 A',
-        host: 'host A',
-        players: 2,
-        maxPlayers: 4,
-        mode: '로드뷰',
-        status: 'waiting',
-      },
-      {
-        id: 'room2',
-        name: '방 제목 B',
-        host: 'host B',
-        players: 3,
-        maxPlayers: 4,
-        mode: '포토',
-        status: 'waiting',
-      },
-      {
-        id: 'room3',
-        name: '방 제목 C',
-        host: 'host c',
-        players: 1,
-        maxPlayers: 2,
-        mode: '로드뷰',
-        status: 'waiting',
-      },
-      {
-        id: 'room5',
-        name: '게임 진행 중 - 3라운드',
-        host: 'host F',
-        players: 4,
-        maxPlayers: 8,
-        mode: '로드뷰',
-        status: 'playing',
-        region: '전국',
-        currentRound: 3,
-        totalRounds: 5,
-      },
-      {
-        id: 'room6',
-        name: '포토모드 5라운드 진행중',
-        host: 'host D',
-        players: 6,
-        maxPlayers: 6,
-        mode: '포토',
-        status: 'playing',
-        currentRound: 5,
-        totalRounds: 8,
-      }
-    ];
-    
-    // 초기화 이후에는 로딩 상태 해제
+          {
+            id: 'room1',
+            name: '방 제목 A',
+            host: 'host A',
+            players: 2,
+            maxPlayers: 4,
+            mode: '로드뷰',
+            status: 'waiting',
+          },
+          {
+            id: 'room2',
+            name: '방 제목 B',
+            host: 'host B',
+            players: 3,
+            maxPlayers: 4,
+            mode: '포토',
+            status: 'waiting',
+          },
+          {
+            id: 'room3',
+            name: '방 제목 C',
+            host: 'host c',
+            players: 1,
+            maxPlayers: 2,
+            mode: '로드뷰',
+            status: 'waiting',
+          },
+          {
+            id: 'room5',
+            name: '게임 진행 중 - 3라운드',
+            host: 'host F',
+            players: 4,
+            maxPlayers: 8,
+            mode: '로드뷰',
+            status: 'playing',
+            region: '전국',
+            currentRound: 3,
+            totalRounds: 5,
+          },
+          {
+            id: 'room6',
+            name: '포토모드 5라운드 진행중',
+            host: 'host D',
+            players: 6,
+            maxPlayers: 6,
+            mode: '포토',
+            status: 'playing',
+            currentRound: 5,
+            totalRounds: 8,
+          }
+        ];
+        
+        // 초기화 이후에는 로딩 상태 해제
     if (!isInitialized.value) {
       isLoading.value = false;
-    }
-    
-  } catch (error) {
-    console.error('방 목록 조회 중 오류 발생:', error);
+        }
+        
+      } catch (error) {
+        console.error('방 목록 조회 중 오류 발생:', error);
     isLoading.value = false;
     throw error;
-  }
+      }
 };
 
 const connectToChat = async () => {
@@ -255,8 +255,8 @@ const disconnectFromChat = () => {
 };
 
 const sendChatMessage = (message) => {
-  if (!message.trim()) return;
-  
+      if (!message.trim()) return;
+      
   // WebSocket 서비스를 통해 메시지 전송
   const success = lobbyService.sendGlobalLobbyChat(message);
   
@@ -268,53 +268,53 @@ const sendChatMessage = (message) => {
 
 const joinRoom = (roomId) => {
   isLoading.value = true;
-  
-  // 실제 구현에서는 API 호출 후 게임 화면으로 이동
-  console.log(`방 ${roomId}에 참가합니다.`);
-  
-  setTimeout(() => {
+      
+      // 실제 구현에서는 API 호출 후 게임 화면으로 이동
+      console.log(`방 ${roomId}에 참가합니다.`);
+      
+      setTimeout(() => {
     isLoading.value = false;
-    // 게임 방으로 이동 (대기실 모드로 시작됨)
+        // 게임 방으로 이동 (대기실 모드로 시작됨)
     router.push({
-      name: 'MultiplayerGame',
-      params: { roomId }
-    });
-  }, 1000);
+          name: 'MultiplayerGame',
+          params: { roomId }
+        });
+      }, 1000);
 };
-
+    
 const createRoom = (roomData) => {
   isLoading.value = true;
-  
-  // 실제 구현에서는 API 호출
-  console.log('새 방 생성:', roomData);
-  
-  setTimeout(() => {
+      
+      // 실제 구현에서는 API 호출
+      console.log('새 방 생성:', roomData);
+      
+      setTimeout(() => {
     showCreateRoomModal.value = false;
     isLoading.value = false;
-    
-    // 생성된 방 목록에 추가
-    const newRoom = {
-      id: `room${Date.now()}`,
-      name: roomData.name,
+        
+        // 생성된 방 목록에 추가
+        const newRoom = {
+          id: `room${Date.now()}`,
+          name: roomData.name,
       host: lobbyService.currentUser.value.nickname,
-      players: 1,
-      maxPlayers: roomData.maxPlayers,
-      mode: roomData.gameMode,
-      status: 'waiting',
-      region: roomData.region,
-      createdAt: new Date().toISOString()
-    };
-    
+          players: 1,
+          maxPlayers: roomData.maxPlayers,
+          mode: roomData.gameMode,
+          status: 'waiting',
+          region: roomData.region,
+          createdAt: new Date().toISOString()
+        };
+        
     rooms.value.unshift(newRoom);
-    
+        
     // 시스템 메시지 추가 (WebSocket 서비스를 통해)
     lobbyService.createGlobalSystemMessage(
       `${lobbyService.currentUser.value.nickname}님이 '${roomData.name}' 방을 생성했습니다.`
     );
-    
-    // 생성한 방으로 자동 입장 (대기실 모드로 시작됨)
+        
+        // 생성한 방으로 자동 입장 (대기실 모드로 시작됨)
     joinRoom(newRoom.id);
-  }, 1000);
+      }, 1000);
 };
 
 // 라이프사이클 훅

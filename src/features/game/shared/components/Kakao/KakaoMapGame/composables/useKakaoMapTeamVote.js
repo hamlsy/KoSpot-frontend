@@ -1,8 +1,8 @@
 import { h, onMounted, onBeforeUnmount, render, ref, watch } from 'vue';
 import { useKakaoMapState } from './useKakaoMapState';
 import VoteOverlay from 'src/features/game/shared/components/Kakao/VoteOverlay.vue';
-import { useTeamWebSocketService } from 'src/features/game/shared/services/useTeamWebSocketService';
-import webSocketManager from 'src/features/game/shared/services/websocket';
+import { useTeamWebSocketService } from 'src/features/game/multiplayer/roadview/services/useTeamRoadViewWebSocketService';
+import webSocketManager from 'src/features/game/multiplayer/shared/services/websocket/composables';
 
 export function useKakaoMapTeamVote(props, emit) {
     const { map, marker, teamMarkers, isVoteInProgress, voteInitiatorId } = useKakaoMapState();

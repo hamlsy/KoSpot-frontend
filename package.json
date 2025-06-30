@@ -5,7 +5,11 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "fix-imports": "node scripts/fix-imports.js",
+    "dedup": "node scripts/deduplicator.js",
+    "restore": "node scripts/restore-imports.js",
+    "optimize": "npm run fix-imports && npm run dedup"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.7.1",
@@ -31,9 +35,11 @@
     "@vue/cli-service": "^5.0.8",
     "@vue/compiler-sfc": "^3.5.14",
     "autoprefixer": "^10.4.16",
+    "chalk": "^4.1.2",
     "eslint": "^7.32.0",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-vue": "^9.19.2",
+    "glob": "^11.0.3",
     "postcss": "^8.4.38",
     "sass": "^1.69.5"
   },

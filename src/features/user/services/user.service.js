@@ -1,4 +1,4 @@
-import apiClient from '../apiClient';
+import apiClient from '../../../core/api/apiClient';
 
 /**
  * 사용자 관련 API 서비스

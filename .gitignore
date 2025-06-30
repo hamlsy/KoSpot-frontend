@@ -22,3 +22,9 @@ pnpm-debug.log*
 *.sln
 *.sw?
 node_modules
+
+# Backup directories
+.backup-deduplication/
+.backup-imports/
+
+

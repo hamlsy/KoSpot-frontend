@@ -1,7 +1,7 @@
 import { ref, computed, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import multiplayerService from '@/api/multiplayerService';
-import useAuth from './useAuth';
+import useAuth from '../core/composables/useAuth';
 
 /**
  * 멀티플레이어 관련 기능을 제공하는 컴포저블

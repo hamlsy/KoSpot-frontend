@@ -1,5 +1,5 @@
 import { ref, onMounted, onBeforeUnmount, readonly } from 'vue';
-import webSocketManager from '../../../shared/services/websocket/composables';
+import webSocketManager from '../../shared/services/websocket/composables';
 
 /**
  * 글로벌 로비 WebSocket 서비스 컴포저블
