@@ -43,9 +43,9 @@
           :class="{ 'mobile-visible': isChatVisible, 'mobile-hidden': !isChatVisible }"
         >
           <ChatWindow 
-            :messages="chatMessages" 
+            :messages="formattedChatMessages" 
             @send-message="sendChatMessage"
-            :current-user-id="currentUser.id"
+            :current-user-id="lobbyService.currentUser.value.id"
             :show-mobile-close="isMobile"
             @close="isChatVisible = false"
           />
@@ -74,263 +74,264 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { useRouter } from 'vue-router';
+import useGlobalLobbyWebSocketService from '../services/useGlobalLobbyWebSocketService';
 import MultiplayerRoomList from '../components/RoomList.vue';
 import MultiplayerLobbyChatWindow from '../../chat/components/Lobby/ChatWindow.vue';
 import MultiplayerCreateRoomModal from '../components/CreateRoomModal.vue';
-import AppLogo from '@/core/components/AppLogo.vue'; // AppLogo 컴포넌트 추가
+import AppLogo from '@/core/components/AppLogo.vue';
 
-export default {
-  name: "MultiplayerLobby",
+// Vue Router
+const router = useRouter();
+
+// WebSocket 로비 서비스 초기화
+const lobbyService = useGlobalLobbyWebSocketService();
+
+// 반응형 데이터
+const rooms = ref([]);
+const showCreateRoomModal = ref(false);
+const isLoading = ref(false);
+const isInitialized = ref(false);
+const isMobile = ref(false);
+const isChatVisible = ref(false);
+const windowWidth = ref(window.innerWidth);
+const refreshInterval = ref(null);
+
+// 계산된 속성
+const formattedChatMessages = computed(() => {
+  // WebSocket 서비스에서 받은 채팅 메시지를 UI 컴포넌트 형식에 맞게 변환
+  return lobbyService.globalLobbyChatMessages.value.map(msg => ({
+    id: msg.id || `msg-${msg.timestamp}`,
+    sender: msg.playerName || msg.sender || '익명',
+    senderId: msg.playerId || msg.memberId || msg.senderId,
+    message: msg.content || msg.message,
+    timestamp: msg.timestamp,
+    system: msg.isSystem || msg.system || false
+  }));
+});
+
+// 메서드
+const checkMobileView = () => {
+  windowWidth.value = window.innerWidth;
+  isMobile.value = windowWidth.value <= 900;
+  isChatVisible.value = !isMobile.value;
+};
+
+const initializeData = async () => {
+  isLoading.value = true;
   
-  components: {
-    GameRoomList: MultiplayerRoomList,
-    ChatWindow: MultiplayerLobbyChatWindow,
-    CreateRoomModal: MultiplayerCreateRoomModal,
-    AppLogo // AppLogo 컴포넌트 등록
-  },
-  
-  data() {
-    return {
-      rooms: [],
-      chatMessages: [],
-      showCreateRoomModal: false,
-      isLoading: false,
-      currentUser: {
-        id: 'user123',
-        nickname: '김코스팟',
-        level: 23,
-        profileImage: '/assets/default-profile.png'
-      },
-      isInitialized: false,
-      isMobile: false,
-      isChatVisible: false,
-      windowWidth: window.innerWidth
-    };
-  },
-  
-  mounted() {
-    this.initializeData();
-    this.checkMobileView();
-    window.addEventListener('resize', this.checkMobileView);
-  },
-  
-  beforeUnmount() {
-    if (this.refreshInterval) {
-      clearInterval(this.refreshInterval);
-    }
-    this.disconnectFromChat();
-    window.removeEventListener('resize', this.checkMobileView);
-  },
-  
-  methods: {
-    checkMobileView() {
-      this.windowWidth = window.innerWidth;
-      this.isMobile = this.windowWidth <= 900;
-      this.isChatVisible = !this.isMobile;
-    },
-    async initializeData() {
-      this.isLoading = true;
-      await this.fetchRooms();
-      this.connectToChat();
-      this.isInitialized = true;
-      this.isLoading = false;
-      
-      // 30초마다 방 목록 갱신
-      this.refreshInterval = setInterval(() => {
-        this.fetchRooms();
-      }, 30000);
-    },
+  try {
+    // 사용자 정보 설정 (실제 구현에서는 로그인 정보에서 가져옴)
+    lobbyService.setCurrentUser({
+      id: 'user123',
+      nickname: '김코스팟',
+      level: 23,
+      profileImage: '/assets/default-profile.png'
+    });
     
-    async fetchRooms() {
-      if (!this.isInitialized) {
-        this.isLoading = true;
-      }
-      
-      try {
-        // 실제 구현에서는 API 호출로
-        // const response = await axios.get('/api/multiplayer/rooms');
-        // this.rooms = response.data.rooms;
-        
-        // 테스트용 즉시 데이터 설정 (setTimeout 제거)
-        this.rooms = [
-          {
-            id: 'room1',
-            name: '방 제목 A',
-            host: 'host A',
-            players: 2,
-            maxPlayers: 4,
-            mode: '로드뷰',
-            status: 'waiting',
-          },
-          {
-            id: 'room2',
-            name: '방 제목 B',
-            host: 'host B',
-            players: 3,
-            maxPlayers: 4,
-            mode: '포토',
-            status: 'waiting',
-          },
-          {
-            id: 'room3',
-            name: '방 제목 C',
-            host: 'host c',
-            players: 1,
-            maxPlayers: 2,
-            mode: '로드뷰',
-            status: 'waiting',
-          },
-          {
-            id: 'room5',
-            name: '게임 진행 중 - 3라운드',
-            host: 'host F',
-            players: 4,
-            maxPlayers: 8,
-            mode: '로드뷰',
-            status: 'playing',
-            region: '전국',
-            currentRound: 3,
-            totalRounds: 5,
-          },
-          {
-            id: 'room6',
-            name: '포토모드 5라운드 진행중',
-            host: 'host D',
-            players: 6,
-            maxPlayers: 6,
-            mode: '포토',
-            status: 'playing',
-            currentRound: 5,
-            totalRounds: 8,
-          }
-        ];
-        
-        // 초기화 이후에는 로딩 상태 해제
-        if (!this.isInitialized) {
-          this.isLoading = false;
-        }
-        
-        return Promise.resolve();
-      } catch (error) {
-        console.error('방 목록 조회 중 오류 발생:', error);
-        this.isLoading = false;
-        return Promise.reject(error);
-      }
-    },
+    // WebSocket 연결 및 채팅 서비스 시작
+    await connectToChat();
     
-    connectToChat() {
-      // 실제 구현에서는 웹소켓 연결로 대체
-      // 테스트용 채팅 메시지
-      this.chatMessages = [
-        {
-          id: 'm1',
-          sender: '시스템',
-          message: '채팅방에 오신 것을 환영합니다.',
-          timestamp: new Date().toISOString(),
-          system: true
-        },
-        {
-          id: 'm2',
-          sender: '포토킹',
-          message: '안녕하세요! 같이 게임하실 분?',
-          timestamp: new Date().toISOString(),
-          system: false
-        },
-        {
-          id: 'm3',
-          sender: '로드마스터',
-          message: '저요! 초보인데 괜찮을까요?',
-          timestamp: new Date().toISOString(),
-          system: false
-        },
-        {
-          id: 'm4',
-          sender: '포토킹',
-          message: '넵! 제 방에 들어오세요~',
-          timestamp: new Date().toISOString(),
-          system: false
-        }
-      ];
-    },
+    // 방 목록 가져오기
+    await fetchRooms();
     
-    disconnectFromChat() {
-      // 웹소켓 연결 해제 로직
-      console.log('채팅 연결 해제');
-    },
+    isInitialized.value = true;
     
-    sendChatMessage(message) {
-      if (!message.trim()) return;
-      
-      // 실제 구현에서는 웹소켓을 통해 전송
-      const newMessage = {
-        id: `m${Date.now()}`,
-        sender: this.currentUser.nickname,
-        senderId: this.currentUser.id,
-        message: message,
-        timestamp: new Date().toISOString(),
-        system: false
-      };
-      
-      this.chatMessages.push(newMessage);
-    },
+    // 30초마다 방 목록 갱신
+    refreshInterval.value = setInterval(() => {
+      fetchRooms();
+    }, 30000);
     
-    joinRoom(roomId) {
-      this.isLoading = true;
-      
-      // 실제 구현에서는 API 호출 후 게임 화면으로 이동
-      console.log(`방 ${roomId}에 참가합니다.`);
-      
-      setTimeout(() => {
-        this.isLoading = false;
-        // 게임 방으로 이동 (대기실 모드로 시작됨)
-        this.$router.push({
-          name: 'MultiplayerGame',
-          params: { roomId }
-        });
-      }, 1000);
-    },
-    
-    createRoom(roomData) {
-      this.isLoading = true;
-      
-      // 실제 구현에서는 API 호출
-      console.log('새 방 생성:', roomData);
-      
-      setTimeout(() => {
-        this.showCreateRoomModal = false;
-        this.isLoading = false;
-        
-        // 생성된 방 목록에 추가
-        const newRoom = {
-          id: `room${Date.now()}`,
-          name: roomData.name,
-          host: this.currentUser.nickname,
-          players: 1,
-          maxPlayers: roomData.maxPlayers,
-          mode: roomData.gameMode,
-          status: 'waiting',
-          region: roomData.region,
-          createdAt: new Date().toISOString()
-        };
-        
-        this.rooms.unshift(newRoom);
-        
-        // 시스템 메시지 추가
-        this.chatMessages.push({
-          id: `m${Date.now()}`,
-          sender: '시스템',
-          message: `${this.currentUser.nickname}님이 '${roomData.name}' 방을 생성했습니다.`,
-          timestamp: new Date().toISOString(),
-          system: true
-        });
-        
-        // 생성한 방으로 자동 입장 (대기실 모드로 시작됨)
-        this.joinRoom(newRoom.id);
-      }, 1000);
-    }
+  } catch (error) {
+    console.error('로비 초기화 중 오류:', error);
+  } finally {
+    isLoading.value = false;
   }
 };
+
+const fetchRooms = async () => {
+  if (!isInitialized.value) {
+    isLoading.value = true;
+  }
+  
+  try {
+    // 실제 구현에서는 API 호출로
+    // const response = await axios.get('/api/multiplayer/rooms');
+    // rooms.value = response.data.rooms;
+    
+    // 테스트용 즉시 데이터 설정
+    rooms.value = [
+      {
+        id: 'room1',
+        name: '방 제목 A',
+        host: 'host A',
+        players: 2,
+        maxPlayers: 4,
+        mode: '로드뷰',
+        status: 'waiting',
+      },
+      {
+        id: 'room2',
+        name: '방 제목 B',
+        host: 'host B',
+        players: 3,
+        maxPlayers: 4,
+        mode: '포토',
+        status: 'waiting',
+      },
+      {
+        id: 'room3',
+        name: '방 제목 C',
+        host: 'host c',
+        players: 1,
+        maxPlayers: 2,
+        mode: '로드뷰',
+        status: 'waiting',
+      },
+      {
+        id: 'room5',
+        name: '게임 진행 중 - 3라운드',
+        host: 'host F',
+        players: 4,
+        maxPlayers: 8,
+        mode: '로드뷰',
+        status: 'playing',
+        region: '전국',
+        currentRound: 3,
+        totalRounds: 5,
+      },
+      {
+        id: 'room6',
+        name: '포토모드 5라운드 진행중',
+        host: 'host D',
+        players: 6,
+        maxPlayers: 6,
+        mode: '포토',
+        status: 'playing',
+        currentRound: 5,
+        totalRounds: 8,
+      }
+    ];
+    
+    // 초기화 이후에는 로딩 상태 해제
+    if (!isInitialized.value) {
+      isLoading.value = false;
+    }
+    
+  } catch (error) {
+    console.error('방 목록 조회 중 오류 발생:', error);
+    isLoading.value = false;
+    throw error;
+  }
+};
+
+const connectToChat = async () => {
+  try {
+    // WebSocket 서비스 연결
+    lobbyService.connectWebSocket();
+    
+    // 더미 모드 활성화 (개발 환경에서)
+    if (process.env.NODE_ENV === 'development') {
+      // WebSocket Manager의 더미 모드 활성화
+      // lobbyService를 통해 접근할 수 있는 방법이 없으므로 기본적으로 더미 모드가 활성화됨
+      console.log('개발 모드: WebSocket 더미 데이터 사용');
+    }
+    
+    console.log('채팅 서비스 연결 성공');
+  } catch (error) {
+    console.error('채팅 서비스 연결 실패:', error);
+  }
+};
+
+const disconnectFromChat = () => {
+  try {
+    lobbyService.disconnectWebSocket();
+    console.log('채팅 연결 해제 완료');
+  } catch (error) {
+    console.error('채팅 연결 해제 중 오류:', error);
+  }
+};
+
+const sendChatMessage = (message) => {
+  if (!message.trim()) return;
+  
+  // WebSocket 서비스를 통해 메시지 전송
+  const success = lobbyService.sendGlobalLobbyChat(message);
+  
+  if (!success) {
+    console.error('메시지 전송 실패');
+    // 사용자에게 오류 알림 (Toast 메시지 등)
+  }
+};
+
+const joinRoom = (roomId) => {
+  isLoading.value = true;
+  
+  // 실제 구현에서는 API 호출 후 게임 화면으로 이동
+  console.log(`방 ${roomId}에 참가합니다.`);
+  
+  setTimeout(() => {
+    isLoading.value = false;
+    // 게임 방으로 이동 (대기실 모드로 시작됨)
+    router.push({
+      name: 'MultiplayerGame',
+      params: { roomId }
+    });
+  }, 1000);
+};
+
+const createRoom = (roomData) => {
+  isLoading.value = true;
+  
+  // 실제 구현에서는 API 호출
+  console.log('새 방 생성:', roomData);
+  
+  setTimeout(() => {
+    showCreateRoomModal.value = false;
+    isLoading.value = false;
+    
+    // 생성된 방 목록에 추가
+    const newRoom = {
+      id: `room${Date.now()}`,
+      name: roomData.name,
+      host: lobbyService.currentUser.value.nickname,
+      players: 1,
+      maxPlayers: roomData.maxPlayers,
+      mode: roomData.gameMode,
+      status: 'waiting',
+      region: roomData.region,
+      createdAt: new Date().toISOString()
+    };
+    
+    rooms.value.unshift(newRoom);
+    
+    // 시스템 메시지 추가 (WebSocket 서비스를 통해)
+    lobbyService.createGlobalSystemMessage(
+      `${lobbyService.currentUser.value.nickname}님이 '${roomData.name}' 방을 생성했습니다.`
+    );
+    
+    // 생성한 방으로 자동 입장 (대기실 모드로 시작됨)
+    joinRoom(newRoom.id);
+  }, 1000);
+};
+
+// 라이프사이클 훅
+onMounted(() => {
+  initializeData();
+  checkMobileView();
+  window.addEventListener('resize', checkMobileView);
+});
+
+onBeforeUnmount(() => {
+  // 정리 작업
+  if (refreshInterval.value) {
+    clearInterval(refreshInterval.value);
+  }
+  disconnectFromChat();
+  window.removeEventListener('resize', checkMobileView);
+});
 </script>
 
 <style scoped>

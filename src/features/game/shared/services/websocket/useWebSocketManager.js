@@ -4,9 +4,9 @@
  * 채팅, 플레이어 상태 관리, 팀 마커 공유 등을 처리합니다.
  *
  * 이 파일은 모듈화된 WebSocket 관리자를 가져와서 기존 인터페이스와 호환되도록 제공합니다.
- * 실제 구현은 ./websocket 디렉토리의 모듈들에 있습니다.
+ * 실제 구현은 ./composables 디렉토리의 모듈들에 있습니다.
  */
-import webSocketManager from './websocket';
+import webSocketManager from './composables';
 
 /**
  * WebSocket 관리자 컴포저블

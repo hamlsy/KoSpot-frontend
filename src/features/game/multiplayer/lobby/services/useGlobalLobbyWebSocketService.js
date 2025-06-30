@@ -1,7 +1,5 @@
 import { ref, onMounted, onBeforeUnmount, readonly } from 'vue';
-import webSocketManager from './websocket';
-import { isConnected, useDummyData } from './websocket/composables/core';
-import { chatMessages, sendChatMessage, handleChatMessage, createSystemMessage } from './websocket/composables/chat';
+import webSocketManager from '../../../shared/services/websocket/composables';
 
 /**
  * 글로벌 로비 WebSocket 서비스 컴포저블
@@ -39,7 +37,7 @@ export function useGlobalLobbyWebSocketService() {
      */
     const connectWebSocket = (endpoint = '/ws') => {
         // 이미 연결된 경우에는 글로벌 로비 채널만 구독
-        if (isConnected.value) {
+        if (webSocketManager.isConnected.value) {
             subscribeToGlobalLobbyChat();
             return;
         }
@@ -79,7 +77,7 @@ export function useGlobalLobbyWebSocketService() {
      */
     const subscribeToGlobalLobbyChat = () => {
         // WebSocket이 연결되지 않은 경우 구독 불가
-        if (!isConnected.value && !useDummyData.value) {
+        if (!webSocketManager.isConnected.value && !webSocketManager.useDummyData.value) {
             console.warn('WebSocket이 연결되지 않아 구독할 수 없습니다.');
             return;
         }
@@ -102,7 +100,7 @@ export function useGlobalLobbyWebSocketService() {
                 console.log(`글로벌 로비 채팅 채널 구독 성공: ${topic}`);
                 
                 // 더미 데이터 모드인 경우 시스템 메시지 추가
-                if (useDummyData.value) {
+                if (webSocketManager.useDummyData.value) {
                     createGlobalSystemMessage('더미 모드: 글로벌 로비 채팅 시뮬레이션 중입니다.');
                     // 더미 채팅 메시지 추가 (예시)
                     simulateGlobalLobbyChat();
@@ -124,7 +122,7 @@ export function useGlobalLobbyWebSocketService() {
             const data = typeof message === 'string' ? JSON.parse(message) : message;
             
             // 채팅 메시지 처리
-            if (data.type === 'CHAT') {
+            if (data.type === 'CHAT' || data.content) {
                 // 글로벌 로비 채팅 메시지 추가
                 globalLobbyChatMessages.value.push(data);
                 
@@ -134,7 +132,7 @@ export function useGlobalLobbyWebSocketService() {
                 }
                 
                 // 일반 채팅 메시지도 처리 (기존 채팅 컴포저블과 통합)
-                handleChatMessage({
+                webSocketManager.handleChatMessage({
                     ...data,
                     chatType: 'lobby' // 글로벌 로비 채팅임을 표시
                 });
@@ -170,7 +168,7 @@ export function useGlobalLobbyWebSocketService() {
         };
         
         // 더미 데이터 모드일 경우 로컬에서 처리
-        if (useDummyData.value) {
+        if (webSocketManager.useDummyData.value) {
             handleGlobalLobbyMessage(chatMessage);
             return true;
         }
@@ -205,7 +203,7 @@ export function useGlobalLobbyWebSocketService() {
      * 개발 및 테스트 목적으로 사용됩니다.
      */
     const simulateGlobalLobbyChat = () => {
-        if (!useDummyData.value) return;
+        if (!webSocketManager.useDummyData.value) return;
         
         const dummyMessages = [
             { playerId: 'dummy-1', playerName: '방문자1', content: '안녕하세요! 오늘 처음 왔어요.' },
@@ -268,11 +266,11 @@ export function useGlobalLobbyWebSocketService() {
     // 외부로 노출할 값과 메서드
     return {
         // 상태 (읽기 전용으로 노출)
-        isConnected: readonly(isConnected),
-        useDummyData: readonly(useDummyData),
+        isConnected: readonly(webSocketManager.isConnected),
+        useDummyData: readonly(webSocketManager.useDummyData),
         currentUser: readonly(currentUser),
         globalLobbyChatMessages: readonly(globalLobbyChatMessages),
-        chatMessages, // 기존 채팅 메시지와 통합
+        chatMessages: webSocketManager.chatMessages, // 기존 채팅 메시지와 통합
         
         // 메서드
         connectWebSocket,
