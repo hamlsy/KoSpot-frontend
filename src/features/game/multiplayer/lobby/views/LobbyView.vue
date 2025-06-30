@@ -3,11 +3,11 @@
     <!-- 헤더 -->
     <header class="header">
       <div class="header-content">
-        <button class="back-button" @click="$router.push('/mainPage')">
+        <button class="back-button" @click="$router.push('/main')">
           <i class="fas fa-arrow-left"></i>
         </button>
         <div class="header-left">
-          <app-logo class="home-link" to="/mainPage" />
+          <app-logo class="home-link" to="/main" />
         </div>
         <div class="header-right">
           <h3>멀티플레이어 로비</h3>
