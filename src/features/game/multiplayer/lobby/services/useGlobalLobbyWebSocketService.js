@@ -29,7 +29,6 @@ export function useGlobalLobbyWebSocketService() {
     const currentUser = ref({
         id: `user-${Math.floor(Math.random() * 1000)}`, // 랜덤 사용자 ID
         nickname: `User-${Math.floor(Math.random() * 1000)}`, // 랜덤 닉네임
-        profileImage: null // 프로필 이미지 (없을 경우 null)
     });
     
     /**
@@ -162,7 +161,7 @@ export function useGlobalLobbyWebSocketService() {
         
         // 글로벌 로비 채팅 메시지 구성
         const chatMessage = {
-            playerId: currentUser.value.id,
+            memberId: currentUser.value.id,
             playerName: currentUser.value.nickname || '익명',
             content: message,
             chatType: 'lobby',
