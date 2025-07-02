@@ -102,6 +102,7 @@ const handleTempLogin = async () => {
     // GET 요청으로 임시 로그인
     const response = await apiClient.get(`/auth/tempLogin/${username.value}`)
     
+    
     // API 응답 성공 여부 확인
     if (!response.data.isSuccess || response.data.code !== 2000) {
       throw new Error(response.data.message || '로그인 처리 중 오류가 발생했습니다.')

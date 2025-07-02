@@ -229,19 +229,25 @@ const fetchRooms = async () => {
 
 const connectToChat = async () => {
   try {
+    console.log('🔗 WebSocket 서비스 연결 시도 중...');
+    
     // WebSocket 서비스 연결
     lobbyService.connectWebSocket();
     
-    // 더미 모드 활성화 (개발 환경에서)
-    if (process.env.NODE_ENV === 'development') {
-      // WebSocket Manager의 더미 모드 활성화
-      // lobbyService를 통해 접근할 수 있는 방법이 없으므로 기본적으로 더미 모드가 활성화됨
-      console.log('개발 모드: WebSocket 더미 데이터 사용');
-    }
+    // 연결 상태 모니터링
+    const checkConnection = () => {
+      console.log('📊 연결 상태:', {
+        isConnected: lobbyService.isConnected.value,
+        useDummyData: lobbyService.useDummyData.value
+      });
+    };
     
-    console.log('채팅 서비스 연결 성공');
+    // 1초 후 연결 상태 확인
+    setTimeout(checkConnection, 1000);
+    
+    console.log('✅ 채팅 서비스 연결 요청 완료');
   } catch (error) {
-    console.error('채팅 서비스 연결 실패:', error);
+    console.error('❌ 채팅 서비스 연결 실패:', error);
   }
 };
 

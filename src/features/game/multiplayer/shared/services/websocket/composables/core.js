@@ -20,8 +20,17 @@ const useDummyData = ref(false);
  * @param {Function} onConnectCallback - 연결 성공 시 실행할 콜백 함수
  */
 const connect = (endpoint = '/ws', onConnectCallback = null) => {
+    console.log('🔴 core.js connect() 함수 호출됨');
+    console.log('파라미터:', { endpoint, hasCallback: !!onConnectCallback });
+    console.log('현재 상태:', { 
+        isConnected: isConnected.value, 
+        hasStompClient: !!stompClient.value,
+        useDummyData: useDummyData.value
+    });
+    
     // 이미 연결된 경우, 콜백만 등록하고 종료
     if (isConnected.value) {
+        console.log('이미 연결되어 있음 - 콜백만 실행');
         if (onConnectCallback) {
             connectionCallbacks.value.add(onConnectCallback);
             // 이미 연결되어 있으므로 즉시 콜백 실행
@@ -32,6 +41,7 @@ const connect = (endpoint = '/ws', onConnectCallback = null) => {
 
     // 연결 시도 중인 경우, 콜백만 등록
     if (stompClient.value) {
+        console.log('연결 시도 중 - 콜백만 등록');
         if (onConnectCallback) {
             connectionCallbacks.value.add(onConnectCallback);
         }
@@ -39,27 +49,109 @@ const connect = (endpoint = '/ws', onConnectCallback = null) => {
     }
 
     try {
+        // 개발 환경에서는 프록시를 통해 연결, 프로덕션에서는 직접 연결
+        const wsUrl = process.env.NODE_ENV === 'development' 
+            ? endpoint 
+            : `${process.env.VUE_APP_WS_BASE_URL || 'http://localhost:8080'}${endpoint}`;
+            
+        console.log('🔴 WebSocket 연결 시도:', wsUrl);
+        console.log('NODE_ENV:', process.env.NODE_ENV);
+        
         // SockJS를 통한 WebSocket 연결 생성
-        const socket = new SockJS(endpoint);
+        console.log('🔴 SockJS 객체 생성 시작');
+        
+        // SockJS 설정 옵션
+        const sockjsOptions = {
+            timeout: 10000,  // 10초 타임아웃
+            transports: ['websocket', 'xhr-polling', 'jsonp-polling']
+        };
+        
+        const socket = new SockJS(wsUrl, undefined, sockjsOptions);
+        console.log('🔴 SockJS 객체 생성 완료:', socket);
+        
+        // SockJS 이벤트 리스너 추가
+        socket.onopen = function() {
+            console.log('🟢 SockJS 연결 열림');
+        };
+        
+        socket.onclose = function(event) {
+            console.log('🔴 SockJS 연결 닫힘:', event);
+            // SockJS 연결 실패 시 즉시 더미 모드로 전환
+            if (!isConnected.value) {
+                console.log('🔴 SockJS 연결 실패로 더미 모드 전환');
+                useDummyData.value = true;
+                stompClient.value = null;
+                
+                // 등록된 콜백들을 더미 모드로 실행
+                connectionCallbacks.value.forEach((callback, index) => {
+                    try {
+                        console.log(`🔴 SockJS 실패 콜백 ${index} 실행 시작`);
+                        callback();
+                        console.log(`🔴 SockJS 실패 콜백 ${index} 실행 완료`);
+                    } catch (error) {
+                        console.error('SockJS 실패 콜백 실행 중 오류:', error);
+                    }
+                });
+            }
+        };
+        
+        socket.onerror = function(error) {
+            console.error('🔴 SockJS 오류:', error);
+            // SockJS 오류 시 즉시 더미 모드로 전환
+            if (!isConnected.value) {
+                console.log('🔴 SockJS 오류로 더미 모드 전환');
+                useDummyData.value = true;
+                stompClient.value = null;
+                
+                // 등록된 콜백들을 더미 모드로 실행
+                connectionCallbacks.value.forEach((callback, index) => {
+                    try {
+                        console.log(`🔴 SockJS 오류 콜백 ${index} 실행 시작`);
+                        callback();
+                        console.log(`🔴 SockJS 오류 콜백 ${index} 실행 완료`);
+                    } catch (error) {
+                        console.error('SockJS 오류 콜백 실행 중 오류:', error);
+                    }
+                });
+            }
+        };
+        
         stompClient.value = Stomp.over(socket);
+        console.log('🔴 STOMP 클라이언트 생성 완료:', stompClient.value);
 
         // 콜백 등록
         if (onConnectCallback) {
+            console.log('🔴 콜백 등록:', onConnectCallback);
             connectionCallbacks.value.add(onConnectCallback);
         }
 
+        // STOMP 클라이언트 디버깅 비활성화 (프로덕션에서)
+        if (process.env.NODE_ENV === 'development') {
+            stompClient.value.debug = function(str) {
+                console.log('STOMP:', str);
+            };
+        } else {
+            stompClient.value.debug = function() {}; // 디버깅 비활성화
+        }
+
         // 연결 시도
+        console.log('🔴 STOMP 연결 시작');
         stompClient.value.connect(
             {}, // 헤더 (인증 정보 등이 필요하면 여기에 추가)
             // 연결 성공 콜백
             frame => {
-                console.log('WebSocket 연결 성공:', frame);
+                console.log('✅ WebSocket 연결 성공:', wsUrl);
+                console.log('연결 프레임:', frame);
                 isConnected.value = true;
+                useDummyData.value = false; // 실제 연결 시 더미 모드 해제
 
+                console.log('🔴 등록된 콜백 수:', connectionCallbacks.value.size);
                 // 등록된 모든 콜백 실행
-                connectionCallbacks.value.forEach(callback => {
+                connectionCallbacks.value.forEach((callback, index) => {
                     try {
+                        console.log(`🔴 콜백 ${index} 실행 시작`);
                         callback();
+                        console.log(`🔴 콜백 ${index} 실행 완료`);
                     } catch (error) {
                         console.error('연결 콜백 실행 중 오류:', error);
                     }
@@ -67,26 +159,48 @@ const connect = (endpoint = '/ws', onConnectCallback = null) => {
             },
             // 연결 실패 콜백
             error => {
-                console.error('WebSocket 연결 오류:', error);
+                console.error('❌ WebSocket 연결 오류:', error);
+                console.error('연결 시도 URL:', wsUrl);
+                console.error('오류 상세:', error);
+                
                 isConnected.value = false;
+                stompClient.value = null; // STOMP 클라이언트 초기화
                 
                 // 더미 데이터 모드로 전환
                 useDummyData.value = true;
-                console.log('더미 데이터 모드로 전환됩니다.');
+                console.log('🔄 더미 데이터 모드로 전환됩니다.');
+                console.log('🔴 등록된 콜백 수 (더미 모드):', connectionCallbacks.value.size);
                 
-                // 5초 후 재연결 시도
-                setTimeout(() => {
-                    if (!isConnected.value) {
-                        console.log('WebSocket 재연결 시도...');
-                        connect(endpoint);
+                // 등록된 콜백들을 더미 모드로 실행
+                connectionCallbacks.value.forEach((callback, index) => {
+                    try {
+                        console.log(`🔴 더미 모드 콜백 ${index} 실행 시작`);
+                        callback();
+                        console.log(`🔴 더미 모드 콜백 ${index} 실행 완료`);
+                    } catch (error) {
+                        console.error('더미 모드 콜백 실행 중 오류:', error);
                     }
-                }, 5000);
+                });
+                
+                // 재연결 시도는 더미 모드에서는 하지 않음
+                console.log('더미 모드: 재연결 시도하지 않음');
             }
         );
+        console.log('🔴 STOMP 연결 시도 완료 (비동기)');
     } catch (error) {
-        console.error('WebSocket 초기화 오류:', error);
+        console.error('🔴 WebSocket 초기화 오류:', error);
         useDummyData.value = true;
-        console.log('더미 데이터 모드로 전환됩니다.');
+        console.log('🔴 더미 데이터 모드로 전환됩니다.');
+        
+        // catch된 경우에도 콜백 실행
+        if (onConnectCallback) {
+            console.log('🔴 catch에서 콜백 실행');
+            try {
+                onConnectCallback();
+            } catch (callbackError) {
+                console.error('catch 콜백 실행 중 오류:', callbackError);
+            }
+        }
     }
 };
 

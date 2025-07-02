@@ -36,21 +36,37 @@ export function useGlobalLobbyWebSocketService() {
      * @param {String} [endpoint='/ws'] - WebSocket 서버의 엔드포인트 URL
      */
     const connectWebSocket = (endpoint = '/ws') => {
+        console.log('🔵 useGlobalLobbyWebSocketService.connectWebSocket() 호출됨');
+        console.log('현재 연결 상태:', {
+            isConnected: webSocketManager.isConnected.value,
+            useDummyData: webSocketManager.useDummyData.value
+        });
+        
         // 이미 연결된 경우에는 글로벌 로비 채널만 구독
         if (webSocketManager.isConnected.value) {
+            console.log('이미 연결되어 있음, 구독만 진행');
             subscribeToGlobalLobbyChat();
             return;
         }
         
         // 연결 성공 시 호출될 콜백 함수
         const onConnectCallback = () => {
+            console.log('🟢 onConnectCallback 실행됨!');
+            console.log('콜백 실행 시점 상태:', {
+                isConnected: webSocketManager.isConnected.value,
+                useDummyData: webSocketManager.useDummyData.value
+            });
+            
             subscribeToGlobalLobbyChat();
+            joinGlobalLobby();
             // 연결 성공 메시지 표시
             createGlobalSystemMessage('채팅 서버에 연결되었습니다.');
         };
         
+        console.log('🔵 webSocketManager.connect() 호출 시작');
         // WebSocketManager를 통해 연결
         webSocketManager.connect(endpoint, onConnectCallback);
+        console.log('🔵 webSocketManager.connect() 호출 완료');
     };
     
     /**
@@ -76,6 +92,7 @@ export function useGlobalLobbyWebSocketService() {
      * 글로벌 로비 채팅 채널을 구독합니다.
      */
     const subscribeToGlobalLobbyChat = () => {
+    
         // WebSocket이 연결되지 않은 경우 구독 불가
         if (!webSocketManager.isConnected.value && !webSocketManager.useDummyData.value) {
             console.warn('WebSocket이 연결되지 않아 구독할 수 없습니다.');
@@ -83,8 +100,8 @@ export function useGlobalLobbyWebSocketService() {
         }
         
         try {
-            // 글로벌 로비 채팅 채널 구독
-            const topic = '/topic/lobby/chat';
+            // 백엔드 설정에 맞춰 구독 토픽 수정: /topic/lobby
+            const topic = '/topic/lobby';
             
             // 이미 구독 중인지 확인
             if (globalLobbySubscriptions.value.has(topic)) {
@@ -94,7 +111,7 @@ export function useGlobalLobbyWebSocketService() {
             
             // 채널 구독
             const subscriptionId = webSocketManager.subscribe(topic, handleGlobalLobbyMessage);
-            
+        
             if (subscriptionId) {
                 globalLobbySubscriptions.value.set(topic, subscriptionId);
                 console.log(`글로벌 로비 채팅 채널 구독 성공: ${topic}`);
@@ -173,8 +190,52 @@ export function useGlobalLobbyWebSocketService() {
             return true;
         }
         
-        // 서버로 메시지 전송
-        return webSocketManager.publish('/app/lobby/chat', chatMessage);
+        // 백엔드 설정에 맞춰 메시지 전송 경로 수정: /app/chat.message.lobby
+        return webSocketManager.publish('/app/chat.message.lobby', chatMessage);
+    };
+    
+    /**
+     * 글로벌 로비에 입장합니다.
+     */
+    const joinGlobalLobby = () => {
+        if (!webSocketManager.isConnected.value) {
+            console.warn('WebSocket이 연결되지 않아 로비에 입장할 수 없습니다.');
+            return false;
+        }
+        
+        try {
+            // 백엔드 설정에 맞춰 로비 입장 메시지 전송: /app/chat.join.lobby
+            return webSocketManager.publish('/app/chat.join.lobby', {
+                memberId: currentUser.value.id,
+                playerName: currentUser.value.nickname || '익명',
+                timestamp: new Date().toISOString()
+            });
+        } catch (error) {
+            console.error('글로벌 로비 입장 중 오류:', error);
+            return false;
+        }
+    };
+    
+    /**
+     * 글로벌 로비에서 퇴장합니다.
+     */
+    const leaveGlobalLobby = () => {
+        if (!webSocketManager.isConnected.value) {
+            console.warn('WebSocket이 연결되지 않아 로비에서 퇴장할 수 없습니다.');
+            return false;
+        }
+        
+        try {
+            // 백엔드 설정에 맞춰 로비 퇴장 메시지 전송: /app/chat.leave.lobby
+            return webSocketManager.publish('/app/chat.leave.lobby', {
+                memberId: currentUser.value.id,
+                playerName: currentUser.value.nickname || '익명',
+                timestamp: new Date().toISOString()
+            });
+        } catch (error) {
+            console.error('글로벌 로비 퇴장 중 오류:', error);
+            return false;
+        }
     };
     
     /**
@@ -259,7 +320,8 @@ export function useGlobalLobbyWebSocketService() {
     // 컴포넌트가 언마운트되기 전에 호출되는 라이프사이클 훅
     onBeforeUnmount(() => {
         console.log('컴포넌트 언마운트 중 글로벌 로비 WebSocket 연결을 정리합니다...');
-        // WebSocket 연결 안전하게 종료
+        // 로비 퇴장 및 WebSocket 연결 안전하게 종료
+        leaveGlobalLobby();
         disconnectWebSocket();
     });
     
@@ -277,6 +339,8 @@ export function useGlobalLobbyWebSocketService() {
         disconnectWebSocket,
         subscribeToGlobalLobbyChat,
         sendGlobalLobbyChat,
+        joinGlobalLobby,
+        leaveGlobalLobby,
         createGlobalSystemMessage,
         setCurrentUser,
         

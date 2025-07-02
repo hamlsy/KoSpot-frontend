@@ -11,7 +11,7 @@ export default {
   name: 'AdminPanel',
   methods: {
     closeAdminPanel() {
-      this.$router.push('/mainPage');
+      this.$router.push('/main');
     }
   }
 }
