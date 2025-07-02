@@ -6,7 +6,7 @@
         <div class="admin-dashboard">
           <h1 class="dashboard-title text-2xl font-bold text-gray-800 mb-6">🛠️ 관리자 대시보드</h1>
           
-          <!-- 네비게이션 탭 -->
+          네비게이션 탭
           <div class="admin-nav mb-6">
             <div class="flex border-b border-gray-200 overflow-x-auto pb-1">
               <button 

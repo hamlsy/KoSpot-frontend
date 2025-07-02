@@ -1,64 +1,5 @@
 <template>
   <div class="admin-panel">
-    <div class="sidebar">
-      <div class="sidebar-header">
-        <h2>관리자 패널</h2>
-        <button class="close-button" @click="closeAdminPanel">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      
-      <div class="admin-user-info">
-        <div class="admin-avatar">
-          <img src="https://randomuser.me/api/portraits/men/1.jpg" alt="관리자 프로필">
-        </div>
-        <div class="admin-info">
-          <p class="admin-name">김관리</p>
-          <p class="admin-role">시스템 관리자</p>
-        </div>
-      </div>
-      
-      <nav class="sidebar-menu">
-        <router-link to="/admin" class="menu-item" exact-active-class="active">
-          <i class="fas fa-tachometer-alt"></i>
-          <span>대시보드</span>
-        </router-link>
-        
-        <router-link to="/admin?section=user-management" class="menu-item" active-class="active">
-          <i class="fas fa-users"></i>
-          <span>사용자 관리</span>
-        </router-link>
-        
-        <router-link to="/admin?section=game-management" class="menu-item" active-class="active">
-          <i class="fas fa-gamepad"></i>
-          <span>게임 관리</span>
-        </router-link>
-        
-        <router-link to="/admin?section=shop-management" class="menu-item" active-class="active">
-          <i class="fas fa-shopping-cart"></i>
-          <span>상점 관리</span>
-        </router-link>
-        
-        <router-link to="/admin?section=statistics" class="menu-item" active-class="active">
-          <i class="fas fa-chart-line"></i>
-          <span>통계 관리</span>
-        </router-link>
-        
-        <router-link to="/admin?section=settings" class="menu-item" active-class="active">
-          <i class="fas fa-cog"></i>
-          <span>시스템 설정</span>
-        </router-link>
-      </nav>
-      
-      <div class="sidebar-footer">
-        <div class="version-info">버전: 1.0.0</div>
-        <button class="logout-button">
-          <i class="fas fa-sign-out-alt"></i>
-          <span>로그아웃</span>
-        </button>
-      </div>
-    </div>
-    
     <div class="content-area">
       <slot></slot>
     </div>
@@ -82,34 +23,6 @@ export default {
   min-height: 100vh;
   background-color: #f9fafb;
   padding-top: 60px; /* 네비게이션바 높이만큼 패딩 추가 */
-}
-
-.sidebar {
-  width: 250px;
-  background-color: #1e293b;
-  color: #e2e8f0;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-  position: fixed;
-  top: 60px; /* 네비게이션바 높이만큼 조정 */
-  bottom: 0;
-  overflow-y: auto;
-}
-
-.sidebar-header {
-  padding: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #334155;
-}
-
-.sidebar-header h2 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #f8fafc;
 }
 
 .close-button {
@@ -230,7 +143,6 @@ export default {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
-  margin-left: 250px; /* 사이드바 너비만큼 여백 */
 }
 
 @media (max-width: 768px) {
