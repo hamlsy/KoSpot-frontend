@@ -141,7 +141,7 @@
       </div>
     </transition>
 
-    <div v-if="isLoading" class="loading-overlay">
+    <div v-if="gameLoading" class="loading-overlay">
       <div class="loading-spinner">
         <i class="fas fa-spinner fa-spin"></i>
         <p>로딩 중...</p>
@@ -155,17 +155,19 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import AppLogo from "@/core/components/AppLogo.vue";
-import useGame from '@/composables/useGame';
+import useGame from '@/core/composables/useGame';
 import GameModeCard from "@/features/game/shared/components/Common/GameModeCard.vue";
 // import useAuth from '../../../../../core/composables/useAuth';
 
 // 라우터 및 컴포지션 API 사용
 const router = useRouter();
 // const { user, isLoggedIn } = useAuth();
-const { gameState, startGame: initGame } = useGame();
+
+// useGame composable 사용
+const { gameState, startGame: initGame, isLoading: gameLoading, error: gameError } = useGame();
+
 
 // 상태 정의
-const isLoading = ref(false);
 const selectedGameMode = ref(null);
 const selectedRegion = ref(null);
 const hoverMode = ref(null);
@@ -227,17 +229,17 @@ const gameModes = [
 ];
 
 // 지역 데이터
-const regions = [
-  { id: "all", name: "전국", icon: "fas fa-map" },
-  { id: "seoul", name: "서울", icon: "fas fa-city" },
-  { id: "busan", name: "부산", icon: "fas fa-ship" },
-  { id: "jeju", name: "제주", icon: "fas fa-umbrella-beach" },
-  { id: "gyeonggi", name: "경기도", icon: "fas fa-mountain" },
-  { id: "gangwon", name: "강원도", icon: "fas fa-skiing" },
-  { id: "chungcheong", name: "충청도", icon: "fas fa-leaf" },
-  { id: "gyeongsang", name: "경상도", icon: "fas fa-industry" },
-  { id: "jeolla", name: "전라도", icon: "fas fa-seedling" },
-];
+const regions = {
+  "전국": "all",
+  "서울": "seoul", 
+  "부산": "busan",
+  "제주": "jeju",
+  "경기도": "gyeonggi",
+  "강원도": "gangwon",
+  "충청도": "chungcheong",
+  "경상도": "gyeongsang",
+  "전라도": "jeolla"
+};
 
 // 게임 시작 준비 상태 계산
 const isGameStartReady = computed(() => {
@@ -268,7 +270,7 @@ const selectRegion = (region) => {
 const startGame = async () => {
   if (!isGameStartReady.value) return;
 
-  isLoading.value = true;
+  // gameLoading이 initGame에서 자동으로 관리됨
 
   const gameData = {
     mode: selectedGameMode.value.id,
@@ -298,8 +300,6 @@ const startGame = async () => {
       
   } catch (error) {
     console.error("게임 시작 중 오류 발생:", error);
-  } finally {
-    isLoading.value = false;
   }
 };
 

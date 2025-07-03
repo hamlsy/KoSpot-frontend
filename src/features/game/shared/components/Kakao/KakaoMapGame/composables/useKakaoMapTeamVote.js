@@ -217,8 +217,8 @@ export function useKakaoMapTeamVote(props, emit) {
             console.log('기존 WebSocket 연결 재사용');
             subscribeToTeamMarkers(teamId);
         } else {
-            console.log('새 WebSocket 연결 시도');
-            connectWebSocket('/ws', teamId);
+            console.log('WebSocket 연결 없음 - LobbyView에서 연결 필요');
+            // connectWebSocket('/ws', teamId); // 자동 연결 비활성화
         }
     };
     
@@ -325,13 +325,22 @@ export function useKakaoMapTeamVote(props, emit) {
     };
     
     /**
-     * 컴포넌트 마운트 시 실행되는 후
+     * 컴포넌트 마운트 시 실행되는 훅
      * 1. 웹소켓 연결 및 팀 채널 구독 설정
      * 2. 더미 데이터 모드 초기화 (테스트용)
      * 3. 플레이어 상태 변경 감지 설정
      */
     onMounted(() => {
         console.log('팀 지도 투표 컴포넌트 초기화 시작');
+        
+        // 싱글 게임 모드인 경우 WebSocket 연결을 설정하지 않음
+        if (props.gameMode === 'single') {
+            console.log('싱글 게임 모드: WebSocket 연결을 설정하지 않습니다.');
+            return;
+        }
+        
+        // 멀티 게임 모드(team, individual)인 경우에만 WebSocket 연결 설정
+        console.log(`멀티 게임 모드(${props.gameMode}): WebSocket 연결을 설정합니다.`);
         
         // 1. 웹소켓 구독 설정 - 대기실에서 연결된 웹소켓을 재사용하거나 새로 연결
         setupTeamMarkerSubscription();
@@ -479,19 +488,6 @@ watch(map, (newMap) => {
     }
 });
 
-// 컴포넌트 마운트 시 게임 모드에 따라 WebSocket 연결 설정
-onMounted(() => {
-    // 싱글 게임 모드인 경우 WebSocket 연결을 설정하지 않음
-    if (props.gameMode === 'single') {
-        console.log('싱글 게임 모드: WebSocket 연결을 설정하지 않습니다.');
-        return;
-    }
-    
-    // 멀티 게임 모드(team, individual)인 경우에만 WebSocket 연결 설정
-    console.log(`멀티 게임 모드(${props.gameMode}): WebSocket 연결을 설정합니다.`);
-    setupTeamMarkerSubscription();
-});
-
 /**
  * 채팅 메시지 전송 함수
  * 팀 채팅 또는 전체 채팅에 메시지를 전송합니다.
@@ -518,7 +514,7 @@ const sendChatMessage = (message, isTeamChat = true) => {
     webSocketManager.publish(destination, JSON.stringify(chatMessage));
     
     console.log(`채팅 메시지 전송 (${isTeamChat ? '팀' : '전체'}): ${message}`);
-} // Added a closing curly brace here
+}
 
 return {
     // 팀 마커 관련 함수

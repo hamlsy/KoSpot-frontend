@@ -49,9 +49,9 @@ const connect = (endpoint = '/ws', onConnectCallback = null) => {
     }
 
     try {
-        // 개발 환경에서는 프록시를 통해 연결, 프로덕션에서는 직접 연결
+        // 개발 환경에서는 현재 호스트를 사용하여 프록시 통해 연결
         const wsUrl = process.env.NODE_ENV === 'development' 
-            ? endpoint 
+            ? `${window.location.protocol}//${window.location.host}${endpoint}`
             : `${process.env.VUE_APP_WS_BASE_URL || 'http://localhost:8080'}${endpoint}`;
             
         console.log('🔴 WebSocket 연결 시도:', wsUrl);
@@ -182,8 +182,8 @@ const connect = (endpoint = '/ws', onConnectCallback = null) => {
                     }
                 });
                 
-                // 재연결 시도는 더미 모드에서는 하지 않음
-                console.log('더미 모드: 재연결 시도하지 않음');
+                // 재연결 시도하지 않음 (수동으로만 연결)
+                console.log('WebSocket 연결 실패: 수동으로만 재연결 가능');
             }
         );
         console.log('🔴 STOMP 연결 시도 완료 (비동기)');

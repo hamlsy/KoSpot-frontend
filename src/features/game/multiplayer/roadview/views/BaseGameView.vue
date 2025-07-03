@@ -135,6 +135,7 @@
       :showDistance="false"
       :showMarker="true"
       :isTeamMode="isTeamMode"
+      :gameMode="gameMode"
       @spot-answer="handlePhoneMapGuess"
     />
 
@@ -276,7 +277,9 @@ export default {
   },
 
   created() {
-    this.connectWebSocket();
+    // WebSocket 연결은 LobbyView에서만 시도
+    // this.connectWebSocket();
+    console.log('BaseGameView: WebSocket 자동 연결 비활성화됨');
   },
 
   mounted() {

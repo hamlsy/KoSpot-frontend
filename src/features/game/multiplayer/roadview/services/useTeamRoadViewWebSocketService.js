@@ -289,8 +289,8 @@ export function useTeamWebSocketService() {
     onMounted(() => {
         // 주의: 여기서 자동 연결을 시도하지 않습니다.
         // 컴포넌트가 마운트될 때 자동으로 연결하려면 다음 주석을 해제하세요:
-        // connectWebSocket();
-        console.log('WebSocket 서비스가 초기화되었습니다.');
+        // connectWebSocket(); // 자동 연결 비활성화
+        console.log('WebSocket 서비스가 초기화되었습니다. (자동 연결 비활성화)');
     });
     
     // 컴포넌트가 언마운트되기 전에 호출되는 라이프사이클 훅
