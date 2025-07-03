@@ -221,10 +221,11 @@ if (require.main === module) {
         case 'list':
             restore.printBackups();
             break;
-        case 'restore':
+        case 'restore': {
             const backupName = args[1];
             restore.restore(backupName);
             break;
+        }
         default:
             console.log(chalk.bold.blue('🔄 Backup Restore Tool\n'));
             console.log('Usage:');

@@ -57,6 +57,9 @@ export function useGlobalLobbyWebSocketService() {
                 useDummyData: webSocketManager.useDummyData.value
             });
             
+            // 기본 구독 설정 (채팅, 플레이어, 게임 상태)
+            webSocketManager.setupDefaultSubscriptions();
+            
             subscribeToGlobalLobbyChat();
             joinGlobalLobby();
             // 연결 성공 메시지 표시

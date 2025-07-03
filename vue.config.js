@@ -24,6 +24,7 @@ module.exports = defineConfig({
   devServer: {
     hot: true,
     port: 3000,
+    webSocketServer: false,
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
@@ -37,6 +38,9 @@ module.exports = defineConfig({
         secure: false,
         logLevel: 'debug'
       }
+    },
+    client: {
+      webSocketURL: 'ws://localhost:8080/ws'
     }
   },
   configureWebpack: {
