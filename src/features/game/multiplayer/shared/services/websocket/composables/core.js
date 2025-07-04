@@ -150,7 +150,7 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
       console.warn("⚠️  JWT 토큰이 없어 인증 없이 연결 시도");
     }
     stompClient.value.connect(
-      { headers }, // 헤더 (인증 정보 등이 필요하면 여기에 추가)
+      headers, // 헤더 (인증 정보 등이 필요하면 여기에 추가)
       // 연결 성공 콜백
       (frame) => {
         console.log("✅ WebSocket 연결 성공:", wsUrl);
