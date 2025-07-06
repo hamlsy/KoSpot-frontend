@@ -44,8 +44,7 @@ export function useGlobalLobbyWebSocketService() {
     const connectWebSocket = (endpoint = '/ws') => {
         console.log('🔵 useGlobalLobbyWebSocketService.connectWebSocket() 호출됨');
         console.log('현재 연결 상태:', {
-            isConnected: webSocketManager.isConnected.value,
-            useDummyData: webSocketManager.useDummyData.value
+            isConnected: webSocketManager.isConnected.value
         });
         
         // 사용자 정보 초기화
@@ -62,8 +61,7 @@ export function useGlobalLobbyWebSocketService() {
         const onConnectCallback = () => {
             console.log('🟢 onConnectCallback 실행됨!');
             console.log('콜백 실행 시점 상태:', {
-                isConnected: webSocketManager.isConnected.value,
-                useDummyData: webSocketManager.useDummyData.value
+                isConnected: webSocketManager.isConnected.value
             });
             
             // 기본 구독 설정 (채팅, 플레이어, 게임 상태)
@@ -105,7 +103,7 @@ export function useGlobalLobbyWebSocketService() {
      */
     const subscribeToGlobalLobbyChat = () => {
         // WebSocket이 연결되지 않은 경우 구독 불가
-        if (!webSocketManager.isConnected.value && !webSocketManager.useDummyData.value) {
+        if (!webSocketManager.isConnected.value) {
             console.warn('WebSocket이 연결되지 않아 구독할 수 없습니다.');
             return;
         }
@@ -126,13 +124,6 @@ export function useGlobalLobbyWebSocketService() {
             // 구독 정보 저장
             globalLobbySubscriptions.value.set(topic, 'lobby-subscription');
             console.log(`글로벌 로비 채팅 채널 구독 성공: ${topic}`);
-            
-            // 더미 데이터 모드인 경우 시스템 메시지 추가
-            if (webSocketManager.useDummyData.value) {
-                createSystemMessage('더미 모드: 글로벌 로비 채팅 시뮬레이션 중입니다.', 'lobby');
-                // 더미 채팅 메시지 추가 (예시)
-                simulateGlobalLobbyChat();
-            }
         } catch (error) {
             console.error('글로벌 로비 채팅 구독 중 오류:', error);
         }
@@ -203,27 +194,7 @@ export function useGlobalLobbyWebSocketService() {
         return createSystemMessage(content, 'lobby');
     };
     
-    /**
-     * 더미 모드에서 글로벌 로비 채팅을 시뮬레이션합니다.
-     * 개발 및 테스트 목적으로 사용됩니다.
-     */
-    const simulateGlobalLobbyChat = () => {
-        if (!webSocketManager.useDummyData.value) return;
-        
-        const dummyMessages = [
-            { content: '안녕하세요! 오늘 처음 왔어요.', nickname: '방문자1' },
-            { content: '여기 게임 재밌나요?', nickname: '방문자2' },
-            { content: '저는 매일 즐겨하고 있어요!', nickname: '단골손님' },
-            { content: '오늘 새로운 게임이 추가되었습니다.', nickname: '게임마스터' }
-        ];
-        
-        // 1~3초 간격으로 더미 메시지 전송 시뮬레이션
-        dummyMessages.forEach((msg, index) => {
-            setTimeout(() => {
-                sendGlobalLobbyChat(msg.content);
-            }, (index + 1) * (1000 + Math.random() * 2000));
-        });
-    };
+
     
     /**
      * 현재 사용자 정보를 업데이트합니다.
@@ -289,9 +260,6 @@ export function useGlobalLobbyWebSocketService() {
         
         // 시스템 메시지
         createGlobalSystemMessage,
-        
-        // 더미 데이터
-        simulateGlobalLobbyChat,
         
         // 사용자 관리
         setCurrentUser,

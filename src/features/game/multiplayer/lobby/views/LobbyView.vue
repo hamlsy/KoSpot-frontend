@@ -230,8 +230,7 @@ const connectToChat = async () => {
     // 연결 상태 모니터링
     const checkConnection = () => {
       console.log('📊 연결 상태:', {
-        isConnected: lobbyService.isConnected.value,
-        useDummyData: lobbyService.useDummyData.value
+        isConnected: lobbyService.isConnected.value
       });
     };
     
