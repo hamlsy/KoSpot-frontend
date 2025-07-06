@@ -149,12 +149,16 @@ export default {
       // 메시지의 senderId 또는 sender가 현재 사용자와 일치하는지 확인
       if (message.system) return false;
       
+      // 현재 사용자 ID가 없으면 내 메시지가 아님
+      if (!this.currentUserId) return false;
+      
+      // senderId가 있는 경우 비교
       if (message.senderId) {
         return message.senderId === this.currentUserId;
       }
       
-      // 테스트 환경에서 사용
-      return message.sender === '김코스팟';
+      // senderId가 없는 경우 다른 식별자 사용 (fallback)
+      return false;
     }
   }
 };

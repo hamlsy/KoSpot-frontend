@@ -1,21 +1,30 @@
 import { ref, onMounted, onBeforeUnmount, readonly } from 'vue';
+import { useAuth } from '@/core/composables/useAuth.js';
 import webSocketManager from '../../shared/services/websocket/composables';
+import { 
+    lobbyChatMessages, 
+    currentUser, 
+    sendChatMessage, 
+    sendLobbyJoinMessage, 
+    sendLobbyLeaveMessage, 
+    createSystemMessage, 
+    setupChatSubscriptions,
+    initializeUserData 
+} from '../../shared/services/websocket/composables/chat.js';
 
 /**
  * 글로벌 로비 WebSocket 서비스 컴포저블
  * 게임방 리스트 화면에서 전체 채팅 기능을 제공하는 서비스
  * - WebSocket을 통한 실시간 채팅 처리
  * - 더미 데이터 모드 지원 (백엔드 없이 개발/테스트 가능)
+ * - 실제 사용자 인증 정보 활용
  * 
- * 이 서비스는 기존 WebSocket 관리자와 채팅 컴포저블을 활용하여
+ * 이 서비스는 기존 WebSocket 관리자와 통합 채팅 컴포저블을 활용하여
  * 글로벌 로비 채팅 기능을 제공합니다.
  */
 
 // 글로벌 로비 구독 정보
 const globalLobbySubscriptions = ref(new Map());
-
-// 글로벌 로비 채팅 메시지
-const globalLobbyChatMessages = ref([]);
 
 /**
  * 글로벌 로비 WebSocket 서비스를 초기화하고 제공하는 컴포저블 함수
@@ -23,11 +32,8 @@ const globalLobbyChatMessages = ref([]);
  * @returns {Object} 글로벌 로비 WebSocket 서비스 관련 함수와 데이터를 포함하는 객체
  */
 export function useGlobalLobbyWebSocketService() {
-    // 현재 사용자 정보 (기본값으로 랜덤 ID와 닉네임 생성)
-    const currentUser = ref({
-        id: `user-${Math.floor(Math.random() * 1000)}`, // 랜덤 사용자 ID
-        nickname: `User-${Math.floor(Math.random() * 1000)}`, // 랜덤 닉네임
-    });
+    // 인증 컴포저블에서 사용자 정보 가져오기
+    const { user: authUser, isAuthenticated } = useAuth();
     
     /**
      * WebSocket 서버에 연결을 시도합니다.
@@ -41,6 +47,9 @@ export function useGlobalLobbyWebSocketService() {
             isConnected: webSocketManager.isConnected.value,
             useDummyData: webSocketManager.useDummyData.value
         });
+        
+        // 사용자 정보 초기화
+        initializeUserData();
         
         // 이미 연결된 경우에는 글로벌 로비 채널만 구독
         if (webSocketManager.isConnected.value) {
@@ -63,7 +72,7 @@ export function useGlobalLobbyWebSocketService() {
             subscribeToGlobalLobbyChat();
             joinGlobalLobby();
             // 연결 성공 메시지 표시
-            createGlobalSystemMessage('채팅 서버에 연결되었습니다.');
+            createSystemMessage('채팅 서버에 연결되었습니다.', 'lobby');
         };
         
         console.log('🔵 webSocketManager.connect() 호출 시작');
@@ -95,7 +104,6 @@ export function useGlobalLobbyWebSocketService() {
      * 글로벌 로비 채팅 채널을 구독합니다.
      */
     const subscribeToGlobalLobbyChat = () => {
-    
         // WebSocket이 연결되지 않은 경우 구독 불가
         if (!webSocketManager.isConnected.value && !webSocketManager.useDummyData.value) {
             console.warn('WebSocket이 연결되지 않아 구독할 수 없습니다.');
@@ -112,53 +120,21 @@ export function useGlobalLobbyWebSocketService() {
                 return;
             }
             
-            // 채널 구독
-            const subscriptionId = webSocketManager.subscribe(topic, handleGlobalLobbyMessage);
-        
-            if (subscriptionId) {
-                globalLobbySubscriptions.value.set(topic, subscriptionId);
-                console.log(`글로벌 로비 채팅 채널 구독 성공: ${topic}`);
-                
-                // 더미 데이터 모드인 경우 시스템 메시지 추가
-                if (webSocketManager.useDummyData.value) {
-                    createGlobalSystemMessage('더미 모드: 글로벌 로비 채팅 시뮬레이션 중입니다.');
-                    // 더미 채팅 메시지 추가 (예시)
-                    simulateGlobalLobbyChat();
-                }
+            // 통합 채팅 모듈로 로비 채팅 구독 설정
+            setupChatSubscriptions(['lobby']);
+            
+            // 구독 정보 저장
+            globalLobbySubscriptions.value.set(topic, 'lobby-subscription');
+            console.log(`글로벌 로비 채팅 채널 구독 성공: ${topic}`);
+            
+            // 더미 데이터 모드인 경우 시스템 메시지 추가
+            if (webSocketManager.useDummyData.value) {
+                createSystemMessage('더미 모드: 글로벌 로비 채팅 시뮬레이션 중입니다.', 'lobby');
+                // 더미 채팅 메시지 추가 (예시)
+                simulateGlobalLobbyChat();
             }
         } catch (error) {
             console.error('글로벌 로비 채팅 구독 중 오류:', error);
-        }
-    };
-    
-    /**
-     * 글로벌 로비 채팅 메시지를 처리합니다.
-     * 
-     * @param {Object} message - 수신된 메시지 객체
-     */
-    const handleGlobalLobbyMessage = (message) => {
-        try {
-            // 메시지가 문자열인 경우 파싱
-            const data = typeof message === 'string' ? JSON.parse(message) : message;
-            
-            // 채팅 메시지 처리
-            if (data.type === 'CHAT' || data.content) {
-                // 글로벌 로비 채팅 메시지 추가
-                globalLobbyChatMessages.value.push(data);
-                
-                // 최대 100개만 유지 (메모리 관리)
-                if (globalLobbyChatMessages.value.length > 100) {
-                    globalLobbyChatMessages.value = globalLobbyChatMessages.value.slice(-100);
-                }
-                
-                // 일반 채팅 메시지도 처리 (기존 채팅 컴포저블과 통합)
-                webSocketManager.handleChatMessage({
-                    ...data,
-                    chatType: 'lobby' // 글로벌 로비 채팅임을 표시
-                });
-            }
-        } catch (error) {
-            console.error('글로벌 로비 메시지 처리 중 오류:', error);
         }
     };
     
@@ -169,32 +145,10 @@ export function useGlobalLobbyWebSocketService() {
      * @returns {Boolean} 전송 성공 여부
      */
     const sendGlobalLobbyChat = (message) => {
-        if (!message) return false;
+        console.log('🔵 로비 채팅 메시지 전송 시도:', message);
         
-        // 사용자 정보 확인
-        if (!currentUser.value || !currentUser.value.id) {
-            console.error('사용자 정보가 없어 메시지를 전송할 수 없습니다.');
-            return false;
-        }
-        
-        // 글로벌 로비 채팅 메시지 구성
-        const chatMessage = {
-            memberId: currentUser.value.id,
-            playerName: currentUser.value.nickname || '익명',
-            content: message,
-            chatType: 'lobby',
-            timestamp: new Date().toISOString(),
-            type: 'CHAT'
-        };
-        
-        // 더미 데이터 모드일 경우 로컬에서 처리
-        if (webSocketManager.useDummyData.value) {
-            handleGlobalLobbyMessage(chatMessage);
-            return true;
-        }
-        
-        // 백엔드 설정에 맞춰 메시지 전송 경로 수정: /app/chat.message.lobby
-        return webSocketManager.publish('/app/chat.message.lobby', chatMessage);
+        // 통합 채팅 모듈 사용
+        return sendChatMessage(message, 'lobby');
     };
     
     /**
@@ -207,12 +161,10 @@ export function useGlobalLobbyWebSocketService() {
         }
         
         try {
-            // 백엔드 설정에 맞춰 로비 입장 메시지 전송: /app/chat.join.lobby
-            return webSocketManager.publish('/app/chat.join.lobby', {
-                memberId: currentUser.value.id,
-                playerName: currentUser.value.nickname || '익명',
-                timestamp: new Date().toISOString()
-            });
+            console.log('🔵 로비 입장 시도');
+            
+            // 통합 채팅 모듈 사용
+            return sendLobbyJoinMessage();
         } catch (error) {
             console.error('글로벌 로비 입장 중 오류:', error);
             return false;
@@ -221,6 +173,7 @@ export function useGlobalLobbyWebSocketService() {
     
     /**
      * 글로벌 로비에서 퇴장합니다.
+     * 주의: 이 함수는 브라우저 창 닫기 시에만 호출되어야 합니다.
      */
     const leaveGlobalLobby = () => {
         if (!webSocketManager.isConnected.value) {
@@ -229,12 +182,10 @@ export function useGlobalLobbyWebSocketService() {
         }
         
         try {
-            // 백엔드 설정에 맞춰 로비 퇴장 메시지 전송: /app/chat.leave.lobby
-            return webSocketManager.publish('/app/chat.leave.lobby', {
-                memberId: currentUser.value.id,
-                playerName: currentUser.value.nickname || '익명',
-                timestamp: new Date().toISOString()
-            });
+            console.log('🚪 글로벌 로비 퇴장 요청 전송');
+            
+            // 통합 채팅 모듈 사용
+            return sendLobbyLeaveMessage();
         } catch (error) {
             console.error('글로벌 로비 퇴장 중 오류:', error);
             return false;
@@ -248,18 +199,8 @@ export function useGlobalLobbyWebSocketService() {
      * @returns {Object} 생성된 시스템 메시지 객체
      */
     const createGlobalSystemMessage = (content) => {
-        const systemMessage = {
-            playerId: 'system',
-            playerName: '시스템',
-            content: content,
-            timestamp: new Date().toISOString(),
-            isSystem: true,
-            chatType: 'lobby',
-            type: 'CHAT'
-        };
-        
-        handleGlobalLobbyMessage(systemMessage);
-        return systemMessage;
+        // 통합 채팅 모듈 사용
+        return createSystemMessage(content, 'lobby');
     };
     
     /**
@@ -270,22 +211,16 @@ export function useGlobalLobbyWebSocketService() {
         if (!webSocketManager.useDummyData.value) return;
         
         const dummyMessages = [
-            { playerId: 'dummy-1', playerName: '방문자1', content: '안녕하세요! 오늘 처음 왔어요.' },
-            { playerId: 'dummy-2', playerName: '방문자2', content: '여기 게임 재밌나요?' },
-            { playerId: 'dummy-3', playerName: '단골손님', content: '저는 매일 즐겨하고 있어요!' },
-            { playerId: 'dummy-4', playerName: '게임마스터', content: '오늘 새로운 게임이 추가되었습니다.' }
+            { content: '안녕하세요! 오늘 처음 왔어요.', nickname: '방문자1' },
+            { content: '여기 게임 재밌나요?', nickname: '방문자2' },
+            { content: '저는 매일 즐겨하고 있어요!', nickname: '단골손님' },
+            { content: '오늘 새로운 게임이 추가되었습니다.', nickname: '게임마스터' }
         ];
         
         // 1~3초 간격으로 더미 메시지 전송 시뮬레이션
         dummyMessages.forEach((msg, index) => {
             setTimeout(() => {
-                const chatMessage = {
-                    ...msg,
-                    chatType: 'lobby',
-                    timestamp: new Date().toISOString(),
-                    type: 'CHAT'
-                };
-                handleGlobalLobbyMessage(chatMessage);
+                sendGlobalLobbyChat(msg.content);
             }, (index + 1) * (1000 + Math.random() * 2000));
         });
     };
@@ -296,59 +231,73 @@ export function useGlobalLobbyWebSocketService() {
      * @param {Object} userInfo - 업데이트할 사용자 정보
      */
     const setCurrentUser = (userInfo) => {
-        if (!userInfo || typeof userInfo !== 'object') {
-            console.error('유효하지 않은 사용자 정보입니다.');
-            return;
-        }
+        console.log('🔵 사용자 정보 업데이트:', userInfo);
         
-        console.log('사용자 정보 업데이트:', userInfo);
+        // 통합 채팅 모듈에서 사용자 정보 초기화
+        initializeUserData();
         
-        // 기존 값과 병합하여 업데이트 (불변성 유지)
-        currentUser.value = {
-            ...currentUser.value,
-            ...userInfo,
-            // undefined가 되지 않도록 기본값 유지
-            id: userInfo.id || currentUser.value.id
-        };
+        console.log('현재 사용자 정보:', currentUser.value);
     };
     
-    // 컴포넌트 마운트 시 호출되는 라이프사이클 훅
+    /**
+     * beforeunload 이벤트 핸들러
+     * 브라우저 창 닫기 시에만 로비 퇴장 메시지 전송
+     */
+    const handleBeforeUnload = () => {
+        console.log('🔵 beforeunload 이벤트 - 로비 퇴장 시도');
+        leaveGlobalLobby();
+    };
+    
+    // 컴포넌트 마운트 시 이벤트 리스너 등록
     onMounted(() => {
-        // 주의: 여기서 자동 연결을 시도하지 않습니다.
-        // 컴포넌트가 마운트될 때 자동으로 연결하려면 다음 주석을 해제하세요:
-        // connectWebSocket(); // 자동 연결 비활성화
-        console.log('글로벌 로비 WebSocket 서비스가 초기화되었습니다. (자동 연결 비활성화)');
+        console.log('🔵 GlobalLobbyWebSocketService mounted');
+        
+        // 브라우저 창 닫기 시에만 leave 요청 전송
+        window.addEventListener('beforeunload', handleBeforeUnload);
     });
     
-    // 컴포넌트가 언마운트되기 전에 호출되는 라이프사이클 훅
+    // 컴포넌트 언마운트 시 정리 작업
     onBeforeUnmount(() => {
-        console.log('컴포넌트 언마운트 중 글로벌 로비 WebSocket 연결을 정리합니다...');
-        // 로비 퇴장 및 WebSocket 연결 안전하게 종료
-        leaveGlobalLobby();
+        console.log('🔵 GlobalLobbyWebSocketService unmounting');
+        
+        // 이벤트 리스너 제거
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+        
+        // 구독 해제 (연결은 유지)
         disconnectWebSocket();
     });
     
-    // 외부로 노출할 값과 메서드
+    // 반환할 객체
     return {
-        // 상태 (읽기 전용으로 노출)
-        isConnected: readonly(webSocketManager.isConnected),
-        useDummyData: readonly(webSocketManager.useDummyData),
-        currentUser: readonly(currentUser),
-        globalLobbyChatMessages: readonly(globalLobbyChatMessages),
-        chatMessages: webSocketManager.chatMessages, // 기존 채팅 메시지와 통합
-        
-        // 메서드
+        // 연결 관리
         connectWebSocket,
         disconnectWebSocket,
+        
+        // 채팅 상태 (통합 채팅 모듈에서 가져옴)
+        globalLobbyChatMessages: lobbyChatMessages,
+        currentUser,
+        
+        // 구독 관리
         subscribeToGlobalLobbyChat,
+        
+        // 채팅 기능
         sendGlobalLobbyChat,
+        
+        // 로비 기능
         joinGlobalLobby,
         leaveGlobalLobby,
+        
+        // 시스템 메시지
         createGlobalSystemMessage,
+        
+        // 더미 데이터
+        simulateGlobalLobbyChat,
+        
+        // 사용자 관리
         setCurrentUser,
         
-        // 테스트용 메서드
-        simulateGlobalLobbyChat
+        // 이벤트 핸들러
+        handleBeforeUnload
     };
 }
 

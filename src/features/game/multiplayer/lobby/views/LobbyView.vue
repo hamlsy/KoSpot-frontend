@@ -123,15 +123,8 @@ const initializeData = async () => {
   isLoading.value = true;
   
   try {
-    // 사용자 정보 설정 (실제 구현에서는 로그인 정보에서 가져옴)
-    lobbyService.setCurrentUser({
-        id: 'user123',
-        nickname: '김코스팟',
-        level: 23,
-        profileImage: '/assets/default-profile.png'
-    });
-    
     // WebSocket 연결 및 채팅 서비스 시작
+    // (사용자 정보는 서비스 내에서 자동으로 초기화됨)
     await connectToChat();
     
     // 방 목록 가져오기

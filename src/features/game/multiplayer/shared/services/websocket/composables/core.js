@@ -28,6 +28,17 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
     useDummyData: useDummyData.value,
   });
 
+  // 기존 연결이 있는 경우 정리 (새로고침 시 중복 연결 방지)
+  if (stompClient.value && !isConnected.value) {
+    console.log("🔄 기존 연결이 있지만 비활성 상태 - 연결 정리");
+    try {
+      stompClient.value.disconnect();
+    } catch (error) {
+      console.error("기존 연결 정리 중 오류:", error);
+    }
+    stompClient.value = null;
+  }
+
   // 이미 연결된 경우, 콜백만 등록하고 종료
   if (isConnected.value) {
     console.log("이미 연결되어 있음 - 콜백만 실행");
@@ -139,22 +150,66 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
 
     // 연결 시도
     console.log("🔴 STOMP 연결 시작");
-    //JWT토큰
-    const token = localStorage.getItem("accessToken");
+    //JWT토큰 (여러 키에서 시도)
+    const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
     const headers = {};
 
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
-      console.log("🔑 WebSocket 연결에 JWT 토큰 포함됨");
+      // 토큰 유효성 기본 검증
+      try {
+        const tokenParts = token.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          const now = Date.now() / 1000;
+          
+          if (payload.exp && payload.exp < now) {
+            console.warn("⚠️  토큰이 만료되었습니다. 새로고침이 필요할 수 있습니다.");
+          } else {
+            console.log("🔑 WebSocket 연결에 유효한 JWT 토큰 포함됨");
+            console.log("🔑 토큰 정보:", {
+              sub: payload.sub,
+              exp: new Date(payload.exp * 1000).toISOString(),
+              iat: new Date(payload.iat * 1000).toISOString()
+            });
+          }
+        }
+      } catch (error) {
+        console.warn("⚠️  토큰 파싱 중 오류:", error);
+      }
+      console.log("🔑 토큰 앞 10자리:", token.substring(0, 10));
     } else {
       console.warn("⚠️  JWT 토큰이 없어 인증 없이 연결 시도");
+      console.warn("⚠️  확인된 localStorage 키들:", Object.keys(localStorage));
     }
+    
+    // 페이지 새로고침 감지 및 연결 정리
+    const handleBeforeUnload = () => {
+      console.log("🌐 페이지 새로고침/종료 감지 - WebSocket 연결 정리");
+      if (stompClient.value && isConnected.value) {
+        // 명시적으로 연결 해제 (graceful shutdown)
+        try {
+          stompClient.value.disconnect();
+        } catch (error) {
+          console.error("연결 해제 중 오류:", error);
+        }
+      }
+    };
+    
+    // 이벤트 리스너가 이미 등록되어 있지 않은 경우에만 등록
+    if (!window.webSocketBeforeUnloadRegistered) {
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      window.webSocketBeforeUnloadRegistered = true;
+    }
+
     stompClient.value.connect(
       headers, // 헤더 (인증 정보 등이 필요하면 여기에 추가)
       // 연결 성공 콜백
       (frame) => {
         console.log("✅ WebSocket 연결 성공:", wsUrl);
         console.log("연결 프레임:", frame);
+        console.log("서버 응답 헤더:", frame.headers);
+        
         isConnected.value = true;
         useDummyData.value = false; // 실제 연결 시 더미 모드 해제
 
@@ -175,6 +230,12 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
         console.error("❌ WebSocket 연결 오류:", error);
         console.error("연결 시도 URL:", wsUrl);
         console.error("오류 상세:", error);
+        console.error("오류 메시지:", error.message);
+        
+        // 인증 오류 체크
+        if (error.message && error.message.includes('401')) {
+          console.error("🔐 인증 오류 - 토큰이 유효하지 않거나 만료됨");
+        }
 
         isConnected.value = false;
         stompClient.value = null; // STOMP 클라이언트 초기화
