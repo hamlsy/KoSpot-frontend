@@ -54,8 +54,14 @@ const setupDefaultSubscriptions = () => {
     console.log('모든 기본 구독 설정 완료');
 };
 
-// 연결 콜백에 기본 구독 설정 추가
-addConnectionCallback(setupDefaultSubscriptions);
+/**
+ * 로비 전용 구독 설정
+ * 로비에서만 필요한 채널들을 설정합니다.
+ */
+const setupLobbySubscriptions = () => {
+    setupChatSubscriptions(['lobby']);
+    console.log('로비 전용 구독 설정 완료');
+};
 
 /**
  * WebSocket 관리자
@@ -99,7 +105,8 @@ const webSocketManager = {
     simulateRoundChange,
     
     // 구독 관리
-    setupDefaultSubscriptions
+    setupDefaultSubscriptions,
+    setupLobbySubscriptions
 };
 
 export default webSocketManager;

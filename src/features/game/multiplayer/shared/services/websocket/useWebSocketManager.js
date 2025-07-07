@@ -52,7 +52,8 @@ function useWebSocketManager() {
         simulateRoundChange: webSocketManager.simulateRoundChange,
         
         // 구독 관리
-        setupDefaultSubscriptions: webSocketManager.setupDefaultSubscriptions
+        setupDefaultSubscriptions: webSocketManager.setupDefaultSubscriptions,
+        setupLobbySubscriptions: webSocketManager.setupLobbySubscriptions
     };
 }
 

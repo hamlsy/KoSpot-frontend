@@ -1,5 +1,5 @@
 import { ref, readonly } from 'vue';
-import { publish, subscribe, useDummyData } from './core';
+import { publish, subscribe } from './core';
 import { useAuth } from '@/core/composables/useAuth.js';
 
 /**
@@ -36,14 +36,7 @@ const initializeUserData = () => {
         };
         console.log('✅ 채팅 모듈: 실제 사용자 정보로 설정됨:', currentUser.value);
     } else {
-        // 더미 데이터 (개발/테스트용)
-        currentUser.value = {
-            id: `guest-${Math.floor(Math.random() * 1000)}`,
-            nickname: `게스트${Math.floor(Math.random() * 1000)}`,
-            email: null,
-            profileImage: null
-        };
-        console.log('⚠️ 채팅 모듈: 더미 사용자 정보로 설정됨:', currentUser.value);
+        console.warn('❌ 인증되지 않은 사용자 - 채팅 기능 제한');
     }
 };
 
@@ -54,15 +47,22 @@ const initializeUserData = () => {
  * @returns {String} 전송 목적지 경로
  */
 const getChatDestination = (chatType, teamId = null) => {
+    let destination;
     switch (chatType) {
         case 'lobby':
-            return '/app/chat.message.lobby';
+            destination = '/app/chat.message.lobby';
+            break;
         case 'team':
-            return teamId ? `/app/game/team/${teamId}/chat` : '/app/game/chat';
+            destination = teamId ? `/app/game/team/${teamId}/chat` : '/app/game/chat';
+            break;
         case 'game':
         default:
-            return '/app/game/chat';
+            destination = '/app/game/chat';
+            break;
     }
+    
+    console.log('📍 메시지 전송 목적지 결정:', { chatType, teamId, destination });
+    return destination;
 };
 
 /**
@@ -73,16 +73,18 @@ const getChatDestination = (chatType, teamId = null) => {
  * @returns {Object} 구성된 채팅 메시지
  */
 const buildChatMessage = (message, chatType, teamId = null) => {
+    let chatMessage;
+    
     if (chatType === 'lobby') {
         // Spring 서버의 ChatMessageDto 형식 (로비 채팅)
-        return {
+        chatMessage = {
             messageType: 'CHAT',
             channelType: 'LOBBY',
             content: message
         };
     } else {
         // 게임 채팅 형식
-        return {
+        chatMessage = {
             playerId: currentUser.value.id,
             playerName: currentUser.value.nickname || '익명',
             teamId: teamId,
@@ -91,6 +93,9 @@ const buildChatMessage = (message, chatType, teamId = null) => {
             timestamp: new Date().toISOString()
         };
     }
+    
+    console.log('📝 채팅 메시지 구성:', { chatType, teamId, message: chatMessage });
+    return chatMessage;
 };
 
 /**
@@ -135,21 +140,6 @@ const sendChatMessage = (message, chatType = 'game', options = {}) => {
         user: currentUser.value
     });
     
-    // 더미 데이터 모드일 경우 로컬에서 처리
-    if (useDummyData.value) {
-        const displayMessage = {
-            ...chatMessage,
-            memberId: currentUser.value.id,
-            playerName: currentUser.value.nickname,
-            profileImage: currentUser.value.profileImage,
-            timestamp: new Date().toISOString(),
-            isAuthenticated: true,
-            chatType: chatType
-        };
-        handleChatMessage(displayMessage);
-        return true;
-    }
-    
     // 서버로 메시지 전송
     return publish(destination, chatMessage);
 };
@@ -171,20 +161,20 @@ const handleChatMessage = (message) => {
             }
             break;
             
-                 case 'team': {
-             const teamId = message.teamId;
-             if (teamId) {
-                 if (!teamChatMessages.value[teamId]) {
-                     teamChatMessages.value[teamId] = [];
-                 }
-                 teamChatMessages.value[teamId].push(message);
-                 // 팀별로 최대 50개만 유지
-                 if (teamChatMessages.value[teamId].length > 50) {
-                     teamChatMessages.value[teamId] = teamChatMessages.value[teamId].slice(-50);
-                 }
-             }
-             break;
-         }
+        case 'team': {
+            const teamId = message.teamId;
+            if (teamId) {
+                if (!teamChatMessages.value[teamId]) {
+                    teamChatMessages.value[teamId] = [];
+                }
+                teamChatMessages.value[teamId].push(message);
+                // 팀별로 최대 50개만 유지
+                if (teamChatMessages.value[teamId].length > 50) {
+                    teamChatMessages.value[teamId] = teamChatMessages.value[teamId].slice(-50);
+                }
+            }
+            break;
+        }
             
         case 'game':
         default:
@@ -274,17 +264,44 @@ const sendLobbyLeaveMessage = () => {
 const setupChatSubscriptions = (chatTypes = ['game']) => {
     chatTypes.forEach(chatType => {
         switch (chatType) {
-            case 'lobby':
-                subscribe('/topic/lobby', (message) => {
-                    try {
-                        const data = typeof message === 'string' ? JSON.parse(message) : message;
-                        data.chatType = 'lobby';
-                        handleChatMessage(data);
-                    } catch (error) {
-                        console.error('로비 채팅 메시지 처리 오류:', error);
-                    }
+            case 'lobby': {
+                // 서버에서 보내는 경로와 일치하는지 확인하기 위해 여러 경로 시도
+                const lobbyTopics = [
+                    '/topic/lobby',           // 기본 경로
+                    '/topic/chat/lobby',      // PREFIX_CHAT + GLOBAL_LOBBY_CHANNEL 가능성 1
+                    '/topic/chat/global-lobby', // PREFIX_CHAT + GLOBAL_LOBBY_CHANNEL 가능성 2
+                    '/topic/global-lobby'     // 다른 가능성
+                ];
+                
+                lobbyTopics.forEach(topic => {
+                    console.log(`🔍 로비 채팅 구독 시도: ${topic}`);
+                    subscribe(topic, (message) => {
+                        console.log(`📥 로비 채팅 메시지 수신 (${topic}):`, message);
+                        try {
+                            const data = typeof message === 'string' ? JSON.parse(message) : message;
+                            console.log('🔍 파싱된 메시지 데이터:', data);
+                            
+                            // 서버의 ChatMessageResponse.GlobalLobby 형식 처리
+                            const processedMessage = {
+                                id: data.id || data.messageId || `msg-${Date.now()}`,
+                                playerId: data.memberId || data.playerId || data.senderId,
+                                playerName: data.memberName || data.playerName || data.nickname || '익명',
+                                content: data.content || data.message,
+                                timestamp: data.timestamp || data.createdAt || new Date().toISOString(),
+                                isSystem: data.isSystem || false,
+                                chatType: 'lobby',
+                                profileImage: data.profileImage || null
+                            };
+                            
+                            console.log('📝 처리된 메시지:', processedMessage);
+                            handleChatMessage(processedMessage);
+                        } catch (error) {
+                            console.error(`❌ 로비 채팅 메시지 처리 오류 (${topic}):`, error, message);
+                        }
+                    });
                 });
                 break;
+            }
                 
             case 'game':
                 subscribe('/topic/game/chat', (message) => {

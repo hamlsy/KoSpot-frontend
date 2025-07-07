@@ -1,5 +1,5 @@
 import { ref, readonly } from 'vue';
-import { subscribe, useDummyData } from './core';
+import { subscribe } from './core';
 import { createSystemMessage } from './chat';
 
 /**

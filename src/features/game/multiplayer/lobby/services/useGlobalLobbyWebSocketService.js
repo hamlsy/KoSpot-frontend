@@ -1,6 +1,6 @@
 import { ref, onMounted, onBeforeUnmount, readonly } from 'vue';
 import { useAuth } from '@/core/composables/useAuth.js';
-import webSocketManager from '../../shared/services/websocket/composables';
+import webSocketManager from '../../shared/services/websocket/composables/index.js';
 import { 
     lobbyChatMessages, 
     currentUser, 
@@ -64,8 +64,8 @@ export function useGlobalLobbyWebSocketService() {
                 isConnected: webSocketManager.isConnected.value
             });
             
-            // 기본 구독 설정 (채팅, 플레이어, 게임 상태)
-            webSocketManager.setupDefaultSubscriptions();
+            // 로비 전용 구독 설정 (게임 채팅, 플레이어 상태, 게임 상태 구독 제외)
+            webSocketManager.setupLobbySubscriptions();
             
             subscribeToGlobalLobbyChat();
             joinGlobalLobby();
@@ -109,6 +109,8 @@ export function useGlobalLobbyWebSocketService() {
         }
         
         try {
+            console.log('🔍 현재 WebSocket 연결 상태:', webSocketManager.isConnected.value);
+            
             // 백엔드 설정에 맞춰 구독 토픽 수정: /topic/lobby
             const topic = '/topic/lobby';
             
@@ -123,9 +125,13 @@ export function useGlobalLobbyWebSocketService() {
             
             // 구독 정보 저장
             globalLobbySubscriptions.value.set(topic, 'lobby-subscription');
-            console.log(`글로벌 로비 채팅 채널 구독 성공: ${topic}`);
+            console.log(`✅ 글로벌 로비 채팅 채널 구독 성공: ${topic}`);
+            
+            // 구독 후 테스트 메시지 (개발용)
+            console.log('🔍 구독 후 로비 채팅 메시지 상태:', lobbyChatMessages.value.length);
+            
         } catch (error) {
-            console.error('글로벌 로비 채팅 구독 중 오류:', error);
+            console.error('❌ 글로벌 로비 채팅 구독 중 오류:', error);
         }
     };
     
@@ -137,9 +143,19 @@ export function useGlobalLobbyWebSocketService() {
      */
     const sendGlobalLobbyChat = (message) => {
         console.log('🔵 로비 채팅 메시지 전송 시도:', message);
+        console.log('🔍 현재 WebSocket 연결 상태:', webSocketManager.isConnected.value);
+        console.log('🔍 현재 사용자 정보:', currentUser.value);
+        
+        if (!webSocketManager.isConnected.value) {
+            console.error('❌ WebSocket이 연결되지 않아 메시지를 전송할 수 없습니다.');
+            return false;
+        }
         
         // 통합 채팅 모듈 사용
-        return sendChatMessage(message, 'lobby');
+        const success = sendChatMessage(message, 'lobby');
+        console.log('📤 로비 채팅 메시지 전송 결과:', success);
+        
+        return success;
     };
     
     /**
