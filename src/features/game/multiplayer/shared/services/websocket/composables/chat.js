@@ -78,8 +78,6 @@ const buildChatMessage = (message, chatType, teamId = null) => {
     if (chatType === 'lobby') {
         // Spring 서버의 ChatMessageDto 형식 (로비 채팅)
         chatMessage = {
-            messageType: 'CHAT',
-            channelType: 'LOBBY',
             content: message
         };
     } else {
@@ -89,7 +87,6 @@ const buildChatMessage = (message, chatType, teamId = null) => {
             playerName: currentUser.value.nickname || '익명',
             teamId: teamId,
             content: message,
-            chatType: chatType,
             timestamp: new Date().toISOString()
         };
     }
