@@ -16,8 +16,6 @@ const teamChatMessages = ref({}); // 팀별 채팅 메시지 (키: 팀ID, 값: �
 const currentUser = ref({
     id: null,
     nickname: null,
-    email: null,
-    profileImage: null
 });
 
 /**
@@ -78,6 +76,8 @@ const buildChatMessage = (message, chatType, teamId = null) => {
     if (chatType === 'lobby') {
         // Spring 서버의 ChatMessageDto 형식 (로비 채팅)
         chatMessage = {
+            messageType: 'CHAT',
+            channelType: 'LOBBY',
             content: message
         };
     } else {
@@ -87,6 +87,7 @@ const buildChatMessage = (message, chatType, teamId = null) => {
             playerName: currentUser.value.nickname || '익명',
             teamId: teamId,
             content: message,
+            chatType: chatType,
             timestamp: new Date().toISOString()
         };
     }
@@ -278,16 +279,16 @@ const setupChatSubscriptions = (chatTypes = ['game']) => {
                             const data = typeof message === 'string' ? JSON.parse(message) : message;
                             console.log('🔍 파싱된 메시지 데이터:', data);
                             
-                            // 서버의 ChatMessageResponse.GlobalLobby 형식 처리
+                            // Spring ChatMessageResponse.GlobalLobby 형식 처리
                             const processedMessage = {
-                                id: data.id || data.messageId || `msg-${Date.now()}`,
-                                playerId: data.memberId || data.playerId || data.senderId,
-                                playerName: data.memberName || data.playerName || data.nickname || '익명',
-                                content: data.content || data.message,
-                                timestamp: data.timestamp || data.createdAt || new Date().toISOString(),
-                                isSystem: data.isSystem || false,
+                                id: data.messageId,
+                                playerName: data.nickname,
+                                content: data.content,
+                                timestamp: data.timestamp,
+                                messageType: data.messageType,
+                                channelType: data.channelType,
                                 chatType: 'lobby',
-                                profileImage: data.profileImage || null
+                                isSystem: data.messageType !== 'CHAT'
                             };
                             
                             console.log('📝 처리된 메시지:', processedMessage);
