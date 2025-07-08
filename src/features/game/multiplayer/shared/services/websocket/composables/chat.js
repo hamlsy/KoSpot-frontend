@@ -107,7 +107,7 @@ const buildChatMessage = (message, chatType, teamId = null) => {
  */
 const sendChatMessage = (message, chatType = 'game', options = {}) => {
     if (!message) return false;
-    
+    console.log(message);
     // 사용자 정보 확인 및 초기화
     if (!currentUser.value?.id) {
         initializeUserData();
@@ -263,40 +263,34 @@ const setupChatSubscriptions = (chatTypes = ['game']) => {
     chatTypes.forEach(chatType => {
         switch (chatType) {
             case 'lobby': {
-                // 서버에서 보내는 경로와 일치하는지 확인하기 위해 여러 경로 시도
-                const lobbyTopics = [
-                    '/topic/lobby',           // 기본 경로
-                    '/topic/chat/lobby',      // PREFIX_CHAT + GLOBAL_LOBBY_CHANNEL 가능성 1
-                    '/topic/chat/global-lobby', // PREFIX_CHAT + GLOBAL_LOBBY_CHANNEL 가능성 2
-                    '/topic/global-lobby'     // 다른 가능성
-                ];
+                // Spring WebSocketChannelConstants에 따른 정확한 로비 채팅 토픽
+                // PREFIX_CHAT + GLOBAL_LOBBY_CHANNEL = "/topic/chat/" + "lobby"
+                const topic = '/topic/chat/lobby';
                 
-                lobbyTopics.forEach(topic => {
-                    console.log(`🔍 로비 채팅 구독 시도: ${topic}`);
-                    subscribe(topic, (message) => {
-                        console.log(`📥 로비 채팅 메시지 수신 (${topic}):`, message);
-                        try {
-                            const data = typeof message === 'string' ? JSON.parse(message) : message;
-                            console.log('🔍 파싱된 메시지 데이터:', data);
-                            
-                            // Spring ChatMessageResponse.GlobalLobby 형식 처리
-                            const processedMessage = {
-                                id: data.messageId,
-                                playerName: data.nickname,
-                                content: data.content,
-                                timestamp: data.timestamp,
-                                messageType: data.messageType,
-                                channelType: data.channelType,
-                                chatType: 'lobby',
-                                isSystem: data.messageType !== 'CHAT'
-                            };
-                            
-                            console.log('📝 처리된 메시지:', processedMessage);
-                            handleChatMessage(processedMessage);
-                        } catch (error) {
-                            console.error(`❌ 로비 채팅 메시지 처리 오류 (${topic}):`, error, message);
-                        }
-                    });
+                console.log(`🔍 로비 채팅 구독: ${topic}`);
+                subscribe(topic, (message) => {
+                    console.log(`📥 로비 채팅 메시지 수신 (${topic}):`, message);
+                    try {
+                        const data = typeof message === 'string' ? JSON.parse(message) : message;
+                        console.log('🔍 파싱된 메시지 데이터:', data);
+                        
+                        // Spring ChatMessageResponse.GlobalLobby 형식 처리
+                        const processedMessage = {
+                            id: data.messageId,
+                            playerName: data.nickname,
+                            content: data.content,
+                            timestamp: data.timestamp,
+                            messageType: data.messageType,
+                            channelType: data.channelType,
+                            chatType: 'lobby',
+                            isSystem: data.messageType !== 'CHAT'
+                        };
+                        
+                        console.log('📝 처리된 메시지:', processedMessage);
+                        handleChatMessage(processedMessage);
+                    } catch (error) {
+                        console.error(`❌ 로비 채팅 메시지 처리 오류 (${topic}):`, error, message);
+                    }
                 });
                 break;
             }

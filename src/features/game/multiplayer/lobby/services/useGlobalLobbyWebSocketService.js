@@ -111,8 +111,9 @@ export function useGlobalLobbyWebSocketService() {
         try {
             console.log('🔍 현재 WebSocket 연결 상태:', webSocketManager.isConnected.value);
             
-            // 백엔드 설정에 맞춰 구독 토픽 수정: /topic/lobby
-            const topic = '/topic/lobby';
+            // Spring WebSocketChannelConstants에 따른 정확한 로비 채팅 토픽
+            // PREFIX_CHAT + GLOBAL_LOBBY_CHANNEL = "/topic/chat/" + "lobby"
+            const topic = '/topic/chat/lobby';
             
             // 이미 구독 중인지 확인
             if (globalLobbySubscriptions.value.has(topic)) {
