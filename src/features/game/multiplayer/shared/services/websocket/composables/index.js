@@ -1,12 +1,10 @@
 import { 
     isConnected, 
-    useDummyData, 
     connect, 
     disconnect, 
     subscribe, 
     unsubscribe, 
     publish, 
-    setDummyMode, 
     addConnectionCallback 
 } from './core';
 
@@ -70,7 +68,6 @@ const setupLobbySubscriptions = () => {
 const webSocketManager = {
     // 상태 (읽기 전용)
     isConnected,
-    useDummyData,
     chatMessages,
     teamChatMessages,
     activePlayers,
@@ -93,8 +90,7 @@ const webSocketManager = {
     handlePlayerStatusChange,
     handleGameStateChange,
     
-    // 더미 데이터 관련
-    setDummyMode,
+    // 더미 데이터 관련 (게임에서만 사용)
     simulateMessage,
     simulateChatMessage,
     simulatePlayerJoin,

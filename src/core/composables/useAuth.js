@@ -34,6 +34,11 @@ export function useAuth() {
       localStorage.setItem('accessToken', accessToken)
       localStorage.setItem('refreshToken', refreshToken)
       
+      // memberId 저장 (채팅 메시지 소유권 판단용)
+      if (user.memberId || user.id) {
+        localStorage.setItem('memberId', user.memberId || user.id)
+      }
+      
       // 사용자 정보 저장
       authState.user = user
       authState.isAuthenticated = true
@@ -57,6 +62,7 @@ export function useAuth() {
       // 로컬 상태 정리
       localStorage.removeItem('accessToken')
       localStorage.removeItem('refreshToken')
+      localStorage.removeItem('memberId') // memberId도 삭제
       authState.user = null
       authState.isAuthenticated = false
       
@@ -94,6 +100,7 @@ export function useAuth() {
       // 토큰이 유효하지 않은 경우
       localStorage.removeItem('accessToken')
       localStorage.removeItem('refreshToken')
+      localStorage.removeItem('memberId') // memberId도 삭제
       return false
     }
   }

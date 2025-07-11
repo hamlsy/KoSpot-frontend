@@ -6,7 +6,6 @@ import {
     currentUser, 
     sendChatMessage, 
     sendLobbyJoinMessage, 
-    sendLobbyLeaveMessage, 
     createSystemMessage, 
     setupChatSubscriptions,
     initializeUserData 
@@ -190,10 +189,9 @@ export function useGlobalLobbyWebSocketService() {
         }
         
         try {
-            console.log('🚪 글로벌 로비 퇴장 요청 전송');
-            
-            // 통합 채팅 모듈 사용
-            return sendLobbyLeaveMessage();
+            console.log('🚪 글로벌 로비 퇴장 (퇴장 메시지 없음)');
+            // 퇴장 메시지는 더 이상 전송하지 않음
+            return true;
         } catch (error) {
             console.error('글로벌 로비 퇴장 중 오류:', error);
             return false;

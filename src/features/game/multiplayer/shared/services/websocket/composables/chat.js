@@ -108,7 +108,22 @@ const buildChatMessage = (message, chatType, teamId = null) => {
 const sendChatMessage = (message, chatType = 'game', options = {}) => {
     if (!message) return false;
     console.log(message);
-    // 사용자 정보 확인 및 초기화
+    
+    // 로비 채팅의 경우 서버 세션으로 사용자 식별하므로 클라이언트 사용자 정보 확인 불필요
+    if (chatType === 'lobby') {
+        const destination = getChatDestination(chatType, options.teamId);
+        const chatMessage = buildChatMessage(message, chatType, options.teamId);
+        
+        console.log('📤 로비 채팅 메시지 전송 (서버 세션):', {
+            type: chatType,
+            destination,
+            message: chatMessage
+        });
+        
+        return publish(destination, chatMessage);
+    }
+    
+    // 게임/팀 채팅의 경우에만 사용자 정보 확인
     if (!currentUser.value?.id) {
         initializeUserData();
     }
@@ -220,39 +235,23 @@ const createSystemMessage = (content, chatType = 'game', teamId = null) => {
 };
 
 /**
- * 로비 입장 메시지 전송
+ * 로비 입장 메시지 (본인만 표시)
  * @returns {Boolean} 전송 성공 여부
  */
 const sendLobbyJoinMessage = () => {
-    if (!currentUser.value?.id) {
-        initializeUserData();
-    }
-    
+    // 본인에게만 표시되는 입장 메시지
     const joinMessage = {
-        messageType: 'JOIN',
-        channelType: 'LOBBY',
-        content: `${currentUser.value.nickname || '익명'}님이 로비에 입장했습니다.`
+        playerName: '시스템',
+        content: '로비에 입장했습니다.',
+        timestamp: new Date().toISOString(),
+        chatType: 'lobby',
+        isSystem: true
     };
     
-    console.log('🚪 로비 입장 메시지 전송:', joinMessage);
-    return publish('/app/chat.join.lobby', joinMessage);
-};
-
-/**
- * 로비 퇴장 메시지 전송
- * @returns {Boolean} 전송 성공 여부
- */
-const sendLobbyLeaveMessage = () => {
-    if (!currentUser.value?.id) return false;
-    
-    const leaveMessage = {
-        messageType: 'LEAVE',
-        channelType: 'LOBBY',
-        content: `${currentUser.value.nickname || '익명'}님이 로비에서 퇴장했습니다.`
-    };
-    
-    console.log('🚪 로비 퇴장 메시지 전송:', leaveMessage);
-    return publish('/app/chat.leave.lobby', leaveMessage);
+    // 서버로 전송하지 않고 본인 채팅창에만 추가
+    handleChatMessage(joinMessage);
+    console.log('🚪 로비 입장 메시지 (본인만 표시):', joinMessage);
+    return true;
 };
 
 /**
@@ -282,8 +281,9 @@ const setupChatSubscriptions = (chatTypes = ['game']) => {
                             timestamp: data.timestamp,
                             messageType: data.messageType,
                             channelType: data.channelType,
+                            senderId: data.senderId,
                             chatType: 'lobby',
-                            isSystem: data.messageType !== 'CHAT'
+                            isSystem: false
                         };
                         
                         console.log('📝 처리된 메시지:', processedMessage);
@@ -398,7 +398,6 @@ export {
     
     // 로비 전용 메서드
     sendLobbyJoinMessage,
-    sendLobbyLeaveMessage,
     
     // 사용자 정보 관리
     initializeUserData

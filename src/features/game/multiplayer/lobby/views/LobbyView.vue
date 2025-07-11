@@ -103,12 +103,14 @@ const refreshInterval = ref(null);
 const formattedChatMessages = computed(() => {
   // WebSocket 서비스에서 받은 채팅 메시지를 UI 컴포넌트 형식에 맞게 변환
   return lobbyService.globalLobbyChatMessages.value.map(msg => ({
-    id: msg.id || `msg-${msg.timestamp}`,
-    sender: msg.playerName || msg.sender || '익명',
-    senderId: msg.playerId || msg.memberId || msg.senderId,
+    id: msg.messageId || msg.id || `msg-${msg.timestamp}`,
+    sender: msg.nickname || msg.playerName || msg.sender || '익명',
+    senderId: msg.senderId || msg.playerId || msg.memberId, // 백엔드에서 제공하는 senderId
     message: msg.content || msg.message,
     timestamp: msg.timestamp,
-    system: msg.isSystem || msg.system || false
+    system: msg.messageType === 'SYSTEM' || msg.messageType === 'JOIN' || msg.messageType === 'LEAVE' || msg.isSystem === true,
+    messageType: msg.messageType,
+    channelType: msg.channelType
   }));
 });
 
