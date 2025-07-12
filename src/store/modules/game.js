@@ -1,5 +1,5 @@
-import Vue from 'vue';
-import { testData, individualTestData } from '@/components/game/multiplayerMode/MultiplayerGameTestData';
+import { reactive } from 'vue';
+import { testData, individualTestData } from '../MultiplayerGameTestData';
 
 // 게임 상태 관리 스토어 모듈
 export default {
@@ -167,7 +167,10 @@ export default {
       if (!teamId) return;
       
       if (!state.teamChatMessages[teamId]) {
-        Vue.set(state.teamChatMessages, teamId, []);
+        state.teamChatMessages = reactive({
+          ...state.teamChatMessages,
+          [teamId]: []
+        });
       }
       
       state.teamChatMessages[teamId].push({

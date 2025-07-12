@@ -135,7 +135,7 @@
 
 <script>
 import PhotoView from './PhotoDisplay.vue';
-import TeamChat from '../../multiplayerMode/gameplayScreen/TeamChat.vue';
+import TeamChat from '../../../multiplayer/chat/components/Game/TeamChat';
 
 export default {
   name: 'PhotoGameController',

@@ -1,0 +1,2893 @@
+/* 🧹 Auto-generated common styles */
+
+.common-style-1 {
+min-height: 100vh;
+  background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
+  padding-bottom: 40px;
+  position: relative;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (/* RoadView 모드 메인 페이지 스타일 */
+
+.road-view-container)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (/* PhotoMode 메인 페이지 스타일 */
+
+.photo-mode-container)
+ */
+
+.common-style-2 {
+position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 1px 15px rgba(0, 0, 0, 0.03);
+  z-index: 100;
+  transition: all 0.3s ease;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.header)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.header)
+ */
+
+.common-style-3 {
+display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.header-content)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.header-content)
+ * src\features\game\multiplayer\lobby\views\LobbyView.vue (.header-content)
+ * src\core\components\TheHeader.vue (.header-content)
+ * src\core\components\NavigationBar.vue (.header-content)
+ */
+
+.common-style-4 {
+background: none;
+  border: none;
+  color: #475569;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-right: 1rem;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.back-button)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.back-button)
+ */
+
+.common-style-5 {
+background-color: #f1f5f9;
+  transform: translateX(-3px);
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.back-button:hover)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.back-button:hover)
+ */
+
+.common-style-6 {
+margin: 0;
+  font-size: 1.2rem;
+  color: #334155;
+  font-weight: 600;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.header-right h3)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.header-right h3)
+ */
+
+.common-style-7 {
+padding: 90px 24px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.main-content)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.main-content)
+ */
+
+.common-style-8 {
+font-size: 1.5rem;
+  color: #334155;
+  margin-bottom: 1.5rem;
+  position: relative;
+  display: inline-block;
+  font-weight: 600;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.section-title)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.section-title)
+ */
+
+.common-style-9 {
+display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  width: 100%;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.game-mode-list)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.category-list)
+ */
+
+.common-style-10 {
+display: flex;
+  align-items: center;
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+  min-height: 120px;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.game-mode-card)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.game-mode-card)
+ */
+
+.common-style-11 {
+content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.game-mode-card::before)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.game-mode-card::before)
+ */
+
+.common-style-12 {
+background: linear-gradient(135deg, rgba(74, 222, 128, 0.15) 0%, rgba(34, 197, 94, 0.08) 100%);
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.game-mode-card.practice-mode.mode-card-hover)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.game-mode-card.practice-mode.mode-card-hover)
+ */
+
+.common-style-13 {
+background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(29, 78, 216, 0.08) 100%);
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.game-mode-card.rank-mode.mode-card-hover)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.game-mode-card.rank-mode.mode-card-hover)
+ */
+
+.common-style-14 {
+background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.08) 100%);
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.game-mode-card.theme-mode.mode-card-hover)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.game-mode-card.theme-mode.mode-card-hover)
+ */
+
+.common-style-15 {
+content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.game-mode-icon::after)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.start-game-button::after)
+ */
+
+.common-style-16 {
+background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.rank-color)
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.start-game-button.rank-color)
+ */
+
+.common-style-17 {
+margin: 0 0 0.6rem 0;
+  font-size: 1.2rem;
+  color: #334155;
+  font-weight: 600;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.game-mode-details h3)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.category-details h3)
+ */
+
+.common-style-18 {
+background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s ease;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.ad-container)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.ad-container)
+ */
+
+.common-style-19 {
+padding: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 90px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.ad-content)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.ad-content)
+ */
+
+.common-style-20 {
+display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  color: #64748b;
+  margin-bottom: 1rem;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.stat-header)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.stat-header)
+ */
+
+.common-style-21 {
+background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.records-list)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.records-list)
+ */
+
+.common-style-22 {
+padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.record-item)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.record-item)
+ */
+
+.common-style-23 {
+display: inline-block;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.record-mode-badge)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.record-category-badge)
+ */
+
+.common-style-24 {
+font-weight: 700;
+  font-size: 1.1rem;
+  color: #334155;
+  margin: 0;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.record-score)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.record-score)
+ */
+
+.common-style-25 {
+position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(8px);
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.game-mode-popup)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.category-popup)
+ * src\features\game\single\main\components\Theme\ThemeModePopup.vue (.theme-mode-popup)
+ */
+
+.common-style-26 {
+display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.popup-header)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.popup-header)
+ * src\features\shop\views\ShopView.vue (.category-header)
+ * src\features\game\single\main\views\PhotoMainView.vue (.popup-header)
+ */
+
+.common-style-27 {
+margin: 0;
+  font-size: 1.6rem;
+  color: #334155;
+  font-weight: 700;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.popup-header h2)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.popup-header h2)
+ * src\features\game\single\main\components\Theme\ThemeModePopup.vue (.popup-header h2)
+ */
+
+.common-style-28 {
+background: #f1f5f9;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.close-button)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.close-button)
+ * src\features\game\single\main\components\Theme\ThemeModePopup.vue (.close-button)
+ */
+
+.common-style-29 {
+color: #64748b;
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.popup-description p)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.popup-description p)
+ * src\features\game\single\main\components\Theme\ThemeModePopup.vue (.theme-description)
+ */
+
+.common-style-30 {
+font-size: 1.2rem;
+  color: #334155;
+  margin-bottom: 1.2rem;
+  font-weight: 600;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.practice-mode-options h3,
+.rank-mode-options h3)
+ * src\features\game\single\main\components\Theme\ThemeModePopup.vue (.section-title)
+ */
+
+.common-style-31 {
+display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-bottom: 2rem;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.region-selector)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.difficulty-selector)
+ */
+
+.common-style-32 {
+background: #e2e8f0;
+  color: #94a3b8;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.start-game-button:disabled)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.start-game-button:disabled)
+ * src\features\game\single\main\components\Theme\ThemeModePopup.vue (.start-game-button:disabled)
+ */
+
+.common-style-33 {
+transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.popup-slide-enter-active,
+.popup-slide-leave-active)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (/* 애니메이션 */
+.popup-slide-enter-active,
+.popup-slide-leave-active)
+ */
+
+.common-style-34 {
+position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(8px);
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (/* 로딩 오버레이 */
+.loading-overlay)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (/* 로딩 오버레이 */
+.loading-overlay)
+ */
+
+.common-style-35 {
+display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.loading-spinner)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.loading-spinner)
+ * src\features\main\components\GameModeUserCard.vue (.user-stat)
+ * src\features\game\single\photo\components\gameplay\PhotoModeGame.vue (.round-info)
+ * src\features\game\shared\components\photo\PhotoGameController.vue (.score-info)
+ * src\features\game\multiplayer\lobby\views\LobbyView.vue (.loading-spinner)
+ */
+
+.common-style-36 {
+color: #334155;
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.loading-spinner p)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.loading-spinner p)
+ */
+
+.common-style-37 {
+flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+}
+
+/* Used in:
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.record-info)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.record-info)
+ * src\features\game\multiplayer\roadview\components\results\RoundResults.vue (.player-info)
+ */
+
+.common-style-38 {
+display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+/* Used in:
+ * src\shared\assets\styles\common\slide-menu\slide-menu.css (.profile-menu-header)
+ * src\features\user\components\Inventory.vue (.inventory-header)
+ * src\features\shop\views\ShopView.vue (.shop-header)
+ */
+
+.common-style-39 {
+display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Used in:
+ * src\shared\assets\styles\common\slide-menu\slide-menu.css (.profile-menu-nav)
+ * src\features\game\single\main\components\Theme\ThemeModePopup.vue (.achievements-list)
+ * src\features\game\multiplayer\shared\components\results\TeamGameResults.vue (.team-results-list)
+ */
+
+.common-style-40 {
+width: 100%;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
+/* Used in:
+ * src\features\user\view\ProfileView.vue (.my-profile-page)
+ * src\features\user\components\Inventory.vue (.inventory-page)
+ * src\features\user\components\FriendsList.vue (.friends-page)
+ * src\features\user\components\AccountSettings.vue (.account-settings-page)
+ * src\features\shop\views\ShopView.vue (.shop-page)
+ * src\features\admin\views\DashboardView.vue (/* 기존 스타일 유지 */
+.admin-page)
+ */
+
+.common-style-41 {
+padding-top: 80px; /* 네비게이션바 높이만큼 여백 */
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Used in:
+ * src\features\user\view\ProfileView.vue (.profile-content)
+ * src\features\user\components\FriendsList.vue (.friends-content)
+ * src\features\admin\views\DashboardView.vue (.admin-content)
+ */
+
+.common-style-42 {
+width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Used in:
+ * src\features\user\view\ProfileView.vue (.badge img)
+ * src\features\user\components\Inventory.vue (.selected-item-image img)
+ * src\features\shop\components\PurchaseModal.vue (.item-image)
+ * src\features\main\components\UserLoginCard.vue (.user-avatar img)
+ * src\features\game\shared\components\Player\List.vue (.player-marker-img)
+ */
+
+.common-style-43 {
+display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Used in:
+ * src\features\user\view\ProfileView.vue (.activity-list)
+ * src\features\game\single\roadview\components\Result\ResultMapSection.vue (.location-info)
+ * src\features\game\single\roadview\components\Result\ResultMapSection.vue (.location-cards)
+ */
+
+.common-style-44 {
+font-size: 2rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+/* Used in:
+ * src\features\user\components\Inventory.vue (.inventory-title)
+ * src\features\shop\views\ShopView.vue (.shop-title)
+ */
+
+.common-style-45 {
+display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: white;
+  padding: 0.6rem 1rem;
+  border-radius: 50px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  font-weight: 600;
+}
+
+/* Used in:
+ * src\features\user\components\Inventory.vue (.stat-item)
+ * src\features\shop\views\ShopView.vue (.currency-item)
+ */
+
+.common-style-46 {
+display: flex;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  margin-bottom: 2rem;
+  overflow: hidden;
+}
+
+/* Used in:
+ * src\features\user\components\Inventory.vue (.inventory-nav)
+ * src\features\shop\views\ShopView.vue (.shop-nav)
+ */
+
+.common-style-47 {
+background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
+
+/* Used in:
+ * src\features\user\components\Inventory.vue (.nav-item.active)
+ * src\features\user\components\Inventory.vue (.equip-button)
+ * src\features\shop\views\ShopView.vue (.nav-item.active)
+ * src\features\shop\components\PurchaseModal.vue (.confirm-button)
+ */
+
+.common-style-48 {
+position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #999;
+}
+
+/* Used in:
+ * src\features\user\components\Inventory.vue (.search-bar i)
+ * src\features\user\components\FriendsList.vue (.search-bar i)
+ */
+
+.common-style-49 {
+transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Used in:
+ * src\features\user\components\Inventory.vue (.inventory-item:hover)
+ * src\features\shop\views\ShopView.vue (.shop-item:hover)
+ */
+
+.common-style-50 {
+position: relative;
+  padding-top: 100%;
+  background: #f8f9fa;
+}
+
+/* Used in:
+ * src\features\user\components\Inventory.vue (.item-image-container)
+ * src\features\shop\views\ShopView.vue (.item-image-container)
+ */
+
+.common-style-51 {
+position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 1rem;
+}
+
+/* Used in:
+ * src\features\user\components\Inventory.vue (.item-image)
+ * src\features\shop\views\ShopView.vue (.item-image)
+ */
+
+.common-style-52 {
+position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+/* Used in:
+ * src\features\user\components\Inventory.vue (.item-rarity)
+ * src\features\shop\views\ShopView.vue (.item-rarity)
+ */
+
+.common-style-53 {
+display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+/* Used in:
+ * src\features\user\components\Inventory.vue (.details-header)
+ * src\features\game\multiplayer\roadview\components\results\RoundResults.vue (/* 헤더 */
+.results-header)
+ */
+
+.common-style-54 {
+background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #999;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+/* Used in:
+ * src\features\user\components\Inventory.vue (.close-details)
+ * src\features\shop\components\PurchaseModal.vue (.close-button)
+ */
+
+.common-style-55 {
+flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+/* Used in:
+ * src\features\user\components\Inventory.vue (.inventory-header)
+ * src\features\shop\views\ShopView.vue (.shop-header)
+ * src\features\shop\views\ShopView.vue (.category-header)
+ * src\features\game\multiplayer\lobby\components\RoomList.vue (.panel-header)
+ */
+
+.common-style-56 {
+flex-direction: column;
+    align-items: flex-start;
+}
+
+/* Used in:
+ * src\features\user\components\Inventory.vue (.category-header)
+ * src\features\user\components\FriendsList.vue (.friends-header)
+ * src\features\game\single\photo\components\gameplay\PhotoModeGame.vue (.game-footer)
+ * src\features\game\single\main\views\PhotoMainView.vue (.record-item)
+ */
+
+.common-style-57 {
+background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+/* Used in:
+ * src\features\user\components\FriendsList.vue (.friends-container)
+ * src\features\user\components\AccountSettings.vue (.settings-container)
+ */
+
+.common-style-58 {
+width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-right: 15px;
+}
+
+/* Used in:
+ * src\features\user\components\FriendsList.vue (.friend-avatar)
+ * src\features\user\components\FriendsList.vue (.request-avatar)
+ */
+
+.common-style-59 {
+width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Used in:
+ * src\features\user\components\FriendsList.vue (.friend-avatar img)
+ * src\features\user\components\FriendsList.vue (.request-avatar img)
+ * src\features\user\components\FriendsList.vue (.result-avatar img)
+ * src\features\game\shared\components\Kakao\VoteOverlay.vue (.player-avatar img)
+ * src\features\game\shared\components\Kakao\KakaoMapGame\KakaoMapGame.vue (.player-marker img)
+ * src\features\game\multiplayer\shared\components\results\IndividualGameResults.vue (.podium-player .player-avatar img)
+ * src\features\admin\components\AdminPanel.vue (.admin-avatar img)
+ * src\core\components\TheHeader.vue (.user-avatar img)
+ * src\core\components\NavigationBar.vue (.user-avatar img)
+ */
+
+.common-style-60 {
+position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* Used in:
+ * src\features\user\components\FriendsList.vue (/* 모달 스타일 */
+.modal-overlay)
+ * src\features\user\components\AccountSettings.vue (/* 모달 스타일 */
+.modal-overlay)
+ */
+
+.common-style-61 {
+display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid #eee;
+}
+
+/* Used in:
+ * src\features\user\components\FriendsList.vue (.modal-header)
+ * src\features\user\components\AccountSettings.vue (.modal-header)
+ */
+
+.common-style-62 {
+background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #999;
+  cursor: pointer;
+}
+
+/* Used in:
+ * src\features\user\components\FriendsList.vue (.close-btn)
+ * src\features\user\components\AccountSettings.vue (.close-btn)
+ */
+
+.common-style-63 {
+display: block;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Used in:
+ * src\features\user\components\FriendsList.vue (.search-section label)
+ * src\features\user\components\AccountSettings.vue (.confirm-input label)
+ */
+
+.common-style-64 {
+margin: 0 0 10px 0;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+/* Used in:
+ * src\features\user\components\FriendsList.vue (.search-results h4)
+ * src\features\user\components\FriendsList.vue (.invite-section h4)
+ */
+
+.common-style-65 {
+flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+/* Used in:
+ * src\features\user\components\AccountSettings.vue (.toggle-group)
+ * src\features\main\components\NoticeTabSection.vue (.section-header)
+ */
+
+.common-style-66 {
+font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+/* Used in:
+ * src\features\shop\views\ShopView.vue (.item-name)
+ * src\features\shop\components\PurchaseModal.vue (.item-name)
+ */
+
+.common-style-67 {
+font-size: 0.9rem;
+  color: #666;
+  line-height: 1.4;
+}
+
+/* Used in:
+ * src\features\shop\views\ShopView.vue (.item-description)
+ * src\features\shop\components\PurchaseModal.vue (.item-description)
+ */
+
+.common-style-68 {
+display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 600;
+}
+
+/* Used in:
+ * src\features\shop\views\ShopView.vue (.item-price)
+ * src\features\shop\components\PurchaseModal.vue (.price, .balance)
+ */
+
+.common-style-69 {
+font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+/* Used in:
+ * src\features\main\views\MainView.vue (.mode-info h3)
+ * src\features\main\components\GameModeUserCard.vue (.login-section h3)
+ */
+
+.common-style-70 {
+position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1001;
+}
+
+/* Used in:
+ * src\features\main\views\MainView.vue (/* 수정: 오버레이 스타일 추가 */
+.overlay)
+ * src\core\components\TheHeader.vue (/* 오버레이 스타일 */
+.overlay)
+ * src\core\components\NavigationBar.vue (/* 오버레이 스타일 */
+.overlay)
+ */
+
+.common-style-71 {
+display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 24px;
+}
+
+/* Used in:
+ * src\features\main\views\MainView.vue (.profile-header)
+ * src\core\components\TheHeader.vue (.profile-header)
+ * src\core\components\NavigationBar.vue (.profile-header)
+ */
+
+.common-style-72 {
+width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+
+/* Used in:
+ * src\features\main\views\MainView.vue (.profile-info img)
+ * src\core\components\TheHeader.vue (.profile-info img)
+ * src\core\components\NavigationBar.vue (.profile-info img)
+ */
+
+.common-style-73 {
+font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+/* Used in:
+ * src\features\main\views\MainView.vue (.profile-text h3)
+ * src\features\main\components\GameModeUserCard.vue (.user-info h3)
+ */
+
+.common-style-74 {
+background: none;
+  border: none;
+  font-size: 20px;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+/* Used in:
+ * src\features\main\views\MainView.vue (.close-menu)
+ * src\core\components\TheHeader.vue (.close-menu)
+ * src\core\components\NavigationBar.vue (.close-menu)
+ */
+
+.common-style-75 {
+transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Used in:
+ * src\features\main\views\MainView.vue (.test-link:hover)
+ * src\features\game\shared\components\Player\List.vue (.player-card:hover)
+ * src\features\game\shared\components\Player\List.vue (.team-player:hover)
+ */
+
+.common-style-76 {
+font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 16px;
+}
+
+/* Used in:
+ * src\features\main\components\GameModeUserCard.vue (.user-info p)
+ * src\features\main\components\GameModeUserCard.vue (.login-section p)
+ */
+
+.common-style-77 {
+position: relative;
+  width: 100%;
+  height: 100vh;
+  background-color: #f5f5f5;
+  overflow: hidden;
+}
+
+/* Used in:
+ * src\features\game\single\roadview\views\RankView.vue (.road-view-practice)
+ * src\features\game\single\roadview\views\PracticeView.vue (.road-view-practice)
+ */
+
+.common-style-78 {
+position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  backdrop-filter: blur(5px);
+}
+
+/* Used in:
+ * src\features\game\single\roadview\views\RankView.vue (/* 헤더 스타일 */
+.game-header)
+ * src\features\game\single\roadview\views\PracticeView.vue (/* 헤더 스타일 */
+.game-header)
+ */
+
+.common-style-79 {
+background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+/* Used in:
+ * src\features\game\single\roadview\views\RankView.vue (.back-btn)
+ * src\features\game\single\roadview\views\PracticeView.vue (.back-btn)
+ */
+
+.common-style-80 {
+background-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+/* Used in:
+ * src\features\game\single\roadview\views\RankView.vue (.back-btn:hover)
+ * src\features\game\single\roadview\views\PracticeView.vue (.back-btn:hover)
+ */
+
+.common-style-81 {
+display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* Used in:
+ * src\features\game\single\roadview\views\RankView.vue (.game-status)
+ * src\features\game\single\roadview\views\PracticeView.vue (.game-status)
+ * src\features\game\shared\components\photo\PhotoGameController.vue (.round-info)
+ */
+
+.common-style-82 {
+background-color: rgba(255, 50, 50, 0.8);
+  animation: pulse 1s infinite;
+}
+
+/* Used in:
+ * src\features\game\single\roadview\views\RankView.vue (.timer-warning)
+ * src\features\game\single\roadview\views\PracticeView.vue (.timer-warning)
+ */
+
+.common-style-83 {
+width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* Used in:
+ * src\features\game\single\roadview\views\RankView.vue (/* 게임 컨테이너 */
+.game-content)
+ * src\features\game\single\roadview\views\PracticeView.vue (/* IntroOverlay 컴포넌트에서 관리하므로 제거 */
+
+/* 로딩 관련 스타일 - 사용하지 않는 부분 제거 */
+
+/* 게임 컨테이너 */
+.game-content)
+ * src\features\game\shared\components\photo\PhotoGameController.vue (.map-container)
+ */
+
+.common-style-84 {
+width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* Used in:
+ * src\features\game\single\roadview\views\RankView.vue (/* 로드뷰 컨테이너 */
+.road-view-container)
+ * src\features\game\single\roadview\views\PracticeView.vue (/* 로드뷰 컨테이너 */
+.road-view-container)
+ */
+
+.common-style-85 {
+position: fixed;
+  bottom: 150px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #27ae60, #2ecc71);
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 30px;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(46, 204, 113, 0.4);
+  transition: all 0.3s ease;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Used in:
+ * src\features\game\single\roadview\views\RankView.vue (/* Spot 버튼 스타일 */
+.spot-button)
+ * src\features\game\single\roadview\views\PracticeView.vue (/* Spot 버튼 스타일 */
+.spot-button)
+ */
+
+.common-style-86 {
+transform: translateX(-50%) translateY(-3px);
+  box-shadow: 0 6px 15px rgba(46, 204, 113, 0.6);
+}
+
+/* Used in:
+ * src\features\game\single\roadview\views\RankView.vue (.spot-button:hover)
+ * src\features\game\single\roadview\views\PracticeView.vue (.spot-button:hover)
+ */
+
+.common-style-87 {
+position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+/* Used in:
+ * src\features\game\single\roadview\views\RankView.vue (.map-toggle)
+ * src\features\game\single\roadview\views\PracticeView.vue (/* 지도 토글 버튼 스타일 */
+
+.map-toggle)
+ */
+
+.common-style-88 {
+transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+}
+
+/* Used in:
+ * src\features\game\single\roadview\views\RankView.vue (.map-toggle:hover)
+ * src\features\game\single\roadview\views\PracticeView.vue (.map-toggle:hover)
+ * src\features\game\multiplayer\roadview\views\TeamGameView.vue (.map-toggle:hover)
+ * src\features\game\multiplayer\roadview\views\BaseGameView.vue (.map-toggle:hover)
+ * src\features\game\multiplayer\roadview\views\BaseGameView.vue (.chat-toggle:hover)
+ */
+
+.common-style-89 {
+padding: 10px 15px;
+    font-size: 0.9rem;
+    bottom: 20px;
+    right: 20px;
+}
+
+/* Used in:
+ * src\features\game\single\roadview\views\RankView.vue (.map-toggle)
+ * src\features\game\single\roadview\views\RankView.vue (.map-toggle)
+ * src\features\game\single\roadview\views\PracticeView.vue (.map-toggle)
+ * src\features\game\multiplayer\roadview\views\BaseGameView.vue (.map-toggle)
+ */
+
+.common-style-90 {
+position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 10px;
+  z-index: 35;
+  max-width: 80%;
+  text-align: center;
+  animation: fadeIn 0.5s ease;
+}
+
+/* Used in:
+ * src\features\game\single\roadview\views\RankView.vue (/* 로드뷰 토스트 메시지 */
+.toast-message)
+ * src\features\game\single\roadview\views\RankView.vue (/* 로드뷰 토스트 메시지 */
+.toast-message)
+ * src\features\game\single\roadview\views\PracticeView.vue (/* 로드뷰 토스트 메시지 */
+.toast-message)
+ */
+
+.common-style-91 {
+position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 30;
+  backdrop-filter: blur(5px);
+}
+
+/* Used in:
+ * src\features\game\single\roadview\views\RankView.vue (/* 모달 */
+.modal-overlay)
+ * src\features\game\single\roadview\views\PracticeView.vue (/* 모달 */
+.modal-overlay)
+ */
+
+.common-style-92 {
+background-color: white;
+  padding: 30px;
+  border-radius: 15px;
+  text-align: center;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+  animation: popIn 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+/* Used in:
+ * src\features\game\single\roadview\views\RankView.vue (.modal-content)
+ * src\features\game\single\roadview\views\PracticeView.vue (.modal-content)
+ */
+
+.common-style-93 {
+display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+/* Used in:
+ * src\features\game\single\roadview\views\RankView.vue (.modal-buttons)
+ * src\features\game\single\roadview\views\PracticeView.vue (.modal-buttons)
+ */
+
+.common-style-94 {
+background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: white;
+}
+
+/* Used in:
+ * src\features\game\single\roadview\views\RankView.vue (.modal-buttons button:last-child)
+ * src\features\game\single\roadview\views\PracticeView.vue (.result-buttons .exit-btn)
+ * src\features\game\single\roadview\views\PracticeView.vue (.modal-buttons button:last-child)
+ */
+
+.common-style-95 {
+transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(231, 76, 60, 0.4);
+}
+
+/* Used in:
+ * src\features\game\single\roadview\views\RankView.vue (.modal-buttons button:last-child:hover)
+ * src\features\game\single\roadview\views\PracticeView.vue (.result-buttons .exit-btn:hover)
+ * src\features\game\single\roadview\views\PracticeView.vue (.modal-buttons button:last-child:hover)
+ */
+
+.common-style-96 {
+flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+}
+
+/* Used in:
+ * src\features\game\single\roadview\views\RankView.vue (.game-status)
+ * src\features\game\single\roadview\views\PracticeView.vue (.game-status)
+ */
+
+.common-style-97 {
+font-size: 1.8rem;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+/* Used in:
+ * src\features\game\single\roadview\components\Result\ResultOverlay.vue (.score-value)
+ * src\features\game\single\roadview\components\Result\ResultOverlay.vue (.distance-value)
+ * src\features\game\single\roadview\components\Result\ResultOverlay.vue (.rank-points-value)
+ */
+
+.common-style-98 {
+width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Used in:
+ * src\features\game\single\photo\views\RankView.vue (.photo-mode-rank)
+ * src\features\game\single\photo\views\PracticeView.vue (.photo-mode-practice)
+ */
+
+.common-style-99 {
+font-size: 0.9rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Used in:
+ * src\features\game\single\photo\components\Result\GameResult.vue (.count-label, .time-label)
+ * src\features\game\single\photo\components\Result\GameResult.vue (.rank-label)
+ * src\features\game\single\main\components\Theme\ThemeModePopup.vue (.location-name)
+ */
+
+.common-style-100 {
+display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Used in:
+ * src\features\game\single\photo\components\Result\GameResult.vue (.rounds-list)
+ * src\features\game\multiplayer\room\components\player\PlayerDetailsModal.vue (/* Rank section */
+.rank-cards)
+ */
+
+.common-style-101 {
+grid-row: 1;
+    grid-column: 2;
+    text-align: right;
+}
+
+/* Used in:
+ * src\features\game\single\photo\components\Result\GameResult.vue (.round-score)
+ * src\features\game\single\photo\components\Result\GameResult.vue (.round-score)
+ */
+
+.common-style-102 {
+display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+/* Used in:
+ * src\features\game\single\main\views\PhotoMainView.vue (.home-link)
+ * src\core\components\TheHeader.vue (.home-link)
+ * src\core\components\NavigationBar.vue (.home-link)
+ * src\core\components\AppLogo.vue (.app-logo)
+ */
+
+.common-style-103 {
+display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Used in:
+ * src\features\game\single\main\views\PhotoMainView.vue (.game-mode-list)
+ * src\features\admin\components\Game\ThemeModeSettings.vue (.settings-grid)
+ * src\features\admin\components\Game\RoadviewModeSettings.vue (.settings-grid)
+ * src\features\admin\components\Game\PhotoModeSettings.vue (.settings-grid)
+ */
+
+.common-style-104 {
+background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+/* Used in:
+ * src\features\game\single\main\views\PhotoMainView.vue (.practice-color)
+ * src\features\game\single\main\views\PhotoMainView.vue (.record-mode-badge.practice-mode)
+ */
+
+.common-style-105 {
+background-color: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+/* Used in:
+ * src\features\game\single\main\views\PhotoMainView.vue (.rank-color)
+ * src\features\game\single\main\views\PhotoMainView.vue (.record-mode-badge.rank-mode)
+ */
+
+.common-style-106 {
+margin: 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* Used in:
+ * src\features\game\single\main\views\PhotoMainView.vue (.game-mode-details p)
+ * src\features\game\shared\components\Common\GameModeCard.vue (.game-mode-details p)
+ */
+
+.common-style-107 {
+display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+/* Used in:
+ * src\features\game\single\main\views\PhotoMainView.vue (.stats-grid)
+ * src\features\game\multiplayer\shared\components\results\TeamGameResults.vue (.winner-players)
+ */
+
+.common-style-108 {
+position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+/* Used in:
+ * src\features\game\single\main\views\PhotoMainView.vue (.game-mode-popup)
+ * src\core\components\BaseModal.vue (.modal-overlay)
+ */
+
+.common-style-109 {
+font-size: 1.1rem;
+  color: #334155;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+/* Used in:
+ * src\features\game\single\main\components\Theme\ThemeModePopup.vue (.locations-title)
+ * src\features\game\single\main\components\Theme\ThemeModePopup.vue (.achievements-title)
+ */
+
+.common-style-110 {
+display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+/* Used in:
+ * src\features\game\single\main\components\Theme\ThemeModePopup.vue (.location-info)
+ * src\features\game\single\main\components\Theme\ThemeModePopup.vue (.achievement-info)
+ */
+
+.common-style-111 {
+display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Used in:
+ * src\features\game\shared\components\roadview\RoadView.vue (.loading-spinner)
+ * src\features\game\shared\components\Kakao\KakaoMap.vue (.loading-spinner)
+ * src\features\game\shared\components\Kakao\KakaoMapGame\KakaoMapGame.vue (.loading-spinner)
+ */
+
+.common-style-112 {
+color: var(--success-color);
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+/* Used in:
+ * src\features\game\shared\components\Player\List.vue (.plus-score)
+ * src\features\game\shared\components\Player\List.vue (.plus-score)
+ */
+
+.common-style-113 {
+width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+/* Used in:
+ * src\features\game\shared\components\Player\List.vue (.player-avatar)
+ * src\features\game\shared\components\Player\List.vue (.player-avatar)
+ */
+
+.common-style-114 {
+width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+/* Used in:
+ * src\features\game\shared\components\Player\List.vue (.player-marker)
+ * src\features\game\shared\components\Player\List.vue (.player-marker)
+ */
+
+.common-style-115 {
+font-size: 0.7em;
+  color: var(--primary-color);
+  background: rgba(var(--primary-rgb), 0.1);
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+/* Used in:
+ * src\features\game\shared\components\Player\List.vue (.you-badge)
+ * src\features\game\shared\components\Player\List.vue (.you-badge)
+ */
+
+.common-style-116 {
+background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+/* Used in:
+ * src\features\game\shared\components\Player\List.vue (.player-card)
+ * src\features\game\shared\components\Player\List.vue (.team-section)
+ */
+
+.common-style-117 {
+position: absolute;
+  top: -5px;
+  left: -5px;
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, #ffd700 0%, #ffb700 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 2px solid white;
+  z-index: 3;
+  animation: bounce 1s infinite alternate;
+}
+
+/* Used in:
+ * src\features\game\shared\components\Player\List.vue (/* Voting indicators */
+.voting-indicator)
+ * src\features\game\shared\components\Player\Card.vue (/* Voting indicators */
+.voting-indicator)
+ */
+
+.common-style-118 {
+position: absolute;
+  bottom: -5px;
+  right: -5px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 2px solid white;
+  z-index: 3;
+}
+
+/* Used in:
+ * src\features\game\shared\components\Player\List.vue (.vote-choice-badge)
+ * src\features\game\shared\components\Player\Card.vue (.vote-choice-badge)
+ */
+
+.common-style-119 {
+background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+}
+
+/* Used in:
+ * src\features\game\shared\components\Player\List.vue (.vote-approve)
+ * src\features\game\shared\components\Player\Card.vue (.vote-approve)
+ * src\features\game\multiplayer\roadview\components\playerlist\TeamPlayersList.vue (.vote-approve)
+ */
+
+.common-style-120 {
+background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+}
+
+/* Used in:
+ * src\features\game\shared\components\Player\List.vue (.vote-reject)
+ * src\features\game\shared\components\Player\Card.vue (.vote-reject)
+ * src\features\game\multiplayer\roadview\components\playerlist\TeamPlayersList.vue (.vote-reject)
+ */
+
+.common-style-121 {
+width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #333, #222);
+  border-radius: 50%;
+  border: 2px solid #444;
+  cursor: pointer;
+  position: relative;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Used in:
+ * src\features\game\shared\components\Phone\PhoneFrame.vue (.home-button)
+ * src\features\game\multiplayer\roadview\views\BaseGameView.vue (.home-button)
+ */
+
+.common-style-122 {
+content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 15px;
+  height: 15px;
+  border: 2px solid #666;
+  border-radius: 3px;
+}
+
+/* Used in:
+ * src\features\game\shared\components\Phone\PhoneFrame.vue (.home-button:before)
+ * src\features\game\multiplayer\roadview\views\BaseGameView.vue (.home-button:before)
+ */
+
+.common-style-123 {
+transform: scale(0.95);
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8);
+}
+
+/* Used in:
+ * src\features\game\shared\components\Phone\PhoneFrame.vue (.home-button:active)
+ * src\features\game\multiplayer\roadview\views\BaseGameView.vue (.home-button:active)
+ */
+
+.common-style-124 {
+transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 6px 12px rgba(46, 204, 113, 0.6);
+}
+
+/* Used in:
+ * src\features\game\shared\components\Phone\PhoneFrame.vue (.phone-spot-button:hover)
+ * src\features\game\multiplayer\roadview\views\BaseGameView.vue (.phone-spot-button:hover)
+ */
+
+.common-style-125 {
+height: 8px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* Used in:
+ * src\features\game\shared\components\Common\GradientTimer.vue (.timer-bar)
+ * src\features\game\multiplayer\photo\views\GameView.vue (.timer-bar)
+ */
+
+.common-style-126 {
+padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\shared\components\results\IndividualGameResults.vue (.action-button)
+ * src\features\game\multiplayer\roadview\components\results\RoundResults.vue (.action-button)
+ */
+
+.common-style-127 {
+background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+}
+
+/* Used in:
+ * src\features\game\multiplayer\shared\components\results\IndividualGameResults.vue (.play-again)
+ * src\features\game\multiplayer\roadview\components\results\RoundResults.vue (.next-button)
+ */
+
+.common-style-128 {
+transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+}
+
+/* Used in:
+ * src\features\game\multiplayer\shared\components\results\IndividualGameResults.vue (.play-again:hover)
+ * src\features\game\multiplayer\roadview\components\results\RoundResults.vue (.next-button:hover)
+ */
+
+.common-style-129 {
+width: 100%;
+    height: 100%;
+    max-height: 100%;
+    border-radius: 0;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\shared\components\results\IndividualGameResults.vue (.results-container)
+ * src\features\game\multiplayer\roadview\components\results\RoundResults.vue (.results-container)
+ */
+
+.common-style-130 {
+position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: white;
+  z-index: 100;
+  /* 중앙 패널 내에서만 작동하도록 설정 */
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Used in:
+ * src\features\game\multiplayer\shared\components\intro\NextRoundOverlay.vue (/* 게임 소개 화면 */
+.intro-overlay)
+ * src\features\game\multiplayer\shared\components\intro\IntroOverlay.vue (/* 게임 소개 화면 */
+.intro-overlay)
+ */
+
+.common-style-131 {
+text-align: center;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\shared\components\intro\NextRoundOverlay.vue (.intro-content)
+ * src\features\game\multiplayer\shared\components\intro\IntroOverlay.vue (.intro-content)
+ */
+
+.common-style-132 {
+font-size: 3rem;
+  font-weight: bold;
+  color: black;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\shared\components\intro\NextRoundOverlay.vue (.intro-content h2)
+ * src\features\game\multiplayer\shared\components\intro\IntroOverlay.vue (.intro-content h2)
+ */
+
+.common-style-133 {
+display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: none !important;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\shared\components\intro\NextRoundOverlay.vue (.countdown-container)
+ * src\features\game\multiplayer\shared\components\intro\IntroOverlay.vue (.countdown-container)
+ */
+
+.common-style-134 {
+transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\shared\components\intro\NextRoundOverlay.vue (/* 페이드 트랜지션 (오버레이 전체) */
+.fade-enter-active,
+.fade-leave-active)
+ * src\features\game\multiplayer\shared\components\intro\IntroOverlay.vue (/* 페이드 트랜지션 (오버레이 전체) */
+.fade-enter-active,
+.fade-leave-active)
+ */
+
+.common-style-135 {
+display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\shared\components\header\GameHeader.vue (.exit-button)
+ * src\features\game\multiplayer\roadview\views\BaseGameView.vue (.exit-button)
+ */
+
+.common-style-136 {
+font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\shared\components\header\GameHeader.vue (.room-name)
+ * src\features\game\multiplayer\roadview\views\BaseGameView.vue (.room-name)
+ */
+
+.common-style-137 {
+font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Used in:
+ * src\features\game\multiplayer\shared\components\header\GameHeader.vue (.game-mode)
+ * src\features\game\multiplayer\roadview\views\BaseGameView.vue (.game-mode)
+ */
+
+.common-style-138 {
+font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\shared\components\header\GameHeader.vue (.round-number)
+ * src\features\game\multiplayer\roadview\views\BaseGameView.vue (.round-number)
+ */
+
+.common-style-139 {
+height: 8px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\shared\components\header\GameHeader.vue (.round-progress)
+ * src\features\game\multiplayer\roadview\views\BaseGameView.vue (.round-progress)
+ */
+
+.common-style-140 {
+flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\shared\components\header\GameHeader.vue (.header-right)
+ * src\features\game\multiplayer\photo\views\GameView.vue (.header-right)
+ */
+
+.common-style-141 {
+margin-top: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\shared\components\header\GameHeader.vue (.correct-region-display)
+ * src\features\game\multiplayer\photo\views\GameView.vue (.correct-region-display)
+ */
+
+.common-style-142 {
+flex-direction: row;
+    padding: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\shared\components\header\GameHeader.vue (.game-header)
+ * src\features\game\multiplayer\roadview\views\BaseGameView.vue (.game-header)
+ */
+
+.common-style-143 {
+flex: 1;
+    margin: 0 0.5rem;
+    max-width: 100%;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\shared\components\header\GameHeader.vue (.header-center)
+ * src\features\game\multiplayer\roadview\views\BaseGameView.vue (.header-center)
+ */
+
+.common-style-144 {
+background: linear-gradient(135deg, #93c5fd 0%, #60a5fa 100%);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  opacity: 0.7;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\room\views\RoomView.vue (.start-game-button:disabled)
+ * src\features\game\multiplayer\room\components\settings\RoomSettingsModal.vue (.save-button:disabled)
+ */
+
+.common-style-145 {
+display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem;
+  border-bottom: 1px solid #f3f4f6;
+  position: relative;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\room\views\RoomView.vue (.chat-header)
+ * src\features\game\multiplayer\room\components\player\KickConfirmationModal.vue (.kick-modal-header)
+ */
+
+.common-style-146 {
+background: none;
+  border: none;
+  color: #6b7280;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\room\views\RoomView.vue (.close-button)
+ * src\features\game\multiplayer\room\components\settings\RoomSettingsModal.vue (.close-button)
+ * src\features\game\multiplayer\room\components\player\PlayerDetailsModal.vue (.close-button)
+ * src\features\game\multiplayer\room\components\player\KickConfirmationModal.vue (.close-button)
+ */
+
+.common-style-147 {
+position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\room\components\settings\RoomSettingsModal.vue (.room-settings-modal)
+ * src\features\game\multiplayer\room\components\player\PlayerDetailsModal.vue (.player-details-modal)
+ * src\features\game\multiplayer\room\components\player\KickConfirmationModal.vue (.kick-modal)
+ */
+
+.common-style-148 {
+background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+/* Used in:
+ * src\features\game\multiplayer\room\components\settings\RoomSettingsModal.vue (.toggle-input:checked + .toggle-label)
+ * src\features\game\multiplayer\room\components\list\TeamWaitingList.vue (.team-blue-bg)
+ */
+
+.common-style-149 {
+background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  color: #4b5563;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\room\components\settings\RoomSettingsModal.vue (.cancel-button)
+ * src\features\game\multiplayer\room\components\player\KickConfirmationModal.vue (.cancel-button)
+ * src\features\game\multiplayer\room\components\header\RoomHeader.vue (.settings-button)
+ */
+
+.common-style-150 {
+background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+  color: #1f2937;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\room\components\settings\RoomSettingsModal.vue (.cancel-button:hover)
+ * src\features\game\multiplayer\room\components\player\KickConfirmationModal.vue (.cancel-button:hover)
+ * src\features\game\multiplayer\room\components\header\RoomHeader.vue (.settings-button:hover)
+ */
+
+.common-style-151 {
+background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+  color: #dc2626;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\room\components\settings\CountdownOverlay.vue (.cancel-button:hover)
+ * src\features\game\multiplayer\room\components\header\RoomHeader.vue (.leave-button:hover)
+ */
+
+.common-style-152 {
+font-size: 1.25rem;
+  font-weight: 700;
+  color: black;
+  margin: 0;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\room\components\player\PlayerDetailsModal.vue (.modal-title)
+ * src\features\game\multiplayer\room\components\player\KickConfirmationModal.vue (.kick-modal-title)
+ */
+
+.common-style-153 {
+background: linear-gradient(135deg, #fecaca 0%, #ef4444 100%);
+  color: white;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\room\components\player\PlayerDetailsModal.vue (.kick-button:hover)
+ * src\features\game\multiplayer\room\components\player\KickConfirmationModal.vue (.confirm-button:hover)
+ */
+
+.common-style-154 {
+background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #ef4444;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\room\components\player\KickConfirmationModal.vue (.confirm-button)
+ * src\features\game\multiplayer\room\components\header\RoomHeader.vue (.leave-button)
+ */
+
+.common-style-155 {
+background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+/* Used in:
+ * src\features\game\multiplayer\roadview\components\playerlist\TeamPlayersList.vue (.team-header:hover .team-score)
+ * src\features\game\multiplayer\roadview\components\playerlist\TeamPlayersList.vue (.submission-badge:hover,
+.voting-badge:hover)
+ */
+
+.common-style-156 {
+transform: scale(1);
+    box-shadow: 0 2px 5px rgba(76, 217, 100, 0.3);
+}
+
+/* Used in:
+ * src\features\game\multiplayer\roadview\components\playerlist\IndividualPlayerList.vue (0%)
+ * src\features\game\multiplayer\roadview\components\playerlist\IndividualPlayerList.vue (100%)
+ */
+
+.common-style-157 {
+transform: scale(1);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Used in:
+ * src\features\game\multiplayer\photo\components\PlayerMarkers.vue (0%)
+ * src\features\game\multiplayer\photo\components\PlayerMarkers.vue (100%)
+ */
+
+.common-style-158 {
+opacity: 1;
+      transform: translateX(-50%) translateY(-10px);
+}
+
+/* Used in:
+ * src\features\game\multiplayer\photo\components\PlayerMarkers.vue (20%)
+ * src\features\game\multiplayer\photo\components\PlayerMarkers.vue (80%)
+ */
+
+.common-style-159 {
+content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #8b5cf6 0%, #60a5fa 100%);
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.3s ease;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\lobby\views\LobbyView.vue (.create-room-button::before)
+ * src\features\game\multiplayer\lobby\components\RoomList.vue (.submit-button::before)
+ * src\features\game\multiplayer\lobby\components\CreateRoomModal.vue (.create-button::before)
+ */
+
+.common-style-160 {
+transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(96, 165, 250, 0.35);
+}
+
+/* Used in:
+ * src\features\game\multiplayer\lobby\views\LobbyView.vue (.create-room-button:hover)
+ * src\features\game\multiplayer\lobby\components\RoomList.vue (.submit-button:hover)
+ * src\features\game\multiplayer\lobby\components\CreateRoomModal.vue (.create-button:hover:not(:disabled))
+ */
+
+.common-style-161 {
+content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 40px;
+  height: 3px;
+  background: linear-gradient(90deg, #60a5fa, #8b5cf6);
+  border-radius: 2px;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\lobby\components\RoomList.vue (.panel-title::after)
+ * src\features\game\multiplayer\lobby\components\RoomList.vue (.password-modal h3::after)
+ * src\features\game\multiplayer\lobby\components\CreateRoomModal.vue (.modal-header h2::after)
+ */
+
+.common-style-162 {
+position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\lobby\components\RoomList.vue (/* 비밀번호 모달 스타일 */
+.modal-overlay)
+ * src\features\game\multiplayer\lobby\components\CreateRoomModal.vue (.modal-backdrop)
+ */
+
+.common-style-163 {
+border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+  background-color: white;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\lobby\components\RoomList.vue (.password-modal input:focus)
+ * src\features\game\multiplayer\lobby\components\CreateRoomModal.vue (.form-group input[type="text"]:focus,
+.form-group select:focus)
+ */
+
+.common-style-164 {
+background: #f8fafc;
+  color: #334155;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Used in:
+ * src\features\game\multiplayer\lobby\components\RoomList.vue (.cancel-button:hover)
+ * src\features\game\multiplayer\lobby\components\CreateRoomModal.vue (.cancel-button:hover)
+ */
+
+.common-style-165 {
+display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  flex: 1;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.chat-window)
+ * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.chat-window)
+ * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.chat-window)
+ */
+
+.common-style-166 {
+display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+  background-color: #f8f9fa;
+  flex-shrink: 0;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.chat-header)
+ * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.chat-header)
+ * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.chat-header)
+ */
+
+.common-style-167 {
+margin: 0;
+  font-size: 1.1rem;
+  color: #333;
+  position: relative;
+  font-weight: 700;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.chat-title)
+ * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.chat-title)
+ * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.chat-title)
+ */
+
+.common-style-168 {
+content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 30px;
+  height: 3px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 3px;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.chat-title::after)
+ * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.chat-title::after)
+ * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.chat-title::after)
+ */
+
+.common-style-169 {
+display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.online-users)
+ * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.online-users)
+ * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.online-users)
+ */
+
+.common-style-170 {
+display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4caf50;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.online-indicator)
+ * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.online-indicator)
+ * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.online-indicator)
+ */
+
+.common-style-171 {
+flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  background: #f9f9f9;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  scrollbar-width: thin;
+  scrollbar-color: #ccc transparent;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.chat-messages)
+ * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.chat-messages)
+ * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.chat-messages)
+ */
+
+.common-style-172 {
+background: white;
+  padding: 0.8rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  align-self: flex-start;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.message:not(.system-message))
+ * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.message:not(.system-message))
+ * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.message:not(.system-message))
+ */
+
+.common-style-173 {
+align-self: flex-end;
+  background: #3b82f6;
+  color: white;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (/* 내가 보낸 메시지 스타일 */
+.message.my-message)
+ * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (/* 내가 보낸 메시지 스타일 */
+.message.my-message)
+ * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (/* 내가 보낸 메시지 스타일 */
+.message.my-message)
+ */
+
+.common-style-174 {
+align-self: center;
+  text-align: center;
+  margin: 0.5rem 0;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.system-message)
+ * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.system-message)
+ * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.system-message)
+ */
+
+.common-style-175 {
+display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+  align-items: center;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.message-header)
+ * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.message-header)
+ * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.message-header)
+ */
+
+.common-style-176 {
+font-weight: 600;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.message-sender)
+ * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.message-sender)
+ * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.message-sender)
+ */
+
+.common-style-177 {
+font-size: 0.95rem;
+  line-height: 1.4;
+  color: #333;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.message-content)
+ * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.message-content)
+ * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.message-content)
+ */
+
+.common-style-178 {
+font-size: 0.85rem;
+  color: #666;
+  font-style: italic;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.system-content)
+ * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.system-content)
+ * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.system-content)
+ */
+
+.common-style-179 {
+display: flex;
+  padding: 1rem;
+  border-top: 1px solid #eee;
+  background: white;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.chat-input)
+ * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.chat-input)
+ * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.chat-input)
+ */
+
+.common-style-180 {
+flex: 1;
+  padding: 0.8rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.chat-input input)
+ * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.chat-input input)
+ * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.chat-input input)
+ */
+
+.common-style-181 {
+border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+/* Used in:
+ * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.chat-input input:focus)
+ * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.chat-input input:focus)
+ * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.chat-input input:focus)
+ */
+
+.common-style-182 {
+background: #667eea;
+  color: white;
+  border: none;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  border-radius: 50%;
+  margin-left: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 15;
+  position: relative;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.send-button)
+ * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.send-button)
+ * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.send-button)
+ */
+
+.common-style-183 {
+background: #5a6edb;
+  transform: translateY(-2px);
+}
+
+/* Used in:
+ * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.send-button:hover:not(:disabled))
+ * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.send-button:hover:not(:disabled))
+ * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.send-button:hover:not(:disabled))
+ */
+
+.common-style-184 {
+background: #ef4444;
+  color: white;
+  border: none;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  border-radius: 50%;
+  margin-left: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 15;
+  position: relative;
+}
+
+/* Used in:
+ * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (/* 채팅방 닫기 버튼 */
+.close-chat-button)
+ * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (/* 채팅방 닫기 버튼 */
+.close-chat-button)
+ * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (/* 채팅방 닫기 버튼 */
+.close-chat-button)
+ */
+
+.common-style-185 {
+background: #dc2626;
+  transform: translateY(-2px);
+}
+
+/* Used in:
+ * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.close-chat-button:hover)
+ * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.close-chat-button:hover)
+ * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.close-chat-button:hover)
+ */
+
+.common-style-186 {
+position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+/* Used in:
+ * src\features\admin\views\DashboardView.vue (/* Toggle Switch 스타일 */
+.switch)
+ * src\features\admin\components\Game\GameModeManagement.vue (/* Toggle Switch 스타일 */
+.switch)
+ */
+
+.common-style-187 {
+position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: .4s;
+}
+
+/* Used in:
+ * src\features\admin\views\DashboardView.vue (.slider)
+ * src\features\admin\components\Game\GameModeManagement.vue (.slider)
+ */
+
+.common-style-188 {
+position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+}
+
+/* Used in:
+ * src\features\admin\views\DashboardView.vue (.slider:before)
+ * src\features\admin\components\Game\GameModeManagement.vue (.slider:before)
+ */
+
+.common-style-189 {
+flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+/* Used in:
+ * src\features\admin\views\DashboardView.vue (.game-mode-item)
+ * src\features\admin\components\Game\GameModeManagement.vue (.game-mode-item)
+ */
+
+.common-style-190 {
+content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(to right, #60a5fa, #8b5cf6);
+}
+
+/* Used in:
+ * src\features\admin\components\System\SystemStatus.vue (.system-status::after)
+ * src\features\admin\components\Statistic\RecentActivities.vue (.recent-activities::after)
+ * src\features\admin\components\Game\GameModeManagement.vue (.game-mode-management::after)
+ */
+
+.common-style-191 {
+transform: translateY(-3px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Used in:
+ * src\features\admin\components\System\SystemStatus.vue (.status-item:hover)
+ * src\features\admin\components\Game\GameModeManagement.vue (.game-mode-item:hover)
+ */
+
+.common-style-192 {
+transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Used in:
+ * src\features\admin\components\Statistic\DashboardStats.vue (.chart-card)
+ * src\features\admin\components\Game\GameModeManagement.vue (.game-mode-item)
+ */
+
+.common-style-193 {
+background-color: #f8fafc;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Used in:
+ * src\features\admin\components\Game\ThemeModeSettings.vue (.settings-section)
+ * src\features\admin\components\Game\RoadviewModeSettings.vue (.settings-section)
+ * src\features\admin\components\Game\PhotoModeSettings.vue (.settings-section)
+ */
+
+.common-style-194 {
+width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+}
+
+/* Used in:
+ * src\features\admin\components\Game\ThemeModeSettings.vue (/* 폼 요소 스타일링 */
+input[type="text"],
+input[type="number"],
+select,
+textarea)
+ * src\features\admin\components\Game\RoadviewModeSettings.vue (/* 폼 요소 스타일링 */
+input[type="text"],
+input[type="number"],
+select)
+ * src\features\admin\components\Game\PhotoModeSettings.vue (/* 폼 요소 스타일링 */
+input[type="text"],
+input[type="number"],
+select,
+textarea)
+ */
+
+.common-style-195 {
+position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  z-index: 100;
+  transition: all 0.3s ease;
+}
+
+/* Used in:
+ * src\core\components\TheHeader.vue (.header)
+ * src\core\components\NavigationBar.vue (.header)
+ */
+
+.common-style-196 {
+font-size: 20px;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+/* Used in:
+ * src\core\components\TheHeader.vue (.logo)
+ * src\core\components\NavigationBar.vue (.logo)
+ */
+
+.common-style-197 {
+background: #e74c3c;
+  color: white;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  margin-left: 0.5rem;
+}
+
+/* Used in:
+ * src\core\components\TheHeader.vue (.badge)
+ * src\core\components\NavigationBar.vue (.badge)
+ */
+
+.common-style-198 {
+margin-left: 2rem;
+  display: flex;
+  gap: 1.5rem;
+}
+
+/* Used in:
+ * src\core\components\TheHeader.vue (.main-nav)
+ * src\core\components\NavigationBar.vue (.main-nav)
+ */
+
+.common-style-199 {
+text-decoration: none;
+  color: #555;
+  font-weight: 500;
+  font-size: 1rem;
+  transition: color 0.2s ease;
+}
+
+/* Used in:
+ * src\core\components\TheHeader.vue (.nav-link)
+ * src\core\components\NavigationBar.vue (.nav-link)
+ */
+
+.common-style-200 {
+margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Used in:
+ * src\core\components\TheHeader.vue (.header-right)
+ * src\core\components\NavigationBar.vue (.header-right)
+ */
+
+.common-style-201 {
+background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #555;
+  cursor: pointer;
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.2s ease;
+}
+
+/* Used in:
+ * src\core\components\TheHeader.vue (.icon-button)
+ * src\core\components\NavigationBar.vue (.icon-button)
+ */
+
+.common-style-202 {
+position: absolute;
+  top: 0;
+  right: 0;
+  background: #e74c3c;
+  color: white;
+  font-size: 0.7rem;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Used in:
+ * src\core\components\TheHeader.vue (.notification-badge)
+ * src\core\components\NavigationBar.vue (.notification-badge)
+ */
+
+.common-style-203 {
+width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #f0f2f5;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Used in:
+ * src\core\components\TheHeader.vue (.user-avatar)
+ * src\core\components\NavigationBar.vue (.user-avatar)
+ */
+
+.common-style-204 {
+position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 300px;
+  background: white;
+  z-index: 1002;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+/* Used in:
+ * src\core\components\TheHeader.vue (/* 프로필 메뉴 스타일 */
+.profile-menu)
+ * src\core\components\NavigationBar.vue (/* 프로필 메뉴 스타일 */
+.profile-menu)
+ */
+
+.common-style-205 {
+font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 4px;
+  margin-top: 0;
+}
+
+/* Used in:
+ * src\core\components\TheHeader.vue (.profile-text h3)
+ * src\core\components\NavigationBar.vue (.profile-text h3)
+ */
+
+.common-style-206 {
+display: flex;
+  align-items: center;
+  padding: 12px 0;
+  color: #1f2937;
+  text-decoration: none;
+  font-weight: 500;
+  gap: 12px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+/* Used in:
+ * src\core\components\TheHeader.vue (.menu-item)
+ * src\core\components\NavigationBar.vue (.menu-item)
+ */
+
+.common-style-207 {
+width: 20px;
+  text-align: center;
+  font-size: 18px;
+  color: #6b7280;
+}
+
+/* Used in:
+ * src\core\components\TheHeader.vue (.menu-item i)
+ * src\core\components\NavigationBar.vue (.menu-item i)
+ */
+
+.common-style-208 {
+height: 1px;
+  background: #e5e7eb;
+  margin: 16px 0;
+}
+
+/* Used in:
+ * src\core\components\TheHeader.vue (.menu-divider)
+ * src\core\components\NavigationBar.vue (.menu-divider)
+ */
+

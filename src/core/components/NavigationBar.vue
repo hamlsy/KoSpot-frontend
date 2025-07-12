@@ -13,6 +13,7 @@
         <router-link to="/shopMain" class="nav-link">상점</router-link>
         <router-link to="/myProfile" class="nav-link">마이페이지</router-link>
         <router-link v-if="userProfile.isAdmin" to="/admin" class="nav-link admin-link">관리자</router-link>
+        <router-link to="/temp-login" class="nav-link temp-login-link">🧪 임시로그인</router-link>
       </div>
 
       <div class="header-right">
@@ -82,6 +83,10 @@
             마이페이지
           </router-link>
           <div class="menu-divider"></div>
+          <router-link to="/temp-login" class="menu-item temp-login-menu-item">
+            <i class="fas fa-flask"></i>
+            임시로그인
+          </router-link>
           <a href="#" class="menu-item">
             <i class="fas fa-sign-out-alt"></i>
             로그아웃
@@ -375,6 +380,20 @@ export default {
 
 .admin-menu-item i {
   color: #6366f1;
+}
+
+.temp-login-link {
+  color: #f59e0b !important;
+  font-weight: 600;
+}
+
+.temp-login-menu-item {
+  color: #f59e0b !important;
+  font-weight: 600;
+}
+
+.temp-login-menu-item i {
+  color: #f59e0b;
 }
 
 /* 트랜지션 애니메이션 */

@@ -6,6 +6,7 @@ node_modules
 # local env files
 .env.local
 .env.*.local
+.env.development
 
 # Log files
 npm-debug.log*
@@ -22,3 +23,9 @@ pnpm-debug.log*
 *.sln
 *.sw?
 node_modules
+
+# Backup directories
+.backup-deduplication/
+.backup-imports/
+
+

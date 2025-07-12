@@ -59,10 +59,11 @@ export function useWebSocket(url) {
         console.log('WebSocket 연결 종료:', event.code, event.reason)
         isConnected.value = false
         
-        // 자동 재연결 (정상 종료가 아닌 경우)
-        if (event.code !== 1000 && reconnectAttempts.value < maxReconnectAttempts) {
-          scheduleReconnect()
-        }
+        // 자동 재연결 비활성화 - 수동으로만 재연결
+        // if (event.code !== 1000 && reconnectAttempts.value < maxReconnectAttempts) {
+        //   scheduleReconnect()
+        // }
+        console.log('useWebSocket: 자동 재연결 비활성화됨')
       }
       
       ws.value.onerror = (error) => {
@@ -75,18 +76,20 @@ export function useWebSocket(url) {
     }
   }
   
-  // 재연결 스케줄링
+  // 재연결 스케줄링 - 비활성화됨
   const scheduleReconnect = () => {
-    if (reconnectInterval.value) return
-    
-    const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.value), 30000)
-    
-    reconnectInterval.value = setTimeout(() => {
-      reconnectAttempts.value++
-      console.log(`WebSocket 재연결 시도 ${reconnectAttempts.value}/${maxReconnectAttempts}`)
-      connect()
-      reconnectInterval.value = null
-    }, delay)
+    console.log('useWebSocket: 자동 재연결이 비활성화되어 있습니다. 수동으로 connect()를 호출하세요.')
+    // 자동 재연결 로직 완전 비활성화
+    // if (reconnectInterval.value) return
+    // 
+    // const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.value), 30000)
+    // 
+    // reconnectInterval.value = setTimeout(() => {
+    //   reconnectAttempts.value++
+    //   console.log(`WebSocket 재연결 시도 ${reconnectAttempts.value}/${maxReconnectAttempts}`)
+    //   connect()
+    //   reconnectInterval.value = null
+    // }, delay)
   }
   
   // 메시지 전송
@@ -170,11 +173,13 @@ export function useWebSocket(url) {
     return sendGameMessage('LEAVE_ROOM', { roomId })
   }
   
-  // 라이프사이클
+  // 라이프사이클 - 자동 연결 비활성화
   onMounted(() => {
-    if (isAuthenticated.value) {
-      connect()
-    }
+    // WebSocket 자동 연결 비활성화 - 수동으로만 연결
+    // if (isAuthenticated.value) {
+    //   connect()
+    // }
+    console.log('useWebSocket: 자동 연결 비활성화됨, 수동으로 connect() 호출 필요')
   })
   
   onUnmounted(() => {

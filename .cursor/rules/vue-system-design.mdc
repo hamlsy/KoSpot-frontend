@@ -1,0 +1,55 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Your rule content
+
+---
+description: Vue 3 프로젝트를 위한 디자인 시스템과 개발 규칙
+globs: ["**/*.vue", "**/*.js", "**/*.ts", "**/*.scss", "**/*.css"]
+alwaysApply: true
+---
+
+# Vue 3 프로젝트 개발 규칙
+
+## 기술 스택
+- Vue 3 with Composition API
+- TypeScript
+- Vite
+- SCSS/CSS
+
+## 디자인 철학
+- **Perfect balance functional design**: 기능성과 미적 균형
+- **Soft, refreshing gradient colors**: 브랜드 팔레트와 조화되는 부드러운 그라데이션 색상
+- **Well-proportioned white space**: 깔끔한 레이아웃을 위한 균형 잡힌 여백
+- **Light and immersive**: 가벼우면서 몰입감 있는 사용자 경험
+- **Clear information hierarchy**: 미묘한 그림자와 모듈식 카드 레이아웃으로 명확한 정보 계층
+- **Natural focus**: 핵심 기능에 자연스러운 집중
+- **Refined rounded corners**: 세련된 둥근 모서리
+- **Delicate micro-interactions**: 섬세한 마이크로 인터랙션
+- **Comfortable visual proportions**: 편안한 시각적 비율
+
+## 스타일링 규칙
+- **All text should be only black or white**: 모든 텍스트는 검은색 또는 흰색만 사용
+- **Images**: 오픈소스 이미지 웹사이트에서 가져와 직접 링크
+- **Accent colors**: 웹 타입에 따라 선택된 강조 색상 사용
+
+## AI 개발 규칙
+- Check for existing components before creating new ones
+- Reuse existing components whenever applicable
+- Eliminate duplicate JavaScript functions to maintain code efficiency
+- Remove redundant CSS to ensure clean and maintainable styles
+- Avoid adding defensive code unnecessarily; prioritize fixing the root cause
+- Follow clean code principles, including readibility, simplicity, and proper naming
+- Ensure smooth communication between components through proper state or event handling
+- Do not break existing functionality under any circumstances
+
+## Vue 컴포넌트 규칙
+- Use Composition API with `<script setup>` syntax
+- Define props with TypeScript interfaces and default values
+- Use computed properties for derived state
+- Use watchers for side effects
+- Implement proper component naming (PascalCase)
+- Always include proper TypeScript types

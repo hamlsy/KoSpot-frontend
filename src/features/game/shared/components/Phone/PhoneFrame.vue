@@ -13,6 +13,7 @@
         :disabled="disabled"
         :showDistance="showDistance"
         :showActionButton="showActionButton"
+        :gameMode="gameMode"
         @close="$emit('close')"
         @check-answer="onCheckAnswer"
         ref="phoneMapGame"
@@ -84,6 +85,10 @@ export default {
     isTeamMode: {
       type: Boolean,
       default: false,
+    },
+    gameMode: {
+      type: String,
+      default: 'single', // 기본값을 single로 설정
     },
   },
   methods: {

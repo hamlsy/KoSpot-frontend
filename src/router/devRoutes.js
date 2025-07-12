@@ -3,6 +3,7 @@ import CoordData from '@/dummy/coordData.vue'
 import kakaoMapTest from '@/dummy/KakaoMapTest.vue'
 import EncryptTest from 'src/dummy/EncryptTest.vue'
 import ComponentTest from 'src/dummy/ComponentTest.vue'
+import TempLoginView from '@/features/auth/views/TempLoginView.vue'
 
 const devRoutes = [
     {
@@ -29,6 +30,11 @@ const devRoutes = [
         path: '/componentTest',
         name: "ComponentTest",
         component: ComponentTest
+    },
+    {
+        path: '/temp-login',
+        name: "TempLogin",
+        component: TempLoginView
     }
 ];
 

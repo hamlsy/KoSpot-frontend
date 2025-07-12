@@ -12,7 +12,7 @@
 import { defineComponent } from 'vue';
 import PhotoModeGame from 'src/features/game/single/photo/components/gameplay/PhotoModeGame.vue'
 // import useGame from '@/composables/useGame';
-// import useAuth from '@/composables/useAuth';
+// import useAuth from '../../../../../core/composables/useAuth';
 
 export default defineComponent({
   name: 'PhotoModeRank',
