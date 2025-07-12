@@ -1,70 +1,114 @@
 <template>
   <div class="room-header">
     <div class="header-content">
-      <!-- 왼쪽: 방 정보 및 모드 -->
-      <div class="room-info">
-        <div class="room-id-badge">
-          <span class="room-id-label">방 ID:</span>
-          <span class="room-id-value">{{ roomData.id }}</span>
-          <button 
-            class="copy-button" 
-            @click="copyRoomId" 
-            title="방 ID 복사"
-          >
-            <i class="fas fa-copy"></i>
-          </button>
+      <!-- 상단: 방 기본 정보 -->
+      <div class="room-info-section">
+        <div class="room-meta">
+          <div class="room-id-badge">
+            <span class="room-id-label">방 ID:</span>
+            <span class="room-id-value">{{ roomData.id }}</span>
+            <button 
+              class="copy-button" 
+              @click="copyRoomId" 
+              title="방 ID 복사"
+            >
+              <i class="fas fa-copy"></i>
+            </button>
+          </div>
+          
+          <div class="room-badges">
+            <div class="privacy-badge" :class="{ 'private': roomData.isPrivate }">
+              <i :class="roomData.isPrivate ? 'fas fa-lock' : 'fas fa-lock-open'"></i>
+              {{ roomData.isPrivate ? '비공개' : '공개' }}
+            </div>
+            <div class="team-badge" v-if="isTeamMode">
+              <i class="fas fa-users"></i>
+              팀전
+            </div>
+          </div>
         </div>
         
         <h2 class="room-title">{{ roomData.title }}</h2>
-        
-        <div class="room-badges">
-          <div class="mode-badge">
-            <i :class="modeIcon"></i>
-            {{ gameModeName }}
-          </div>
-          <div class="privacy-badge" :class="{ 'private': roomData.isPrivate }">
-            <i :class="roomData.isPrivate ? 'fas fa-lock' : 'fas fa-lock-open'"></i>
-            {{ roomData.isPrivate ? '비공개' : '공개' }}
-          </div>
-          <div class="team-badge" v-if="isTeamMode">
-            <i class="fas fa-users"></i>
-            팀전
-          </div>
-        </div>
       </div>
       
-      <!-- 오른쪽: 버튼 그룹 -->
-      <div class="header-buttons">
-        <button 
-          class="action-button settings-button" 
-          @click="$emit('open-settings')"
-          title="방 설정"
-          v-if="isHost"
-        >
-          <i class="fas fa-cog"></i>
-          <span>설정</span>
-        </button>
+      <!-- 하단: 게임 정보 및 버튼 -->
+      <div class="header-actions">
+        <!-- 게임 정보 카드 -->
+        <div class="game-info-compact">
+          <div class="game-info-item">
+            <div class="info-icon">
+              <i :class="modeIcon"></i>
+            </div>
+            <div class="info-content">
+              <div class="info-label">게임 모드</div>
+              <div class="info-value">{{ gameModeName }}</div>
+            </div>
+          </div>
+          
+          <div class="game-info-item">
+            <div class="info-icon">
+              <i class="fas fa-redo-alt"></i>
+            </div>
+            <div class="info-content">
+              <div class="info-label">라운드</div>
+              <div class="info-value">{{ roomData.rounds }}회</div>
+            </div>
+          </div>
+          
+          <div class="game-info-item">
+            <div class="info-icon">
+              <i class="fas fa-clock"></i>
+            </div>
+            <div class="info-content">
+              <div class="info-label">제한 시간</div>
+              <div class="info-value">{{ roomData.timeLimit }}초</div>
+            </div>
+          </div>
+          
+          <div class="game-info-item">
+            <div class="info-icon">
+              <i class="fas fa-map-marker-alt"></i>
+            </div>
+            <div class="info-content">
+              <div class="info-label">지역</div>
+              <div class="info-value">{{ roomData.region || "전국" }}</div>
+            </div>
+          </div>
+        </div>
         
-        <button 
-          class="action-button leave-button" 
-          @click="leaveRoomWithConfirm"
-          title="방 나가기"
-        >
-          <i class="fas fa-sign-out-alt"></i>
-          <span>나가기</span>
-        </button>
-        
-        <button 
-          v-if="isHost" 
-          class="action-button start-button" 
-          :disabled="!canStartGame" 
-          @click="$emit('start-game')"
-          :class="{ 'disabled': !canStartGame }"
-          title="게임 시작"
-        >
-          <i class="fas fa-play"></i>
-          <span>시작</span>
-        </button>
+        <!-- 버튼 그룹 -->
+        <div class="header-buttons">
+          <button 
+            class="action-button settings-button" 
+            @click="$emit('open-settings')"
+            title="방 설정"
+            v-if="isHost"
+          >
+            <i class="fas fa-cog"></i>
+            <span>설정</span>
+          </button>
+          
+          <button 
+            class="action-button leave-button" 
+            @click="leaveRoomWithConfirm"
+            title="방 나가기"
+          >
+            <i class="fas fa-sign-out-alt"></i>
+            <span>나가기</span>
+          </button>
+          
+          <button 
+            v-if="isHost" 
+            class="action-button start-button" 
+            :disabled="!canStartGame" 
+            @click="$emit('start-game')"
+            :class="{ 'disabled': !canStartGame }"
+            title="게임 시작"
+          >
+            <i class="fas fa-play"></i>
+            <span>시작</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -143,10 +187,11 @@ const leaveRoomWithConfirm = () => {
   background: white;
   border-radius: 16px;
   padding: 1rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
   margin-bottom: 1rem;
   position: relative;
   overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 .room-header::before {
@@ -155,53 +200,62 @@ const leaveRoomWithConfirm = () => {
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+  height: 3px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
 }
 
 .header-content {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 1rem;
 }
 
-/* Room info styling */
-.room-info {
-  flex: 1;
-  min-width: 250px;
+/* Room info section */
+.room-info-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.room-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .room-id-badge {
   display: inline-flex;
   align-items: center;
-  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-  padding: 0.4rem 0.8rem;
-  border-radius: 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 0.35rem 0.75rem;
+  border-radius: 50px;
   font-size: 0.8rem;
-  margin-bottom: 0.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 .room-id-label {
-  color: #6b7280;
-  margin-right: 0.3rem;
+  color: #64748b;
+  margin-right: 0.4rem;
+  font-weight: 500;
 }
 
 .room-id-value {
-  font-weight: 600;
-  color: black;
+  font-weight: 700;
+  color: #1e293b;
   letter-spacing: 0.5px;
+  font-family: 'Courier New', monospace;
 }
 
 .copy-button {
   background: none;
   border: none;
-  color: #6b7280;
+  color: #64748b;
   cursor: pointer;
   padding: 0.2rem;
-  margin-left: 0.5rem;
+  margin-left: 0.4rem;
   border-radius: 50%;
   width: 24px;
   height: 24px;
@@ -212,187 +266,249 @@ const leaveRoomWithConfirm = () => {
 }
 
 .copy-button:hover {
-  background-color: #e5e7eb;
-  color: #4b5563;
-}
-
-.room-title {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: black;
-  margin: 0.3rem 0 0.6rem;
-  line-height: 1.2;
+  background-color: #e2e8f0;
+  color: #475569;
+  transform: scale(1.1);
 }
 
 .room-badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
-.mode-badge, .privacy-badge, .team-badge {
+.privacy-badge, .team-badge {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.3rem;
   padding: 0.3rem 0.6rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
   font-weight: 600;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.mode-badge {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(79, 70, 229, 0.1) 100%);
-  color: #6366f1;
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 .privacy-badge {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
-  color: #10b981;
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #059669;
+  border: 1px solid rgba(5, 150, 105, 0.15);
 }
 
 .privacy-badge.private {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #dc2626;
+  border: 1px solid rgba(220, 38, 38, 0.15);
 }
 
 .team-badge {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%);
-  color: #f59e0b;
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #d97706;
+  border: 1px solid rgba(217, 119, 6, 0.15);
 }
 
-/* Header buttons styling */
+.room-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+/* Header actions */
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Game info compact */
+.game-info-compact {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.game-info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.info-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #667eea;
+  font-size: 0.9rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.info-label {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.info-value {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.2;
+}
+
+/* Header buttons */
 .header-buttons {
   display: flex;
-  flex-wrap: wrap;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .action-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   padding: 0.5rem 1rem;
-  border-radius: 12px;
+  border-radius: 10px;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   transition: all 0.2s ease;
   border: none;
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
 .settings-button {
-  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-  color: #4b5563;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #475569;
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .settings-button:hover {
-  background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
-  color: #1f2937;
+  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+  color: #334155;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .leave-button {
   background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-  color: #ef4444;
+  color: #dc2626;
+  border: 1px solid rgba(220, 38, 38, 0.15);
 }
 
 .leave-button:hover {
   background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
-  color: #dc2626;
+  color: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(220, 38, 38, 0.15);
 }
 
 .start-button {
-  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
-  color: #22c55e;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: 1px solid rgba(102, 126, 234, 0.3);
 }
 
 .start-button:hover {
-  background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%);
-  color: #16a34a;
+  background: linear-gradient(135deg, #5a67d8 0%, #553c9a 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
 .start-button.disabled {
-  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-  color: #9ca3af;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: #94a3b8;
   cursor: not-allowed;
-  opacity: 0.7;
+  transform: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
-/* 중간 크기 화면에서의 스타일 조정 */
-@media (max-width: 992px) {
-  .room-info {
-    min-width: 220px;
-  }
-  
-  .room-title {
-    font-size: 1.2rem;
-    margin: 0.2rem 0 0.5rem;
-  }
-  
-  .action-button {
-    padding: 0.4rem 0.8rem;
-  }
+.start-button.disabled:hover {
+  transform: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
-/* 작은 화면에서의 스타일 조정 */
-@media (max-width: 768px) {
-  .room-header {
-    padding: 0.8rem;
+/* Responsive design */
+@media (max-width: 1024px) {
+  .header-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
   }
   
-  .header-content {
-    gap: 0.5rem;
-  }
-  
-  .room-info {
-    width: 100%;
-  }
-  
-  .room-badges {
-    gap: 0.4rem;
-    margin-bottom: 0.5rem;
-  }
-  
-  .mode-badge, .privacy-badge, .team-badge {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
+  .game-info-compact {
+    justify-content: center;
+    gap: 0.75rem;
   }
   
   .header-buttons {
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-    gap: 0.4rem;
-  }
-  
-  .action-button {
-    padding: 0.4rem 0.6rem;
-    font-size: 0.75rem;
     justify-content: center;
-    width: 100%;
   }
 }
 
-/* 매우 작은 화면에서의 스타일 조정 */
-@media (max-width: 480px) {
-  .room-id-badge {
-    font-size: 0.7rem;
-    padding: 0.3rem 0.6rem;
+@media (max-width: 768px) {
+  .room-header {
+    padding: 0.75rem;
   }
   
   .room-title {
     font-size: 1.1rem;
-    margin: 0.2rem 0 0.4rem;
   }
   
-  .room-badges {
-    flex-wrap: wrap;
+  .game-info-compact {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+  
+  .header-buttons {
+    width: 100%;
+    justify-content: stretch;
+  }
+  
+  .action-button {
+    flex: 1;
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .room-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+  
+  .room-id-badge {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.6rem;
+  }
+  
+  .room-title {
+    font-size: 1rem;
+  }
+  
+  .game-info-compact {
+    flex-direction: column;
+    gap: 0.5rem;
   }
   
   .action-button span {
@@ -400,13 +516,8 @@ const leaveRoomWithConfirm = () => {
   }
   
   .action-button {
-    padding: 0.4rem;
-    aspect-ratio: 1/1;
-  }
-  
-  .action-button i {
-    font-size: 1rem;
-    margin: 0;
+    padding: 0.5rem;
+    justify-content: center;
   }
 }
 </style>
