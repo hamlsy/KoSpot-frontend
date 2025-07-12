@@ -45,7 +45,7 @@
           <ChatWindow 
             :messages="formattedChatMessages" 
             @send-message="sendChatMessage"
-            :current-user-id="lobbyService.currentUser.value.id"
+            :current-user-id="getCurrentUserId()"
             :show-mobile-close="isMobile"
             @close="isChatVisible = false"
           />
@@ -77,6 +77,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
+import { useAuth } from '@/core/composables/useAuth.js';
 import useGlobalLobbyWebSocketService from '../services/useGlobalLobbyWebSocketService';
 import GameRoomList from '../components/RoomList.vue';
 import ChatWindow from '../../chat/components/Lobby/ChatWindow.vue';
@@ -119,6 +120,12 @@ const checkMobileView = () => {
   windowWidth.value = window.innerWidth;
   isMobile.value = windowWidth.value <= 900;
   isChatVisible.value = !isMobile.value;
+};
+
+const getCurrentUserId = () => {
+  // localStorage에서 memberId 가져오기
+  const localStorageMemberId = localStorage.getItem('memberId');
+  return localStorageMemberId;
 };
 
 const initializeData = async () => {
@@ -292,11 +299,15 @@ const createRoom = (roomData) => {
     showCreateRoomModal.value = false;
     isLoading.value = false;
         
+        // 사용자 정보 가져오기 (useAuth에서 직접)
+        const { user: authUser } = useAuth();
+        const userNickname = authUser.value?.nickname || '익명';
+        
         // 생성된 방 목록에 추가
         const newRoom = {
           id: `room${Date.now()}`,
           name: roomData.name,
-      host: lobbyService.currentUser.value.nickname,
+      host: userNickname,
           players: 1,
           maxPlayers: roomData.maxPlayers,
           mode: roomData.gameMode,
@@ -309,7 +320,7 @@ const createRoom = (roomData) => {
         
     // 시스템 메시지 추가 (WebSocket 서비스를 통해)
     lobbyService.createGlobalSystemMessage(
-      `${lobbyService.currentUser.value.nickname}님이 '${roomData.name}' 방을 생성했습니다.`
+      `${userNickname}님이 '${roomData.name}' 방을 생성했습니다.`
     );
         
         // 생성한 방으로 자동 입장 (대기실 모드로 시작됨)

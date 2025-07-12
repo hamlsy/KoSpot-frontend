@@ -3,12 +3,10 @@ import { useAuth } from '@/core/composables/useAuth.js';
 import webSocketManager from '../../shared/services/websocket/composables/index.js';
 import { 
     lobbyChatMessages, 
-    currentUser, 
     sendChatMessage, 
     sendLobbyJoinMessage, 
     createSystemMessage, 
-    setupChatSubscriptions,
-    initializeUserData 
+    setupChatSubscriptions
 } from '../../shared/services/websocket/composables/chat.js';
 
 /**
@@ -46,8 +44,7 @@ export function useGlobalLobbyWebSocketService() {
             isConnected: webSocketManager.isConnected.value
         });
         
-        // 사용자 정보 초기화
-        initializeUserData();
+        // 로비 채팅은 서버 세션으로 사용자 식별하므로 별도 초기화 불필요
         
         // 이미 연결된 경우에는 글로벌 로비 채널만 구독
         if (webSocketManager.isConnected.value) {
@@ -144,7 +141,7 @@ export function useGlobalLobbyWebSocketService() {
     const sendGlobalLobbyChat = (message) => {
         console.log('🔵 로비 채팅 메시지 전송 시도:', message);
         console.log('🔍 현재 WebSocket 연결 상태:', webSocketManager.isConnected.value);
-        console.log('🔍 현재 사용자 정보:', currentUser.value);
+        // 로비 채팅은 서버 세션으로 사용자 식별
         
         if (!webSocketManager.isConnected.value) {
             console.error('❌ WebSocket이 연결되지 않아 메시지를 전송할 수 없습니다.');
@@ -213,16 +210,13 @@ export function useGlobalLobbyWebSocketService() {
     
     /**
      * 현재 사용자 정보를 업데이트합니다.
+     * 로비 채팅은 서버 세션으로 사용자 식별하므로 별도 처리 불필요
      * 
      * @param {Object} userInfo - 업데이트할 사용자 정보
      */
     const setCurrentUser = (userInfo) => {
-        console.log('🔵 사용자 정보 업데이트:', userInfo);
-        
-        // 통합 채팅 모듈에서 사용자 정보 초기화
-        initializeUserData();
-        
-        console.log('현재 사용자 정보:', currentUser.value);
+        console.log('🔵 로비 사용자 정보 업데이트:', userInfo);
+        // 로비 채팅은 서버 세션으로 사용자 식별하므로 별도 처리 불필요
     };
     
     /**
@@ -261,7 +255,6 @@ export function useGlobalLobbyWebSocketService() {
         
         // 채팅 상태 (통합 채팅 모듈에서 가져옴)
         globalLobbyChatMessages: lobbyChatMessages,
-        currentUser,
         
         // 구독 관리
         subscribeToGlobalLobbyChat,

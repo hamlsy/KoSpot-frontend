@@ -8,9 +8,9 @@ import { useAuth } from '@/core/composables/useAuth.js';
  */
 
 // 채팅 유형별 메시지 저장소
-const lobbyChatMessages = ref([]); // 로비 채팅 메시지
-const gameChatMessages = ref([]); // 게임 전체 채팅 메시지
-const teamChatMessages = ref({}); // 팀별 채팅 메시지 (키: 팀ID, 값: 메시지 배열)
+const lobbyChatMessages = ref([]);
+const gameChatMessages = ref([]);
+const teamChatMessages = ref({});
 
 // 사용자 정보 관리
 const currentUser = ref({
@@ -19,107 +19,73 @@ const currentUser = ref({
 });
 
 /**
- * 사용자 정보 초기화
+ * 사용자 정보 초기화 (게임/팀 채팅 전용)
  */
 const initializeUserData = () => {
     const { user: authUser, isAuthenticated } = useAuth();
+    const localStorageMemberId = localStorage.getItem('memberId');
     
     if (isAuthenticated.value && authUser.value) {
-        // 실제 인증된 사용자 정보 사용
+        const userId = authUser.value.id || authUser.value.memberId || localStorageMemberId;
+        
         currentUser.value = {
-            id: authUser.value.id || authUser.value.memberId,
-            nickname: authUser.value.nickname || authUser.value.name || authUser.value.username,
-            email: authUser.value.email,
-            profileImage: authUser.value.profileImage || authUser.value.avatar
+            id: userId,
+            nickname: '익명',
+            email: null,
+            profileImage: null
         };
-        console.log('✅ 채팅 모듈: 실제 사용자 정보로 설정됨:', currentUser.value);
-    } else {
-        console.warn('❌ 인증되지 않은 사용자 - 채팅 기능 제한');
+    } else if (!isAuthenticated.value) {
+        console.warn('❌ 인증되지 않은 사용자 - 게임/팀 채팅 기능 제한');
     }
 };
 
 /**
  * 채팅 메시지 전송 목적지 결정
- * @param {String} chatType - 채팅 유형 ('lobby', 'game', 'team')
- * @param {String} teamId - 팀 ID (팀 채팅인 경우)
- * @returns {String} 전송 목적지 경로
  */
 const getChatDestination = (chatType, teamId = null) => {
-    let destination;
     switch (chatType) {
         case 'lobby':
-            destination = '/app/chat.message.lobby';
-            break;
+            return '/app/chat.message.lobby';
         case 'team':
-            destination = teamId ? `/app/game/team/${teamId}/chat` : '/app/game/chat';
-            break;
+            return teamId ? `/app/game/team/${teamId}/chat` : '/app/game/chat';
         case 'game':
         default:
-            destination = '/app/game/chat';
-            break;
+            return '/app/game/chat';
     }
-    
-    console.log('📍 메시지 전송 목적지 결정:', { chatType, teamId, destination });
-    return destination;
 };
 
 /**
  * 채팅 메시지 구성
- * @param {String} message - 메시지 내용
- * @param {String} chatType - 채팅 유형
- * @param {String} teamId - 팀 ID (팀 채팅인 경우)
- * @returns {Object} 구성된 채팅 메시지
  */
 const buildChatMessage = (message, chatType, teamId = null) => {
-    let chatMessage;
-    
     if (chatType === 'lobby') {
-        // Spring 서버의 ChatMessageDto 형식 (로비 채팅)
-        chatMessage = {
+        return {
             messageType: 'CHAT',
             channelType: 'LOBBY',
             content: message
         };
-    } else {
-        // 게임 채팅 형식
-        chatMessage = {
-            playerId: currentUser.value.id,
-            playerName: currentUser.value.nickname || '익명',
-            teamId: teamId,
-            content: message,
-            chatType: chatType,
-            timestamp: new Date().toISOString()
-        };
     }
     
-    console.log('📝 채팅 메시지 구성:', { chatType, teamId, message: chatMessage });
-    return chatMessage;
+    return {
+        playerId: currentUser.value.id,
+        playerName: currentUser.value.nickname || '익명',
+        teamId: teamId,
+        content: message,
+        chatType: chatType,
+        timestamp: new Date().toISOString()
+    };
 };
 
 /**
  * 통합 채팅 메시지 전송
- * @param {String} message - 메시지 내용
- * @param {String} chatType - 채팅 유형 ('lobby', 'game', 'team')
- * @param {Object} options - 추가 옵션
- * @param {String} options.teamId - 팀 ID (팀 채팅인 경우)
- * @param {Object} options.player - 플레이어 정보 (게임 채팅인 경우, 하위 호환성)
- * @returns {Boolean} 전송 성공 여부
  */
 const sendChatMessage = (message, chatType = 'game', options = {}) => {
     if (!message) return false;
-    console.log(message);
     
-    // 로비 채팅의 경우 서버 세션으로 사용자 식별하므로 클라이언트 사용자 정보 확인 불필요
+    // 로비 채팅의 경우 서버 세션으로 사용자 식별 (currentUser 불필요)
     if (chatType === 'lobby') {
         const destination = getChatDestination(chatType, options.teamId);
         const chatMessage = buildChatMessage(message, chatType, options.teamId);
-        
-        console.log('📤 로비 채팅 메시지 전송 (서버 세션):', {
-            type: chatType,
-            destination,
-            message: chatMessage
-        });
-        
         return publish(destination, chatMessage);
     }
     
@@ -129,7 +95,7 @@ const sendChatMessage = (message, chatType = 'game', options = {}) => {
     }
     
     if (!currentUser.value?.id) {
-        console.error('사용자 정보가 없어 메시지를 전송할 수 없습니다.');
+        console.error('게임/팀 채팅: 사용자 정보가 없어 메시지를 전송할 수 없습니다.');
         return false;
     }
     
@@ -146,29 +112,18 @@ const sendChatMessage = (message, chatType = 'game', options = {}) => {
     const destination = getChatDestination(chatType, options.teamId);
     const chatMessage = buildChatMessage(message, chatType, options.teamId);
     
-    console.log('📤 채팅 메시지 전송:', {
-        type: chatType,
-        destination,
-        message: chatMessage,
-        user: currentUser.value
-    });
-    
-    // 서버로 메시지 전송
     return publish(destination, chatMessage);
 };
 
 /**
  * 통합 채팅 메시지 처리
- * @param {Object} message - 채팅 메시지 데이터
  */
 const handleChatMessage = (message) => {
     const chatType = message.chatType || 'game';
     
-    // 채팅 유형에 따라 적절한 저장소에 메시지 추가
     switch (chatType) {
         case 'lobby':
             lobbyChatMessages.value.push(message);
-            // 최대 100개만 유지
             if (lobbyChatMessages.value.length > 100) {
                 lobbyChatMessages.value = lobbyChatMessages.value.slice(-100);
             }
@@ -181,7 +136,6 @@ const handleChatMessage = (message) => {
                     teamChatMessages.value[teamId] = [];
                 }
                 teamChatMessages.value[teamId].push(message);
-                // 팀별로 최대 50개만 유지
                 if (teamChatMessages.value[teamId].length > 50) {
                     teamChatMessages.value[teamId] = teamChatMessages.value[teamId].slice(-50);
                 }
@@ -192,29 +146,15 @@ const handleChatMessage = (message) => {
         case 'game':
         default:
             gameChatMessages.value.push(message);
-            // 최대 100개만 유지
             if (gameChatMessages.value.length > 100) {
                 gameChatMessages.value = gameChatMessages.value.slice(-100);
             }
             break;
     }
-    
-    console.log('📥 채팅 메시지 처리됨:', {
-        type: chatType,
-        messageCount: {
-            lobby: lobbyChatMessages.value.length,
-            game: gameChatMessages.value.length,
-            teams: Object.keys(teamChatMessages.value).length
-        }
-    });
 };
 
 /**
  * 시스템 메시지 생성
- * @param {String} content - 메시지 내용
- * @param {String} chatType - 채팅 유형
- * @param {String} teamId - 팀 ID (팀 채팅인 경우)
- * @returns {Object} 시스템 메시지 객체
  */
 const createSystemMessage = (content, chatType = 'game', teamId = null) => {
     const systemMessage = {
@@ -236,10 +176,8 @@ const createSystemMessage = (content, chatType = 'game', teamId = null) => {
 
 /**
  * 로비 입장 메시지 (본인만 표시)
- * @returns {Boolean} 전송 성공 여부
  */
 const sendLobbyJoinMessage = () => {
-    // 본인에게만 표시되는 입장 메시지
     const joinMessage = {
         playerName: '시스템',
         content: '로비에 입장했습니다.',
@@ -248,32 +186,23 @@ const sendLobbyJoinMessage = () => {
         isSystem: true
     };
     
-    // 서버로 전송하지 않고 본인 채팅창에만 추가
     handleChatMessage(joinMessage);
-    console.log('🚪 로비 입장 메시지 (본인만 표시):', joinMessage);
     return true;
 };
 
 /**
  * 채팅 구독 설정
- * @param {Array} chatTypes - 구독할 채팅 유형 배열 ['lobby', 'game', 'team']
  */
 const setupChatSubscriptions = (chatTypes = ['game']) => {
     chatTypes.forEach(chatType => {
         switch (chatType) {
             case 'lobby': {
-                // Spring WebSocketChannelConstants에 따른 정확한 로비 채팅 토픽
-                // PREFIX_CHAT + GLOBAL_LOBBY_CHANNEL = "/topic/chat/" + "lobby"
                 const topic = '/topic/chat/lobby';
                 
-                console.log(`🔍 로비 채팅 구독: ${topic}`);
                 subscribe(topic, (message) => {
-                    console.log(`📥 로비 채팅 메시지 수신 (${topic}):`, message);
                     try {
                         const data = typeof message === 'string' ? JSON.parse(message) : message;
-                        console.log('🔍 파싱된 메시지 데이터:', data);
                         
-                        // Spring ChatMessageResponse.GlobalLobby 형식 처리
                         const processedMessage = {
                             id: data.messageId,
                             playerName: data.nickname,
@@ -286,7 +215,6 @@ const setupChatSubscriptions = (chatTypes = ['game']) => {
                             isSystem: false
                         };
                         
-                        console.log('📝 처리된 메시지:', processedMessage);
                         handleChatMessage(processedMessage);
                     } catch (error) {
                         console.error(`❌ 로비 채팅 메시지 처리 오류 (${topic}):`, error, message);
@@ -312,13 +240,10 @@ const setupChatSubscriptions = (chatTypes = ['game']) => {
                 break;
         }
     });
-    
-    console.log('✅ 채팅 구독 설정 완료:', chatTypes);
 };
 
 /**
  * 팀 채팅 구독 설정
- * @param {String} teamId - 팀 ID
  */
 const subscribeToTeamChat = (teamId) => {
     if (!teamId) return;
@@ -334,14 +259,10 @@ const subscribeToTeamChat = (teamId) => {
             console.error('팀 채팅 메시지 처리 오류:', error);
         }
     });
-    
-    console.log('✅ 팀 채팅 구독 설정 완료:', teamId);
 };
 
 /**
  * 채팅 메시지 초기화
- * @param {String} chatType - 초기화할 채팅 유형 ('lobby', 'game', 'team', 'all')
- * @param {String} teamId - 팀 ID (팀 채팅 초기화 시)
  */
 const clearChatMessages = (chatType = 'all', teamId = null) => {
     switch (chatType) {
@@ -365,12 +286,7 @@ const clearChatMessages = (chatType = 'all', teamId = null) => {
             teamChatMessages.value = {};
             break;
     }
-    
-    console.log('🧹 채팅 메시지 초기화:', chatType, teamId);
 };
-
-// 사용자 정보 초기화
-initializeUserData();
 
 // 읽기 전용 상태 생성
 const readonlyLobbyChatMessages = readonly(lobbyChatMessages);

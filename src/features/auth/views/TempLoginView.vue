@@ -109,14 +109,12 @@ const handleTempLogin = async () => {
     }
 
     // result에서 토큰 정보 추출
-    const { accessToken, refreshToken } = response.data.result
+    const { memberId, accessToken, refreshToken } = response.data.result
 
     // 토큰 저장
     localStorage.setItem('accessToken', accessToken)
     localStorage.setItem('refreshToken', refreshToken)
-
-    // 사용자 정보 저장
-    currentUser.value = { username: username.value }
+    localStorage.setItem('memberId', memberId)
     
     successMessage.value = '임시 로그인에 성공했습니다!'
     
@@ -158,6 +156,7 @@ const handleLogout = async () => {
     // 로컬 스토리지 정리
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
+    localStorage.removeItem('memberId')
     currentUser.value = null
     username.value = ''
     loading.value = false

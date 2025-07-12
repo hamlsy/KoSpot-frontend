@@ -126,6 +126,13 @@ export default {
         });
       },
       deep: true
+    },
+    // currentUserId props 변경을 감지하여 memberId 업데이트
+    currentUserId: {
+      handler(newValue) {
+        this.initializeCurrentUser();
+      },
+      immediate: true
     }
   },
   
@@ -136,8 +143,13 @@ export default {
   methods: {
     initializeCurrentUser() {
       // localStorage에서 memberId 가져오기
-      this.currentMemberId = localStorage.getItem('memberId');
-      console.log('ChatWindow: 현재 사용자 memberId 설정됨:', this.currentMemberId);
+      const localStorageMemberId = localStorage.getItem('memberId');
+      
+      // props로 전달받은 currentUserId 확인
+      const propsUserId = this.currentUserId;
+      
+      // localStorage의 memberId를 우선 사용, 없으면 props 사용
+      this.currentMemberId = localStorageMemberId || propsUserId;
     },
     
     sendMessage() {
@@ -173,14 +185,10 @@ export default {
     isMyMessage(message) {
       if (message.system) return false;
       
-      // 백엔드에서 isMyMessage 필드를 직접 제공하는 경우
-      if (typeof message.isMyMessage === 'boolean') {
-        return message.isMyMessage;
-      }
-      
       // senderId와 현재 사용자 memberId 비교
       if (this.currentMemberId && message.senderId) {
-        return String(this.currentMemberId) === String(message.senderId);
+        const isMyMsg = String(this.currentMemberId) === String(message.senderId);
+        return isMyMsg;
       }
       
       return false;

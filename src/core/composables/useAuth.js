@@ -28,22 +28,23 @@ export function useAuth() {
       authState.error = null
       
       const response = await apiClient.post(API_ENDPOINTS.AUTH.LOGIN, credentials)
-      const { user, accessToken, refreshToken } = response.data
+      const { memberId, accessToken, refreshToken } = response.data
       
       // 토큰 저장
       localStorage.setItem('accessToken', accessToken)
       localStorage.setItem('refreshToken', refreshToken)
       
-      // memberId 저장 (채팅 메시지 소유권 판단용)
-      if (user.memberId || user.id) {
-        localStorage.setItem('memberId', user.memberId || user.id)
-      }
+      // memberId 저장 (채팅 메시지 소유권 판단용) - String으로 변환하여 저장
+      const memberIdString = String(memberId);
+      localStorage.setItem('memberId', memberIdString);
       
-      // 사용자 정보 저장
-      authState.user = user
+      // 최소한의 사용자 정보 저장 (memberId만으로 구성)
+      authState.user = {
+        id: memberId,
+      }
       authState.isAuthenticated = true
       
-      return { success: true, user }
+      return { success: true, memberId }
     } catch (error) {
       authState.error = error.response?.data?.message || '로그인에 실패했습니다.'
       return { success: false, error: authState.error }
@@ -105,19 +106,6 @@ export function useAuth() {
     }
   }
   
-  // 비밀번호 변경
-  const changePassword = async (passwordData) => {
-    try {
-      authState.loading = true
-      const response = await apiClient.post(API_ENDPOINTS.USER.CHANGE_PASSWORD, passwordData)
-      return { success: true, message: response.data.message }
-    } catch (error) {
-      return { success: false, error: error.response?.data?.message }
-    } finally {
-      authState.loading = false
-    }
-  }
-  
   return {
     // 상태
     user,
@@ -130,6 +118,5 @@ export function useAuth() {
     logout,
     register,
     checkAuth,
-    changePassword
   }
 }
