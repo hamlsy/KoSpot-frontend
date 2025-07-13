@@ -24,14 +24,14 @@
         <div class="panel-section">
           <h3 class="section-title">
             <i class="fas fa-users"></i>
-            참가자 ({{ players.length }}/{{ roomData.maxPlayers }})
+            참가자 ({{ localPlayers.length }}/{{ roomData.maxPlayers }})
           </h3>
 
           <!-- 팀 모드인 경우 팀별로 플레이어 목록 표시 -->
           <TeamWaitingList
             v-if="isTeamMode"
             :teams="availableTeams"
-            :players="players"
+            :players="localPlayers"
             :current-user-id="currentUserId"
             :is-host="isHost"
             :max-players-per-team="maxPlayersPerTeam"
@@ -44,7 +44,7 @@
           <!-- 개인 모드인 경우 플레이어 목록 표시 -->
           <IndividualWaitingList
             v-else
-            :players="players"
+            :players="localPlayers"
             :current-user-id="currentUserId"
             :is-host="isHost"
             :max-players="roomData.maxPlayers"
@@ -68,7 +68,7 @@
             </div>
             <div class="chat-status">
               <i class="fas fa-circle online-indicator"></i>
-              <span>{{ players.length }}명 온라인</span>
+              <span>{{ localPlayers.length }}명 온라인</span>
             </div>
           </div>
 
@@ -135,7 +135,8 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, nextTick } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import webSocketManager from 'src/features/game/multiplayer/shared/services/websocket/composables/index.js';
 import RoomHeader from 'src/features/game/multiplayer/room/components/header/RoomHeader.vue'
 //waiting list
 import TeamWaitingList from 'src/features/game/multiplayer/room/components/list/TeamWaitingList.vue'
@@ -191,8 +192,13 @@ const emit = defineEmits([
   'send-chat',
   'update-room-settings',
   'kick-player',
-  'join-team'
+  'join-team',
+  'player-list-updated' // 웹소켓으로 플레이어 목록 업데이트 시 사용
 ]);
+
+// WebSocket 관련 상태
+const roomSubscriptions = ref(new Map());
+const isWebSocketConnected = ref(false);
 
 // State
 const isRoomSettingsOpen = ref(false);
@@ -241,10 +247,15 @@ const chatMessagesRef = ref(null);
 
 // 로컬 상태 (props 복사)
 const localRoomData = ref({...props.roomData});
+const localPlayers = ref([...props.players]);
 
 // props가 변경되면 로컬 상태 업데이트
 watch(() => props.roomData, (newVal) => {
   localRoomData.value = {...newVal};
+}, { deep: true });
+
+watch(() => props.players, (newVal) => {
+  localPlayers.value = [...newVal];
 }, { deep: true });
 
 // Computed properties
@@ -254,12 +265,12 @@ const isTeamMode = computed(() => {
 
 const canStartGame = computed(() => {
   // 최소 2명 이상의 플레이어가 있어야 시작 가능
-  if (props.players.length < 2) return false;
+  if (localPlayers.value.length < 2) return false;
   
   // 팀 모드인 경우 각 팀에 최소 1명 이상의 플레이어가 있어야 함
   if (isTeamMode.value) {
     const teamCounts = {};
-    props.players.forEach(player => {
+    localPlayers.value.forEach(player => {
       if (player.teamId) {
         teamCounts[player.teamId] = (teamCounts[player.teamId] || 0) + 1;
       }
@@ -295,6 +306,385 @@ const maxPlayersPerTeam = computed(() => {
   return 4; // 각 팀별 플레이어 제한은 4명으로 고정
 });
 
+// WebSocket 관련 Methods
+const requestCurrentPlayerList = () => {
+  const roomId = localRoomData.value.id;
+  const topic = `/app/room/${roomId}/getPlayerList`;
+  
+  const requestData = {
+    roomId,
+    requesterId: props.currentUserId
+  };
+  
+  console.log('📤 현재 플레이어 목록 요청:', requestData);
+  
+  const success = webSocketManager.publish(topic, requestData);
+  
+  if (!success) {
+    console.error('❌ 플레이어 목록 요청 실패');
+  }
+  
+  return success;
+};
+
+const handleCurrentPlayerList = (playerListEvent) => {
+  console.log('📥 현재 플레이어 목록 수신:', playerListEvent);
+  
+  if (!playerListEvent || !playerListEvent.players) {
+    console.warn('⚠️ 잘못된 플레이어 목록 형식:', playerListEvent);
+    return;
+  }
+  
+  // 현재 방의 플레이어 목록으로 업데이트
+  localPlayers.value = playerListEvent.players;
+  
+  // 시스템 메시지 추가
+  addSystemMessage(`현재 ${playerListEvent.players.length}명이 방에 참가중입니다.`);
+  
+  // 부모 컴포넌트에 플레이어 목록 업데이트 알림
+  emit('player-list-updated', localPlayers.value);
+  
+  console.log('✅ 플레이어 목록 업데이트 완료');
+};
+
+const connectToRoom = () => {
+  console.log('🔗 방 WebSocket 연결 시도 중...');
+  
+  // 이미 연결되어 있는 경우 구독만 진행
+  if (webSocketManager.isConnected.value) {
+    console.log('이미 연결되어 있음, 구독만 진행');
+    subscribeToRoomEvents();
+    requestCurrentPlayerList(); // 현재 플레이어 목록 요청
+    return;
+  }
+  
+  // 연결 성공 콜백
+  const onConnectCallback = () => {
+    console.log('🟢 방 WebSocket 연결 성공!');
+    isWebSocketConnected.value = true;
+    subscribeToRoomEvents();
+    
+    // 현재 방의 플레이어 목록 먼저 요청
+    requestCurrentPlayerList();
+    
+    // 그 다음 자신의 입장 알림
+    setTimeout(() => {
+      publishRoomEvent('JOIN', {
+        roomId: localRoomData.value.id,
+        player: {
+          id: props.currentUserId,
+          nickname: getCurrentPlayerNickname(),
+          profileImage: '',
+          isHost: props.isHost,
+          teamId: getCurrentPlayerTeam()
+        }
+      });
+    }, 100);
+  };
+  
+  // WebSocket 연결
+  webSocketManager.connect('/ws', onConnectCallback);
+};
+
+const subscribeToRoomEvents = () => {
+  const roomId = localRoomData.value.id;
+  
+  // 방별 플레이어 상태 변경 구독
+  const playerStatusTopic = `/topic/room/${roomId}/players`;
+  const playerStatusSubscription = webSocketManager.subscribe(playerStatusTopic, handlePlayerStatusChange);
+  
+  if (playerStatusSubscription) {
+    roomSubscriptions.value.set(playerStatusTopic, playerStatusSubscription);
+    console.log(`✅ 플레이어 상태 구독 완료: ${playerStatusTopic}`);
+  }
+  
+  // 방별 방 설정 변경 구독
+  const roomSettingsTopic = `/topic/room/${roomId}/settings`;
+  const roomSettingsSubscription = webSocketManager.subscribe(roomSettingsTopic, handleRoomSettingsChange);
+  
+  if (roomSettingsSubscription) {
+    roomSubscriptions.value.set(roomSettingsTopic, roomSettingsSubscription);
+    console.log(`✅ 방 설정 구독 완료: ${roomSettingsTopic}`);
+  }
+  
+  // 방별 채팅 구독
+  const chatTopic = `/topic/room/${roomId}/chat`;
+  const chatSubscription = webSocketManager.subscribe(chatTopic, handleRoomChatMessage);
+  
+  if (chatSubscription) {
+    roomSubscriptions.value.set(chatTopic, chatSubscription);
+    console.log(`✅ 방 채팅 구독 완료: ${chatTopic}`);
+  }
+  
+  // 현재 플레이어 목록 응답 구독 (일회성)
+  const playerListTopic = `/topic/room/${roomId}/playerList`;
+  const playerListSubscription = webSocketManager.subscribe(playerListTopic, handleCurrentPlayerList);
+  
+  if (playerListSubscription) {
+    roomSubscriptions.value.set(playerListTopic, playerListSubscription);
+    console.log(`✅ 플레이어 목록 구독 완료: ${playerListTopic}`);
+  }
+};
+
+const handlePlayerStatusChange = (playerEvent) => {
+  console.log('🔄 플레이어 상태 변경:', playerEvent);
+  
+  if (!playerEvent || !playerEvent.eventType || !playerEvent.player) {
+    console.warn('⚠️ 잘못된 플레이어 이벤트 형식:', playerEvent);
+    return;
+  }
+  
+  const { eventType, player } = playerEvent;
+  
+  switch (eventType) {
+    case 'JOIN':
+      // 플레이어 입장 처리
+      if (!localPlayers.value.find(p => p.id === player.id)) {
+        localPlayers.value.push(player);
+        
+        // 시스템 메시지 추가
+        addSystemMessage(`${player.nickname || '플레이어'}님이 방에 참가했습니다.`);
+        
+        console.log(`✅ 플레이어 입장: ${player.nickname} (${player.id})`);
+      }
+      break;
+      
+    case 'LEAVE': {
+      // 플레이어 퇴장 처리
+      const leaveIndex = localPlayers.value.findIndex(p => p.id === player.id);
+      if (leaveIndex !== -1) {
+        localPlayers.value.splice(leaveIndex, 1);
+        
+        // 시스템 메시지 추가
+        addSystemMessage(`${player.nickname || '플레이어'}님이 방을 나갔습니다.`);
+        
+        console.log(`✅ 플레이어 퇴장: ${player.nickname} (${player.id})`);
+      }
+      break;
+    }
+      
+    case 'KICKED': {
+      // 플레이어 강퇴 처리
+      const kickIndex = localPlayers.value.findIndex(p => p.id === player.id);
+      if (kickIndex !== -1) {
+        localPlayers.value.splice(kickIndex, 1);
+        
+        // 시스템 메시지 추가
+        addSystemMessage(`${player.nickname || '플레이어'}님이 방에서 강퇴되었습니다.`);
+        
+        console.log(`✅ 플레이어 강퇴: ${player.nickname} (${player.id})`);
+        
+        // 자신이 강퇴당한 경우 방 나가기
+        if (player.id === props.currentUserId) {
+          alert('방장에 의해 강퇴되었습니다.');
+          leaveRoom();
+        }
+      }
+      break;
+    }
+      
+    case 'TEAM_CHANGE': {
+      // 팀 변경 처리
+      const teamChangeIndex = localPlayers.value.findIndex(p => p.id === player.id);
+      if (teamChangeIndex !== -1) {
+        localPlayers.value[teamChangeIndex] = {
+          ...localPlayers.value[teamChangeIndex],
+          teamId: player.teamId
+        };
+        
+        // 시스템 메시지 추가
+        const teamName = availableTeams.value.find(t => t.id === player.teamId)?.name || '팀';
+        addSystemMessage(`${player.nickname || '플레이어'}님이 ${teamName}으로 팀을 변경했습니다.`);
+        
+        console.log(`✅ 팀 변경: ${player.nickname} -> ${teamName}`);
+      }
+      break;
+    }
+      
+    default:
+      console.warn('⚠️ 알 수 없는 플레이어 이벤트:', eventType);
+  }
+  
+  // 부모 컴포넌트에 플레이어 목록 업데이트 알림
+  emit('player-list-updated', localPlayers.value);
+};
+
+const handleRoomSettingsChange = (settingsEvent) => {
+  console.log('🔄 방 설정 변경:', settingsEvent);
+  
+  if (!settingsEvent || !settingsEvent.settings) {
+    console.warn('⚠️ 잘못된 방 설정 이벤트 형식:', settingsEvent);
+    return;
+  }
+  
+  // 로컬 방 설정 업데이트
+  localRoomData.value = {
+    ...localRoomData.value,
+    ...settingsEvent.settings
+  };
+  
+  // 시스템 메시지 추가
+  addSystemMessage('방 설정이 변경되었습니다.');
+  
+  console.log('✅ 방 설정 업데이트 완료');
+};
+
+const handleRoomChatMessage = (chatEvent) => {
+  console.log('💬 방 채팅 메시지:', chatEvent);
+  
+  if (!chatEvent || !chatEvent.message) {
+    console.warn('⚠️ 잘못된 채팅 이벤트 형식:', chatEvent);
+    return;
+  }
+  
+  // 채팅 메시지 추가
+  const message = {
+    id: chatEvent.message.id || Date.now(),
+    senderId: chatEvent.message.senderId,
+    content: chatEvent.message.content,
+    timestamp: chatEvent.message.timestamp || new Date().toISOString(),
+    senderNickname: chatEvent.message.senderNickname
+  };
+  
+  chatMessages.value.push(message);
+  
+  // 읽지 않은 메시지 카운트 증가
+  if (chatEvent.message.senderId !== props.currentUserId) {
+    unreadMessages.value++;
+  }
+  
+  // 채팅 스크롤 하단으로 이동
+  nextTick(() => {
+    scrollChatToBottom();
+  });
+};
+
+const publishRoomEvent = (eventType, data) => {
+  const roomId = localRoomData.value.id;
+  const topic = `/app/room/${roomId}/event`;
+  
+  const eventData = {
+    eventType,
+    roomId,
+    ...data
+  };
+  
+  console.log(`📤 방 이벤트 발행: ${eventType}`, eventData);
+  
+  const success = webSocketManager.publish(topic, eventData);
+  
+  if (!success) {
+    console.error('❌ 방 이벤트 발행 실패:', eventType);
+  }
+  
+  return success;
+};
+
+const publishKickEvent = (targetPlayerId) => {
+  return publishRoomEvent('KICK', {
+    targetPlayerId,
+    kickedBy: props.currentUserId
+  });
+};
+
+const publishJoinTeamEvent = (teamId) => {
+  return publishRoomEvent('TEAM_CHANGE', {
+    player: {
+      id: props.currentUserId,
+      nickname: getCurrentPlayerNickname(),
+      profileImage: '',
+      isHost: props.isHost,
+      teamId: teamId
+    }
+  });
+};
+
+const publishLeaveEvent = () => {
+  return publishRoomEvent('LEAVE', {
+    player: {
+      id: props.currentUserId,
+      nickname: getCurrentPlayerNickname(),
+      profileImage: '',
+      isHost: props.isHost,
+      teamId: getCurrentPlayerTeam()
+    }
+  });
+};
+
+const publishChatMessage = (message) => {
+  const roomId = localRoomData.value.id;
+  const topic = `/app/room/${roomId}/chat`;
+  
+  const chatData = {
+    roomId,
+    message: {
+      id: Date.now(),
+      senderId: props.currentUserId,
+      senderNickname: getCurrentPlayerNickname(),
+      content: message,
+      timestamp: new Date().toISOString()
+    }
+  };
+  
+  console.log('📤 채팅 메시지 발행:', chatData);
+  
+  const success = webSocketManager.publish(topic, chatData);
+  
+  if (!success) {
+    console.error('❌ 채팅 메시지 발행 실패');
+  }
+  
+  return success;
+};
+
+const addSystemMessage = (content) => {
+  const systemMessage = {
+    id: Date.now(),
+    senderId: 'system',
+    content,
+    timestamp: new Date().toISOString(),
+    isSystem: true
+  };
+  
+  chatMessages.value.push(systemMessage);
+  
+  nextTick(() => {
+    scrollChatToBottom();
+  });
+};
+
+const getCurrentPlayerNickname = () => {
+  const currentPlayer = localPlayers.value.find(p => p.id === props.currentUserId);
+  return currentPlayer?.nickname || '플레이어';
+};
+
+const getCurrentPlayerTeam = () => {
+  const currentPlayer = localPlayers.value.find(p => p.id === props.currentUserId);
+  return currentPlayer?.teamId || null;
+};
+
+const disconnectFromRoom = () => {
+  console.log('🔌 방 WebSocket 연결 해제 시도...');
+  
+  // 방 나가기 이벤트 발행
+  publishLeaveEvent();
+  
+  // 구독 해제
+  roomSubscriptions.value.forEach((subscription, topic) => {
+    try {
+      webSocketManager.unsubscribe(topic);
+      console.log(`✅ 구독 해제: ${topic}`);
+    } catch (error) {
+      console.error(`❌ 구독 해제 실패: ${topic}`, error);
+    }
+  });
+  
+  roomSubscriptions.value.clear();
+  isWebSocketConnected.value = false;
+  
+  console.log('✅ 방 WebSocket 연결 해제 완료');
+};
+
 // Methods
 const openRoomSettings = () => {
 isRoomSettingsOpen.value = true;
@@ -311,7 +701,13 @@ const updateRoomSettings = (settings) => {
     ...settings
   };
   
-  // 부모 컴포넌트에 업데이트 알림
+  // WebSocket으로 방 설정 변경 알림
+  publishRoomEvent('SETTINGS_CHANGE', {
+    settings,
+    changedBy: props.currentUserId
+  });
+  
+  // 기존 emit 유지 (하위 호환성)
   emit('update-room-settings', settings);
   closeRoomSettings();
 };
@@ -333,17 +729,35 @@ const scrollChatToBottom = () => {
 const sendChatMessage = () => {
   if (!chatInput.value.trim()) return;
   
-  emit('send-chat', chatInput.value);
-  chatInput.value = '';
+  // WebSocket으로 채팅 메시지 발행
+  const success = publishChatMessage(chatInput.value);
+  
+  if (success) {
+    chatInput.value = '';
+  } else {
+    // WebSocket 실패 시 기존 emit 사용
+    emit('send-chat', chatInput.value);
+    chatInput.value = '';
+  }
 };
 
 const leaveRoom = () => {
+  // WebSocket 연결 해제
+  disconnectFromRoom();
+  
+  // 기존 emit 유지
   emit('leave-room');
 };
 
 const startGame = () => {
   if (!canStartGame.value) return;
   
+  // 게임 시작 이벤트 발행
+  publishRoomEvent('GAME_START', {
+    startedBy: props.currentUserId
+  });
+  
+  // 기존 emit 유지
   emit('start-game');
 };
 
@@ -360,7 +774,16 @@ const closeKickModal = () => {
 
 const kickPlayer = () => {
   if (playerToKick.value) {
-    emit('kick-player', playerToKick.value.id);
+    // WebSocket으로 강퇴 이벤트 발행
+    const success = publishKickEvent(playerToKick.value.id);
+    
+    if (success) {
+      console.log(`✅ 강퇴 이벤트 발행: ${playerToKick.value.nickname}`);
+    } else {
+      // WebSocket 실패 시 기존 emit 사용
+      emit('kick-player', playerToKick.value.id);
+    }
+    
     closeKickModal();
   }
 };
@@ -376,19 +799,27 @@ const closePlayerDetails = () => {
 };
 
 const joinTeam = (teamId) => {
-  // 현재 사용자의 플레이어 객체 찾기
-  const currentPlayerIndex = props.players.findIndex(player => player.id === props.currentUserId);
-  if (currentPlayerIndex === -1) return;
+  // WebSocket으로 팀 변경 이벤트 발행
+  const success = publishJoinTeamEvent(teamId);
   
-  // 플레이어 객체 복사 및 팀 ID 업데이트
-  const updatedPlayers = [...props.players];
-  updatedPlayers[currentPlayerIndex] = {
-    ...updatedPlayers[currentPlayerIndex],
-    teamId: teamId
-  };
-  
-  // 부모 컴포넌트에 업데이트된 플레이어 목록 전달
-  emit('join-team', { teamId, updatedPlayers });
+  if (success) {
+    console.log(`✅ 팀 변경 이벤트 발행: ${teamId}`);
+  } else {
+    // WebSocket 실패 시 기존 emit 사용
+    // 현재 사용자의 플레이어 객체 찾기
+    const currentPlayerIndex = localPlayers.value.findIndex(player => player.id === props.currentUserId);
+    if (currentPlayerIndex === -1) return;
+    
+    // 플레이어 객체 복사 및 팀 ID 업데이트
+    const updatedPlayers = [...localPlayers.value];
+    updatedPlayers[currentPlayerIndex] = {
+      ...updatedPlayers[currentPlayerIndex],
+      teamId: teamId
+    };
+    
+    // 부모 컴포넌트에 업데이트된 플레이어 목록 전달
+    emit('join-team', { teamId, updatedPlayers });
+  }
 };
 
 // Watchers
@@ -415,6 +846,14 @@ onMounted(() => {
   nextTick(() => {
     scrollChatToBottom();
   });
+  
+  // WebSocket 연결
+  connectToRoom();
+});
+
+onBeforeUnmount(() => {
+  // WebSocket 연결 해제
+  disconnectFromRoom();
 });
 </script>
 
