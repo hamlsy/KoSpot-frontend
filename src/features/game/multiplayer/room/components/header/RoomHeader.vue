@@ -3,19 +3,7 @@
     <div class="header-content">
       <!-- 상단: 방 기본 정보 -->
       <div class="room-info-section">
-        <div class="room-meta">
-          <div class="room-id-badge">
-            <span class="room-id-label">방 ID:</span>
-            <span class="room-id-value">{{ roomData.id }}</span>
-            <button 
-              class="copy-button" 
-              @click="copyRoomId" 
-              title="방 ID 복사"
-            >
-              <i class="fas fa-copy"></i>
-            </button>
-          </div>
-          
+        <div class="room-meta">    
           <div class="room-badges">
             <div class="privacy-badge" :class="{ 'private': roomData.isPrivate }">
               <i :class="roomData.isPrivate ? 'fas fa-lock' : 'fas fa-lock-open'"></i>
@@ -62,16 +50,6 @@
             <div class="info-content">
               <div class="info-label">제한 시간</div>
               <div class="info-value">{{ roomData.timeLimit }}초</div>
-            </div>
-          </div>
-          
-          <div class="game-info-item">
-            <div class="info-icon">
-              <i class="fas fa-map-marker-alt"></i>
-            </div>
-            <div class="info-content">
-              <div class="info-label">지역</div>
-              <div class="info-value">{{ roomData.region || "전국" }}</div>
             </div>
           </div>
         </div>
