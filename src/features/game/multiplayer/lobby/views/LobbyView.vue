@@ -31,8 +31,12 @@
         <!-- 왼쪽 패널: 게임 방 목록 -->
         <GameRoomList 
           :rooms="rooms" 
+          :loading="isLoading || isJoining"
+          :error="roomError"
           @join-room="joinRoom"
-          @refresh-rooms="fetchRooms"
+          @refresh-rooms="refreshRooms"
+          @load-more="loadMoreRooms"
+          @clear-error="clearError"
           class="game-room-list"
           :class="{ 'chat-open': isChatVisible && isMobile }"
         />
@@ -65,10 +69,21 @@
     />
 
     <!-- 로딩 오버레이 -->
-    <div v-if="isLoading" class="loading-overlay">
+    <div v-if="isLoading || isJoining" class="loading-overlay">
       <div class="loading-spinner">
         <i class="fas fa-spinner fa-spin"></i>
-        <p>로딩 중...</p>
+        <p>{{ isJoining ? '방에 입장 중...' : '로딩 중...' }}</p>
+      </div>
+    </div>
+    
+    <!-- 에러 알림 (Toast 형태) -->
+    <div v-if="roomError" class="error-toast" @click="clearError">
+      <div class="error-content">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span>{{ roomError }}</span>
+        <button class="error-close" @click="clearError">
+          <i class="fas fa-times"></i>
+        </button>
       </div>
     </div>
   </div>
@@ -79,6 +94,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '@/core/composables/useAuth.js';
 import useGlobalLobbyWebSocketService from '../services/useGlobalLobbyWebSocketService';
+import { useLobbyRoom } from '../composables/useLobbyRoom.js';
 import GameRoomList from '../components/RoomList.vue';
 import ChatWindow from '../../chat/components/Lobby/ChatWindow.vue';
 import CreateRoomModal from '../components/CreateRoomModal.vue';
@@ -90,10 +106,27 @@ const router = useRouter();
 // WebSocket 로비 서비스 초기화
 const lobbyService = useGlobalLobbyWebSocketService();
 
+// 방 관리 composables 초기화
+const {
+  rooms,
+  isLoading,
+  error: roomError,
+  isJoining,
+  currentPage,
+  hasNextPage,
+  availableRooms,
+  playingRooms,
+  fetchRooms,
+  loadMoreRooms,
+  refreshRooms,
+  joinRoom: joinRoomAPI,
+  joinRoomByObject,
+  createRoom: createRoomAPI,
+  clearError
+} = useLobbyRoom();
+
 // 반응형 데이터
-const rooms = ref([]);
 const showCreateRoomModal = ref(false);
-const isLoading = ref(false);
 const isInitialized = ref(false);
 const isMobile = ref(false);
 const isChatVisible = ref(false);
@@ -129,105 +162,27 @@ const getCurrentUserId = () => {
 };
 
 const initializeData = async () => {
-  isLoading.value = true;
-  
   try {
     // WebSocket 연결 및 채팅 서비스 시작
     // (사용자 정보는 서비스 내에서 자동으로 초기화됨)
     await connectToChat();
     
-    // 방 목록 가져오기
-    await fetchRooms();
+    // 방 목록 가져오기 (첫 페이지)
+    await fetchRooms(0);
     
     isInitialized.value = true;
       
-      // 30초마다 방 목록 갱신
+      // 30초마다 방 목록 새로고침
     refreshInterval.value = setInterval(() => {
-      fetchRooms();
+      refreshRooms();
       }, 30000);
     
   } catch (error) {
     console.error('로비 초기화 중 오류:', error);
-  } finally {
-    isLoading.value = false;
   }
 };
 
-const fetchRooms = async () => {
-  if (!isInitialized.value) {
-    isLoading.value = true;
-      }
-      
-      try {
-        // 실제 구현에서는 API 호출로
-        // const response = await axios.get('/api/multiplayer/rooms');
-    // rooms.value = response.data.rooms;
-        
-    // 테스트용 즉시 데이터 설정
-    rooms.value = [
-          {
-            id: 'room1',
-            name: '방 제목 A',
-            host: 'host A',
-            players: 2,
-            maxPlayers: 4,
-            mode: '로드뷰',
-            status: 'waiting',
-          },
-          {
-            id: 'room2',
-            name: '방 제목 B',
-            host: 'host B',
-            players: 3,
-            maxPlayers: 4,
-            mode: '포토',
-            status: 'waiting',
-          },
-          {
-            id: 'room3',
-            name: '방 제목 C',
-            host: 'host c',
-            players: 1,
-            maxPlayers: 2,
-            mode: '로드뷰',
-            status: 'waiting',
-          },
-          {
-            id: 'room5',
-            name: '게임 진행 중 - 3라운드',
-            host: 'host F',
-            players: 4,
-            maxPlayers: 8,
-            mode: '로드뷰',
-            status: 'playing',
-            region: '전국',
-            currentRound: 3,
-            totalRounds: 5,
-          },
-          {
-            id: 'room6',
-            name: '포토모드 5라운드 진행중',
-            host: 'host D',
-            players: 6,
-            maxPlayers: 6,
-            mode: '포토',
-            status: 'playing',
-            currentRound: 5,
-            totalRounds: 8,
-          }
-        ];
-        
-        // 초기화 이후에는 로딩 상태 해제
-    if (!isInitialized.value) {
-      isLoading.value = false;
-        }
-        
-      } catch (error) {
-        console.error('방 목록 조회 중 오류 발생:', error);
-    isLoading.value = false;
-    throw error;
-      }
-};
+// fetchRooms는 이제 composables에서 가져옴 (더 이상 여기서 정의하지 않음)
 
 const connectToChat = async () => {
   try {
@@ -273,59 +228,52 @@ const sendChatMessage = (message) => {
   }
 };
 
-const joinRoom = (roomId) => {
-  isLoading.value = true;
-      
-      // 실제 구현에서는 API 호출 후 게임 화면으로 이동
-      console.log(`방 ${roomId}에 참가합니다.`);
-      
-      setTimeout(() => {
-    isLoading.value = false;
-        // 게임 방으로 이동 (대기실 모드로 시작됨)
-    router.push({
-          name: 'MultiplayerGame',
-          params: { roomId }
-        });
-      }, 1000);
+const joinRoom = async (roomParam) => {
+  try {
+    // roomParam이 문자열(roomId)인지 객체(room)인지 확인
+    if (typeof roomParam === 'string' || typeof roomParam === 'number') {
+      // roomId로 직접 입장
+      await joinRoomAPI(roomParam);
+    } else if (roomParam && roomParam.id) {
+      // room 객체로 입장
+      await joinRoomByObject(roomParam);
+    } else {
+      console.error('❌ 잘못된 방 입장 파라미터:', roomParam);
+      return;
+    }
+  } catch (error) {
+    console.error('❌ 방 입장 처리 중 오류:', error);
+    // 에러는 composables에서 처리됨
+  }
 };
     
-const createRoom = (roomData) => {
-  isLoading.value = true;
-      
-      // 실제 구현에서는 API 호출
-      console.log('새 방 생성:', roomData);
-      
-      setTimeout(() => {
+const createRoom = async (roomData) => {
+  try {
+    console.log('🏗️ 새 방 생성 요청:', roomData);
+    
+    // 모달 닫기
     showCreateRoomModal.value = false;
-    isLoading.value = false;
-        
-        // 사용자 정보 가져오기 (useAuth에서 직접)
-        const { user: authUser } = useAuth();
-        const userNickname = authUser.value?.nickname || '익명';
-        
-        // 생성된 방 목록에 추가
-        const newRoom = {
-          id: `room${Date.now()}`,
-          name: roomData.name,
-      host: userNickname,
-          players: 1,
-          maxPlayers: roomData.maxPlayers,
-          mode: roomData.gameMode,
-          status: 'waiting',
-          region: roomData.region,
-          createdAt: new Date().toISOString()
-        };
-        
-    rooms.value.unshift(newRoom);
-        
-    // 시스템 메시지 추가 (WebSocket 서비스를 통해)
-    lobbyService.createGlobalSystemMessage(
-      `${userNickname}님이 '${roomData.name}' 방을 생성했습니다.`
-    );
-        
-        // 생성한 방으로 자동 입장 (대기실 모드로 시작됨)
-    joinRoom(newRoom.id);
-      }, 1000);
+    
+    // API를 통해 방 생성 (자동으로 해당 방에 입장됨)
+    const newRoom = await createRoomAPI(roomData);
+    
+    if (newRoom) {
+      // 사용자 정보 가져오기 
+      const { user: authUser } = useAuth();
+      const userNickname = authUser.value?.nickname || '익명';
+      
+      // 시스템 메시지 추가 (WebSocket 서비스를 통해)
+      lobbyService.createGlobalSystemMessage(
+        `${userNickname}님이 '${roomData.name}' 방을 생성했습니다.`
+      );
+      
+      console.log('✅ 방 생성 및 입장 완료');
+    }
+  } catch (error) {
+    console.error('❌ 방 생성 처리 중 오류:', error);
+    // 에러 발생 시 모달 다시 열기
+    showCreateRoomModal.value = true;
+  }
 };
 
 // 라이프사이클 훅
@@ -586,6 +534,66 @@ onBeforeUnmount(() => {
   background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
 }
 
+/* 에러 토스트 */
+.error-toast {
+  position: fixed;
+  top: 100px;
+  right: 20px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
+  z-index: 1000;
+  cursor: pointer;
+  animation: slideInRight 0.3s ease-out;
+  max-width: 400px;
+  min-width: 300px;
+}
+
+.error-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.error-content i {
+  font-size: 1.1rem;
+  color: #fef2f2;
+}
+
+.error-content span {
+  flex: 1;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.error-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.error-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
 /* 반응형 스타일 */
 @media (max-width: 900px) {
   .lobby-layout {
@@ -650,6 +658,14 @@ onBeforeUnmount(() => {
     right: 15px;
     padding: 10px 16px;
     font-size: 0.85rem;
+  }
+  
+  .error-toast {
+    top: 80px;
+    left: 15px;
+    right: 15px;
+    max-width: none;
+    min-width: auto;
   }
 }
 </style>
