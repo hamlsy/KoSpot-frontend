@@ -26,39 +26,46 @@
     <div class="rooms-container" v-if="rooms && rooms.length > 0">
       <div 
         v-for="room in rooms" 
-        :key="room.id"
+        :key="room.gameRoomId"
         class="room-card"
-        :class="{ 'playing': room.status === 'playing' }"
+        :class="{ 'playing': room.gameRoomStatus === '게임 중' }"
         @click="joinRoom(room)"
       >
         <div class="room-content">
           <div class="room-header">
             <div class="room-info">
-              <h3 class="room-name">{{ room.name }}</h3>
-              <span class="room-host">방장: {{ room.host }}</span>
+              <h3 class="room-name">{{ room.title }}</h3>
+              <span class="room-host">방장: {{ room.hostNickname }}</span>
             </div>
             <div class="room-badges">
               <span 
                 class="mode-badge"
                 :class="{ 
-                  'roadview-mode': room.mode === '로드뷰',
-                  'photo-mode': room.mode === '포토'
+                  'roadview-mode': room.gameMode === '로드뷰',
+                  'photo-mode': room.gameMode === '포토모드'
                 }"
               >
-                <i :class="room.mode === '로드뷰' ? 'fas fa-street-view' : 'fas fa-camera'"></i>
-                {{ room.mode }}
+                <i :class="room.gameMode === '로드뷰' ? 'fas fa-street-view' : 'fas fa-camera'"></i>
+                {{ room.gameMode }}
+              </span>
+              <span 
+                class="type-badge"
+                :class="{ 
+                  'individual': room.gameType === '개인전',
+                  'team': room.gameType === '팀전'
+                }"
+              >
+                <i :class="room.gameType === '개인전' ? 'fas fa-user' : 'fas fa-users'"></i>
+                {{ room.gameType }}
               </span>
               <span 
                 class="status-badge"
                 :class="{ 
-                  'waiting': room.status === 'waiting',
-                  'playing': room.status === 'playing'
+                  'waiting': room.gameRoomStatus === '대기 중',
+                  'playing': room.gameRoomStatus === '게임 중'
                 }"
               >
-                {{ room.status === 'waiting' ? '대기중' : '게임중' }}
-                <span v-if="room.status === 'playing' && room.currentRound" class="round-info">
-                  {{ room.currentRound }}/{{ room.totalRounds }}R
-                </span>
+                {{ room.gameRoomStatus }}
               </span>
             </div>
           </div>
@@ -66,9 +73,9 @@
           <div class="room-details">
             <div class="detail-item">
               <i class="fas fa-users"></i>
-              <span>{{ room.players }}/{{ room.maxPlayers }}명</span>
+              <span>{{ room.currentPlayerCount }}/{{ room.maxPlayers }}명</span>
             </div>
-            <div class="detail-item" v-if="room.isPrivate">
+            <div class="detail-item" v-if="room.privateRoom">
               <i class="fas fa-lock"></i>
               <span>비밀방</span>
             </div>
@@ -145,51 +152,37 @@ export default {
     },
     
     joinRoom(room) {
-      if (room.players >= room.maxPlayers) {
+      if (room.currentPlayerCount >= room.maxPlayers) {
         alert('방이 가득 찼습니다.');
         return;
       }
       
-      if (room.status === 'playing') {
+      if (room.gameRoomStatus === '게임 중') {
         alert('이미 게임이 진행중인 방입니다.');
         return;
       }
       
-      if (room.isPrivate) {
+      if (room.privateRoom) {
         this.selectedRoom = room;
         this.showPasswordModal = true;
         this.passwordInput = '';
       } else {
-        this.$emit('join-room', room.id);
+        this.$emit('join-room', room.gameRoomId);
       }
     },
     
     handlePasswordSubmit(password) {
       if (!this.selectedRoom) return;
       
-      if (password === this.selectedRoom.password) {
-        this.$emit('join-room', this.selectedRoom.id);
+      // 백엔드 API에서는 비밀번호 검증이 서버에서 이루어질 예정
+      // 현재는 더미 데이터에서만 password 필드 사용
+      if (password === this.selectedRoom.password || password) {
+        this.$emit('join-room', this.selectedRoom.gameRoomId, password);
         this.showPasswordModal = false;
         this.selectedRoom = null;
       } else {
         alert('비밀번호가 일치하지 않습니다.');
       }
-    },
-    
-    formatTimeAgo(timestamp) {
-      const now = new Date();
-      const roomDate = new Date(timestamp);
-      const diffMs = now - roomDate;
-      const diffMins = Math.floor(diffMs / (1000 * 60));
-      
-      if (diffMins < 1) return '방금 전';
-      if (diffMins < 60) return `${diffMins}분 전`;
-      
-      const diffHours = Math.floor(diffMins / 60);
-      if (diffHours < 24) return `${diffHours}시간 전`;
-      
-      const diffDays = Math.floor(diffHours / 24);
-      return `${diffDays}일 전`;
     }
   }
 };
@@ -455,7 +448,7 @@ export default {
   gap: 0.5rem;
 }
 
-.mode-badge, .status-badge {
+.mode-badge, .status-badge, .type-badge {
   padding: 0.35rem 0.7rem;
   border-radius: 20px;
   font-size: 0.75rem;
@@ -485,6 +478,16 @@ export default {
 .playing {
   background: linear-gradient(135deg, #fef3c7, #ffedd5);
   color: #d97706;
+}
+
+.individual {
+  background: linear-gradient(135deg, #f3e8ff, #e9d5ff);
+  color: #8b5cf6;
+}
+
+.team {
+  background: linear-gradient(135deg, #ecfeff, #cffafe);
+  color: #06b6d4;
 }
 
 .round-info {

@@ -11,6 +11,17 @@
         </div>
         <div class="header-right">
           <h3>멀티플레이어 로비</h3>
+          <!-- 개발 모드 토글 버튼 (개발 환경에서만 표시) -->
+          <button 
+            v-if="isDevelopment"
+            class="dev-mode-toggle"
+            @click="toggleDevMode"
+            :class="{ 'active': useDummyData }"
+            :title="useDummyData ? '개발 모드 끄기' : '개발 모드 켜기'"
+          >
+            <i class="fas" :class="useDummyData ? 'fa-database' : 'fa-wifi'"></i>
+            <span>{{ useDummyData ? 'DEV' : 'API' }}</span>
+          </button>
         </div>
       </div>
     </header>
@@ -32,11 +43,9 @@
         <GameRoomList 
           :rooms="rooms" 
           :loading="isLoading"
-          :error="roomError"
           @join-room="joinRoom"
           @refresh-rooms="refreshRooms"
           @load-more="loadMoreRooms"
-          @clear-error="clearError"
           class="game-room-list"
           :class="{ 'chat-open': isChatVisible && isMobile }"
         />
@@ -80,23 +89,7 @@
     <div v-if="roomError" class="error-toast">
       <div class="error-content">
         <i class="fas fa-exclamation-triangle"></i>
-        <div class="error-message-section">
-          <span class="error-message">{{ roomError }}</span>
-          <div v-if="isNetworkError" class="error-actions">
-            <button class="error-action-btn retry-btn" @click="handleRetry">
-              <i class="fas fa-redo"></i>
-              다시 시도
-            </button>
-            <button 
-              v-if="process.env.NODE_ENV === 'development'" 
-              class="error-action-btn dummy-btn" 
-              @click="handleEnableDummyData"
-            >
-              <i class="fas fa-database"></i>
-              개발 모드
-            </button>
-          </div>
-        </div>
+        <span class="error-message">{{ roomError }}</span>
         <button class="error-close" @click="clearError">
           <i class="fas fa-times"></i>
         </button>
@@ -104,7 +97,7 @@
     </div>
     
     <!-- 더미 데이터 모드 알림 -->
-    <div v-if="useDummyData && process.env.NODE_ENV === 'development'" class="dummy-mode-toast">
+    <div v-if="useDummyData && isDevelopment" class="dummy-mode-toast">
       <div class="dummy-content">
         <i class="fas fa-database"></i>
         <span>개발 모드: 더미 데이터 사용 중</span>
@@ -128,6 +121,10 @@ import ChatWindow from '../../chat/components/Lobby/ChatWindow.vue';
 import CreateRoomModal from '../components/CreateRoomModal.vue';
 import AppLogo from '@/core/components/AppLogo.vue';
 
+// Vue3 script setup에서 process.env 접근을 위한 정의
+// const isDevelopment = process.env.NODE_ENV === 'development';
+const isDevelopment = true;
+
 // Vue Router
 const router = useRouter();
 
@@ -140,12 +137,7 @@ const {
   isLoading,
   error: roomError,
   isJoining,
-  currentPage,
-  hasNextPage,
-  pageSize,
   useDummyData,
-  availableRooms,
-  playingRooms,
   fetchRooms,
   loadMoreRooms,
   refreshRooms,
@@ -153,11 +145,8 @@ const {
   joinRoomByObject,
   createRoom: createRoomAPI,
   clearError,
-  setError,
-  setPageSize,
   enableDummyData,
-  disableDummyData,
-  testConnection
+  disableDummyData
 } = useLobbyRoom();
 
 // 반응형 데이터
@@ -181,17 +170,6 @@ const formattedChatMessages = computed(() => {
     messageType: msg.messageType,
     channelType: msg.channelType
   }));
-});
-
-// 네트워크 오류 감지
-const isNetworkError = computed(() => {
-  return roomError.value && (
-    roomError.value.includes('네트워크') || 
-    roomError.value.includes('연결') ||
-    roomError.value.includes('인터넷') ||
-    roomError.value.includes('network') ||
-    roomError.value.includes('connection')
-  );
 });
 
 // 메서드
@@ -218,9 +196,11 @@ const initializeData = async () => {
     
     isInitialized.value = true;
       
-      // 30초마다 방 목록 새로고침
+      // 30초마다 방 목록 새로고침 (더미 데이터 모드가 아닐 때만)
     refreshInterval.value = setInterval(() => {
-      refreshRooms();
+      if (!useDummyData.value) {
+        refreshRooms();
+      }
       }, 30000);
     
   } catch (error) {
@@ -322,45 +302,31 @@ const createRoom = async (roomData) => {
   }
 };
 
-// 에러 처리 관련 메서드
-const handleRetry = async () => {
-  console.log('🔄 네트워크 재시도 시작...');
-  clearError();
-  
-  try {
-    // 네트워크 연결 테스트
-    const isConnected = await testConnection();
-    
-    if (isConnected) {
-      // 연결되면 방 목록 새로고침
-      await refreshRooms();
-      console.log('✅ 네트워크 재연결 성공');
-    } else {
-      // 여전히 연결되지 않으면 에러 표시
-      setTimeout(() => {
-        if (!roomError.value) {
-          // 에러 상태가 없다면 다시 설정
-          setError('네트워크 연결을 확인해주세요. 인터넷 연결 상태를 점검해보세요.');
-        }
-      }, 1000);
-    }
-  } catch (error) {
-    console.error('❌ 재시도 중 오류:', error);
-  }
-};
-
-const handleEnableDummyData = () => {
-  console.log('🧪 더미 데이터 모드 활성화');
-  clearError();
-  enableDummyData(true);
-};
-
+// 개발 모드 관련 메서드
 const handleDisableDummyData = async () => {
   console.log('🌐 실제 API 모드로 전환');
   try {
     await disableDummyData();
   } catch (error) {
     console.error('❌ API 모드 전환 실패:', error);
+  }
+};
+
+// 개발 모드 토글 메서드
+const toggleDevMode = async () => {
+  if (useDummyData.value) {
+    // 개발 모드에서 API 모드로 전환
+    console.log('🌐 API 모드로 전환');
+    try {
+      await disableDummyData();
+    } catch (error) {
+      console.error('❌ API 모드 전환 실패:', error);
+    }
+  } else {
+    // API 모드에서 개발 모드로 전환
+    console.log('🧪 개발 모드로 전환');
+    clearError(); // 기존 에러 클리어
+    enableDummyData(true);
   }
 };
 
@@ -455,6 +421,53 @@ onBeforeUnmount(() => {
   height: 3px;
   background: linear-gradient(90deg, #60a5fa, #8b5cf6);
   border-radius: 2px;
+}
+
+/* 개발 모드 토글 버튼 */
+.dev-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.8rem;
+  margin-left: 1rem;
+  background: rgba(107, 114, 128, 0.1);
+  border: 1px solid rgba(107, 114, 128, 0.2);
+  border-radius: 8px;
+  color: #6b7280;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.dev-mode-toggle i {
+  font-size: 0.75rem;
+  transition: all 0.25s ease;
+}
+
+.dev-mode-toggle span {
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+}
+
+.dev-mode-toggle:hover {
+  background: rgba(107, 114, 128, 0.15);
+  border-color: rgba(107, 114, 128, 0.3);
+  transform: translateY(-1px);
+}
+
+.dev-mode-toggle.active {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border-color: #2563eb;
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+.dev-mode-toggle.active:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
 }
 
 /* 메인 콘텐츠 스타일 */
@@ -682,60 +695,6 @@ onBeforeUnmount(() => {
   }
 }
 
-/* 개선된 에러 토스트 스타일 */
-.error-message-section {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.error-message {
-  font-weight: 500;
-  line-height: 1.4;
-}
-
-.error-actions {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.25rem;
-}
-
-.error-action-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.4rem 0.8rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.retry-btn {
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.retry-btn:hover {
-  background: rgba(255, 255, 255, 0.25);
-  transform: translateY(-1px);
-}
-
-.dummy-btn {
-  background: rgba(59, 130, 246, 0.2);
-  color: #dbeafe;
-  border: 1px solid rgba(59, 130, 246, 0.3);
-}
-
-.dummy-btn:hover {
-  background: rgba(59, 130, 246, 0.3);
-  transform: translateY(-1px);
-}
-
 /* 더미 데이터 모드 토스트 */
 .dummy-mode-toast {
   position: fixed;
@@ -851,8 +810,29 @@ onBeforeUnmount(() => {
     padding: 0.8rem 1rem;
   }
   
+  .header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+  }
+  
   .header-right h3 {
     font-size: 1rem;
+  }
+  
+  .dev-mode-toggle {
+    margin-left: 0;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.7rem;
+  }
+  
+  .dev-mode-toggle span {
+    font-size: 0.6rem;
+  }
+  
+  .dev-mode-toggle i {
+    font-size: 0.7rem;
   }
   
   .main-content {
@@ -881,16 +861,6 @@ onBeforeUnmount(() => {
     max-width: none;
     min-width: auto;
     width: calc(100% - 30px);
-  }
-  
-  .error-actions {
-    flex-wrap: wrap;
-    gap: 0.4rem;
-  }
-  
-  .error-action-btn {
-    font-size: 0.75rem;
-    padding: 0.35rem 0.7rem;
   }
 }
 </style>

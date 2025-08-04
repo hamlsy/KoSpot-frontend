@@ -19,39 +19,31 @@ export function useLobbyRoom() {
   const isLoading = ref(false);
   const error = ref(null);
   const isJoining = ref(false);
-  const currentPage = ref(0);
-  const hasNextPage = ref(true);
-  const pageSize = ref(10); // 페이지 크기
   const useDummyData = ref(false); // 더미 데이터 사용 여부
   
-  // 계산된 속성
-  const availableRooms = computed(() => {
-    return rooms.value.filter(room => room.gameRoomStatus === 'WAITING');
-  });
+  // 페이징 관련 (loadMoreRooms에서만 사용)
+  const currentPage = ref(0);
+  const hasNextPage = ref(true);
   
-  const playingRooms = computed(() => {
-    return rooms.value.filter(room => room.gameRoomStatus === 'PLAYING');
-  });
+
   
   /**
    * 방 목록을 서버에서 가져옵니다
    * @param {number} page - 페이지 번호 (기본값: 0)
    * @param {boolean} refresh - 새로고침 여부 (기본값: false)
-   * @param {number} size - 페이지 크기 (기본값: pageSize.value)
    * @returns {Promise<Array>} 방 목록
    */
-  const fetchRooms = async (page = 0, refresh = false, size = null) => {
-    const requestSize = size || pageSize.value;
+  const fetchRooms = async (page = 0, refresh = false) => {
     isLoading.value = true;
     error.value = null;
     
     try {
-      console.log(`🔍 방 목록 조회 요청... (페이지: ${page}, 크기: ${requestSize})`);
+      console.log(`🔍 방 목록 조회 요청... (페이지: ${page})`);
       
       const response = await apiClient.get(API_ENDPOINTS.GAME_ROOM.LIST, {
         params: { 
           page,
-          size: requestSize
+          size: 10 // 고정 페이지 크기
         }
       });
       
@@ -65,9 +57,9 @@ export function useLobbyRoom() {
           rooms.value = [...rooms.value, ...roomList];
         }
         
+        // 페이징 상태 업데이트 (loadMoreRooms용)
         currentPage.value = page;
-        // 페이지 크기만큼 데이터가 왔으면 다음 페이지가 있을 가능성이 높음
-        hasNextPage.value = roomList.length === requestSize;
+        hasNextPage.value = roomList.length === 10; // 고정 페이지 크기와 비교
         
         console.log('✅ 방 목록 조회 성공:', roomList.length, '개의 방 (총:', rooms.value.length, '개)');
         return roomList;
@@ -79,22 +71,13 @@ export function useLobbyRoom() {
       const errorMessage = _handleApiError(err, '방 목록을 불러오는데 실패했습니다.');
       error.value = errorMessage;
       
-      // 네트워크 오류 타입 확인
-      const isNetworkError = !err.response && err.request;
-      const isServerError = err.response?.status >= 500;
-      
-      if (isNetworkError) {
-        console.warn('🌐 네트워크 연결 오류 - 더미 데이터 사용하지 않음');
-        // 네트워크 오류 시에는 더미 데이터를 표시하지 않음
-        if (page === 0) {
-          rooms.value = []; // 기존 데이터 클리어
-        }
-      } else if (useDummyData.value && process.env.NODE_ENV === 'development' && page === 0) {
-        // 더미 데이터가 명시적으로 활성화된 경우에만 사용
-        console.log('🧪 개발 모드: 더미 데이터 사용 (명시적 활성화)');
+      // 더미 데이터 모드가 활성화된 경우 더미 데이터 유지
+      if (useDummyData.value && page === 0) {
+        console.log('🧪 개발 모드: 더미 데이터 유지');
         rooms.value = _getDummyRooms();
       } else if (page === 0) {
-        // 첫 페이지 로드 실패 시 빈 배열
+        // 더미 데이터 모드가 아닌 경우에만 빈 배열로 설정
+        console.warn('🌐 API 요청 실패 - 방 목록 클리어');
         rooms.value = [];
       }
       
@@ -232,14 +215,6 @@ export function useLobbyRoom() {
   };
   
   /**
-   * 에러 메시지를 설정합니다
-   * @param {string} message - 에러 메시지
-   */
-  const setError = (message) => {
-    error.value = message;
-  };
-  
-  /**
    * API 에러를 처리하고 사용자 친화적인 메시지를 반환합니다
    * 백엔드 메시지를 우선 사용하되, UX 개선을 위해 프론트엔드에서 보완
    * @private
@@ -320,50 +295,75 @@ export function useLobbyRoom() {
    * @private
    */
   const _getDummyRooms = () => {
+    // 백엔드 FindGameRoomResponse 형식에 맞는 더미 데이터
     return [
       {
         gameRoomId: 1,
-        title: '방 제목 A',
-        gameMode: 'ROADVIEW',
-        gameType: 'INDIVIDUAL',
+        title: '🏙️ 서울 시내 투어방',
+        gameMode: '로드뷰',
+        gameType: '개인전',
         maxPlayers: 4,
         currentPlayerCount: 2,
-        hostNickname: 'host A',
+        hostNickname: '김서울',
         privateRoom: false,
-        gameRoomStatus: 'WAITING'
+        gameRoomStatus: '대기 중'
       },
       {
         gameRoomId: 2,
-        title: '방 제목 B',
-        gameMode: 'PHOTO',
-        gameType: 'TEAM',
-        maxPlayers: 4,
-        currentPlayerCount: 3,
-        hostNickname: 'host B',
+        title: '📸 부산 맛집 포토존',
+        gameMode: '포토모드',
+        gameType: '팀전',
+        maxPlayers: 6,
+        currentPlayerCount: 4,
+        hostNickname: '부산갈매기',
         privateRoom: false,
-        gameRoomStatus: 'WAITING'
+        gameRoomStatus: '대기 중'
       },
       {
         gameRoomId: 3,
-        title: '게임 진행 중 - 3라운드',
-        gameMode: 'ROADVIEW',
-        gameType: 'INDIVIDUAL',
+        title: '🎮 제주 관광지 랜덤게임',
+        gameMode: '로드뷰',
+        gameType: '개인전',
         maxPlayers: 8,
-        currentPlayerCount: 4,
-        hostNickname: 'host C',
+        currentPlayerCount: 6,
+        hostNickname: '제주감귤',
         privateRoom: false,
-        gameRoomStatus: 'PLAYING'
+        gameRoomStatus: '게임 중'
       },
       {
         gameRoomId: 4,
-        title: '비밀방 테스트',
-        gameMode: 'PHOTO',
-        gameType: 'TEAM',
-        maxPlayers: 6,
+        title: '🔒 VIP 전용 경기도 탐험',
+        gameMode: '포토모드',
+        gameType: '팀전',
+        maxPlayers: 4,
         currentPlayerCount: 1,
-        hostNickname: 'host D',
+        hostNickname: '경기도민',
         privateRoom: true,
-        gameRoomStatus: 'WAITING'
+        gameRoomStatus: '대기 중',
+        // 테스트용 비밀번호 (실제 백엔드에서는 반환되지 않음)
+        password: '1234'
+      },
+      {
+        gameRoomId: 5,
+        title: '🌸 대구 벚꽃 명소 찾기',
+        gameMode: '로드뷰',
+        gameType: '개인전',
+        maxPlayers: 6,
+        currentPlayerCount: 3,
+        hostNickname: '대구사과',
+        privateRoom: false,
+        gameRoomStatus: '대기 중'
+      },
+      {
+        gameRoomId: 6,
+        title: '⚡ 인천 스피드 배틀',
+        gameMode: '포토모드',
+        gameType: '팀전',
+        maxPlayers: 8,
+        currentPlayerCount: 7,
+        hostNickname: '인천바다',
+        privateRoom: false,
+        gameRoomStatus: '게임 중'
       }
     ];
   };
@@ -387,23 +387,15 @@ export function useLobbyRoom() {
   };
   
   /**
-   * 페이지 크기를 설정합니다
-   * @param {number} size - 페이지 크기
-   */
-  const setPageSize = (size) => {
-    pageSize.value = size;
-  };
-  
-  /**
    * 더미 데이터 사용 여부를 설정합니다 (개발/테스트 목적)
    * @param {boolean} enabled - 더미 데이터 사용 여부
    */
   const enableDummyData = (enabled = true) => {
     useDummyData.value = enabled;
-    if (enabled && process.env.NODE_ENV === 'development') {
+    if (enabled) {
       console.log('🧪 더미 데이터 모드 활성화');
       rooms.value = _getDummyRooms();
-      error.value = null;
+      error.value = null; // 기존 에러 클리어
     }
   };
   
@@ -417,45 +409,13 @@ export function useLobbyRoom() {
     await fetchRooms(0, true);
   };
   
-  /**
-   * 네트워크 연결 상태를 테스트합니다
-   */
-  const testConnection = async () => {
-    try {
-      isLoading.value = true;
-      error.value = null;
-      
-      const response = await apiClient.get(API_ENDPOINTS.GAME_ROOM.LIST, {
-        params: { page: 0, size: 1 }
-      });
-      
-      if (response.data && response.data.isSuccess) {
-        console.log('✅ 네트워크 연결 정상');
-        return true;
-      }
-      return false;
-    } catch (err) {
-      console.warn('❌ 네트워크 연결 테스트 실패:', err.message);
-      return false;
-    } finally {
-      isLoading.value = false;
-    }
-  };
-
   return {
     // 상태
     rooms: readonly(rooms),
     isLoading: readonly(isLoading),
     error: readonly(error),
     isJoining: readonly(isJoining),
-    currentPage: readonly(currentPage),
-    hasNextPage: readonly(hasNextPage),
-    pageSize: readonly(pageSize),
     useDummyData: readonly(useDummyData),
-    
-    // 계산된 속성
-    availableRooms,
-    playingRooms,
     
     // 메서드
     fetchRooms,
@@ -465,12 +425,9 @@ export function useLobbyRoom() {
     joinRoomByObject,
     createRoom,
     clearError,
-    setError,
-    setPageSize,
     
     // 개발/디버깅 메서드
     enableDummyData,
-    disableDummyData,
-    testConnection
+    disableDummyData
   };
 }
