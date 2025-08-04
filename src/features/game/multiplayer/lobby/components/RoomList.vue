@@ -1,7 +1,13 @@
 <template>
   <div class="game-rooms-panel">
     <div class="panel-header">
-      <h2 class="panel-title">게임 방 목록</h2>
+      <div class="panel-title-section">
+        <h2 class="panel-title">게임 방 목록</h2>
+        <div v-if="loading" class="header-loading">
+          <i class="fas fa-spinner fa-spin"></i>
+          <span class="loading-text">새로고침 중...</span>
+        </div>
+      </div>
       <div class="room-actions">
         <div class="search-box">
           <input 
@@ -11,8 +17,8 @@
           />
           <i class="fas fa-search"></i>
         </div>
-        <button class="refresh-button" @click="refreshRooms">
-          <i class="fas fa-sync-alt"></i>
+        <button class="refresh-button" @click="refreshRooms" :disabled="loading">
+          <i class="fas fa-sync-alt" :class="{ 'fa-spin': loading }"></i>
         </button>
       </div>
     </div>
@@ -104,6 +110,10 @@ export default {
       type: Array,
       required: true,
       default: () => []
+    },
+    loading: {
+      type: Boolean,
+      default: false
     }
   },
   
@@ -210,6 +220,12 @@ export default {
   -webkit-backdrop-filter: blur(5px);
 }
 
+.panel-title-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .panel-title {
   margin: 0;
   font-size: 1.2rem;
@@ -217,6 +233,24 @@ export default {
   color: #111827;
   position: relative;
   padding-bottom: 5px;
+}
+
+.header-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6b7280;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.header-loading i {
+  color: #60a5fa;
+  font-size: 0.85rem;
+}
+
+.loading-text {
+  animation: fadeInOut 2s infinite;
 }
 
 .panel-title::after {
@@ -240,6 +274,11 @@ export default {
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
 }
 
 .search-box {
@@ -294,11 +333,23 @@ export default {
   justify-content: center;
 }
 
-.refresh-button:hover {
+.refresh-button:hover:not(:disabled) {
   background: white;
   transform: rotate(180deg);
   box-shadow: 0 4px 8px rgba(96, 165, 250, 0.15);
   color: #3b82f6;
+}
+
+.refresh-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.refresh-button:disabled:hover {
+  background: rgba(240, 244, 248, 0.8);
+  transform: none;
+  box-shadow: none;
 }
 
 .rooms-container {
@@ -372,12 +423,6 @@ export default {
   background-color: #f0f9ff;
   transform: translateY(-2px);
   box-shadow: 0 8px 15px rgba(0, 0, 0, 0.06);
-}
-
-.room-card:not(.playing):hover::after,
-.room-card:not(.playing):hover::before,
-.room-card:not(.playing):hover .room-content {
-  /* 모두 제거 */
 }
 
 .room-info {
@@ -490,6 +535,7 @@ export default {
   margin-bottom: 1.2rem;
   color: #cbd5e1;
   background: linear-gradient(135deg, #60a5fa, #8b5cf6);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   opacity: 0.4;

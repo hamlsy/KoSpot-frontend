@@ -21,6 +21,8 @@ export function useLobbyRoom() {
   const isJoining = ref(false);
   const currentPage = ref(0);
   const hasNextPage = ref(true);
+  const pageSize = ref(10); // 페이지 크기
+  const useDummyData = ref(false); // 더미 데이터 사용 여부
   
   // 계산된 속성
   const availableRooms = computed(() => {
@@ -35,16 +37,23 @@ export function useLobbyRoom() {
    * 방 목록을 서버에서 가져옵니다
    * @param {number} page - 페이지 번호 (기본값: 0)
    * @param {boolean} refresh - 새로고침 여부 (기본값: false)
+   * @param {number} size - 페이지 크기 (기본값: pageSize.value)
    * @returns {Promise<Array>} 방 목록
    */
-  const fetchRooms = async (page = 0, refresh = false) => {
+  const fetchRooms = async (page = 0, refresh = false, size = null) => {
+    const requestSize = size || pageSize.value;
     isLoading.value = true;
     error.value = null;
     
     try {
-      console.log(`🔍 방 목록 조회 요청... (페이지: ${page})`);
+      console.log(`🔍 방 목록 조회 요청... (페이지: ${page}, 크기: ${requestSize})`);
       
-      const response = await apiClient.get(API_ENDPOINTS.GAME_ROOM.LIST(page));
+      const response = await apiClient.get(API_ENDPOINTS.GAME_ROOM.LIST, {
+        params: { 
+          page,
+          size: requestSize
+        }
+      });
       
       if (response.data && response.data.isSuccess) {
         const roomList = response.data.result || [];
@@ -57,7 +66,8 @@ export function useLobbyRoom() {
         }
         
         currentPage.value = page;
-        hasNextPage.value = roomList.length > 0; // 더 정확한 판단은 백엔드에서 총 페이지 수 제공 필요
+        // 페이지 크기만큼 데이터가 왔으면 다음 페이지가 있을 가능성이 높음
+        hasNextPage.value = roomList.length === requestSize;
         
         console.log('✅ 방 목록 조회 성공:', roomList.length, '개의 방 (총:', rooms.value.length, '개)');
         return roomList;
@@ -66,12 +76,26 @@ export function useLobbyRoom() {
       }
     } catch (err) {
       console.error('❌ 방 목록 조회 실패:', err);
-      error.value = _handleApiError(err, '방 목록을 불러오는데 실패했습니다.');
+      const errorMessage = _handleApiError(err, '방 목록을 불러오는데 실패했습니다.');
+      error.value = errorMessage;
       
-      // 개발 모드에서는 더미 데이터 사용 (첫 페이지만)
-      if (process.env.NODE_ENV === 'development' && page === 0) {
-        console.log('🧪 개발 모드: 더미 데이터 사용');
+      // 네트워크 오류 타입 확인
+      const isNetworkError = !err.response && err.request;
+      const isServerError = err.response?.status >= 500;
+      
+      if (isNetworkError) {
+        console.warn('🌐 네트워크 연결 오류 - 더미 데이터 사용하지 않음');
+        // 네트워크 오류 시에는 더미 데이터를 표시하지 않음
+        if (page === 0) {
+          rooms.value = []; // 기존 데이터 클리어
+        }
+      } else if (useDummyData.value && process.env.NODE_ENV === 'development' && page === 0) {
+        // 더미 데이터가 명시적으로 활성화된 경우에만 사용
+        console.log('🧪 개발 모드: 더미 데이터 사용 (명시적 활성화)');
         rooms.value = _getDummyRooms();
+      } else if (page === 0) {
+        // 첫 페이지 로드 실패 시 빈 배열
+        rooms.value = [];
       }
       
       return [];
@@ -205,6 +229,14 @@ export function useLobbyRoom() {
    */
   const clearError = () => {
     error.value = null;
+  };
+  
+  /**
+   * 에러 메시지를 설정합니다
+   * @param {string} message - 에러 메시지
+   */
+  const setError = (message) => {
+    error.value = message;
   };
   
   /**
@@ -353,6 +385,62 @@ export function useLobbyRoom() {
   const refreshRooms = async () => {
     return await fetchRooms(0, true);
   };
+  
+  /**
+   * 페이지 크기를 설정합니다
+   * @param {number} size - 페이지 크기
+   */
+  const setPageSize = (size) => {
+    pageSize.value = size;
+  };
+  
+  /**
+   * 더미 데이터 사용 여부를 설정합니다 (개발/테스트 목적)
+   * @param {boolean} enabled - 더미 데이터 사용 여부
+   */
+  const enableDummyData = (enabled = true) => {
+    useDummyData.value = enabled;
+    if (enabled && process.env.NODE_ENV === 'development') {
+      console.log('🧪 더미 데이터 모드 활성화');
+      rooms.value = _getDummyRooms();
+      error.value = null;
+    }
+  };
+  
+  /**
+   * 더미 데이터를 비활성화하고 실제 API를 다시 호출합니다
+   */
+  const disableDummyData = async () => {
+    useDummyData.value = false;
+    console.log('🌐 실제 API 모드로 전환');
+    rooms.value = [];
+    await fetchRooms(0, true);
+  };
+  
+  /**
+   * 네트워크 연결 상태를 테스트합니다
+   */
+  const testConnection = async () => {
+    try {
+      isLoading.value = true;
+      error.value = null;
+      
+      const response = await apiClient.get(API_ENDPOINTS.GAME_ROOM.LIST, {
+        params: { page: 0, size: 1 }
+      });
+      
+      if (response.data && response.data.isSuccess) {
+        console.log('✅ 네트워크 연결 정상');
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.warn('❌ 네트워크 연결 테스트 실패:', err.message);
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  };
 
   return {
     // 상태
@@ -362,6 +450,8 @@ export function useLobbyRoom() {
     isJoining: readonly(isJoining),
     currentPage: readonly(currentPage),
     hasNextPage: readonly(hasNextPage),
+    pageSize: readonly(pageSize),
+    useDummyData: readonly(useDummyData),
     
     // 계산된 속성
     availableRooms,
@@ -374,6 +464,13 @@ export function useLobbyRoom() {
     joinRoom,
     joinRoomByObject,
     createRoom,
-    clearError
+    clearError,
+    setError,
+    setPageSize,
+    
+    // 개발/디버깅 메서드
+    enableDummyData,
+    disableDummyData,
+    testConnection
   };
 }

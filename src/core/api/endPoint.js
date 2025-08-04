@@ -73,7 +73,7 @@ export const API_ENDPOINTS = {
     
     // 게임 룸 관리
     GAME_ROOM: {
-      LIST: (page = 0) => `/gameRoom/${page}`,
+      LIST: '/gameRoom',
       JOIN: (roomId) => `/gameRoom/${roomId}/join`,
       CREATE: '/gameRoom/',
       LEAVE: (roomId) => `/gameRoom/${roomId}/leave`,

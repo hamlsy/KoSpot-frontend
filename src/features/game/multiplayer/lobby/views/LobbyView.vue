@@ -31,7 +31,7 @@
         <!-- 왼쪽 패널: 게임 방 목록 -->
         <GameRoomList 
           :rooms="rooms" 
-          :loading="isLoading || isJoining"
+          :loading="isLoading"
           :error="roomError"
           @join-room="joinRoom"
           @refresh-rooms="refreshRooms"
@@ -68,21 +68,49 @@
       @create-room="createRoom"
     />
 
-    <!-- 로딩 오버레이 -->
-    <div v-if="isLoading || isJoining" class="loading-overlay">
+    <!-- 방 입장 중 로딩 오버레이 (전체 화면) -->
+    <div v-if="isJoining" class="loading-overlay">
       <div class="loading-spinner">
         <i class="fas fa-spinner fa-spin"></i>
-        <p>{{ isJoining ? '방에 입장 중...' : '로딩 중...' }}</p>
+        <p>방에 입장 중...</p>
       </div>
     </div>
     
     <!-- 에러 알림 (Toast 형태) -->
-    <div v-if="roomError" class="error-toast" @click="clearError">
+    <div v-if="roomError" class="error-toast">
       <div class="error-content">
         <i class="fas fa-exclamation-triangle"></i>
-        <span>{{ roomError }}</span>
+        <div class="error-message-section">
+          <span class="error-message">{{ roomError }}</span>
+          <div v-if="isNetworkError" class="error-actions">
+            <button class="error-action-btn retry-btn" @click="handleRetry">
+              <i class="fas fa-redo"></i>
+              다시 시도
+            </button>
+            <button 
+              v-if="process.env.NODE_ENV === 'development'" 
+              class="error-action-btn dummy-btn" 
+              @click="handleEnableDummyData"
+            >
+              <i class="fas fa-database"></i>
+              개발 모드
+            </button>
+          </div>
+        </div>
         <button class="error-close" @click="clearError">
           <i class="fas fa-times"></i>
+        </button>
+      </div>
+    </div>
+    
+    <!-- 더미 데이터 모드 알림 -->
+    <div v-if="useDummyData && process.env.NODE_ENV === 'development'" class="dummy-mode-toast">
+      <div class="dummy-content">
+        <i class="fas fa-database"></i>
+        <span>개발 모드: 더미 데이터 사용 중</span>
+        <button class="dummy-action-btn" @click="handleDisableDummyData">
+          <i class="fas fa-wifi"></i>
+          실제 API 사용
         </button>
       </div>
     </div>
@@ -114,6 +142,8 @@ const {
   isJoining,
   currentPage,
   hasNextPage,
+  pageSize,
+  useDummyData,
   availableRooms,
   playingRooms,
   fetchRooms,
@@ -122,7 +152,12 @@ const {
   joinRoom: joinRoomAPI,
   joinRoomByObject,
   createRoom: createRoomAPI,
-  clearError
+  clearError,
+  setError,
+  setPageSize,
+  enableDummyData,
+  disableDummyData,
+  testConnection
 } = useLobbyRoom();
 
 // 반응형 데이터
@@ -146,6 +181,17 @@ const formattedChatMessages = computed(() => {
     messageType: msg.messageType,
     channelType: msg.channelType
   }));
+});
+
+// 네트워크 오류 감지
+const isNetworkError = computed(() => {
+  return roomError.value && (
+    roomError.value.includes('네트워크') || 
+    roomError.value.includes('연결') ||
+    roomError.value.includes('인터넷') ||
+    roomError.value.includes('network') ||
+    roomError.value.includes('connection')
+  );
 });
 
 // 메서드
@@ -273,6 +319,48 @@ const createRoom = async (roomData) => {
     console.error('❌ 방 생성 처리 중 오류:', error);
     // 에러 발생 시 모달 다시 열기
     showCreateRoomModal.value = true;
+  }
+};
+
+// 에러 처리 관련 메서드
+const handleRetry = async () => {
+  console.log('🔄 네트워크 재시도 시작...');
+  clearError();
+  
+  try {
+    // 네트워크 연결 테스트
+    const isConnected = await testConnection();
+    
+    if (isConnected) {
+      // 연결되면 방 목록 새로고침
+      await refreshRooms();
+      console.log('✅ 네트워크 재연결 성공');
+    } else {
+      // 여전히 연결되지 않으면 에러 표시
+      setTimeout(() => {
+        if (!roomError.value) {
+          // 에러 상태가 없다면 다시 설정
+          setError('네트워크 연결을 확인해주세요. 인터넷 연결 상태를 점검해보세요.');
+        }
+      }, 1000);
+    }
+  } catch (error) {
+    console.error('❌ 재시도 중 오류:', error);
+  }
+};
+
+const handleEnableDummyData = () => {
+  console.log('🧪 더미 데이터 모드 활성화');
+  clearError();
+  enableDummyData(true);
+};
+
+const handleDisableDummyData = async () => {
+  console.log('🌐 실제 API 모드로 전환');
+  try {
+    await disableDummyData();
+  } catch (error) {
+    console.error('❌ API 모드 전환 실패:', error);
   }
 };
 
@@ -594,6 +682,124 @@ onBeforeUnmount(() => {
   }
 }
 
+/* 개선된 에러 토스트 스타일 */
+.error-message-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.error-message {
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.error-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.error-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.retry-btn {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.retry-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.dummy-btn {
+  background: rgba(59, 130, 246, 0.2);
+  color: #dbeafe;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.dummy-btn:hover {
+  background: rgba(59, 130, 246, 0.3);
+  transform: translateY(-1px);
+}
+
+/* 더미 데이터 모드 토스트 */
+.dummy-mode-toast {
+  position: fixed;
+  top: 100px;
+  left: 20px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+  z-index: 1000;
+  animation: slideInLeft 0.3s ease-out;
+  max-width: 400px;
+  min-width: 300px;
+}
+
+.dummy-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dummy-content i {
+  font-size: 1.1rem;
+  color: #dbeafe;
+}
+
+.dummy-content span {
+  flex: 1;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.dummy-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dummy-action-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
 /* 반응형 스타일 */
 @media (max-width: 900px) {
   .lobby-layout {
@@ -666,6 +872,25 @@ onBeforeUnmount(() => {
     right: 15px;
     max-width: none;
     min-width: auto;
+  }
+  
+  .dummy-mode-toast {
+    top: 80px;
+    left: 15px;
+    right: auto;
+    max-width: none;
+    min-width: auto;
+    width: calc(100% - 30px);
+  }
+  
+  .error-actions {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  
+  .error-action-btn {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.7rem;
   }
 }
 </style>
