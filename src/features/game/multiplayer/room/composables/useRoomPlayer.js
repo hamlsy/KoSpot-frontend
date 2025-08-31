@@ -44,7 +44,24 @@ export function useRoomPlayer(props) {
   };
 
   /**
-   * 플레이어 상태 변경 처리
+   * 플레이어 목록 업데이트 (Redis에서 받은 최신 데이터로 교체)
+   */
+  const updatePlayerList = (newPlayers) => {
+    console.log('🔄 플레이어 목록 업데이트:', newPlayers);
+    
+    if (!Array.isArray(newPlayers)) {
+      console.warn('⚠️ 잘못된 플레이어 목록 형식:', newPlayers);
+      return;
+    }
+    
+    // 기존 플레이어 목록을 새로운 목록으로 교체
+    localPlayers.value = [...newPlayers];
+    
+    console.log(`✅ 플레이어 목록 업데이트 완료: ${newPlayers.length}명`);
+  };
+
+  /**
+   * 플레이어 상태 변경 처리 (기존 방식 - 호환성 유지)
    */
   const handlePlayerStatusChange = (playerEvent, addSystemMessage) => {
     console.log('🔄 플레이어 상태 변경:', playerEvent);
@@ -130,12 +147,7 @@ export function useRoomPlayer(props) {
     return localPlayers.value;
   };
 
-  /**
-   * 현재 플레이어 목록 업데이트
-   */
-  const updatePlayerList = (players) => {
-    localPlayers.value = players;
-  };
+
 
   /**
    * 팀 모드에서 게임 시작 가능 여부 확인
@@ -219,7 +231,7 @@ export function useRoomPlayer(props) {
     getCurrentPlayerNickname,
     getCurrentPlayerTeam,
     handlePlayerStatusChange,
-    updatePlayerList,
+    updatePlayerList, // 새로 추가된 메서드
     canStartGame,
     canStartTeamGame,
     getTeamPlayerCount,

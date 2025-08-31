@@ -25,11 +25,34 @@
           <h3 class="section-title">
             <i class="fas fa-users"></i>
             참가자 ({{ localPlayers.length }}/{{ localRoomData.maxPlayers }})
+            
+            <!-- WebSocket 연결 상태 표시 -->
+            <div class="connection-status">
+              <div v-if="isWebSocketConnected" class="status-indicator connected" title="실시간 연결됨">
+                <i class="fas fa-wifi"></i>
+              </div>
+              <div v-else class="status-indicator disconnected" title="폴링 모드">
+                <i class="fas fa-clock"></i>
+              </div>
+              
+              <!-- 플레이어 목록 로딩 상태 -->
+              <div v-if="isLoadingPlayerList" class="loading-indicator" title="플레이어 목록 업데이트 중">
+                <i class="fas fa-spinner fa-spin"></i>
+              </div>
+            </div>
           </h3>
+
+          <!-- 로딩 상태 표시 -->
+          <div v-if="isLoadingPlayerList && localPlayers.length === 0" class="loading-players">
+            <div class="loading-spinner">
+              <i class="fas fa-spinner fa-spin"></i>
+            </div>
+            <p>플레이어 목록을 불러오는 중...</p>
+          </div>
 
           <!-- 팀 모드인 경우 팀별로 플레이어 목록 표시 -->
           <TeamWaitingList
-            v-if="isTeamMode"
+            v-else-if="isTeamMode"
             :teams="availableTeams"
             :players="localPlayers"
             :current-user-id="currentUserId"
@@ -52,6 +75,14 @@
             @show-player-details="showPlayerDetails"
             @kick-player="confirmKickPlayer"
           />
+
+          <!-- 마지막 업데이트 시간 표시 -->
+          <div v-if="lastPlayerListUpdate" class="last-update-time">
+            <small>
+              <i class="fas fa-clock"></i>
+              마지막 업데이트: {{ formatUpdateTime(lastPlayerListUpdate) }}
+            </small>
+          </div>
         </div>
       </div>
 
@@ -207,6 +238,11 @@ const {
   isTeamMode,
   canStartGame,
   
+  // WebSocket 및 로딩 상태
+  isWebSocketConnected,
+  isLoadingPlayerList,
+  lastPlayerListUpdate,
+  
   // 모달 상태
   isRoomSettingsOpen,
   isKickModalOpen,
@@ -234,6 +270,11 @@ const {
   joinTeam,
   sendChatMessage,
   
+  // 실시간 업데이트 메서드
+  handlePlayerListUpdate,
+  startPlayersPolling,
+  stopPlayersPolling,
+  
   // 모달 메서드
   openRoomSettings,
   closeRoomSettings,
@@ -253,6 +294,25 @@ const {
   canJoinTeam,
   getTeamPlayerCount
 } = room;
+
+// 시간 포맷팅 유틸리티
+const formatUpdateTime = (timestamp) => {
+  const now = Date.now();
+  const diff = now - timestamp;
+  
+  if (diff < 1000) {
+    return '방금 전';
+  } else if (diff < 60000) {
+    return `${Math.floor(diff / 1000)}초 전`;
+  } else if (diff < 3600000) {
+    return `${Math.floor(diff / 60000)}분 전`;
+  } else {
+    return new Date(timestamp).toLocaleTimeString('ko-KR', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  }
+};
 </script>
 
 <style scoped>
@@ -322,6 +382,120 @@ const {
 .section-title i {
   color: #667eea;
   font-size: 1rem;
+}
+
+/* 연결 상태 표시 */
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  transition: all 0.2s ease;
+}
+
+.status-indicator.connected {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+  animation: pulse-green 2s infinite;
+}
+
+.status-indicator.disconnected {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+  animation: pulse-orange 2s infinite;
+}
+
+.loading-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: #667eea;
+  font-size: 0.8rem;
+}
+
+@keyframes pulse-green {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+  }
+  50% {
+    box-shadow: 0 2px 12px rgba(34, 197, 94, 0.6);
+  }
+}
+
+@keyframes pulse-orange {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    box-shadow: 0 2px 12px rgba(245, 158, 11, 0.6);
+  }
+}
+
+/* 플레이어 목록 로딩 상태 */
+.loading-players {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  color: #64748b;
+  gap: 1rem;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.2rem;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.loading-players p {
+  margin: 0;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+/* 마지막 업데이트 시간 */
+.last-update-time {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f1f5f9;
+  text-align: center;
+}
+
+.last-update-time small {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.last-update-time i {
+  font-size: 0.7rem;
+  opacity: 0.8;
 }
 
 /* 채팅 패널 전체 높이 */
