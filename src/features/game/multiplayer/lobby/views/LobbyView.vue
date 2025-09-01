@@ -11,6 +11,17 @@
         </div>
         <div class="header-right">
           <h3>멀티플레이어 로비</h3>
+          <!-- 개발 모드 토글 버튼 (개발 환경에서만 표시) -->
+          <button 
+            v-if="isDevelopment"
+            class="dev-mode-toggle"
+            @click="toggleDevMode"
+            :class="{ 'active': useDummyData }"
+            :title="useDummyData ? '개발 모드 끄기' : '개발 모드 켜기'"
+          >
+            <i class="fas" :class="useDummyData ? 'fa-database' : 'fa-wifi'"></i>
+            <span>{{ useDummyData ? 'DEV' : 'API' }}</span>
+          </button>
         </div>
       </div>
     </header>
@@ -31,8 +42,10 @@
         <!-- 왼쪽 패널: 게임 방 목록 -->
         <GameRoomList 
           :rooms="rooms" 
+          :loading="isLoading"
           @join-room="joinRoom"
-          @refresh-rooms="fetchRooms"
+          @refresh-rooms="refreshRooms"
+          @load-more="loadMoreRooms"
           class="game-room-list"
           :class="{ 'chat-open': isChatVisible && isMobile }"
         />
@@ -64,11 +77,34 @@
       @create-room="createRoom"
     />
 
-    <!-- 로딩 오버레이 -->
-    <div v-if="isLoading" class="loading-overlay">
+    <!-- 방 입장 중 로딩 오버레이 (전체 화면) -->
+    <div v-if="isJoining" class="loading-overlay">
       <div class="loading-spinner">
         <i class="fas fa-spinner fa-spin"></i>
-        <p>로딩 중...</p>
+        <p>방에 입장 중...</p>
+      </div>
+    </div>
+    
+    <!-- 에러 알림 (Toast 형태) -->
+    <div v-if="roomError" class="error-toast">
+      <div class="error-content">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span class="error-message">{{ roomError }}</span>
+        <button class="error-close" @click="clearError">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    </div>
+    
+    <!-- 더미 데이터 모드 알림 -->
+    <div v-if="useDummyData && isDevelopment" class="dummy-mode-toast">
+      <div class="dummy-content">
+        <i class="fas fa-database"></i>
+        <span>개발 모드: 더미 데이터 사용 중</span>
+        <button class="dummy-action-btn" @click="handleDisableDummyData">
+          <i class="fas fa-wifi"></i>
+          실제 API 사용
+        </button>
       </div>
     </div>
   </div>
@@ -79,10 +115,15 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '@/core/composables/useAuth.js';
 import useGlobalLobbyWebSocketService from '../services/useGlobalLobbyWebSocketService';
+import { useLobbyRoom } from '../composables/useLobbyRoom.js';
 import GameRoomList from '../components/RoomList.vue';
 import ChatWindow from '../../chat/components/Lobby/ChatWindow.vue';
 import CreateRoomModal from '../components/CreateRoomModal.vue';
 import AppLogo from '@/core/components/AppLogo.vue';
+
+// Vue3 script setup에서 process.env 접근을 위한 정의
+// const isDevelopment = process.env.NODE_ENV === 'development';
+const isDevelopment = true;
 
 // Vue Router
 const router = useRouter();
@@ -90,10 +131,26 @@ const router = useRouter();
 // WebSocket 로비 서비스 초기화
 const lobbyService = useGlobalLobbyWebSocketService();
 
+// 방 관리 composables 초기화
+const {
+  rooms,
+  isLoading,
+  error: roomError,
+  isJoining,
+  useDummyData,
+  fetchRooms,
+  loadMoreRooms,
+  refreshRooms,
+  joinRoom: joinRoomAPI,
+  joinRoomByObject,
+  createRoom: createRoomAPI,
+  clearError,
+  enableDummyData,
+  disableDummyData
+} = useLobbyRoom();
+
 // 반응형 데이터
-const rooms = ref([]);
 const showCreateRoomModal = ref(false);
-const isLoading = ref(false);
 const isInitialized = ref(false);
 const isMobile = ref(false);
 const isChatVisible = ref(false);
@@ -129,105 +186,29 @@ const getCurrentUserId = () => {
 };
 
 const initializeData = async () => {
-  isLoading.value = true;
-  
   try {
     // WebSocket 연결 및 채팅 서비스 시작
     // (사용자 정보는 서비스 내에서 자동으로 초기화됨)
     await connectToChat();
     
-    // 방 목록 가져오기
-    await fetchRooms();
+    // 방 목록 가져오기 (첫 페이지)
+    await fetchRooms(0);
     
     isInitialized.value = true;
       
-      // 30초마다 방 목록 갱신
+      // 30초마다 방 목록 새로고침 (더미 데이터 모드가 아닐 때만)
     refreshInterval.value = setInterval(() => {
-      fetchRooms();
+      if (!useDummyData.value) {
+        refreshRooms();
+      }
       }, 30000);
     
   } catch (error) {
     console.error('로비 초기화 중 오류:', error);
-  } finally {
-    isLoading.value = false;
   }
 };
 
-const fetchRooms = async () => {
-  if (!isInitialized.value) {
-    isLoading.value = true;
-      }
-      
-      try {
-        // 실제 구현에서는 API 호출로
-        // const response = await axios.get('/api/multiplayer/rooms');
-    // rooms.value = response.data.rooms;
-        
-    // 테스트용 즉시 데이터 설정
-    rooms.value = [
-          {
-            id: 'room1',
-            name: '방 제목 A',
-            host: 'host A',
-            players: 2,
-            maxPlayers: 4,
-            mode: '로드뷰',
-            status: 'waiting',
-          },
-          {
-            id: 'room2',
-            name: '방 제목 B',
-            host: 'host B',
-            players: 3,
-            maxPlayers: 4,
-            mode: '포토',
-            status: 'waiting',
-          },
-          {
-            id: 'room3',
-            name: '방 제목 C',
-            host: 'host c',
-            players: 1,
-            maxPlayers: 2,
-            mode: '로드뷰',
-            status: 'waiting',
-          },
-          {
-            id: 'room5',
-            name: '게임 진행 중 - 3라운드',
-            host: 'host F',
-            players: 4,
-            maxPlayers: 8,
-            mode: '로드뷰',
-            status: 'playing',
-            region: '전국',
-            currentRound: 3,
-            totalRounds: 5,
-          },
-          {
-            id: 'room6',
-            name: '포토모드 5라운드 진행중',
-            host: 'host D',
-            players: 6,
-            maxPlayers: 6,
-            mode: '포토',
-            status: 'playing',
-            currentRound: 5,
-            totalRounds: 8,
-          }
-        ];
-        
-        // 초기화 이후에는 로딩 상태 해제
-    if (!isInitialized.value) {
-      isLoading.value = false;
-        }
-        
-      } catch (error) {
-        console.error('방 목록 조회 중 오류 발생:', error);
-    isLoading.value = false;
-    throw error;
-      }
-};
+// fetchRooms는 이제 composables에서 가져옴 (더 이상 여기서 정의하지 않음)
 
 const connectToChat = async () => {
   try {
@@ -273,59 +254,80 @@ const sendChatMessage = (message) => {
   }
 };
 
-const joinRoom = (roomId) => {
-  isLoading.value = true;
-      
-      // 실제 구현에서는 API 호출 후 게임 화면으로 이동
-      console.log(`방 ${roomId}에 참가합니다.`);
-      
-      setTimeout(() => {
-    isLoading.value = false;
-        // 게임 방으로 이동 (대기실 모드로 시작됨)
-    router.push({
-          name: 'MultiplayerGame',
-          params: { roomId }
-        });
-      }, 1000);
+const joinRoom = async (roomParam, password = null) => {
+  try {
+    // Spring API에 맞는 방 입장 처리
+    if (typeof roomParam === 'string' || typeof roomParam === 'number') {
+      // roomId로 직접 입장 (기존 호환성 유지)
+      await joinRoomAPI(roomParam, password);
+    } else if (roomParam && (roomParam.gameRoomId || roomParam.id)) {
+      // FindGameRoomResponse 객체로 입장 (개선된 방식)
+      await joinRoomByObject(roomParam, password);
+    } else {
+      console.error('❌ 잘못된 방 입장 파라미터:', roomParam);
+      return;
+    }
+  } catch (error) {
+    console.error('❌ 방 입장 처리 중 오류:', error);
+    // 에러는 composables에서 처리됨
+  }
 };
     
-const createRoom = (roomData) => {
-  isLoading.value = true;
-      
-      // 실제 구현에서는 API 호출
-      console.log('새 방 생성:', roomData);
-      
-      setTimeout(() => {
+const createRoom = async (roomData) => {
+  try {
+    console.log('🏗️ 새 방 생성 요청:', roomData);
+    
+    // 모달 닫기
     showCreateRoomModal.value = false;
-    isLoading.value = false;
-        
-        // 사용자 정보 가져오기 (useAuth에서 직접)
-        const { user: authUser } = useAuth();
-        const userNickname = authUser.value?.nickname || '익명';
-        
-        // 생성된 방 목록에 추가
-        const newRoom = {
-          id: `room${Date.now()}`,
-          name: roomData.name,
-      host: userNickname,
-          players: 1,
-          maxPlayers: roomData.maxPlayers,
-          mode: roomData.gameMode,
-          status: 'waiting',
-          region: roomData.region,
-          createdAt: new Date().toISOString()
-        };
-        
-    rooms.value.unshift(newRoom);
-        
-    // 시스템 메시지 추가 (WebSocket 서비스를 통해)
-    lobbyService.createGlobalSystemMessage(
-      `${userNickname}님이 '${roomData.name}' 방을 생성했습니다.`
-    );
-        
-        // 생성한 방으로 자동 입장 (대기실 모드로 시작됨)
-    joinRoom(newRoom.id);
-      }, 1000);
+    
+    // API를 통해 방 생성 (자동으로 해당 방에 입장됨)
+    const newRoom = await createRoomAPI(roomData);
+    
+    if (newRoom) {
+      // 사용자 정보 가져오기 
+      const { user: authUser } = useAuth();
+      const userNickname = authUser.value?.nickname || '익명';
+      
+      // 시스템 메시지 추가 (WebSocket 서비스를 통해)
+      lobbyService.createGlobalSystemMessage(
+        `${userNickname}님이 '${roomData.name}' 방을 생성했습니다.`
+      );
+      
+      console.log('✅ 방 생성 및 입장 완료');
+    }
+  } catch (error) {
+    console.error('❌ 방 생성 처리 중 오류:', error);
+    // 에러 발생 시 모달 다시 열기
+    showCreateRoomModal.value = true;
+  }
+};
+
+// 개발 모드 관련 메서드
+const handleDisableDummyData = async () => {
+  console.log('🌐 실제 API 모드로 전환');
+  try {
+    await disableDummyData();
+  } catch (error) {
+    console.error('❌ API 모드 전환 실패:', error);
+  }
+};
+
+// 개발 모드 토글 메서드
+const toggleDevMode = async () => {
+  if (useDummyData.value) {
+    // 개발 모드에서 API 모드로 전환
+    console.log('🌐 API 모드로 전환');
+    try {
+      await disableDummyData();
+    } catch (error) {
+      console.error('❌ API 모드 전환 실패:', error);
+    }
+  } else {
+    // API 모드에서 개발 모드로 전환
+    console.log('🧪 개발 모드로 전환');
+    clearError(); // 기존 에러 클리어
+    enableDummyData(true);
+  }
 };
 
 // 라이프사이클 훅
@@ -419,6 +421,53 @@ onBeforeUnmount(() => {
   height: 3px;
   background: linear-gradient(90deg, #60a5fa, #8b5cf6);
   border-radius: 2px;
+}
+
+/* 개발 모드 토글 버튼 */
+.dev-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.8rem;
+  margin-left: 1rem;
+  background: rgba(107, 114, 128, 0.1);
+  border: 1px solid rgba(107, 114, 128, 0.2);
+  border-radius: 8px;
+  color: #6b7280;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.dev-mode-toggle i {
+  font-size: 0.75rem;
+  transition: all 0.25s ease;
+}
+
+.dev-mode-toggle span {
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+}
+
+.dev-mode-toggle:hover {
+  background: rgba(107, 114, 128, 0.15);
+  border-color: rgba(107, 114, 128, 0.3);
+  transform: translateY(-1px);
+}
+
+.dev-mode-toggle.active {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border-color: #2563eb;
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+.dev-mode-toggle.active:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
 }
 
 /* 메인 콘텐츠 스타일 */
@@ -586,6 +635,130 @@ onBeforeUnmount(() => {
   background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
 }
 
+/* 에러 토스트 */
+.error-toast {
+  position: fixed;
+  top: 100px;
+  right: 20px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
+  z-index: 1000;
+  cursor: pointer;
+  animation: slideInRight 0.3s ease-out;
+  max-width: 400px;
+  min-width: 300px;
+}
+
+.error-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.error-content i {
+  font-size: 1.1rem;
+  color: #fef2f2;
+}
+
+.error-content span {
+  flex: 1;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.error-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.error-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* 더미 데이터 모드 토스트 */
+.dummy-mode-toast {
+  position: fixed;
+  top: 100px;
+  left: 20px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+  z-index: 1000;
+  animation: slideInLeft 0.3s ease-out;
+  max-width: 400px;
+  min-width: 300px;
+}
+
+.dummy-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dummy-content i {
+  font-size: 1.1rem;
+  color: #dbeafe;
+}
+
+.dummy-content span {
+  flex: 1;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.dummy-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dummy-action-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
 /* 반응형 스타일 */
 @media (max-width: 900px) {
   .lobby-layout {
@@ -637,8 +810,29 @@ onBeforeUnmount(() => {
     padding: 0.8rem 1rem;
   }
   
+  .header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+  }
+  
   .header-right h3 {
     font-size: 1rem;
+  }
+  
+  .dev-mode-toggle {
+    margin-left: 0;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.7rem;
+  }
+  
+  .dev-mode-toggle span {
+    font-size: 0.6rem;
+  }
+  
+  .dev-mode-toggle i {
+    font-size: 0.7rem;
   }
   
   .main-content {
@@ -650,6 +844,23 @@ onBeforeUnmount(() => {
     right: 15px;
     padding: 10px 16px;
     font-size: 0.85rem;
+  }
+  
+  .error-toast {
+    top: 80px;
+    left: 15px;
+    right: 15px;
+    max-width: none;
+    min-width: auto;
+  }
+  
+  .dummy-mode-toast {
+    top: 80px;
+    left: 15px;
+    right: auto;
+    max-width: none;
+    min-width: auto;
+    width: calc(100% - 30px);
   }
 }
 </style>

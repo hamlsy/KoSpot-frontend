@@ -69,6 +69,15 @@ export const API_ENDPOINTS = {
     UPLOAD: {
       IMAGE: '/upload/image',
       AVATAR: '/upload/avatar'
+    },
+    
+    // 게임 룸 관리
+    GAME_ROOM: {
+      LIST: '/gameRoom',
+      JOIN: (roomId) => `/gameRoom/${roomId}/join`,
+      CREATE: '/gameRoom/',
+      LEAVE: (roomId) => `/gameRoom/${roomId}/leave`,
+      DETAILS: (roomId) => `/gameRoom/${roomId}`
     }
   }
   

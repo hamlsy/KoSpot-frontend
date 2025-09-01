@@ -189,8 +189,6 @@ const sortedPlayers = computed(() => {
 // Methods
 const getStatusIcon = (status) => {
   switch (status) {
-    case 'ready': return 'fa-check-circle ready';
-    case 'not-ready': return 'fa-times-circle not-ready';
     case 'playing': return 'fa-gamepad playing';
     case 'submitted': return 'fa-check-circle submitted';
     default: return 'fa-circle';
@@ -199,8 +197,6 @@ const getStatusIcon = (status) => {
 
 const getStatusText = (status) => {
   switch (status) {
-    case 'ready': return '준비 완료';
-    case 'not-ready': return '대기 중';
     case 'playing': return '플레이 중';
     case 'submitted': return '제출 완료';
     default: return '';
@@ -612,8 +608,6 @@ defineExpose({
   font-size: 0.9em;
 }
 
-.player-status .ready { color: var(--success-color); }
-.player-status .not-ready { color: var(--danger-color); }
 .player-status .playing { color: var(--primary-color); }
 .player-status .submitted { color: var(--success-color); }
 

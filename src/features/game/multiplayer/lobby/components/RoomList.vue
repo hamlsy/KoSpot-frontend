@@ -1,7 +1,13 @@
 <template>
   <div class="game-rooms-panel">
     <div class="panel-header">
-      <h2 class="panel-title">게임 방 목록</h2>
+      <div class="panel-title-section">
+        <h2 class="panel-title">게임 방 목록</h2>
+        <div v-if="loading" class="header-loading">
+          <i class="fas fa-spinner fa-spin"></i>
+          <span class="loading-text">새로고침 중...</span>
+        </div>
+      </div>
       <div class="room-actions">
         <div class="search-box">
           <input 
@@ -11,8 +17,8 @@
           />
           <i class="fas fa-search"></i>
         </div>
-        <button class="refresh-button" @click="refreshRooms">
-          <i class="fas fa-sync-alt"></i>
+        <button class="refresh-button" @click="refreshRooms" :disabled="loading">
+          <i class="fas fa-sync-alt" :class="{ 'fa-spin': loading }"></i>
         </button>
       </div>
     </div>
@@ -20,39 +26,46 @@
     <div class="rooms-container" v-if="rooms && rooms.length > 0">
       <div 
         v-for="room in rooms" 
-        :key="room.id"
+        :key="room.gameRoomId"
         class="room-card"
-        :class="{ 'playing': room.status === 'playing' }"
+        :class="{ 'playing': room.gameRoomStatus === '게임 중' }"
         @click="joinRoom(room)"
       >
         <div class="room-content">
           <div class="room-header">
             <div class="room-info">
-              <h3 class="room-name">{{ room.name }}</h3>
-              <span class="room-host">방장: {{ room.host }}</span>
+              <h3 class="room-name">{{ room.title }}</h3>
+              <span class="room-host">방장: {{ room.hostNickname }}</span>
             </div>
             <div class="room-badges">
               <span 
                 class="mode-badge"
                 :class="{ 
-                  'roadview-mode': room.mode === '로드뷰',
-                  'photo-mode': room.mode === '포토'
+                  'roadview-mode': room.gameMode === '로드뷰',
+                  'photo-mode': room.gameMode === '포토모드'
                 }"
               >
-                <i :class="room.mode === '로드뷰' ? 'fas fa-street-view' : 'fas fa-camera'"></i>
-                {{ room.mode }}
+                <i :class="room.gameMode === '로드뷰' ? 'fas fa-street-view' : 'fas fa-camera'"></i>
+                {{ room.gameMode }}
+              </span>
+              <span 
+                class="type-badge"
+                :class="{ 
+                  'individual': room.gameType === '개인전',
+                  'team': room.gameType === '팀전'
+                }"
+              >
+                <i :class="room.gameType === '개인전' ? 'fas fa-user' : 'fas fa-users'"></i>
+                {{ room.gameType }}
               </span>
               <span 
                 class="status-badge"
                 :class="{ 
-                  'waiting': room.status === 'waiting',
-                  'playing': room.status === 'playing'
+                  'waiting': room.gameRoomStatus === '대기 중',
+                  'playing': room.gameRoomStatus === '게임 중'
                 }"
               >
-                {{ room.status === 'waiting' ? '대기중' : '게임중' }}
-                <span v-if="room.status === 'playing' && room.currentRound" class="round-info">
-                  {{ room.currentRound }}/{{ room.totalRounds }}R
-                </span>
+                {{ room.gameRoomStatus }}
               </span>
             </div>
           </div>
@@ -60,9 +73,9 @@
           <div class="room-details">
             <div class="detail-item">
               <i class="fas fa-users"></i>
-              <span>{{ room.players }}/{{ room.maxPlayers }}명</span>
+              <span>{{ room.currentPlayerCount }}/{{ room.maxPlayers }}명</span>
             </div>
-            <div class="detail-item" v-if="room.isPrivate">
+            <div class="detail-item" v-if="room.privateRoom">
               <i class="fas fa-lock"></i>
               <span>비밀방</span>
             </div>
@@ -104,6 +117,10 @@ export default {
       type: Array,
       required: true,
       default: () => []
+    },
+    loading: {
+      type: Boolean,
+      default: false
     }
   },
   
@@ -135,51 +152,44 @@ export default {
     },
     
     joinRoom(room) {
-      if (room.players >= room.maxPlayers) {
+      // FindGameRoomResponse 구조에 맞는 검증 로직
+      if (room.currentPlayerCount >= room.maxPlayers) {
         alert('방이 가득 찼습니다.');
         return;
       }
       
-      if (room.status === 'playing') {
+      // Spring에서 올 수 있는 gameRoomStatus 값들 체크
+      if (room.gameRoomStatus === '게임 중' || room.gameRoomStatus === 'PLAYING') {
         alert('이미 게임이 진행중인 방입니다.');
         return;
       }
       
-      if (room.isPrivate) {
+      // 비밀방인 경우 비밀번호 모달 표시
+      if (room.privateRoom) {
         this.selectedRoom = room;
         this.showPasswordModal = true;
         this.passwordInput = '';
       } else {
-        this.$emit('join-room', room.id);
+        // 공개방인 경우 즉시 입장 (room 객체 전체를 전달)
+        this.$emit('join-room', room);
       }
     },
     
     handlePasswordSubmit(password) {
       if (!this.selectedRoom) return;
       
-      if (password === this.selectedRoom.password) {
-        this.$emit('join-room', this.selectedRoom.id);
-        this.showPasswordModal = false;
-        this.selectedRoom = null;
-      } else {
-        alert('비밀번호가 일치하지 않습니다.');
+      // Spring API에서 비밀번호 검증이 서버에서 이루어지므로
+      // 프론트엔드에서는 빈 비밀번호만 체크
+      if (!password || password.trim() === '') {
+        alert('비밀번호를 입력해주세요.');
+        return;
       }
-    },
-    
-    formatTimeAgo(timestamp) {
-      const now = new Date();
-      const roomDate = new Date(timestamp);
-      const diffMs = now - roomDate;
-      const diffMins = Math.floor(diffMs / (1000 * 60));
       
-      if (diffMins < 1) return '방금 전';
-      if (diffMins < 60) return `${diffMins}분 전`;
-      
-      const diffHours = Math.floor(diffMins / 60);
-      if (diffHours < 24) return `${diffHours}시간 전`;
-      
-      const diffDays = Math.floor(diffHours / 24);
-      return `${diffDays}일 전`;
+      // room 객체와 비밀번호를 함께 전달
+      this.$emit('join-room', this.selectedRoom, password);
+      this.showPasswordModal = false;
+      this.selectedRoom = null;
+      this.passwordInput = '';
     }
   }
 };
@@ -210,6 +220,12 @@ export default {
   -webkit-backdrop-filter: blur(5px);
 }
 
+.panel-title-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .panel-title {
   margin: 0;
   font-size: 1.2rem;
@@ -217,6 +233,24 @@ export default {
   color: #111827;
   position: relative;
   padding-bottom: 5px;
+}
+
+.header-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6b7280;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.header-loading i {
+  color: #60a5fa;
+  font-size: 0.85rem;
+}
+
+.loading-text {
+  animation: fadeInOut 2s infinite;
 }
 
 .panel-title::after {
@@ -240,6 +274,11 @@ export default {
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
 }
 
 .search-box {
@@ -294,11 +333,23 @@ export default {
   justify-content: center;
 }
 
-.refresh-button:hover {
+.refresh-button:hover:not(:disabled) {
   background: white;
   transform: rotate(180deg);
   box-shadow: 0 4px 8px rgba(96, 165, 250, 0.15);
   color: #3b82f6;
+}
+
+.refresh-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.refresh-button:disabled:hover {
+  background: rgba(240, 244, 248, 0.8);
+  transform: none;
+  box-shadow: none;
 }
 
 .rooms-container {
@@ -374,12 +425,6 @@ export default {
   box-shadow: 0 8px 15px rgba(0, 0, 0, 0.06);
 }
 
-.room-card:not(.playing):hover::after,
-.room-card:not(.playing):hover::before,
-.room-card:not(.playing):hover .room-content {
-  /* 모두 제거 */
-}
-
 .room-info {
   flex: 1;
 }
@@ -410,7 +455,7 @@ export default {
   gap: 0.5rem;
 }
 
-.mode-badge, .status-badge {
+.mode-badge, .status-badge, .type-badge {
   padding: 0.35rem 0.7rem;
   border-radius: 20px;
   font-size: 0.75rem;
@@ -440,6 +485,16 @@ export default {
 .playing {
   background: linear-gradient(135deg, #fef3c7, #ffedd5);
   color: #d97706;
+}
+
+.individual {
+  background: linear-gradient(135deg, #f3e8ff, #e9d5ff);
+  color: #8b5cf6;
+}
+
+.team {
+  background: linear-gradient(135deg, #ecfeff, #cffafe);
+  color: #06b6d4;
 }
 
 .round-info {
@@ -490,6 +545,7 @@ export default {
   margin-bottom: 1.2rem;
   color: #cbd5e1;
   background: linear-gradient(135deg, #60a5fa, #8b5cf6);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   opacity: 0.4;

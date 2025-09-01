@@ -3,35 +3,58 @@
     <!-- 배경 요소 -->
     <div class="mode-background"></div>
 
-    <!-- 헤더 컴포넌트 -->
-    <RoomHeader
-      :room-data="roomData"
-      :is-host="isHost"
-      :can-start-game="canStartGame"
-      :unread-messages="unreadMessages"
-      :is-team-mode="isTeamMode"
-      @open-settings="openRoomSettings"
-      @toggle-chat="toggleChat"
-      @leave-room="leaveRoom"
-      @start-game="startGame"
-    />
-
     <!-- 메인 컨텐츠 영역 -->
     <div class="room-content">
-      <!-- 왼쪽 패널: 플레이어 목록 및 게임 정보 -->
+      <!-- 왼쪽 패널: 헤더 + 플레이어 목록 -->
       <div class="left-panel">
-        <!-- 플레이어 목록 섹션 -->
+        <!-- 헤더 컴포넌트 -->
+        <RoomHeader
+          :room-data="localRoomData"
+          :is-host="isHost"
+          :can-start-game="canStartGame"
+          :unread-messages="unreadMessages"
+          :is-team-mode="isTeamMode"
+          @open-settings="openRoomSettings"
+          @toggle-chat="toggleChat"
+          @leave-room="leaveRoom"
+          @start-game="startGame"
+        />
+
+        <!-- 플레이어 목록 -->
         <div class="panel-section">
           <h3 class="section-title">
             <i class="fas fa-users"></i>
-            참가자 ({{ players.length }}/{{ roomData.maxPlayers }})
+            참가자 ({{ localPlayers.length }}/{{ localRoomData.maxPlayers }})
+            
+            <!-- WebSocket 연결 상태 표시 -->
+            <div class="connection-status">
+              <div v-if="isWebSocketConnected" class="status-indicator connected" title="실시간 연결됨">
+                <i class="fas fa-wifi"></i>
+              </div>
+              <div v-else class="status-indicator disconnected" title="폴링 모드">
+                <i class="fas fa-clock"></i>
+              </div>
+              
+              <!-- 플레이어 목록 로딩 상태 -->
+              <div v-if="isLoadingPlayerList" class="loading-indicator" title="플레이어 목록 업데이트 중">
+                <i class="fas fa-spinner fa-spin"></i>
+              </div>
+            </div>
           </h3>
+
+          <!-- 로딩 상태 표시 -->
+          <div v-if="isLoadingPlayerList && localPlayers.length === 0" class="loading-players">
+            <div class="loading-spinner">
+              <i class="fas fa-spinner fa-spin"></i>
+            </div>
+            <p>플레이어 목록을 불러오는 중...</p>
+          </div>
 
           <!-- 팀 모드인 경우 팀별로 플레이어 목록 표시 -->
           <TeamWaitingList
-            v-if="isTeamMode"
+            v-else-if="isTeamMode"
             :teams="availableTeams"
-            :players="players"
+            :players="localPlayers"
             :current-user-id="currentUserId"
             :is-host="isHost"
             :max-players-per-team="maxPlayersPerTeam"
@@ -44,88 +67,72 @@
           <!-- 개인 모드인 경우 플레이어 목록 표시 -->
           <IndividualWaitingList
             v-else
-            :players="players"
+            :players="localPlayers"
             :current-user-id="currentUserId"
             :is-host="isHost"
+            :max-players="localRoomData.maxPlayers"
             :player-messages="playerMessages"
             @show-player-details="showPlayerDetails"
             @kick-player="confirmKickPlayer"
           />
-        </div>
-      </div>
 
-      <!-- 오른쪽 패널: 게임 정보 및 설정 -->
-      <div class="right-panel">
-        <!-- 게임 정보 섹션 -->
-        <div class="panel-section">
-          <h3 class="section-title">
-            <i class="fas fa-info-circle"></i> 게임 정보
-          </h3>
-
-          <div class="game-info-card">
-            <div class="game-info-item">
-              <div class="info-label">게임 모드</div>
-              <div class="info-value">
-                <i :class="modeIcon"></i>
-                {{ gameModeName }}
-              </div>
-            </div>
-
-            <div class="game-info-item">
-              <div class="info-label">라운드 수</div>
-              <div class="info-value">{{ roomData.rounds }}</div>
-            </div>
-
-            <div class="game-info-item">
-              <div class="info-label">제한 시간</div>
-              <div class="info-value">{{ roomData.timeLimit }}초</div>
-            </div>
-
-            <div class="game-info-item">
-              <div class="info-label">게임 지역</div>
-              <div class="info-value">{{ roomData.region || "전국" }}</div>
-            </div>
-
-            <div class="game-info-item" v-if="isTeamMode">
-              <div class="info-label">팀 모드</div>
-              <div class="info-value"><i class="fas fa-users"></i> 팀전</div>
-            </div>
+          <!-- 마지막 업데이트 시간 표시 -->
+          <div v-if="lastPlayerListUpdate" class="last-update-time">
+            <small>
+              <i class="fas fa-clock"></i>
+              마지막 업데이트: {{ formatUpdateTime(lastPlayerListUpdate) }}
+            </small>
           </div>
         </div>
-
       </div>
-    </div>
 
-    <!-- 채팅 모달 -->
-    <div class="chat-modal" :class="{ active: isChatOpen }">
-      <div class="chat-container">
-        <div class="chat-header">
-          <h3 class="chat-title"><i class="fas fa-comments"></i> 채팅</h3>
-          <button class="close-button" @click="toggleChat">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
+      <!-- 오른쪽 패널: 채팅 전체 높이 -->
+      <div class="right-panel">
+        <div class="chat-panel">
+          <div class="chat-header">
+            <div class="chat-title">
+              <i class="fas fa-comments"></i>
+              <span>채팅</span>
+              <div class="chat-notification" v-if="unreadMessages > 0">
+                {{ unreadMessages > 9 ? '9+' : unreadMessages }}
+              </div>
+            </div>
+            <div class="chat-status">
+              <i class="fas fa-circle online-indicator"></i>
+              <span>{{ localPlayers.length }}명 온라인</span>
+            </div>
+          </div>
 
-        <div class="chat-messages" ref="chatMessages">
-          <ChatMessage
-            v-for="(message, index) in chatMessages"
-            :key="index"
-            :message="message"
-            :current-user-id="currentUserId"
-          />
-        </div>
+          <div class="chat-container">
+            <div class="chat-messages" ref="chatMessagesRef">
+              <div class="chat-welcome">
+                <div class="welcome-icon">
+                  <i class="fas fa-comments"></i>
+                </div>
+                <p class="welcome-text">채팅으로 다른 플레이어들과 소통해보세요!</p>
+              </div>
+              
+              <ChatMessage
+                v-for="(message, index) in chatMessages"
+                :key="index"
+                :message="message"
+                :current-user-id="currentUserId"
+              />
+            </div>
 
-        <div class="chat-input-container">
-          <input
-            type="text"
-            class="chat-input"
-            v-model="chatInput"
-            placeholder="메시지를 입력하세요..."
-            @keyup.enter="sendChatMessage"
-          />
-          <button class="send-button" @click="sendChatMessage">
-            <i class="fas fa-paper-plane"></i>
-          </button>
+            <div class="chat-input-container">
+              <input
+                type="text"
+                class="chat-input"
+                v-model="chatInput"
+                placeholder="메시지를 입력하세요..."
+                @keyup.enter="sendChatMessage"
+              />
+              <button class="send-button" @click="sendChatMessage">
+                <i class="fas fa-paper-plane"></i>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -133,12 +140,10 @@
     <!-- 방 설정 모달 -->
     <RoomSettingsModal
       :is-active="isRoomSettingsOpen"
-      :room-data="roomData"
+      :room-data="localRoomData"
       @close="closeRoomSettings"
       @save="updateRoomSettings"
     />
-
-    <!-- 카운트다운 오버레이 -->
 
     <!-- 강퇴 확인 모달 -->
     <KickConfirmationModal
@@ -157,19 +162,10 @@
       @close="closePlayerDetails"
       @kick="confirmKickPlayer"
     />
-    
-    <!-- 채팅 토글 버튼 (오른쪽 하단에 고정) -->
-    <button class="chat-toggle-button" @click="toggleChat">
-      <i class="fas fa-comments"></i>
-      <div class="notification-badge" v-if="unreadMessages > 0">
-        {{ unreadMessages > 9 ? '9+' : unreadMessages }}
-      </div>
-    </button>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import RoomHeader from 'src/features/game/multiplayer/room/components/header/RoomHeader.vue'
 //waiting list
 import TeamWaitingList from 'src/features/game/multiplayer/room/components/list/TeamWaitingList.vue'
@@ -180,6 +176,9 @@ import KickConfirmationModal from 'src/features/game/multiplayer/room/components
 import PlayerDetailsModal from 'src/features/game/multiplayer/room/components/player/PlayerDetailsModal.vue'
 import RoomSettingsModal from 'src/features/game/multiplayer/room/components/settings/RoomSettingsModal.vue'
 import ChatMessage from 'src/features/game/multiplayer/chat/components/Room/ChatMessage.vue'
+
+// Composables
+import { useRoom } from '../composables/useRoom';
 
 // Props
 const props = defineProps({
@@ -202,11 +201,11 @@ const props = defineProps({
   players: {
     type: Array,
     default: () => [
-      { id: 'user1', nickname: '방장닉네임', profileImage: '', team: 1, isReady: true, isHost: true },
-      { id: 'user2', nickname: '플레이어2', profileImage: '', team: 1, isReady: true, isHost: false },
-      { id: 'user3', nickname: '플레이어3', profileImage: '', team: 2, isReady: false, isHost: false },
-      { id: 'user4', nickname: '플레이어4', profileImage: '', team: 2, isReady: true, isHost: false },
-      { id: 'user5', nickname: '플레이어5', profileImage: '', team: 1, isReady: false, isHost: false },
+      { id: 'user1', nickname: '방장닉네임', profileImage: '', team: 1, isHost: true },
+      { id: 'user2', nickname: '플레이어2', profileImage: '', team: 1, isHost: false },
+      { id: 'user3', nickname: '플레이어3', profileImage: '', team: 2, isHost: false },
+      { id: 'user4', nickname: '플레이어4', profileImage: '', team: 2, isHost: false },
+      { id: 'user5', nickname: '플레이어5', profileImage: '', team: 1, isHost: false },
     ]
   },
   isHost: {
@@ -225,301 +224,105 @@ const emit = defineEmits([
   'send-chat',
   'update-room-settings',
   'kick-player',
-  'join-team'
+  'join-team',
+  'player-list-updated' // 웹소켓으로 플레이어 목록 업데이트 시 사용
 ]);
 
-// State
-const isChatOpen = ref(false);
-const isRoomSettingsOpen = ref(false);
-const isCountdownActive = ref(false);
-const isKickModalOpen = ref(false);
-const isPlayerDetailsOpen = ref(false);
-const chatMessages = ref([
-  {
-    id: 1,
-    senderId: 'user2',
-    content: '안녕하세요! 게임 시작하나요?',
-    timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-  },
-  {
-    id: 2,
-    senderId: 'user1',
-    content: '네, 곧 시작할게요. 모두 준비해주세요!',
-    timestamp: new Date(Date.now() - 1000 * 60 * 4).toISOString(),
-  },
-  {
-    id: 3,
-    senderId: 'user3',
-    content: '첫 게임이라 잘 모르겠어요. 어떻게 하는 건가요?',
-    timestamp: new Date(Date.now() - 1000 * 60 * 3).toISOString(),
-  },
-  {
-    id: 4,
-    senderId: 'user1',
-    content: '로드뷰나 사진을 보고 지도에 위치를 찍는 게임이에요!',
-    timestamp: new Date(Date.now() - 1000 * 60 * 2).toISOString(),
-  },
-  {
-    id: 5,
-    senderId: 'user4',
-    content: '저는 준비 완료했습니다!',
-    timestamp: new Date(Date.now() - 1000 * 60 * 1).toISOString(),
-  },
-]);
-const chatInput = ref('');
-const unreadMessages = ref(0);
-const countdown = ref(5);
-const countdownMessage = ref('준비하세요!');
-const canCancelCountdown = ref(true);
-const playerToKick = ref(null);
-const selectedPlayer = ref(null);
-const playerMessages = ref({});
+// Room composable 사용
+const room = useRoom(props, emit);
 
-// DOM refs
-const chatMessagesRef = ref(null);
-
-// 로컬 상태 (props 복사)
-const localRoomData = ref({...props.roomData});
-
-// props가 변경되면 로컬 상태 업데이트
-watch(() => props.roomData, (newVal) => {
-  localRoomData.value = {...newVal};
-}, { deep: true });
-
-// Computed properties
-const isTeamMode = computed(() => {
-  return localRoomData.value.isTeamMode === true;
-});
-
-const gameModeName = computed(() => {
-const modes = {
-'roadview': '로드뷰 모드',
-'photo': '포토 모드',
-'mixed': '믹스 모드',
-'team': '팀 모드'
-};
-return modes[props.roomData.gameMode] || '알 수 없음';
-});
-
-const modeIcon = computed(() => {
-const icons = {
-'roadview': 'fas fa-street-view',
-'photo': 'fas fa-camera',
-'mixed': 'fas fa-random',
-'team': 'fas fa-users'
-};
-return icons[props.roomData.gameMode] || 'fas fa-question';
-});
-
-const canStartGame = computed(() => {
-  // 최소 2명 이상의 플레이어가 있어야 시작 가능
-  if (props.players.length < 2) return false;
+// 템플릿에서 사용할 상태와 메서드 추출
+const {
+  // 상태
+  localRoomData,
+  isTeamMode,
+  canStartGame,
   
-  // 팀 모드인 경우 각 팀에 최소 1명 이상의 플레이어가 있어야 함
-  if (isTeamMode.value) {
-    const teamCounts = {};
-    props.players.forEach(player => {
-      if (player.teamId) {
-        teamCounts[player.teamId] = (teamCounts[player.teamId] || 0) + 1;
-      }
-    });
-    
-    // 최소 2개 이상의 팀에 플레이어가 있어야 함
-    const teamsWithPlayers = Object.keys(teamCounts).length;
-    if (teamsWithPlayers < 2) return false;
-    
-    // 각 팀에 최소 1명 이상의 플레이어가 있어야 함
-    for (const team of availableTeams.value) {
-      if (!teamCounts[team.id] || teamCounts[team.id] < 1) {
-        return false;
-      }
-    }
-    
-    return true;
-  }
+  // WebSocket 및 로딩 상태
+  isWebSocketConnected,
+  isLoadingPlayerList,
+  lastPlayerListUpdate,
   
-  return true;
-});
-
-const availableTeams = computed(() => {
-return [
-{ id: 'blue', name: '블루 팀' },
-{ id: 'red', name: '레드 팀' },
-{ id: 'green', name: '그린 팀' },
-{ id: 'yellow', name: '옐로우 팀' }
-];
-});
-
-const maxPlayersPerTeam = computed(() => {
-  return 4; // 각 팀별 플레이어 제한은 4명으로 고정
-});
-
-// Methods
-const openRoomSettings = () => {
-isRoomSettingsOpen.value = true;
-};
-
-const closeRoomSettings = () => {
-isRoomSettingsOpen.value = false;
-}
-
-const updateRoomSettings = (settings) => {
-  // 로컬 상태 업데이트 (UI 즉시 반영을 위해)
-  localRoomData.value = {
-    ...localRoomData.value,
-    ...settings
-  };
+  // 모달 상태
+  isRoomSettingsOpen,
+  isKickModalOpen,
+  isPlayerDetailsOpen,
+  playerToKick,
+  selectedPlayer,
   
-  // 부모 컴포넌트에 업데이트 알림
-  emit('update-room-settings', settings);
-  closeRoomSettings();
-};
+  // 채팅 상태
+  chatMessages,
+  chatInput,
+  unreadMessages,
+  chatMessagesRef,
+  
+  // 플레이어 상태
+  localPlayers,
+  playerMessages,
+  availableTeams,
+  maxPlayersPerTeam,
+  
+  // 방 관련 메서드
+  updateRoomSettings,
+  leaveRoom,
+  startGame,
+  kickPlayer,
+  joinTeam,
+  sendChatMessage,
+  
+  // 실시간 업데이트 메서드
+  handlePlayerListUpdate,
+  startPlayersPolling,
+  stopPlayersPolling,
+  
+  // 모달 메서드
+  openRoomSettings,
+  closeRoomSettings,
+  showPlayerDetails,
+  closePlayerDetails,
+  confirmKickPlayer,
+  closeKickModal,
+  
+  // 채팅 메서드
+  toggleChat,
+  scrollChatToBottom,
+  addSystemMessage,
+  
+  // 플레이어 메서드
+  getCurrentPlayerNickname,
+  getCurrentPlayerTeam,
+  canJoinTeam,
+  getTeamPlayerCount
+} = room;
 
-const toggleChat = () => {
-  isChatOpen.value = !isChatOpen.value;
-  if (isChatOpen.value) {
-    unreadMessages.value = 0;
-    nextTick(() => {
-      scrollChatToBottom();
+// 시간 포맷팅 유틸리티
+const formatUpdateTime = (timestamp) => {
+  const now = Date.now();
+  const diff = now - timestamp;
+  
+  if (diff < 1000) {
+    return '방금 전';
+  } else if (diff < 60000) {
+    return `${Math.floor(diff / 1000)}초 전`;
+  } else if (diff < 3600000) {
+    return `${Math.floor(diff / 60000)}분 전`;
+  } else {
+    return new Date(timestamp).toLocaleTimeString('ko-KR', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
     });
   }
 };
-
-const scrollChatToBottom = () => {
-  if (chatMessagesRef.value) {
-    chatMessagesRef.value.scrollTop = chatMessagesRef.value.scrollHeight;
-  }
-};
-
-const sendChatMessage = () => {
-  if (!chatInput.value.trim()) return;
-  
-  emit('send-chat', chatInput.value);
-  chatInput.value = '';
-};
-
-const leaveRoom = () => {
-  emit('leave-room');
-};
-
-const startGame = () => {
-  if (!canStartGame.value) return;
-  
-  isCountdownActive.value = true;
-  countdown.value = 5;
-  
-  const countdownInterval = setInterval(() => {
-    countdown.value--;
-    
-    if (countdown.value <= 0) {
-      clearInterval(countdownInterval);
-      isCountdownActive.value = false;
-      emit('start-game');
-    }
-  }, 1000);
-};
-
-const cancelCountdown = () => {
-  isCountdownActive.value = false;
-  countdown.value = 5;
-};
-
-const confirmKickPlayer = (player) => {
-  playerToKick.value = player;
-  isKickModalOpen.value = true;
-  isPlayerDetailsOpen.value = false;
-};
-
-const closeKickModal = () => {
-  isKickModalOpen.value = false;
-  playerToKick.value = null;
-};
-
-const kickPlayer = () => {
-  if (playerToKick.value) {
-    emit('kick-player', playerToKick.value.id);
-    closeKickModal();
-  }
-};
-
-const showPlayerDetails = (player) => {
-  selectedPlayer.value = player;
-  isPlayerDetailsOpen.value = true;
-};
-
-const closePlayerDetails = () => {
-  isPlayerDetailsOpen.value = false;
-  selectedPlayer.value = null;
-};
-
-const joinTeam = (teamId) => {
-  // 현재 사용자의 플레이어 객체 찾기
-  const currentPlayerIndex = props.players.findIndex(player => player.id === props.currentUserId);
-  if (currentPlayerIndex === -1) return;
-  
-  // 플레이어 객체 복사 및 팀 ID 업데이트
-  const updatedPlayers = [...props.players];
-  updatedPlayers[currentPlayerIndex] = {
-    ...updatedPlayers[currentPlayerIndex],
-    teamId: teamId
-  };
-  
-  // 부모 컴포넌트에 업데이트된 플레이어 목록 전달
-  emit('join-team', { teamId, updatedPlayers });
-};
-
-const getPlayerName = (playerId) => {
-  const player = props.players.find(p => p.id === playerId);
-  return player ? player.nickname : '알 수 없음';
-};
-
-const formatTime = (timestamp) => {
-  if (!timestamp) return '';
-  
-  const date = new Date(timestamp);
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-  
-  return `${hours}:${minutes}`;
-};
-
-// Watchers
-watch(() => props.chatMessages, (newMessages) => {
-  if (newMessages && newMessages.length > chatMessages.value.length) {
-    const newCount = newMessages.length - chatMessages.value.length;
-    
-    if (!isChatOpen.value) {
-      unreadMessages.value += newCount;
-    }
-    
-    chatMessages.value = newMessages;
-    
-    if (isChatOpen.value) {
-      nextTick(() => {
-        scrollChatToBottom();
-      });
-    }
-  }
-}, { deep: true });
-
-// Lifecycle hooks
-onMounted(() => {
-  // 초기 채팅 메시지 로드
-  if (props.chatMessages) {
-    chatMessages.value = props.chatMessages;
-  }
-});
 </script>
 
 <style scoped>
 .multiplayer-room-waiting {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: 100vh;
   position: relative;
-  padding: 1.5rem;
-  overflow-x: hidden;
-  overflow-y: auto;
+  padding: 1rem;
+  overflow: hidden;
 }
 
 .mode-background {
@@ -528,34 +331,48 @@ onMounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   z-index: -1;
 }
 
 .room-content {
   display: flex;
-  gap: 1.5rem;
+  gap: 1rem;
   flex: 1;
+  min-height: 0;
 }
 
 .left-panel {
-  flex: 2;
+  flex: 1.2;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .right-panel {
   flex: 1;
-  min-width: 300px;
+  min-width: 380px;
+  display: flex;
+  flex-direction: column;
 }
 
 .panel-section {
-  margin-bottom: 1.5rem;
+  background: white;
+  border-radius: 16px;
+  padding: 1.25rem;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .section-title {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  color: black;
+  color: #1e293b;
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
@@ -563,310 +380,427 @@ onMounted(() => {
 }
 
 .section-title i {
-  color: #6366f1;
+  color: #667eea;
+  font-size: 1rem;
 }
 
-/* Game info card styling */
-.game-info-card {
-  background: white;
-  border-radius: 16px;
-  padding: 1.25rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  position: relative;
-  overflow: hidden;
-}
-
-.game-info-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #6366f1 0%, #a855f7 100%);
-}
-
-.game-info-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid #f3f4f6;
-}
-
-.game-info-item:last-child {
-  border-bottom: none;
-}
-
-.info-label {
-  color: #6b7280;
-  font-weight: 500;
-}
-
-.info-value {
-  font-weight: 600;
-  color: black;
+/* 연결 상태 표시 */
+.connection-status {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  margin-left: auto;
 }
 
-
-.settings-button {
-  padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-  border: none;
-  border-radius: 8px;
-  color: #4b5563;
-  font-weight: 600;
+.status-indicator {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 0.7rem;
   transition: all 0.2s ease;
 }
 
-.settings-button:hover {
-  background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
-  transform: translateY(-1px);
-}
-
-.settings-button i {
-  color: #4b5563;
-}
-
-.start-game-button {
-  padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  border: none;
-  border-radius: 8px;
+.status-indicator.connected {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
   color: white;
-  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+  animation: pulse-green 2s infinite;
+}
+
+.status-indicator.disconnected {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+  animation: pulse-orange 2s infinite;
+}
+
+.loading-indicator {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: #667eea;
+  font-size: 0.8rem;
 }
 
-.start-game-button:hover {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+@keyframes pulse-green {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+  }
+  50% {
+    box-shadow: 0 2px 12px rgba(34, 197, 94, 0.6);
+  }
 }
 
-.start-game-button:disabled {
-  background: linear-gradient(135deg, #93c5fd 0%, #60a5fa 100%);
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-  opacity: 0.7;
+@keyframes pulse-orange {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    box-shadow: 0 2px 12px rgba(245, 158, 11, 0.6);
+  }
 }
 
-.start-game-button i {
-  color: white;
-}
-
-/* Chat modal styling */
-.chat-modal {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 350px;
-  background: white;
-  box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
-  z-index: 100;
-  transform: translateX(100%);
-  transition: transform 0.3s ease;
+/* 플레이어 목록 로딩 상태 */
+.loading-players {
   display: flex;
   flex-direction: column;
-}
-
-.chat-modal.active {
-  transform: translateX(0);
-}
-
-.chat-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.chat-header {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 1.25rem;
-  border-bottom: 1px solid #f3f4f6;
-  position: relative;
+  justify-content: center;
+  padding: 3rem 1rem;
+  color: #64748b;
+  gap: 1rem;
 }
 
-.chat-header::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
-}
-
-.chat-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: black;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.chat-title i {
-  color: #3b82f6;
-}
-
-.close-button {
-  background: none;
-  border: none;
-  color: #6b7280;
-  width: 32px;
-  height: 32px;
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  color: white;
+  font-size: 1.2rem;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
-.close-button:hover {
-  background-color: #f3f4f6;
-  color: #4b5563;
+.loading-players p {
+  margin: 0;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+/* 마지막 업데이트 시간 */
+.last-update-time {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f1f5f9;
+  text-align: center;
+}
+
+.last-update-time small {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.last-update-time i {
+  font-size: 0.7rem;
+  opacity: 0.8;
+}
+
+/* 채팅 패널 전체 높이 */
+.chat-panel {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+}
+
+.chat-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  position: relative;
+}
+
+.chat-title i {
+  font-size: 1.2rem;
+}
+
+.chat-notification {
+  background: #ef4444;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  margin-left: 0.5rem;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+}
+
+.chat-status {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.online-indicator {
+  color: #22c55e;
+  font-size: 0.6rem;
+  text-shadow: 0 0 4px rgba(34, 197, 94, 0.5);
+}
+
+/* 채팅 컨테이너 */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  flex: 1;
+  min-height: 0;
 }
 
 .chat-messages {
   flex: 1;
-  padding: 1.25rem;
   overflow-y: auto;
+  padding: 1rem 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f8fafc;
+}
+
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: #f8fafc;
+  border-radius: 10px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.chat-welcome {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  color: #64748b;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 1rem;
+}
+
+.welcome-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.75rem;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.welcome-icon i {
+  font-size: 1.2rem;
+  color: white;
+}
+
+.welcome-text {
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.5;
+  margin: 0;
 }
 
 .chat-input-container {
   display: flex;
-  padding: 1rem;
-  border-top: 1px solid #f3f4f6;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #f1f5f9;
+  background: #fafbfc;
 }
 
 .chat-input {
   flex: 1;
   padding: 0.75rem 1rem;
-  border: 1px solid #e5e7eb;
+  border: 2px solid #e2e8f0;
   border-radius: 24px;
   font-size: 0.9rem;
-  color: black;
+  color: #1e293b;
   outline: none;
   transition: all 0.2s ease;
+  background: white;
 }
 
 .chat-input:focus {
-  border-color: #93c5fd;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.chat-input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
 }
 
 .send-button {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  margin-left: 0.5rem;
   transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .send-button:hover {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  transform: scale(1.05);
+  background: linear-gradient(135deg, #5a67d8 0%, #553c9a 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
 }
 
-/* 채팅 토글 버튼 스타일링 */
-.chat-toggle-button {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  transition: all 0.2s ease;
-  z-index: 50;
+.send-button:active {
+  transform: translateY(0);
 }
 
-.chat-toggle-button:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+.send-button i {
+  font-size: 0.9rem;
 }
 
-.chat-toggle-button i {
-  font-size: 1.5rem;
+/* Responsive design */
+@media (max-width: 1200px) {
+  .left-panel {
+    flex: 1.4;
+  }
+  
+  .right-panel {
+    min-width: 350px;
+  }
 }
 
-.chat-toggle-button .notification-badge {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  background: #ef4444;
-  color: white;
-  border-radius: 50%;
-  width: 22px;
-  height: 22px;
-  font-size: 0.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid white;
-}
-
-/* Responsive styling */
 @media (max-width: 1024px) {
   .room-content {
     flex-direction: column;
+    gap: 1rem;
+  }
+
+  .left-panel {
+    flex: none;
+    height: 50vh;
   }
 
   .right-panel {
+    flex: 1;
     min-width: 0;
+    min-height: 45vh;
   }
 }
 
 @media (max-width: 768px) {
   .multiplayer-room-waiting {
+    padding: 0.75rem;
+  }
+
+  .room-content {
+    gap: 0.75rem;
+  }
+
+  .panel-section {
     padding: 1rem;
   }
 
-  .chat-modal {
-    width: 100%;
+  .section-title {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
   }
-  
-  .chat-toggle-button {
-    bottom: 1.5rem;
-    right: 1.5rem;
-    width: 48px;
-    height: 48px;
+
+  .chat-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .chat-title {
+    font-size: 1rem;
+  }
+
+  .chat-status {
+    font-size: 0.8rem;
+  }
+
+  .chat-messages {
+    padding: 0.75rem 1rem;
+  }
+
+  .chat-input-container {
+    padding: 0.75rem 1rem;
+    gap: 0.5rem;
+  }
+
+  .send-button {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .left-panel {
+    height: 45vh;
+  }
+
+  .right-panel {
+    min-height: 50vh;
+  }
+
+  .chat-welcome {
+    padding: 1rem 0.5rem;
+  }
+
+  .welcome-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .welcome-text {
+    font-size: 0.8rem;
+  }
+
+  .chat-input {
+    padding: 0.65rem 0.85rem;
+    font-size: 0.85rem;
+  }
+
+  .send-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .send-button i {
+    font-size: 0.8rem;
   }
 }
 </style>
