@@ -73,6 +73,15 @@
                 <div v-if="activeSection === 'play-results'" class="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600"></div>
               </button>
               <button 
+                @click="activeSection = 'shop'" 
+                class="px-4 py-2 text-sm font-medium transition-colors relative whitespace-nowrap"
+                :class="activeSection === 'shop' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
+              >
+                <i class="fas fa-shopping-cart mr-2"></i>
+                <span>상점 관리</span>
+                <div v-if="activeSection === 'shop'" class="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600"></div>
+              </button>
+              <button 
                 @click="activeSection = 'statistics'" 
                 class="px-4 py-2 text-sm font-medium transition-colors relative whitespace-nowrap"
                 :class="activeSection === 'statistics' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
@@ -119,6 +128,11 @@
             <GameResultsManager />
           </div>
           
+          <!-- 상점 관리 섹션 -->
+          <div v-if="activeSection === 'shop'">
+            <ShopManager />
+          </div>
+          
           <!-- 접속자 통계 섹션 -->
           <div v-if="activeSection === 'statistics'">
             <VisitorStatsManager />
@@ -139,6 +153,7 @@ import PhotoManager from '@/features/admin/components/Game/PhotoManager.vue'
 import ThemeManager from '@/features/admin/components/Game/ThemeManager.vue'
 import PlayerManager from '@/features/admin/components/User/PlayerManager.vue'
 import BannerManager from '@/features/admin/components/Banner/BannerManager.vue'
+import ShopManager from '@/features/admin/components/Shop/ShopManager.vue'
 import GameResultsManager from '@/features/admin/components/Analytics/GameResultsManager.vue'
 import VisitorStatsManager from '@/features/admin/components/Analytics/VisitorStatsManager.vue'
 

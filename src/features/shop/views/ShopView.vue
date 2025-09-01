@@ -40,12 +40,20 @@
           </div>
         </div>
         
-        <div class="items-grid">
+        <!-- 로딩 상태 -->
+        <div v-if="loading" class="loading-container">
+          <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>아이템을 불러오는 중...</p>
+          </div>
+        </div>
+
+        <div v-else class="items-grid">
           <div 
             v-for="item in filteredItems" 
-            :key="item.id"
+            :key="useApiData ? item.itemId : item.id"
             class="shop-item"
-            :class="{ 'owned': item.owned }"
+            :class="{ 'owned': item.owned, 'equipped': item.equipped }"
           >
             <div class="item-image-container">
               <img :src="item.image" :alt="item.name" class="item-image" />
@@ -63,16 +71,36 @@
                 <i class="fas fa-coins"></i>
               </div>
               <div class="item-status" v-else>
-                <span class="owned-label">보유 중</span>
+                <span class="owned-label" :class="{ 'equipped': item.equipped }">
+                  {{ item.equipped ? '장착 중' : '보유 중' }}
+                </span>
               </div>
               
-              <button 
-                class="buy-button" 
-                :disabled="item.owned || !canAfford(item)"
-                @click="buyItem(item)"
-              >
-                {{ item.owned ? '보유 중' : '구매하기' }}
-              </button>
+              <div class="item-actions">
+                <button 
+                  v-if="!item.owned"
+                  class="buy-button" 
+                  :disabled="!canAfford(item) || loading"
+                  @click="buyItem(item)"
+                >
+                  구매하기
+                </button>
+                
+                <button 
+                  v-else-if="shopService.isEquippableCategory(currentCategory)"
+                  class="equip-button"
+                  :class="{ 'equipped': item.equipped }"
+                  :disabled="loading"
+                  @click="equipItem(item)"
+                >
+                  {{ item.equipped ? '장착 중' : '장착하기' }}
+                </button>
+                
+                <div v-else class="owned-indicator">
+                  <i class="fas fa-check"></i>
+                  보유 중
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -91,6 +119,7 @@
 <script>
 import PurchaseModal from "@/features/shop/components/PurchaseModal.vue"
 import NavigationBar from '@/core/components/NavigationBar.vue'
+import { shopService } from '@/features/shop/services/shop.service.js'
 
 export default {
   name: 'ShopMain',
@@ -107,6 +136,11 @@ export default {
       currentFilter: 'all',
       showPurchaseModal: false,
       selectedItem: null,
+      
+      // API 관련 상태
+      loading: false,
+      useApiData: true, // API 사용 여부 (폴백으로 더미 데이터 사용)
+      apiItems: {}, // API에서 받은 아이템들
       categories: [
         { id: 'markers', name: '마커', icon: 'fas fa-map-marker-alt' },
         { id: 'nicknames', name: '닉네임 꾸미기', icon: 'fas fa-font' },
@@ -243,6 +277,9 @@ export default {
     },
     
     currentCategoryItems() {
+      if (this.useApiData && this.apiItems[this.currentCategory]) {
+        return this.apiItems[this.currentCategory];
+      }
       return this.shopItems[this.currentCategory] || [];
     },
     
@@ -263,13 +300,53 @@ export default {
     }
   },
   
+  async mounted() {
+    await this.loadItems();
+  },
+  
   methods: {
     formatNumber(num) {
       return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     },
+
+    // shopService를 템플릿에서 접근할 수 있도록 하는 헬퍼
+    get shopService() {
+      return shopService;
+    },
     
-    setCategory(categoryId) {
+    async setCategory(categoryId) {
       this.currentCategory = categoryId;
+      await this.loadItems();
+    },
+
+    // API에서 아이템 데이터 로드
+    async loadItems() {
+      try {
+        this.loading = true;
+        const itemTypeKey = shopService.getCategoryToItemTypeKey(this.currentCategory);
+        const response = await shopService.getItemsByType(itemTypeKey);
+        
+        if (response.isSuccess) {
+          // API 응답을 UI 형식으로 변환
+          const apiItems = response.result.map(item => 
+            shopService.convertApiToUiFormat(item, this.currentCategory)
+          );
+          
+          // API 데이터를 카테고리별로 저장
+          this.$set(this.apiItems, this.currentCategory, apiItems);
+          
+          console.log(`${this.currentCategory} 아이템 로드 완료:`, apiItems);
+        } else {
+          throw new Error(response.message || 'API 응답 실패');
+        }
+      } catch (error) {
+        console.error('아이템 로드 실패:', error);
+        // API 실패 시 더미 데이터 사용
+        this.useApiData = false;
+        console.warn('더미 데이터로 폴백');
+      } finally {
+        this.loading = false;
+      }
     },
     
     setFilter(filterId) {
@@ -287,23 +364,93 @@ export default {
       this.showPurchaseModal = true;
     },
     
-    confirmPurchase() {
+    async confirmPurchase() {
       if (!this.selectedItem) return;
       
-      // 실제 구매 처리
-      this.userCoins -= this.selectedItem.price;
-      
-      // 아이템 보유 상태 업데이트
-      const category = this.shopItems[this.selectedItem.category];
-      const itemIndex = category.findIndex(item => item.id === this.selectedItem.id);
-      if (itemIndex !== -1) {
-        category[itemIndex].owned = true;
+      try {
+        this.loading = true;
+        
+        // API를 통한 아이템 구매
+        const response = await shopService.purchaseItem(this.selectedItem.itemId);
+        
+        if (response.isSuccess) {
+          // 구매 성공 시 UI 업데이트
+          this.userCoins -= this.selectedItem.price;
+          
+          // 아이템 보유 상태 업데이트
+          if (this.useApiData) {
+            const items = this.apiItems[this.selectedItem.category];
+            const itemIndex = items.findIndex(item => item.itemId === this.selectedItem.itemId);
+            if (itemIndex !== -1) {
+              items[itemIndex].owned = true;
+              items[itemIndex].memberItemId = response.result?.memberItemId || Math.floor(Math.random() * 10000);
+            }
+          } else {
+            // 더미 데이터 업데이트
+            const category = this.shopItems[this.selectedItem.category];
+            const itemIndex = category.findIndex(item => item.id === this.selectedItem.id);
+            if (itemIndex !== -1) {
+              category[itemIndex].owned = true;
+            }
+          }
+          
+          console.log('아이템 구매 완료:', this.selectedItem.name);
+          alert(`${this.selectedItem.name}을(를) 구매했습니다!`);
+        } else {
+          throw new Error(response.message || '구매에 실패했습니다.');
+        }
+      } catch (error) {
+        console.error('아이템 구매 실패:', error);
+        alert(error.message || '구매에 실패했습니다. 다시 시도해주세요.');
+      } finally {
+        this.loading = false;
+        this.showPurchaseModal = false;
+        this.selectedItem = null;
       }
-      
-      this.showPurchaseModal = false;
-      this.selectedItem = null;
-      
-      // 실제 구현에서는 API를 통해 서버에 아이템 구매 요청
+    },
+
+    // 아이템 장착
+    async equipItem(item) {
+      if (!item.owned || !item.memberItemId) {
+        alert('보유하지 않은 아이템입니다.');
+        return;
+      }
+
+      try {
+        this.loading = true;
+        
+        const response = await shopService.equipItem(item.memberItemId);
+        
+        if (response.isSuccess) {
+          // 장착 성공 시 UI 업데이트
+          if (this.useApiData) {
+            const items = this.apiItems[this.currentCategory];
+            
+            // 해당 카테고리의 모든 아이템 장착 해제
+            items.forEach(categoryItem => {
+              if (categoryItem.memberItemId) {
+                categoryItem.equipped = false;
+              }
+            });
+            
+            // 선택한 아이템만 장착
+            const itemIndex = items.findIndex(categoryItem => categoryItem.memberItemId === item.memberItemId);
+            if (itemIndex !== -1) {
+              items[itemIndex].equipped = true;
+            }
+          }
+          
+          console.log('아이템 장착 완료:', item.name);
+          alert(`${item.name}을(를) 장착했습니다!`);
+        } else {
+          throw new Error(response.message || '장착에 실패했습니다.');
+        }
+      } catch (error) {
+        console.error('아이템 장착 실패:', error);
+        alert(error.message || '장착에 실패했습니다. 다시 시도해주세요.');
+      } finally {
+        this.loading = false;
+      }
     },
     
     cancelPurchase() {
@@ -469,6 +616,34 @@ export default {
   opacity: 0.8;
 }
 
+.shop-item.equipped {
+  border: 2px solid #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.shop-item.equipped::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 20px;
+  height: 20px;
+  background: #10b981;
+  border-radius: 50%;
+  z-index: 2;
+}
+
+.shop-item.equipped::after {
+  content: '✓';
+  position: absolute;
+  top: 12px;
+  left: 15px;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  z-index: 3;
+}
+
 .item-image-container {
   position: relative;
   padding-top: 100%;
@@ -555,6 +730,85 @@ export default {
 .item-status {
   font-weight: 600;
   color: #4caf50;
+}
+
+.owned-label.equipped {
+  color: #10b981;
+  font-weight: 700;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem 2rem;
+}
+
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  color: #6b7280;
+}
+
+.loading-spinner i {
+  font-size: 2rem;
+  color: #667eea;
+}
+
+.loading-spinner p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.item-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.equip-button {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+}
+
+.equip-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669, #047857);
+  transform: translateY(-2px);
+}
+
+.equip-button.equipped {
+  background: linear-gradient(135deg, #6b7280, #4b5563);
+  cursor: default;
+}
+
+.equip-button.equipped:hover {
+  transform: none;
+  background: linear-gradient(135deg, #6b7280, #4b5563);
+}
+
+.equip-button:disabled {
+  background: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.owned-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #10b981;
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .buy-button {
