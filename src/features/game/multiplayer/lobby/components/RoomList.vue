@@ -152,37 +152,44 @@ export default {
     },
     
     joinRoom(room) {
+      // FindGameRoomResponse 구조에 맞는 검증 로직
       if (room.currentPlayerCount >= room.maxPlayers) {
         alert('방이 가득 찼습니다.');
         return;
       }
       
-      if (room.gameRoomStatus === '게임 중') {
+      // Spring에서 올 수 있는 gameRoomStatus 값들 체크
+      if (room.gameRoomStatus === '게임 중' || room.gameRoomStatus === 'PLAYING') {
         alert('이미 게임이 진행중인 방입니다.');
         return;
       }
       
+      // 비밀방인 경우 비밀번호 모달 표시
       if (room.privateRoom) {
         this.selectedRoom = room;
         this.showPasswordModal = true;
         this.passwordInput = '';
       } else {
-        this.$emit('join-room', room.gameRoomId);
+        // 공개방인 경우 즉시 입장 (room 객체 전체를 전달)
+        this.$emit('join-room', room);
       }
     },
     
     handlePasswordSubmit(password) {
       if (!this.selectedRoom) return;
       
-      // 백엔드 API에서는 비밀번호 검증이 서버에서 이루어질 예정
-      // 현재는 더미 데이터에서만 password 필드 사용
-      if (password === this.selectedRoom.password || password) {
-        this.$emit('join-room', this.selectedRoom.gameRoomId, password);
-        this.showPasswordModal = false;
-        this.selectedRoom = null;
-      } else {
-        alert('비밀번호가 일치하지 않습니다.');
+      // Spring API에서 비밀번호 검증이 서버에서 이루어지므로
+      // 프론트엔드에서는 빈 비밀번호만 체크
+      if (!password || password.trim() === '') {
+        alert('비밀번호를 입력해주세요.');
+        return;
       }
+      
+      // room 객체와 비밀번호를 함께 전달
+      this.$emit('join-room', this.selectedRoom, password);
+      this.showPasswordModal = false;
+      this.selectedRoom = null;
+      this.passwordInput = '';
     }
   }
 };

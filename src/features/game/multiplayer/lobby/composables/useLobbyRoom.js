@@ -29,40 +29,57 @@ export function useLobbyRoom() {
   
   /**
    * 방 목록을 서버에서 가져옵니다
+   * Spring API: GET /gameRoom?page={page}
    * @param {number} page - 페이지 번호 (기본값: 0)
    * @param {boolean} refresh - 새로고침 여부 (기본값: false)
-   * @returns {Promise<Array>} 방 목록
+   * @returns {Promise<Array<FindGameRoomResponse>>} 방 목록
    */
   const fetchRooms = async (page = 0, refresh = false) => {
+    // 더미 데이터 모드인 경우 즉시 반환
+    if (useDummyData.value) {
+      console.log('🧪 개발 모드: 더미 데이터 사용');
+      if (page === 0) {
+        rooms.value = _getDummyRooms();
+      }
+      return rooms.value;
+    }
+
     isLoading.value = true;
     error.value = null;
     
     try {
       console.log(`🔍 방 목록 조회 요청... (페이지: ${page})`);
       
+      // Spring Controller: @GetMapping("/") with @RequestParam("page")
       const response = await apiClient.get(API_ENDPOINTS.GAME_ROOM.LIST, {
-        params: { 
-          page,
-          size: 10 // 고정 페이지 크기
-        }
+        params: { page }
       });
       
+      // Spring ApiResponseDto 응답 구조에 맞게 처리
       if (response.data && response.data.isSuccess) {
         const roomList = response.data.result || [];
         
+        // FindGameRoomResponse 배열을 UI에서 사용할 수 있도록 변환
+        const formattedRooms = roomList.map(room => ({
+          ...room,
+          // Spring에서 오는 필드명과 UI에서 사용하는 필드명 매핑
+          id: room.gameRoomId, // UI 호환성을 위해 추가
+          name: room.title,     // UI 호환성을 위해 추가
+        }));
+        
         // 첫 페이지이거나 새로고침인 경우 전체 교체, 아니면 추가
         if (page === 0 || refresh) {
-          rooms.value = roomList;
+          rooms.value = formattedRooms;
         } else {
-          rooms.value = [...rooms.value, ...roomList];
+          rooms.value = [...rooms.value, ...formattedRooms];
         }
         
         // 페이징 상태 업데이트 (loadMoreRooms용)
         currentPage.value = page;
-        hasNextPage.value = roomList.length === 10; // 고정 페이지 크기와 비교
+        hasNextPage.value = roomList.length > 0; // 다음 페이지 존재 여부는 결과 길이로 판단
         
         console.log('✅ 방 목록 조회 성공:', roomList.length, '개의 방 (총:', rooms.value.length, '개)');
-        return roomList;
+        return formattedRooms;
       } else {
         throw new Error(response.data?.message || '방 목록 조회에 실패했습니다.');
       }
@@ -71,12 +88,8 @@ export function useLobbyRoom() {
       const errorMessage = _handleApiError(err, '방 목록을 불러오는데 실패했습니다.');
       error.value = errorMessage;
       
-      // 더미 데이터 모드가 활성화된 경우 더미 데이터 유지
-      if (useDummyData.value && page === 0) {
-        console.log('🧪 개발 모드: 더미 데이터 유지');
-        rooms.value = _getDummyRooms();
-      } else if (page === 0) {
-        // 더미 데이터 모드가 아닌 경우에만 빈 배열로 설정
+      // API 요청 실패 시 빈 배열로 설정 (첫 페이지인 경우에만)
+      if (page === 0) {
         console.warn('🌐 API 요청 실패 - 방 목록 클리어');
         rooms.value = [];
       }
@@ -89,6 +102,7 @@ export function useLobbyRoom() {
   
   /**
    * 특정 방에 입장합니다
+   * Spring API: POST /gameRoom/{id}/join with GameRoomRequest.Join
    * @param {string|number} roomId - 방 ID
    * @param {string} [password] - 비밀번호 (private 방인 경우)
    * @returns {Promise<boolean>} 입장 성공 여부
@@ -102,23 +116,24 @@ export function useLobbyRoom() {
     error.value = null;
     
     try {
-      console.log(`🚪 방 입장 시도: ${roomId}`);
+      console.log(`🚪 방 입장 시도: ${roomId}${password ? ' (비밀방)' : ''}`);
       
-      // API 요청 바디 구성 (GameRoomRequest.Join)
-      const requestBody = {};
-      if (password) {
-        requestBody.password = password;
-      }
+      // Spring GameRoomRequest.Join 구조에 맞는 요청 바디
+      const requestBody = {
+        password: password || null
+      };
       
+      // Spring Controller: @PostMapping("/{id}/join") with @CurrentMember and @RequestBody
       const response = await apiClient.post(API_ENDPOINTS.GAME_ROOM.JOIN(roomId), requestBody);
       
+      // Spring ApiResponseDto<SuccessStatus> 응답 처리
       if (response.data && response.data.isSuccess) {
-        console.log('✅ 방 입장 성공');
+        console.log('✅ 방 입장 성공 - API 응답:', response.data);
         
-        // 방 목록에서 해당 방의 플레이어 수 업데이트 (Redis에서 관리되므로 다시 조회)
+        // Redis에서 관리되는 현재 플레이어 수를 즉시 업데이트
         _updateRoomPlayerCountAfterJoin(roomId);
         
-        // 방 페이지로 이동
+        // 방 페이지로 이동 (라우트 파라미터는 문자열로 변환)
         await router.push({
           name: 'RoomView', 
           params: { roomId: roomId.toString() }
@@ -126,11 +141,29 @@ export function useLobbyRoom() {
         
         return true;
       } else {
-        throw new Error(response.data?.message || '방 입장에 실패했습니다.');
+        // Spring에서 실패 응답이 온 경우
+        const errorMessage = response.data?.message || '방 입장에 실패했습니다.';
+        throw new Error(errorMessage);
       }
     } catch (err) {
       console.error('❌ 방 입장 실패:', err);
-      error.value = _handleApiError(err, '방에 입장할 수 없습니다.');
+      
+      // Spring에서 발생할 수 있는 구체적인 에러 처리
+      let errorMessage = '방에 입장할 수 없습니다.';
+      
+      if (err.response?.status === 400) {
+        errorMessage = '잘못된 요청입니다. 방 정보를 확인해주세요.';
+      } else if (err.response?.status === 403) {
+        errorMessage = '비밀번호가 일치하지 않습니다.';
+      } else if (err.response?.status === 404) {
+        errorMessage = '존재하지 않는 방입니다.';
+      } else if (err.response?.status === 409) {
+        errorMessage = '이미 다른 방에 참여 중이거나 방이 가득 찼습니다.';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      }
+      
+      error.value = errorMessage;
       return false;
     } finally {
       isJoining.value = false;
@@ -139,35 +172,39 @@ export function useLobbyRoom() {
   
   /**
    * 방 객체를 통해 입장합니다 (UI에서 방 카드 클릭 시 사용)
+   * FindGameRoomResponse 객체를 검증한 후 joinRoom 호출
    * @param {Object} room - 방 객체 (FindGameRoomResponse 구조)
+   * @param {string} [password] - 비밀방인 경우 비밀번호
    * @returns {Promise<boolean>} 입장 성공 여부
    */
-  const joinRoomByObject = async (room) => {
+  const joinRoomByObject = async (room, password = null) => {
     if (!room || !room.gameRoomId) {
       console.error('❌ 잘못된 방 정보:', room);
       error.value = '잘못된 방 정보입니다.';
       return false;
     }
     
-    // 방 상태 검증 (FindGameRoomResponse.gameRoomStatus)
-    if (room.gameRoomStatus !== 'WAITING') {
+    // FindGameRoomResponse.gameRoomStatus 검증
+    // Spring에서 올 수 있는 상태값들을 고려 (대기 중, 게임 중 등)
+    if (room.gameRoomStatus && room.gameRoomStatus !== '대기 중' && room.gameRoomStatus !== 'WAITING') {
       error.value = '게임이 진행 중인 방에는 입장할 수 없습니다.';
       return false;
     }
     
-    // 방이 가득 찬 경우 (FindGameRoomResponse.currentPlayerCount, maxPlayers)
+    // FindGameRoomResponse.currentPlayerCount, maxPlayers 검증
     if (room.currentPlayerCount >= room.maxPlayers) {
       error.value = '방이 가득 찼습니다.';
       return false;
     }
     
-    // 비밀방인 경우 비밀번호 처리 (향후 모달로 처리 예정)
-    if (room.privateRoom) {
-      error.value = '비밀방 입장 기능은 준비 중입니다.';
+    // FindGameRoomResponse.privateRoom 처리
+    if (room.privateRoom && !password) {
+      error.value = '비밀방 입장을 위해서는 비밀번호가 필요합니다.';
       return false;
     }
     
-    return await joinRoom(room.gameRoomId);
+    // Spring API 호출
+    return await joinRoom(room.gameRoomId, password);
   };
   
   /**
@@ -216,35 +253,33 @@ export function useLobbyRoom() {
   
   /**
    * API 에러를 처리하고 사용자 친화적인 메시지를 반환합니다
-   * 백엔드 메시지를 우선 사용하되, UX 개선을 위해 프론트엔드에서 보완
+   * Spring ApiResponseDto 응답 구조에 맞게 처리
    * @private
    */
   const _handleApiError = (err, defaultMessage) => {
-    if (err.response) {
-      const status = err.response.status;
+    if (err.response?.data) {
       const data = err.response.data;
       
-      // 백엔드에서 구체적인 에러 정보가 온 경우
-      if (data && !data.isSuccess) {
-        const backendMessage = data.message;
-        const errorCode = data.code;
-        
-        // 에러 코드별 추가 처리 (UX 개선)
-        const enhancedMessage = _enhanceErrorMessage(errorCode, backendMessage);
+      // Spring ApiResponseDto에서 제공하는 메시지 우선 사용
+      if (data.message) {
+        return data.message;
+      }
+      
+      // 에러 코드가 있는 경우 상수 파일에서 메시지 조회
+      if (data.code) {
+        const enhancedMessage = getErrorMessage(data.code);
         if (enhancedMessage) {
           return enhancedMessage;
         }
-        
-        // 백엔드 메시지 그대로 사용
-        if (backendMessage) {
-          return backendMessage;
-        }
       }
-      
-      // HTTP 상태코드별 기본 처리
+    }
+    
+    // HTTP 상태코드별 기본 처리
+    if (err.response?.status) {
+      const status = err.response.status;
       switch (status) {
         case 400:
-          return data?.message || '잘못된 요청입니다.';
+          return '잘못된 요청입니다. 입력 정보를 확인해주세요.';
         case 401:
           return '로그인이 필요합니다. 다시 로그인해주세요.';
         case 403:
@@ -252,30 +287,21 @@ export function useLobbyRoom() {
         case 404:
           return '요청하신 방을 찾을 수 없습니다.';
         case 409:
-          return data?.message || '이미 다른 방에 참여 중입니다.';
-        case 422:
-          return data?.message || '입력 정보를 확인해주세요.';
+          return '이미 다른 방에 참여 중이거나 방이 가득 찼습니다.';
         case 500:
           return '서버에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
-        case 503:
-          return '서비스가 일시적으로 이용할 수 없습니다.';
         default:
-          return data?.message || defaultMessage;
+          return defaultMessage;
       }
-    } else if (err.request) {
-      return '네트워크 연결을 확인해주세요. 인터넷 연결 상태를 점검해보세요.';
-    } else {
-      return err.message || defaultMessage;
     }
-  };
-  
-  /**
-   * 에러 코드별 메시지 개선 (UX 최적화)
-   * @private
-   */
-  const _enhanceErrorMessage = (errorCode, backendMessage) => {
-    // 상수 파일에서 정의된 메시지 사용
-    return getErrorMessage(errorCode);
+    
+    // 네트워크 에러
+    if (err.request) {
+      return '네트워크 연결을 확인해주세요.';
+    }
+    
+    // 기타 에러
+    return err.message || defaultMessage;
   };
   
   /**
@@ -291,12 +317,13 @@ export function useLobbyRoom() {
   };
   
   /**
-   * 개발용 더미 데이터 (FindGameRoomResponse 구조)
+   * 개발용 더미 데이터 (Spring FindGameRoomResponse 구조)
    * @private
+   * @returns {Array<FindGameRoomResponse>} 더미 방 목록
    */
   const _getDummyRooms = () => {
-    // 백엔드 FindGameRoomResponse 형식에 맞는 더미 데이터
-    return [
+    // Spring FindGameRoomResponse 필드에 정확히 맞는 더미 데이터
+    const dummyRooms = [
       {
         gameRoomId: 1,
         title: '🏙️ 서울 시내 투어방',
@@ -339,9 +366,7 @@ export function useLobbyRoom() {
         currentPlayerCount: 1,
         hostNickname: '경기도민',
         privateRoom: true,
-        gameRoomStatus: '대기 중',
-        // 테스트용 비밀번호 (실제 백엔드에서는 반환되지 않음)
-        password: '1234'
+        gameRoomStatus: '대기 중'
       },
       {
         gameRoomId: 5,
@@ -366,6 +391,13 @@ export function useLobbyRoom() {
         gameRoomStatus: '게임 중'
       }
     ];
+    
+    // UI 호환성을 위한 필드 추가 (실제 API 호출과 동일한 변환 적용)
+    return dummyRooms.map(room => ({
+      ...room,
+      id: room.gameRoomId, // UI 호환성
+      name: room.title      // UI 호환성
+    }));
   };
   
   /**

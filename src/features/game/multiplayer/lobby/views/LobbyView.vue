@@ -254,15 +254,15 @@ const sendChatMessage = (message) => {
   }
 };
 
-const joinRoom = async (roomParam) => {
+const joinRoom = async (roomParam, password = null) => {
   try {
-    // roomParam이 문자열(roomId)인지 객체(room)인지 확인
+    // Spring API에 맞는 방 입장 처리
     if (typeof roomParam === 'string' || typeof roomParam === 'number') {
-      // roomId로 직접 입장
-      await joinRoomAPI(roomParam);
-    } else if (roomParam && roomParam.id) {
-      // room 객체로 입장
-      await joinRoomByObject(roomParam);
+      // roomId로 직접 입장 (기존 호환성 유지)
+      await joinRoomAPI(roomParam, password);
+    } else if (roomParam && (roomParam.gameRoomId || roomParam.id)) {
+      // FindGameRoomResponse 객체로 입장 (개선된 방식)
+      await joinRoomByObject(roomParam, password);
     } else {
       console.error('❌ 잘못된 방 입장 파라미터:', roomParam);
       return;
