@@ -8,6 +8,7 @@ import roadViewRoutes from './roadViewRoutes.js';
 import userRoutes from './userRoutes.js';
 import devRoutes from './devRoutes.js';
 import adminRoutes from './adminRoutes.js';
+import noticeRoutes from './noticeRoutes.js';
 
 // Combine all routes
 const routes = [
@@ -17,7 +18,8 @@ const routes = [
   ...multiplayerRoutes,
   ...userRoutes,
   ...adminRoutes,
-  ...devRoutes
+  ...devRoutes,
+  ...noticeRoutes
 ];
 
 const router = createRouter({

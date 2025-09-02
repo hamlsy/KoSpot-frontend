@@ -163,7 +163,7 @@
       <section class="notices-section">
         <div class="section-header">
           <h2 class="section-title">공지사항</h2>
-          <router-link to="/noticeList" class="view-all">
+          <router-link :to="{ name: 'NoticeListView' }" class="view-all">
             전체보기 <i class="fas fa-angle-right"></i>
           </router-link>
         </div>
@@ -244,7 +244,7 @@
 
         <!-- 모바일용 내비게이션 메뉴 추가 -->
         <nav class="mobile-nav">
-          <router-link to="/noticeList" class="menu-item">
+          <router-link :to="{ name: 'NoticeListView' }" class="menu-item">
             <i class="fas fa-bullhorn"></i>
             공지사항
           </router-link>
@@ -425,7 +425,7 @@ function navigateTo(route) {
 
 // 공지사항 상세 페이지로 이동
 function goToNoticeDetail(noticeId) {
-  router.push(`/notice/${noticeId}`);
+  router.push({ name: 'NoticeDetailView', params: { id: noticeId } });
 }
 
 // 배너 회전 시작 함수

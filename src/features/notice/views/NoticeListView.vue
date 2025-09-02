@@ -14,7 +14,7 @@
           <!-- 관리자만 보이는 작성 버튼 -->
           <router-link 
             v-if="isAdmin"
-            to="/notice/write"
+            :to="{ name: 'NoticeWriteView' }"
             class="write-button"
           >
             <i class="fas fa-plus"></i>
@@ -147,12 +147,13 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import NavigationBar from 'src/core/components/NavigationBar.vue'
 import { noticeService } from '@/features/notice/services/notice.service.js'
 
 // 라우터 설정
 const router = useRouter()
+const route = useRoute()
 
 // 반응형 상태
 const loading = ref(false)
@@ -251,7 +252,7 @@ const onSearchInput = () => {
 }
 
 const goToNoticeDetail = (noticeId) => {
-  router.push(`/notice/${noticeId}`)
+  router.push({ name: 'NoticeDetailView', params: { id: noticeId } })
 }
 
 const goToPage = (page) => {
@@ -262,8 +263,29 @@ const goToPage = (page) => {
 
 // 라이프사이클
 onMounted(() => {
+  // 쿼리 파라미터(category)로 초기 활성 카테고리 설정
+  const categoryFromQuery = route.query.category
+  if (typeof categoryFromQuery === 'string' && categoryFromQuery) {
+    const validCategoryIds = categories.map(c => c.id)
+    if (validCategoryIds.includes(categoryFromQuery)) {
+      activeCategory.value = categoryFromQuery
+    }
+  }
   loadNotices()
 })
+
+// 라우트 쿼리 변경 시 카테고리 동기화
+watch(
+  () => route.query.category,
+  (newCategory) => {
+    if (typeof newCategory === 'string' && newCategory) {
+      const validCategoryIds = categories.map(c => c.id)
+      if (validCategoryIds.includes(newCategory)) {
+        activeCategory.value = newCategory
+      }
+    }
+  }
+)
 
 // 템플릿에서 서비스 접근
 const noticeServiceRef = noticeService
