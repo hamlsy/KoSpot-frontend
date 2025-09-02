@@ -2,13 +2,13 @@
   <header class="header">
     <div class="header-content">
       <div class="header-left">
-        <app-logo class="home-link" to="/mainPage" />
+        <app-logo class="home-link" to="/main" />
       </div>
 
       <!-- 네비게이션 추가 - 웹 전용 -->
       <div class="main-nav desktop-only">
-        <router-link to="/noticeList" class="nav-link">공지사항</router-link>
-        <router-link to="/tempPage" class="nav-link">이벤트</router-link>
+        <router-link :to="{ name: 'NoticeListView' }" class="nav-link">공지사항</router-link>
+        <router-link :to="{ name: 'NoticeListView', query: { category: '이벤트' } }" class="nav-link">이벤트</router-link>
         <router-link to="/tempPage" class="nav-link">통계</router-link>
         <router-link to="/shopMain" class="nav-link">상점</router-link>
         <router-link to="/myProfile" class="nav-link">마이페이지</router-link>
@@ -62,11 +62,11 @@
 
         <!-- 모바일용 내비게이션 메뉴 추가 -->
         <nav class="mobile-nav">
-          <router-link to="/noticeList" class="menu-item">
+          <router-link :to="{ name: 'NoticeListView' }" class="menu-item">
             <i class="fas fa-bullhorn"></i>
             공지사항
           </router-link>
-          <router-link to="/tempPage" class="menu-item">
+          <router-link :to="{ name: 'NoticeListView', query: { category: '이벤트' } }" class="menu-item">
             <i class="fas fa-calendar-alt"></i>
             이벤트
           </router-link>

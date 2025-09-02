@@ -163,15 +163,25 @@
       <section class="notices-section">
         <div class="section-header">
           <h2 class="section-title">공지사항</h2>
-          <router-link to="/noticeList" class="view-all">
+          <router-link :to="{ name: 'NoticeListView' }" class="view-all">
             전체보기 <i class="fas fa-angle-right"></i>
           </router-link>
         </div>
-        <div class="notices-list">
+        <!-- 로딩 상태 -->
+        <div v-if="noticesLoading" class="notices-loading">
+          <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>공지사항을 불러오는 중...</span>
+          </div>
+        </div>
+        
+        <!-- 공지사항 목록 -->
+        <div v-else class="notices-list">
           <div
             class="notice-item"
             v-for="notice in recentNotices"
             :key="notice.id"
+            @click="goToNoticeDetail(notice.id)"
           >
             <div class="notice-info">
               <span
@@ -234,7 +244,7 @@
 
         <!-- 모바일용 내비게이션 메뉴 추가 -->
         <nav class="mobile-nav">
-          <router-link to="/noticeList" class="menu-item">
+          <router-link :to="{ name: 'NoticeListView' }" class="menu-item">
             <i class="fas fa-bullhorn"></i>
             공지사항
           </router-link>
@@ -287,6 +297,7 @@ import { useRouter } from 'vue-router';
 // import store from '@/store';
 import NavigationBar from 'src/core/components/NavigationBar.vue'
 import UserLoginCard from 'src/features/main/components/UserLoginCard.vue'
+import { noticeService } from 'src/features/notice/services/notice.service.js'
 // import useAuth from 'src/core/composables/useAuth.js'
 
 // 라우터 설정
@@ -336,30 +347,48 @@ const banners = [
 ];
 
 // 공지사항 데이터
-const recentNotices = [
-  {
-    id: 1,
-    category: "test",
-    title: "test",
-    date: "2025.06.10"
-  },
-  {
-    id: 2,
-    category: "test",
-    title: "test",
-    date: "2025.06.05"
-  },
-  {
-    id: 3,
-    category: "test3",
-    title: "test4",
-    date: "2025.06.01"
+const recentNotices = ref([]);
+const noticesLoading = ref(false);
+
+// 공지사항 로드 함수
+async function loadRecentNotices() {
+  try {
+    noticesLoading.value = true;
+    const response = await noticeService.getAllNotices(0);
+    
+    if (response.isSuccess) {
+      // 최근 3개의 공지사항만 표시
+      recentNotices.value = response.result.slice(0, 3).map(notice => ({
+        id: notice.noticeId,
+        category: noticeService.getNoticeCategory(notice.title),
+        title: notice.title,
+        date: noticeService.formatDate(notice.createdDate)
+      }));
+      
+      console.log('메인 페이지 공지사항 로드 완료:', recentNotices.value);
+    } else {
+      throw new Error(response.message || '공지사항 조회 실패');
+    }
+  } catch (error) {
+    console.error('공지사항 로드 실패:', error);
+    // 에러 시 더미 데이터 사용
+    recentNotices.value = [
+      {
+        id: 1,
+        category: "공지",
+        title: "공지사항을 불러올 수 없습니다",
+        date: "2025.01.01"
+      }
+    ];
+  } finally {
+    noticesLoading.value = false;
   }
-];
+}
 
 // 컴포넌트 마운트 시 실행
 onMounted(() => {
   startBannerRotation();
+  loadRecentNotices();
 });
 
 // 컴포넌트 언마운트 전 실행
@@ -392,6 +421,11 @@ function openNotifications() {
 // 페이지 이동 함수
 function navigateTo(route) {
   router.push(`/${route}`);
+}
+
+// 공지사항 상세 페이지로 이동
+function goToNoticeDetail(noticeId) {
+  router.push({ name: 'NoticeDetailView', params: { id: noticeId } });
 }
 
 // 배너 회전 시작 함수
@@ -555,13 +589,7 @@ function showLockedMessage() {
   opacity: 0.2;
 }
 
-.roadview .mode-background {
-  /* background-image: url('/images/roadview-bg.jpg'); */
-}
-
-.photo .mode-background {
-  /* background-image: url('/images/photo-bg.jpg'); */
-}
+/* 로드뷰 및 포토 모드 배경 이미지는 필요시 추가 */
 
 .mode-card.locked {
   position: relative;
@@ -931,5 +959,27 @@ function showLockedMessage() {
 .test-link:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 공지사항 로딩 상태 */
+.notices-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.loading-spinner i {
+  font-size: 1.5rem;
+  color: #667eea;
 }
 </style>

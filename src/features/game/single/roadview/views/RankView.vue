@@ -106,6 +106,7 @@ import PhoneFrame from 'src/features/game/shared/components/Phone/PhoneFrame.vue
 import CountdownOverlay from "@/features/game/shared/components/Common/CountdownOverlay.vue";
 import IntroOverlay from "@/features/game/shared/components/Common/IntroOverlay.vue";
 import ResultOverlay from 'src/features/game/single/roadview/components/Result/ResultOverlay.vue';
+import { roadViewApiService } from 'src/features/game/single/roadview/services/roadViewApi.service.js';
 
 export default {
   name: "RoadViewRank",
@@ -145,6 +146,10 @@ export default {
       guessedLocation: null,
       errorCount: 0, // 로드뷰 로드 오류 카운트
       maxErrorRetry: 3, // 최대 재시도 횟수
+      
+      // API 관련
+      gameId: null, // 백엔드에서 받은 게임 ID
+      markerImageUrl: null, // 마커 이미지 URL
 
       // 게임 점수 관련
       distance: null,
@@ -220,9 +225,13 @@ export default {
       this.score = 0;
       this.elapsedTime = 0;
       
-      this.showCountdown  = true;
+      // API 관련 상태 초기화
+      this.gameId = null;
+      this.markerImageUrl = null;
+      
+      this.showCountdown = true;
 
-      // 게임 위치 데이터 요청
+      // 새로운 게임 위치 데이터 요청
       this.fetchGameLocationData();
     },
 
@@ -299,12 +308,49 @@ export default {
       }
     },
 
-    // 게임 위치 데이터 가져오기 (백엔드 연동 부분)
-    fetchGameLocationData() {
-      // 실제 구현에서는 axios를 사용하여 백엔드에서 데이터 가져오기
+    // 게임 위치 데이터 가져오기 (백엔드 API 연동)
+    async fetchGameLocationData() {
       this.isLoading = true;
 
-      // 더미 데이터: 로드뷰가 있는 것으로 확인된 좌표들 (서울, 부산 등 주요 도시)
+      try {
+        // 백엔드 API 호출하여 랭크 게임 시작
+        const response = await roadViewApiService.startRankGame();
+        
+        if (response.isSuccess && response.result) {
+          const { gameId, targetLat, targetLng, markerImageUrl } = response.result;
+          
+          // API 응답 데이터를 컴포넌트 상태에 저장
+          this.gameId = gameId;
+          this.markerImageUrl = markerImageUrl;
+          this.currentLocation = {
+            lat: roadViewApiService.convertCoordinateToNumber(targetLat),
+            lng: roadViewApiService.convertCoordinateToNumber(targetLng)
+          };
+          
+          console.log("백엔드에서 받은 게임 데이터:", {
+            gameId,
+            location: this.currentLocation,
+            markerImageUrl
+          });
+        } else {
+          throw new Error(response.message || '게임 시작에 실패했습니다.');
+        }
+      } catch (error) {
+        console.error("게임 시작 API 호출 실패:", error);
+        this.showToastMessage("게임을 시작할 수 없습니다. 다시 시도해주세요.");
+        
+        // API 실패 시 더미 데이터로 폴백
+        this.fallbackToDummyData();
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    // API 실패 시 더미 데이터로 폴백
+    fallbackToDummyData() {
+      console.warn("더미 데이터로 폴백");
+      
+      // 더미 데이터: 로드뷰가 있는 것으로 확인된 좌표들
       const knownLocations = [
         { lat: 37.566826, lng: 126.978656 }, // 서울시청
         { lat: 37.551229, lng: 126.988205 }, // 남산타워
@@ -318,15 +364,14 @@ export default {
         { lat: 33.4507, lng: 126.570667 }, // 제주 시내
       ];
 
-      // 지역에 맞는 위치 선택
-      let filteredLocations = knownLocations;
-
-      // 필터링된 위치에서 랜덤으로 선택
-      const randomIndex = Math.floor(Math.random() * filteredLocations.length);
-      this.currentLocation = filteredLocations[randomIndex];
-      console.log("선택된 로드뷰 위치:", this.currentLocation);
-
-      this.isLoading = false;
+      const randomIndex = Math.floor(Math.random() * knownLocations.length);
+      this.currentLocation = knownLocations[randomIndex];
+      
+      // 더미 게임 ID 생성
+      this.gameId = `dummy_${Date.now()}`;
+      this.markerImageUrl = null;
+      
+      console.log("더미 데이터로 선택된 위치:", this.currentLocation);
     },
 
     // 결과 화면 표시 메서드
@@ -346,8 +391,17 @@ export default {
       });
     },
 
-    // 랭크 포인트 변화 계산 (더미 데이터)
+    // 랭크 포인트 변화 계산
     calculateRankPointChange() {
+      // API 호출로 이미 랭크 포인트가 설정된 경우 그대로 사용
+      if (this.rankPointChange !== 0) {
+        console.log("백엔드에서 계산된 랭크 포인트 변화 사용:", this.rankPointChange);
+        return;
+      }
+
+      // API 실패 시 더미 데이터로 폴백
+      console.warn("더미 랭크 포인트 계산 사용");
+      
       // 점수에 따라 랭크 포인트 변화 계산
       if (this.score >= 90) {
         this.rankPointChange = 25;
@@ -363,7 +417,7 @@ export default {
         this.rankPointChange = -25;
       }
 
-      // 현재 랭크 포인트 업데이트
+      // 현재 랭크 포인트 업데이트 (더미 데이터인 경우에만)
       this.currentRankPoints += this.rankPointChange;
 
       // 최소값 보정
@@ -438,7 +492,7 @@ export default {
     },
 
     // 게임 결과 확인
-    checkAnswer(position) {
+    async checkAnswer(position) {
       if (this.showResult) return;
 
       // 타이머 정리
@@ -452,16 +506,64 @@ export default {
         this.currentLocation.lng
       );
 
-      // 점수 계산 (최대 100점)
-      const score = Math.max(0, Math.floor(100 - Math.sqrt(distance) * 10));
+      // 로컬 점수 계산 (임시, 백엔드에서 최종 점수 계산)
+      const localScore = Math.max(0, Math.floor(100 - Math.sqrt(distance) * 10));
 
-      // 게임 결과 저장
+      // 게임 결과 저장 (백엔드 API 호출 전 임시 저장)
       this.distance = distance;
-      this.score = score;
       this.guessedLocation = position;
+
+      try {
+        // 백엔드 API 호출하여 게임 종료
+        await this.endGameWithApi(position);
+      } catch (error) {
+        console.error("게임 종료 API 호출 실패:", error);
+        // API 실패 시 로컬 계산 결과 사용
+        this.score = localScore;
+        this.showToastMessage("결과 전송에 실패했지만 게임을 계속합니다.");
+      }
 
       // 결과 화면 표시
       this.showResultScreen(position);
+    },
+
+    // 백엔드 API로 게임 종료
+    async endGameWithApi(position) {
+      if (!this.gameId) {
+        console.warn("게임 ID가 없어 API 호출을 건너뜁니다.");
+        return;
+      }
+
+      try {
+        const endData = {
+          gameId: this.gameId,
+          targetLat: roadViewApiService.convertCoordinateToString(position.lat),
+          targetLng: roadViewApiService.convertCoordinateToString(position.lng),
+          markerImageUrl: this.markerImageUrl || ""
+        };
+
+        const response = await roadViewApiService.endRankGame(endData);
+        
+        if (response.isSuccess && response.result) {
+          const { currentRatingPoint, ratingScoreChange, score } = response.result;
+          
+          // 백엔드에서 계산된 점수와 랭킹 정보로 업데이트
+          this.score = score;
+          this.currentRankPoints = currentRatingPoint;
+          this.rankPointChange = ratingScoreChange;
+          
+          console.log("백엔드에서 받은 게임 결과:", {
+            score,
+            currentRatingPoint,
+            ratingScoreChange
+          });
+        } else {
+          throw new Error(response.message || '게임 결과 처리에 실패했습니다.');
+        }
+      } catch (error) {
+        console.error("게임 종료 API 호출 중 오류:", error);
+        throw error; // 상위에서 처리
+      }
     },
 
     // 다음 라운드 시작

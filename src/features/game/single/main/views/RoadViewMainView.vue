@@ -215,21 +215,25 @@ const gameModes = [
   },
 ];
 
-// 지역 데이터
+// 지역 데이터 (백엔드 sido key 기반)
 const regions = {
-  서울: "seoul",
-  경기: "gyeonggi",
-  인천: "incheon",
-  부산: "busan",
-  대구: "daegu",
-  대전: "daejeon",
-  광주: "gwangju",
-  울산: "ulsan",
-  강원: "gangwon",
-  충청: "chungcheong",
-  전라: "jeolla",
-  경상: "gyeongsang",
-  제주: "jeju",
+  서울: "SEOUL",
+  부산: "BUSAN", 
+  대구: "DAEGU",
+  인천: "INCHEON",
+  광주: "GWANGJU",
+  대전: "DAEJEON",
+  울산: "ULSAN",
+  세종: "SEJONG",
+  경기: "GYEONGGI",
+  강원: "GANGWON",
+  충북: "CHUNGBUK",
+  충남: "CHUNGNAM",
+  전북: "JEONBUK",
+  전남: "JEONNAM",
+  경북: "GYEONGBUK",
+  경남: "GYEONGNAM",
+  제주: "JEJU",
 };
 
 // 통계 데이터
@@ -304,28 +308,33 @@ async function startGame() {
 
   isLoading.value = true;
 
-  const gameData = {
-    mode: selectedGameMode.value.id,
-    region: selectedRegion.value,
-  };
-
-  console.log("Starting game with:", gameData);
-
   try {
-    // 실제 구현에서는 API 호출로 대체
-    // const response = await axios.post('/api/game/start', gameData);
-
-    // 테스트를 위한 타임아웃
-    setTimeout(() => {
-      isLoading.value = false;
-      // 게임 화면으로 라우팅하는 로직이 구현되어야 함
-      // router.push({
-      //   name: 'roadViewPlay',
-      //   params: { gameId: 'generated-id' }
-      // });
-    }, 1500);
+    if (selectedGameMode.value.id === "practice") {
+      // 연습 모드: sido key와 함께 라우팅
+      const sidoKey = selectedRegion.value; // 이미 SEOUL, BUSAN 등의 형태
+      
+      console.log("Starting practice game with sido:", sidoKey);
+      
+      // 연습 게임 화면으로 라우팅 (sido를 쿼리 파라미터로 전달)
+      await router.push({
+        path: '/roadView/practice',
+        query: { sido: sidoKey }
+      });
+      
+    } else if (selectedGameMode.value.id === "rank") {
+      // 랭크 모드: 바로 랭크 게임 화면으로 라우팅
+      console.log("Starting rank game");
+      
+      await router.push({
+        path: '/roadView/rank'
+      });
+    }
+    
+    closeGameModePopup();
+    
   } catch (error) {
     console.error("게임 시작 중 오류 발생:", error);
+  } finally {
     isLoading.value = false;
   }
 }

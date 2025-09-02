@@ -180,6 +180,7 @@ import RoadViewGame from 'src/features/game/single/roadview/components/gameplay/
 import PhoneFrame from 'src/features/game/shared/components/Phone/PhoneFrame.vue'
 import CountdownOverlay from "@/features/game/shared/components/Common/CountdownOverlay.vue";
 import IntroOverlay from "@/features/game/shared/components/Common/IntroOverlay.vue";
+import { roadViewApiService } from 'src/features/game/single/roadview/services/roadViewApi.service.js';
 
 export default {
   name: "RoadViewPractice",
@@ -221,6 +222,11 @@ export default {
       guessedLocation: null,
       errorCount: 0, // 로드뷰 로드 오류 카운트
       maxErrorRetry: 3, // 최대 재시도 횟수
+      
+      // API 관련
+      gameId: null, // 백엔드에서 받은 게임 ID
+      markerImageUrl: null, // 마커 이미지 URL
+      currentSidoKey: null, // 현재 선택된 sido key (API 호출 시 사용)
 
       // 게임 점수 관련
       distance: null,
@@ -251,6 +257,27 @@ export default {
           centerLng: 127.5183,
         },
       ],
+      
+      // 백엔드 sido key를 한글 지역명으로 변환하는 매핑
+      sidoKeyToRegionNameMapping: {
+        "SEOUL": "서울",
+        "BUSAN": "부산", 
+        "DAEGU": "대구",
+        "INCHEON": "인천",
+        "GWANGJU": "광주",
+        "DAEJEON": "대전",
+        "ULSAN": "울산",
+        "SEJONG": "세종",
+        "GYEONGGI": "경기",
+        "GANGWON": "강원",
+        "CHUNGBUK": "충북",
+        "CHUNGNAM": "충남",
+        "JEONBUK": "전북",
+        "JEONNAM": "전남",
+        "GYEONGBUK": "경북",
+        "GYEONGNAM": "경남",
+        "JEJU": "제주"
+      },
       selectedRegion: {
         name: "서울",
         bounds: {
@@ -275,10 +302,52 @@ export default {
     };
   },
   mounted() {
-    // 지역 설정
-    this.selectedRegion =
-      this.regions.find((r) => r.id === this.region.toLowerCase()) ||
-      this.regions[0];
+    // 쿼리 파라미터에서 sido key 받기
+    const sidoKey = this.$route.query.sido;
+    
+    if (sidoKey) {
+      // sido key로부터 지역 정보 설정
+      const regionName = this.sidoKeyToRegionNameMapping[sidoKey];
+      if (regionName) {
+        // sido key를 데이터에 저장 (API 호출 시 사용)
+        this.currentSidoKey = sidoKey;
+        
+        // 지역 이름으로 selectedRegion 설정
+        const matchedRegion = this.regions.find((r) => r.name === regionName);
+        if (matchedRegion) {
+          this.selectedRegion = matchedRegion;
+        } else {
+          // 매칭되지 않으면 기본값 설정
+          this.selectedRegion = { 
+            id: sidoKey.toLowerCase(), 
+            name: regionName, 
+            centerLat: 37.5665, 
+            centerLng: 126.978 
+          };
+        }
+        
+        // 게임 제목을 지역명으로 업데이트
+        this.gameTitle = `${regionName} 로드뷰 연습게임`;
+        
+        console.log("쿼리 파라미터에서 받은 sido:", sidoKey, "→", regionName);
+      } else {
+        console.warn("알 수 없는 sido key:", sidoKey);
+        this.selectedRegion = this.regions[0]; // 기본값: 서울
+        this.currentSidoKey = "SEOUL";
+        this.gameTitle = "서울 로드뷰 연습게임";
+      }
+    } else {
+      // props에서 region이 전달된 경우 (기존 로직 유지)
+      this.selectedRegion =
+        this.regions.find((r) => r.id === this.region.toLowerCase()) ||
+        this.regions[0];
+      
+      // props 기반으로 sido key 설정 (폴백용)
+      this.currentSidoKey = "SEOUL"; // 기본값
+      
+      // 게임 제목을 지역명으로 업데이트
+      this.gameTitle = `${this.selectedRegion.name} 로드뷰 연습게임`;
+    }
 
     // 게임 위치 데이터 요청
     this.fetchGameLocationData();
@@ -306,6 +375,11 @@ export default {
       this.score = 0;
       this.elapsedTime = 0;
 
+      // API 관련 상태 초기화
+      this.gameId = null;
+      this.markerImageUrl = null;
+      // currentSidoKey는 쿼리 파라미터에서 온 값이므로 유지
+
       // 힌트 상태 초기화
       this.hintCount = 3;
       this.hintRadius = 120000;
@@ -318,7 +392,7 @@ export default {
         this.hintCircle = null;
       }
 
-      // 게임 위치 데이터 요청
+      // 새로운 게임 위치 데이터 요청
       this.fetchGameLocationData();
     },
 
@@ -522,9 +596,8 @@ export default {
         .padStart(2, "0")}`;
     },
 
-    // 게임 위치 데이터 가져오기 (백엔드 연동 부분)
-    fetchGameLocationData() {
-      // 실제 구현에서는 axios를 사용하여 백엔드에서 데이터 가져오기
+    // 게임 위치 데이터 가져오기 (백엔드 API 연동)
+    async fetchGameLocationData() {
       this.isLoading = true;
 
       // 선택된 지역의 센터 위치로 중앙 설정
@@ -533,7 +606,49 @@ export default {
         lng: this.selectedRegion.centerLng,
       };
 
-      // 더미 데이터: 로드뷰가 있는 것으로 확인된 좌표들 (서울, 부산 등 주요 도시)
+      try {
+        // 현재 설정된 sido key 사용 (쿼리 파라미터에서 받은 값)
+        const sido = this.currentSidoKey || "SEOUL";
+        
+        // 백엔드 API 호출하여 연습 게임 시작
+        const response = await roadViewApiService.startPracticeGame(sido);
+        
+        if (response.isSuccess && response.result) {
+          const { gameId, targetLat, targetLng, markerImageUrl } = response.result;
+          
+          // API 응답 데이터를 컴포넌트 상태에 저장
+          this.gameId = gameId;
+          this.markerImageUrl = markerImageUrl;
+          this.currentLocation = {
+            lat: roadViewApiService.convertCoordinateToNumber(targetLat),
+            lng: roadViewApiService.convertCoordinateToNumber(targetLng)
+          };
+          
+          console.log("백엔드에서 받은 연습 게임 데이터:", {
+            gameId,
+            sido,
+            location: this.currentLocation,
+            markerImageUrl
+          });
+        } else {
+          throw new Error(response.message || '연습 게임 시작에 실패했습니다.');
+        }
+      } catch (error) {
+        console.error("연습 게임 시작 API 호출 실패:", error);
+        this.showToastMessage("게임을 시작할 수 없습니다. 다시 시도해주세요.");
+        
+        // API 실패 시 더미 데이터로 폴백
+        this.fallbackToDummyData();
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    // API 실패 시 더미 데이터로 폴백
+    fallbackToDummyData() {
+      console.warn("더미 데이터로 폴백");
+      
+      // 더미 데이터: 로드뷰가 있는 것으로 확인된 좌표들
       const knownLocations = [
         { lat: 37.566826, lng: 126.978656 }, // 서울시청
         { lat: 37.551229, lng: 126.988205 }, // 남산타워
@@ -560,13 +675,16 @@ export default {
       // 필터링된 위치에서 랜덤으로 선택
       const randomIndex = Math.floor(Math.random() * filteredLocations.length);
       this.currentLocation = filteredLocations[randomIndex];
-      console.log("선택된 로드뷰 위치:", this.currentLocation);
-
-      this.isLoading = false;
+      
+      // 더미 게임 ID 생성
+      this.gameId = `dummy_practice_${Date.now()}`;
+      this.markerImageUrl = null;
+      
+      console.log("더미 데이터로 선택된 위치:", this.currentLocation);
     },
 
     // 게임 결과 확인
-    checkAnswer(position) {
+    async checkAnswer(position) {
       if (this.showResult) return;
 
       // 타이머 정리
@@ -580,13 +698,22 @@ export default {
         this.currentLocation.lng
       );
 
-      // 점수 계산 (최대 100점)
-      const score = Math.max(0, Math.floor(100 - Math.sqrt(distance) * 10));
+      // 로컬 점수 계산 (임시, 백엔드에서 최종 점수 계산)
+      const localScore = Math.max(0, Math.floor(100 - Math.sqrt(distance) * 10));
 
-      // 게임 결과 저장
+      // 게임 결과 저장 (백엔드 API 호출 전 임시 저장)
       this.distance = distance;
-      this.score = score;
       this.guessedLocation = position;
+
+      try {
+        // 백엔드 API 호출하여 게임 종료
+        await this.endGameWithApi(position);
+      } catch (error) {
+        console.error("게임 종료 API 호출 실패:", error);
+        // API 실패 시 로컬 계산 결과 사용
+        this.score = localScore;
+        this.showToastMessage("결과 전송에 실패했지만 게임을 계속합니다.");
+      }
 
       // 결과 화면 표시
       this.showResult = true;
@@ -595,6 +722,41 @@ export default {
       this.$nextTick(() => {
         this.initResultMap(position);
       });
+    },
+
+    // 백엔드 API로 게임 종료
+    async endGameWithApi(position) {
+      if (!this.gameId) {
+        console.warn("게임 ID가 없어 API 호출을 건너뜁니다.");
+        return;
+      }
+
+      try {
+        const endData = {
+          gameId: this.gameId,
+          targetLat: roadViewApiService.convertCoordinateToString(position.lat),
+          targetLng: roadViewApiService.convertCoordinateToString(position.lng),
+          markerImageUrl: this.markerImageUrl || ""
+        };
+
+        const response = await roadViewApiService.endPracticeGame(endData);
+        
+        if (response.isSuccess && response.result) {
+          const { score } = response.result;
+          
+          // 백엔드에서 계산된 점수로 업데이트
+          this.score = score;
+          
+          console.log("백엔드에서 받은 연습 게임 결과:", {
+            score
+          });
+        } else {
+          throw new Error(response.message || '게임 결과 처리에 실패했습니다.');
+        }
+      } catch (error) {
+        console.error("게임 종료 API 호출 중 오류:", error);
+        throw error; // 상위에서 처리
+      }
     },
 
     // 결과 지도 초기화
