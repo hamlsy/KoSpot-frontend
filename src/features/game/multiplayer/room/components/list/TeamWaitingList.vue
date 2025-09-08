@@ -17,30 +17,39 @@
       </div>
       
       <div class="team-players">
-        <div 
-          v-for="player in getTeamPlayers(team.id)" 
-          :key="player.id"
-          class="player-wrapper"
+        <TransitionGroup 
+          name="player-list" 
+          tag="div"
+          class="player-transition-group"
         >
-          <BasePlayerCard 
-            :player="player"
-            :current-user-id="currentUserId"
-            :is-host="isHost"
-            :player-message="getPlayerMessage(player.id)"
-            @click="$emit('show-player-details', player)"
-            @kick="$emit('kick-player', player)"
-          />
-        </div>
+          <div 
+            v-for="player in getTeamPlayers(team.id)" 
+            :key="player.id"
+            class="player-wrapper"
+            :class="{ 'joining-team': player.id === joiningPlayerId }"
+          >
+            <BasePlayerCard 
+              :player="player"
+              :current-user-id="currentUserId"
+              :is-host="isHost"
+              :player-message="getPlayerMessage(player.id)"
+              @click="$emit('show-player-details', player)"
+              @kick="$emit('kick-player', player)"
+            />
+          </div>
+        </TransitionGroup>
         
         <button 
           v-if="canJoinTeam(team.id)"
           class="join-team-button"
-          @click="$emit('join-team', team.id)"
+          :class="{ 'joining': joiningTeamId === team.id }"
+          :disabled="joiningTeamId !== null"
+          @click="handleJoinTeam(team.id)"
         >
           <div class="join-icon">
-            <i class="fas fa-plus"></i>
+            <i :class="joiningTeamId === team.id ? 'fas fa-spinner fa-spin' : 'fas fa-plus'"></i>
           </div>
-          <span>팀 참가하기</span>
+          <span>{{ joiningTeamId === team.id ? '참가 중...' : '팀 참가하기' }}</span>
         </button>
       </div>
     </div>
@@ -48,7 +57,7 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits, computed } from 'vue';
+import { defineProps, defineEmits, computed, ref } from 'vue';
 import BasePlayerCard from '@/features/game/shared/components/Player/Card.vue';
 
 const props = defineProps({
@@ -80,6 +89,10 @@ const props = defineProps({
 
 const emit = defineEmits(['show-player-details', 'kick-player', 'join-team']);
 
+// 팀 변경 애니메이션 상태
+const joiningTeamId = ref(null);
+const joiningPlayerId = ref(null);
+
 // Methods
 const getTeamPlayers = (teamId) => {
   return props.players.filter(player => player.teamId === teamId);
@@ -90,6 +103,11 @@ const getPlayerMessage = (playerId) => {
 };
 
 const canJoinTeam = (teamId) => {
+  // 팀 변경 중이면 참가 불가
+  if (joiningTeamId.value !== null) {
+    return false;
+  }
+  
   // Check if current user is already in this team
   const currentPlayer = props.players.find(player => player.id === props.currentUserId);
   if (currentPlayer && currentPlayer.teamId === teamId) {
@@ -99,6 +117,25 @@ const canJoinTeam = (teamId) => {
   // Check if team is full
   const teamPlayers = getTeamPlayers(teamId);
   return teamPlayers.length < props.maxPlayersPerTeam;
+};
+
+const handleJoinTeam = async (teamId) => {
+  joiningTeamId.value = teamId;
+  joiningPlayerId.value = props.currentUserId;
+  
+  try {
+    emit('join-team', teamId);
+    
+    // 애니메이션 시간 후 상태 초기화
+    setTimeout(() => {
+      joiningTeamId.value = null;
+      joiningPlayerId.value = null;
+    }, 1500);
+  } catch (error) {
+    console.error('팀 참가 실패:', error);
+    joiningTeamId.value = null;
+    joiningPlayerId.value = null;
+  }
 };
 </script>
 
@@ -196,12 +233,25 @@ const canJoinTeam = (teamId) => {
   padding: 1.25rem;
 }
 
+.player-transition-group {
+  position: relative;
+}
+
 .player-wrapper {
   margin-bottom: 0.75rem;
+  transition: all 0.3s ease;
 }
 
 .player-wrapper:last-child {
   margin-bottom: 1.25rem;
+}
+
+.player-wrapper.joining-team {
+  transform: scale(1.05);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%);
+  border-radius: 12px;
+  padding: 0.25rem;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
 
 .join-team-button {
@@ -218,10 +268,23 @@ const canJoinTeam = (teamId) => {
   transition: all 0.2s ease;
 }
 
-.join-team-button:hover {
+.join-team-button:hover:not(:disabled) {
   background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
   color: #4b5563;
   border-color: #9ca3af;
+  transform: translateY(-1px);
+}
+
+.join-team-button.joining {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #3b82f6;
+  border-color: #60a5fa;
+  cursor: not-allowed;
+}
+
+.join-team-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .join-icon {
@@ -234,6 +297,46 @@ const canJoinTeam = (teamId) => {
   justify-content: center;
   margin-right: 0.75rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* 플레이어 이동 애니메이션 */
+.player-list-enter-active,
+.player-list-leave-active {
+  transition: all 0.4s ease;
+}
+
+.player-list-enter-from {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.95);
+}
+
+.player-list-leave-to {
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+}
+
+.player-list-move {
+  transition: all 0.4s ease;
+}
+
+/* 팀 변경 성공 애니메이션 */
+@keyframes teamJoinSuccess {
+  0% {
+    transform: scale(1.05);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%);
+  }
+  50% {
+    transform: scale(1.1);
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(22, 163, 74, 0.2) 100%);
+  }
+  100% {
+    transform: scale(1);
+    background: transparent;
+  }
+}
+
+.player-wrapper.team-join-success {
+  animation: teamJoinSuccess 1s ease-out;
 }
 
 @media (max-width: 768px) {

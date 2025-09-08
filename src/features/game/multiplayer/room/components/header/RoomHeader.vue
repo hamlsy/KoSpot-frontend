@@ -57,6 +57,19 @@
         <!-- 버튼 그룹 -->
         <div class="header-buttons">
           <button 
+            class="action-button chat-toggle-button" 
+            @click="$emit('toggle-chat')"
+            title="채팅 토글"
+            v-show="showChatToggle"
+          >
+            <i class="fas fa-comments"></i>
+            <span>채팅</span>
+            <div class="chat-notification-mini" v-if="unreadMessages > 0">
+              {{ unreadMessages > 9 ? '9+' : unreadMessages }}
+            </div>
+          </button>
+
+          <button 
             class="action-button settings-button" 
             @click="$emit('open-settings')"
             title="방 설정"
@@ -115,10 +128,14 @@ const props = defineProps({
   isTeamMode: {
     type: Boolean,
     default: false
+  },
+  showChatToggle: {
+    type: Boolean,
+    default: false
   }
 });
 
-const emit = defineEmits(['open-settings', 'leave-room', 'start-game']);
+const emit = defineEmits(['open-settings', 'leave-room', 'start-game', 'toggle-chat']);
 
 const gameModeName = computed(() => {
   switch(props.roomData.gameMode) {
@@ -372,6 +389,37 @@ const leaveRoomWithConfirm = () => {
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
   text-transform: uppercase;
   letter-spacing: 0.025em;
+}
+
+.chat-toggle-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  position: relative;
+}
+
+.chat-toggle-button:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #553c9a 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.chat-notification-mini {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+  border: 2px solid white;
 }
 
 .settings-button {

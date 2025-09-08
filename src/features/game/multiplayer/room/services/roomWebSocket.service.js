@@ -20,6 +20,14 @@ class RoomWebSocketService {
     this.webSocketManager = useWebSocketManager();
     this.activeSubscriptions = new Map();
     this.roomEventHandlers = new Map();
+    
+    // 재연결 관련 상태
+    this.reconnectAttempts = 0;
+    this.maxReconnectAttempts = 5;
+    this.reconnectInterval = 2000; // 2초부터 시작
+    this.maxReconnectInterval = 30000; // 최대 30초
+    this.reconnectTimeoutId = null;
+    this.isManualDisconnect = false;
   }
 
   /**
@@ -37,51 +45,40 @@ class RoomWebSocketService {
     try {
       console.log('🔌 게임 방 WebSocket 연결 시작:', { roomId, currentUserId });
 
+      this.isManualDisconnect = false;
+      
       // WebSocket 연결
       if (!this.webSocketManager.isConnected.value) {
-        await this.webSocketManager.connect();
+        const connected = await this._connectWithRetry();
+        if (!connected) {
+          throw new Error('WebSocket 연결 실패');
+        }
       }
 
-      // 이벤트 핸들러 저장
+      // 이벤트 핸들러 저장 (재연결 시 재사용)
       this.roomEventHandlers.set(roomId, { ...eventHandlers, currentUserId });
 
       // 방 관련 토픽 구독
       await this._subscribeToRoomChannels(roomId, eventHandlers);
 
+      // 연결 상태 모니터링 시작
+      this._startConnectionMonitoring(roomId);
+
+      // 재연결 상태 초기화
+      this.reconnectAttempts = 0;
+
       console.log('✅ 게임 방 WebSocket 연결 완료:', roomId);
       return true;
     } catch (error) {
       console.error('❌ 게임 방 WebSocket 연결 실패:', error);
+      
+      // 재연결 시도
+      await this._attemptReconnect(roomId, currentUserId, eventHandlers);
+      
       return false;
     }
   }
 
-  /**
-   * 게임 방 WebSocket 연결 해제
-   * @param {string} roomId - 게임 방 ID
-   * @param {string} currentUserId - 현재 사용자 ID
-   * @param {boolean} isHost - 방장 여부
-   */
-  async disconnectFromRoom(roomId, currentUserId, isHost = false) {
-    try {
-      console.log('🔌 게임 방 WebSocket 연결 해제:', { roomId, currentUserId, isHost });
-
-      // 방 퇴장 이벤트 발행 (방장이 아닌 경우만)
-      if (!isHost) {
-        this.publishLeaveRoom(roomId, currentUserId);
-      }
-
-      // 구독 해제
-      await this._unsubscribeFromRoomTopics(roomId);
-
-      // 이벤트 핸들러 제거
-      this.roomEventHandlers.delete(roomId);
-
-      console.log('✅ 게임 방 WebSocket 연결 해제 완료:', roomId);
-    } catch (error) {
-      console.error('❌ 게임 방 WebSocket 연결 해제 실패:', error);
-    }
-  }
 
   /**
    * WebSocket 연결 상태 확인
@@ -142,7 +139,23 @@ class RoomWebSocketService {
       );
     }
 
-    // 게임 방 상태 채널 구독 (설정 변경, 게임 시작 등)
+    // 게임 방 설정 채널 구독 (GameRoomUpdateMessage 처리)
+    if (eventHandlers.onGameRoomSettingsUpdate) {
+      const settingsChannel = getGameRoomSettingsChannel(roomId);
+      subscriptions.push(
+        this.webSocketManager.subscribe(settingsChannel, (message) => {
+          try {
+            const settingsUpdate = JSON.parse(message.body);
+            console.log('📥 게임 방 설정 업데이트 수신:', settingsUpdate);
+            this._handleGameRoomSettingsUpdate(settingsUpdate, eventHandlers);
+          } catch (error) {
+            console.error('❌ 게임 방 설정 업데이트 파싱 실패:', error);
+          }
+        })
+      );
+    }
+
+    // 게임 방 상태 채널 구독 (게임 시작 등)
     if (eventHandlers.onGameRoomStatusChange) {
       const statusChannel = getGameRoomStatusChannel(roomId);
       subscriptions.push(
@@ -255,6 +268,387 @@ class RoomWebSocketService {
   }
 
   /**
+   * GameRoomUpdateMessage 처리 (Spring Boot와 연동)
+   * @param {Object} settingsUpdate - GameRoomUpdateMessage 객체
+   * @param {string} settingsUpdate.roomId - 방 ID
+   * @param {string} settingsUpdate.title - 방 제목
+   * @param {string} settingsUpdate.gameModeKey - 게임 모드 키
+   * @param {string} settingsUpdate.playerMatchTypeKey - 플레이어 매치 타입 키 
+   * @param {boolean} settingsUpdate.privateRoom - 비공개 방 여부
+   * @param {number} settingsUpdate.teamCount - 팀 수
+   * @param {Object} eventHandlers - 이벤트 핸들러들
+   * @private
+   */
+  _handleGameRoomSettingsUpdate(settingsUpdate, eventHandlers) {
+    console.log('⚙️ 게임 방 설정 업데이트 처리:', settingsUpdate);
+    
+    const { roomId, title, gameModeKey, playerMatchTypeKey, privateRoom, teamCount } = settingsUpdate;
+    
+    // 프론트엔드 형식으로 변환
+    const transformedSettings = {
+      title,
+      gameMode: gameModeKey,
+      isTeamMode: playerMatchTypeKey === 'team',
+      isPrivate: privateRoom,
+      teamCount: teamCount || 2,
+      timestamp: new Date().toISOString()
+    };
+    
+    if (eventHandlers.onGameRoomSettingsUpdate) {
+      eventHandlers.onGameRoomSettingsUpdate({
+        type: 'SETTINGS_UPDATED',
+        roomId,
+        settings: transformedSettings,
+        message: '방 설정이 변경되었습니다.',
+        timestamp: new Date().toISOString()
+      });
+    }
+  }
+
+  /**
+   * 방 설정 변경 이벤트 발행
+   * @param {string} roomId - 게임 방 ID
+   * @param {Object} settings - 변경된 설정
+   * @param {string} userId - 변경한 사용자 ID
+   * @returns {boolean} 발행 성공 여부
+   */
+  publishRoomSettings(roomId, settings, userId) {
+    try {
+      if (!this.isConnected) {
+        console.warn('⚠️ WebSocket이 연결되지 않아 방 설정 변경을 발행할 수 없습니다.');
+        return false;
+      }
+
+      const settingsData = {
+        roomId,
+        title: settings.title,
+        gameModeKey: settings.gameMode,
+        playerMatchTypeKey: settings.isTeamMode ? 'team' : 'individual',
+        privateRoom: settings.isPrivate || false,
+        teamCount: settings.teamCount || 2,
+        updatedBy: userId,
+        timestamp: new Date().toISOString()
+      };
+
+      const success = this.webSocketManager.publish(`/app/room/${roomId}/updateSettings`, settingsData);
+      
+      if (success) {
+        console.log('✅ 방 설정 변경 이벤트 발행 성공:', settingsData);
+      } else {
+        console.error('❌ 방 설정 변경 이벤트 발행 실패');
+      }
+      
+      return success;
+    } catch (error) {
+      console.error('❌ 방 설정 변경 이벤트 발행 중 오류:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 팀 변경 이벤트 발행
+   * @param {string} roomId - 게임 방 ID
+   * @param {number} teamId - 변경할 팀 ID
+   * @param {string} userId - 변경하는 사용자 ID
+   * @returns {boolean} 발행 성공 여부
+   */
+  publishJoinTeam(roomId, teamId, userId) {
+    try {
+      if (!this.isConnected) {
+        console.warn('⚠️ WebSocket이 연결되지 않아 팀 변경을 발행할 수 없습니다.');
+        return false;
+      }
+
+      const teamChangeData = {
+        roomId,
+        memberId: userId,
+        teamId,
+        timestamp: new Date().toISOString()
+      };
+
+      const success = this.webSocketManager.publish(`/app/room/${roomId}/joinTeam`, teamChangeData);
+      
+      if (success) {
+        console.log('✅ 팀 변경 이벤트 발행 성공:', teamChangeData);
+      } else {
+        console.error('❌ 팀 변경 이벤트 발행 실패');
+      }
+      
+      return success;
+    } catch (error) {
+      console.error('❌ 팀 변경 이벤트 발행 중 오류:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 채팅 메시지 발행
+   * @param {string} roomId - 게임 방 ID
+   * @param {string} message - 메시지 내용
+   * @param {string} userId - 발송자 사용자 ID
+   * @returns {boolean} 발행 성공 여부
+   */
+  publishChatMessage(roomId, message, userId) {
+    try {
+      if (!this.isConnected) {
+        console.warn('⚠️ WebSocket이 연결되지 않아 채팅 메시지를 발행할 수 없습니다.');
+        return false;
+      }
+
+      const chatData = {
+        roomId,
+        senderId: userId,
+        content: message,
+        timestamp: new Date().toISOString()
+      };
+
+      const success = this.webSocketManager.publish(`/app/room/${roomId}/chat`, chatData);
+      
+      if (success) {
+        console.log('✅ 채팅 메시지 발행 성공');
+      } else {
+        console.error('❌ 채팅 메시지 발행 실패');
+      }
+      
+      return success;
+    } catch (error) {
+      console.error('❌ 채팅 메시지 발행 중 오류:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 게임 시작 이벤트 발행
+   * @param {string} roomId - 게임 방 ID
+   * @param {string} userId - 게임을 시작하는 사용자 ID (방장)
+   * @returns {boolean} 발행 성공 여부
+   */
+  publishGameStart(roomId, userId) {
+    try {
+      if (!this.isConnected) {
+        console.warn('⚠️ WebSocket이 연결되지 않아 게임 시작을 발행할 수 없습니다.');
+        return false;
+      }
+
+      const gameStartData = {
+        roomId,
+        startedBy: userId,
+        timestamp: new Date().toISOString()
+      };
+
+      const success = this.webSocketManager.publish(`/app/room/${roomId}/startGame`, gameStartData);
+      
+      if (success) {
+        console.log('✅ 게임 시작 이벤트 발행 성공:', gameStartData);
+      } else {
+        console.error('❌ 게임 시작 이벤트 발행 실패');
+      }
+      
+      return success;
+    } catch (error) {
+      console.error('❌ 게임 시작 이벤트 발행 중 오류:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 플레이어 강퇴 이벤트 발행
+   * @param {string} roomId - 게임 방 ID
+   * @param {string} targetPlayerId - 강퇴할 플레이어 ID
+   * @param {string} hostId - 강퇴하는 방장 ID
+   * @returns {boolean} 발행 성공 여부
+   */
+  publishKickPlayer(roomId, targetPlayerId, hostId) {
+    try {
+      if (!this.isConnected) {
+        console.warn('⚠️ WebSocket이 연결되지 않아 플레이어 강퇴를 발행할 수 없습니다.');
+        return false;
+      }
+
+      const kickData = {
+        roomId,
+        targetMemberId: targetPlayerId,
+        kickedBy: hostId,
+        timestamp: new Date().toISOString()
+      };
+
+      const success = this.webSocketManager.publish(`/app/room/${roomId}/kickPlayer`, kickData);
+      
+      if (success) {
+        console.log('✅ 플레이어 강퇴 이벤트 발행 성공:', kickData);
+      } else {
+        console.error('❌ 플레이어 강퇴 이벤트 발행 실패');
+      }
+      
+      return success;
+    } catch (error) {
+      console.error('❌ 플레이어 강퇴 이벤트 발행 중 오류:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 방 퇴장 이벤트 발행
+   * @param {string} roomId - 게임 방 ID
+   * @param {string} userId - 퇴장하는 사용자 ID
+   * @returns {boolean} 발행 성공 여부
+   */
+  publishLeaveRoom(roomId, userId) {
+    try {
+      if (!this.isConnected) {
+        console.warn('⚠️ WebSocket이 연결되지 않아 방 퇴장을 발행할 수 없습니다.');
+        return false;
+      }
+
+      const leaveData = {
+        roomId,
+        memberId: userId,
+        timestamp: new Date().toISOString()
+      };
+
+      const success = this.webSocketManager.publish(`/app/room/${roomId}/leave`, leaveData);
+      
+      if (success) {
+        console.log('✅ 방 퇴장 이벤트 발행 성공:', leaveData);
+      } else {
+        console.error('❌ 방 퇴장 이벤트 발행 실패');
+      }
+      
+      return success;
+    } catch (error) {
+      console.error('❌ 방 퇴장 이벤트 발행 중 오류:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 재연결과 함께 WebSocket 연결 시도
+   * @private
+   */
+  async _connectWithRetry() {
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    while (attempts < maxAttempts) {
+      try {
+        await this.webSocketManager.connect();
+        if (this.webSocketManager.isConnected.value) {
+          return true;
+        }
+      } catch (error) {
+        console.error(`WebSocket 연결 시도 ${attempts + 1}/${maxAttempts} 실패:`, error);
+      }
+      
+      attempts++;
+      if (attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
+      }
+    }
+    
+    return false;
+  }
+
+  /**
+   * 연결 상태 모니터링 시작
+   * @param {string} roomId - 모니터링할 방 ID
+   * @private
+   */
+  _startConnectionMonitoring(roomId) {
+    // 기존 모니터링 중지
+    if (this.connectionMonitorId) {
+      clearInterval(this.connectionMonitorId);
+    }
+
+    // 5초마다 연결 상태 확인
+    this.connectionMonitorId = setInterval(() => {
+      if (!this.isManualDisconnect && !this.webSocketManager.isConnected.value) {
+        console.warn('🔄 WebSocket 연결 끊김 감지, 재연결 시도...');
+        const eventHandlers = this.roomEventHandlers.get(roomId);
+        if (eventHandlers) {
+          this._attemptReconnect(roomId, eventHandlers.currentUserId, eventHandlers);
+        }
+      }
+    }, 5000);
+  }
+
+  /**
+   * 재연결 시도
+   * @param {string} roomId - 게임 방 ID
+   * @param {string} currentUserId - 현재 사용자 ID
+   * @param {Object} eventHandlers - 이벤트 핸들러들
+   * @private
+   */
+  async _attemptReconnect(roomId, currentUserId, eventHandlers) {
+    if (this.isManualDisconnect) {
+      console.log('수동 연결 해제 상태, 재연결 중지');
+      return;
+    }
+
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      console.error('❌ 최대 재연결 시도 횟수 초과, 재연결 포기');
+      this._notifyReconnectionFailed(eventHandlers);
+      return;
+    }
+
+    this.reconnectAttempts++;
+    const delay = Math.min(this.reconnectInterval * Math.pow(2, this.reconnectAttempts - 1), this.maxReconnectInterval);
+    
+    console.log(`🔄 재연결 시도 ${this.reconnectAttempts}/${this.maxReconnectAttempts} (${delay}ms 후)`);
+    
+    this.reconnectTimeoutId = setTimeout(async () => {
+      try {
+        const connected = await this._connectWithRetry();
+        if (connected) {
+          console.log('✅ 재연결 성공');
+          
+          // 채널 재구독
+          await this._subscribeToRoomChannels(roomId, eventHandlers);
+          
+          // 재연결 상태 초기화
+          this.reconnectAttempts = 0;
+          
+          // 재연결 성공 알림
+          this._notifyReconnectionSuccess(eventHandlers);
+        } else {
+          // 재연결 실패, 다시 시도
+          await this._attemptReconnect(roomId, currentUserId, eventHandlers);
+        }
+      } catch (error) {
+        console.error('재연결 중 오류:', error);
+        await this._attemptReconnect(roomId, currentUserId, eventHandlers);
+      }
+    }, delay);
+  }
+
+  /**
+   * 재연결 성공 알림
+   * @param {Object} eventHandlers - 이벤트 핸들러들
+   * @private
+   */
+  _notifyReconnectionSuccess(eventHandlers) {
+    if (eventHandlers.onConnectionStatusChange) {
+      eventHandlers.onConnectionStatusChange({
+        type: 'RECONNECTED',
+        message: '서버와의 연결이 복구되었습니다.'
+      });
+    }
+  }
+
+  /**
+   * 재연결 실패 알림
+   * @param {Object} eventHandlers - 이벤트 핸들러들
+   * @private
+   */
+  _notifyReconnectionFailed(eventHandlers) {
+    if (eventHandlers.onConnectionStatusChange) {
+      eventHandlers.onConnectionStatusChange({
+        type: 'DISCONNECTED',
+        message: '서버와의 연결이 끊어졌습니다. 페이지를 새로고침해주세요.'
+      });
+    }
+  }
+
+  /**
    * 방 관련 채널 구독 해제
    * @param {string} roomId - 게임 방 ID
    * @private
@@ -271,6 +665,50 @@ class RoomWebSocketService {
       
       this.activeSubscriptions.delete(roomId);
       console.log(`✅ 방 채널 구독 해제 완료: ${subscriptions.length}개 채널`);
+    }
+  }
+
+  /**
+   * 수동 연결 해제 (재연결 시도 중지)
+   * @param {string} roomId - 게임 방 ID
+   * @param {string} currentUserId - 현재 사용자 ID
+   * @param {boolean} isHost - 방장 여부
+   */
+  async disconnectFromRoom(roomId, currentUserId, isHost = false) {
+    try {
+      console.log('🔌 게임 방 WebSocket 연결 해제:', { roomId, currentUserId, isHost });
+
+      this.isManualDisconnect = true;
+
+      // 재연결 타이머 중지
+      if (this.reconnectTimeoutId) {
+        clearTimeout(this.reconnectTimeoutId);
+        this.reconnectTimeoutId = null;
+      }
+
+      // 연결 모니터링 중지
+      if (this.connectionMonitorId) {
+        clearInterval(this.connectionMonitorId);
+        this.connectionMonitorId = null;
+      }
+
+      // 방 퇴장 이벤트 발행 (방장이 아닌 경우만)
+      if (!isHost) {
+        this.publishLeaveRoom(roomId, currentUserId);
+      }
+
+      // 구독 해제
+      await this._unsubscribeFromRoomChannels(roomId);
+
+      // 이벤트 핸들러 제거
+      this.roomEventHandlers.delete(roomId);
+
+      // 재연결 상태 초기화
+      this.reconnectAttempts = 0;
+
+      console.log('✅ 게임 방 WebSocket 연결 해제 완료:', roomId);
+    } catch (error) {
+      console.error('❌ 게임 방 WebSocket 연결 해제 실패:', error);
     }
   }
 }
