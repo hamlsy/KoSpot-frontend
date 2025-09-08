@@ -4,7 +4,21 @@
       <!-- 헤더 -->
       <div class="results-header">
         <div class="header-left">
-          <h2 class="round-title">라운드 {{ round }} 결과</h2>
+          <h2 class="round-title">
+            라운드 {{ round }} 결과
+            <span class="location-name" v-if="locationName">- {{ locationName }}</span>
+          </h2>
+          <div class="round-info">
+            {{ round }} / {{ totalRounds }} 라운드 완료
+            <span v-if="isLastRound" class="final-round-badge">최종 라운드!</span>
+          </div>
+        </div>
+        <div class="results-summary">
+          <div class="top-player-info" v-if="topPlayer && topPlayer.playerName">
+            <i class="fas fa-crown"></i>
+            <span class="top-player-name">{{ topPlayer.playerName }}</span>
+            <span class="top-player-distance">{{ formatDistance(topPlayer.distance) }}km</span>
+          </div>
         </div>
       </div>
 
@@ -96,17 +110,19 @@
             @click="$emit('finish-game')"
           >
             <i class="fas fa-trophy"></i>
-            게임 결과 보기
+            <span>최종 결과 보기</span>
+            <div class="button-shine"></div>
           </button>
-          <button 
-            v-else 
-            class="action-button next-button" 
-            @click="$emit('request-next-round')"
-            :disabled="currentUserHasVoted"
-          >
-            <i class="fas fa-arrow-right"></i>
-            다음 라운드
-          </button>
+          <!-- 자동 진행 타이머 -->
+          <div v-else class="auto-progress-container">
+            <div class="progress-info">
+              <i class="fas fa-clock"></i>
+              <span class="countdown-text">{{ countdownSeconds }}초 후 다음 라운드</span>
+            </div>
+            <div class="progress-bar-container">
+              <div class="progress-bar" :style="{ width: progressPercentage + '%' }"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -214,6 +230,11 @@ export default {
   computed: {
     sortedPlayers() {
       return [...this.players].sort((a, b) => b.score - a.score);
+    },
+    
+    // 진행바 퍼센테이지 계산
+    progressPercentage() {
+      return ((this.totalCountdownTime - this.countdownSeconds) / this.totalCountdownTime) * 100;
     },
 
     isLastRound() {
@@ -338,9 +359,13 @@ export default {
       gameStore,
       visible: true,
       map: null,
-      countdownInterval: null, // This might still be used for local animations or can be removed if not needed
+      countdownInterval: null,
       showLocationInfoModal: false,
       currentLocationInfo: {},
+      // 자동 진행 타이머 관련
+      countdownSeconds: 10,
+      totalCountdownTime: 10,
+      countdownTimer: null,
     };
   },
 
@@ -352,11 +377,39 @@ export default {
         this.initMap();
       }, 300);
     });
+    
+    // 마지막 라운드가 아닌 경우 자동 진행 타이머 시작
+    if (!this.isLastRound) {
+      this.startCountdown();
+    }
+  },
+  
+  beforeUnmount() {
+    // 컴포넌트 해제 시 타이머 정리
+    if (this.countdownTimer) {
+      clearInterval(this.countdownTimer);
+      this.countdownTimer = null;
+    }
   },
 
   methods: {
     close() {
       this.$emit("close");
+    },
+    
+    // 카운트다운 시작
+    startCountdown() {
+      this.countdownTimer = setInterval(() => {
+        this.countdownSeconds--;
+        
+        if (this.countdownSeconds <= 0) {
+          clearInterval(this.countdownTimer);
+          this.countdownTimer = null;
+          
+          // 다음 라운드로 자동 진행
+          this.$emit('request-next-round');
+        }
+      }, 1000);
     },
 
     initMap() {
@@ -397,6 +450,12 @@ export default {
       // this.stopCountdown(); // stopCountdown is removed
       this.$emit("finish-game");
     },
+
+    // 거리 포맷팅 메서드
+    formatDistance(distance) {
+      if (!distance && distance !== 0) return "0";
+      return Math.round(distance * 100) / 100;
+    },
   },
 };
 </script>
@@ -425,9 +484,14 @@ export default {
 .results-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 1.5rem;
   border-bottom: 1px solid #eee;
+  background: linear-gradient(135deg, #f8f9fa, #ffffff);
+}
+
+.header-left {
+  flex: 1;
 }
 
 .round-title {
@@ -435,12 +499,70 @@ export default {
   font-size: 1.6rem;
   color: #333;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.location-name {
+  font-size: 1.2rem;
+  color: #666;
+  font-weight: 500;
 }
 
 .round-info {
-  margin-top: 0.3rem;
+  margin-top: 0.5rem;
   font-size: 0.9rem;
   color: #666;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.final-round-badge {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+  color: white;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  animation: pulse 2s infinite;
+}
+
+.results-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.top-player-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #ffd700, #ffed4e);
+  color: #333;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+.top-player-info i {
+  color: #ff6b35;
+  font-size: 1.1rem;
+}
+
+.top-player-name {
+  font-size: 0.9rem;
+}
+
+.top-player-distance {
+  font-size: 0.8rem;
+  color: #666;
+  background: white;
+  padding: 0.2rem 0.5rem;
+  border-radius: 8px;
 }
 
 .close-button {
@@ -615,41 +737,79 @@ export default {
 }
 
 .action-button {
-  padding: 0.8rem 1.5rem;
-  border-radius: 8px;
+  padding: 1rem 2rem;
+  border-radius: 12px;
   border: none;
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
   cursor: pointer;
   transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  min-width: 160px;
+  justify-content: center;
 }
 
 .next-button {
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
-  box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
-.next-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+.next-button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
 }
 
 .next-button:disabled {
   background: linear-gradient(135deg, #a5b4fc, #8b5cf6);
-  opacity: 0.7;
+  opacity: 0.8;
   cursor: not-allowed;
   transform: none;
-  box-shadow: none;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
 }
 
 .finish-button {
   background: linear-gradient(135deg, #ff9800, #f57c00);
   color: white;
-  box-shadow: 0 4px 10px rgba(255, 152, 0, 0.3);
+  box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+}
+
+.finish-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(255, 152, 0, 0.4);
+}
+
+/* 버튼 반짝임 효과 */
+.button-shine {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.6s;
+}
+
+.action-button:hover .button-shine {
+  left: 100%;
+}
+
+.action-button i {
+  font-size: 1.2rem;
+}
+
+.action-button span {
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 /* 플레이어 마커 스타일 */
@@ -843,5 +1003,72 @@ export default {
   .player-avatar {
     margin-right: 0;
   }
+}
+
+/* 자동 진행 타이머 스타일 */
+.auto-progress-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, rgba(46, 204, 113, 0.1), rgba(39, 174, 96, 0.1));
+  border-radius: 15px;
+  border: 2px solid rgba(46, 204, 113, 0.3);
+}
+
+.progress-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2ecc71;
+}
+
+.progress-info i {
+  font-size: 1.2rem;
+  animation: pulse-clock 1s infinite;
+}
+
+.countdown-text {
+  color: #27ae60;
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 8px;
+  background-color: rgba(46, 204, 113, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #2ecc71, #27ae60);
+  border-radius: 4px;
+  transition: width 1s linear;
+  position: relative;
+}
+
+.progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 20px;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3));
+  animation: progress-shine 2s infinite;
+}
+
+@keyframes pulse-clock {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+@keyframes progress-shine {
+  0% { transform: translateX(-20px); }
+  100% { transform: translateX(20px); }
 }
 </style> 

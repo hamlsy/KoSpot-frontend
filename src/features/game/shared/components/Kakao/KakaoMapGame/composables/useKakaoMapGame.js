@@ -10,8 +10,8 @@ export function useKakaoMapGame(props, emit) {
   
   const { getMarkerPosition } = useKakaoMapControls(props, emit);
   
-  // 팀 투표 기능 사용
-  const teamVote = useKakaoMapTeamVote(props, emit);
+  // 팀 투표 기능 - individual 모드에서는 사용하지 않음
+  const teamVote = props.gameMode === 'individual' ? null : useKakaoMapTeamVote(props, emit);
   
   const submitAnswer = async () => {
     if (!marker.value) return;
@@ -26,7 +26,7 @@ export function useKakaoMapGame(props, emit) {
   
   // 팀 투표 시작 함수
   const startTeamVoting = async (playerInfo) => {
-    if (!marker.value) return;
+    if (!marker.value || !teamVote) return null;
     
     try {
       // useKakaoMapTeamVote의 startTeamVote 함수 호출

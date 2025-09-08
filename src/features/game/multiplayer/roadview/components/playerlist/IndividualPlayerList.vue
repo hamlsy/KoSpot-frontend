@@ -44,13 +44,15 @@
             </div>
             <div class="player-status" v-if="!showScores">
               <template v-if="player.hasSubmitted">
-                <div class="check-badge">
-                  <i class="fas fa-check"></i>
+                <div class="check-badge submitted">
+                  <i class="fas fa-check-circle"></i>
+                  <span class="status-text">제출완료</span>
                 </div>
               </template>
               <template v-else>
-                <div class="waiting-badge">
-                  <i class="fas fa-hourglass-half"></i>
+                <div class="waiting-badge waiting">
+                  <i class="fas fa-clock"></i>
+                  <span class="status-text">대기중</span>
                 </div>
               </template>
             </div>
@@ -81,6 +83,17 @@
             <div class="no-score" v-else>-</div>
           </div>
         </div>
+        
+        <!-- 채팅 말풍선 -->
+        <div 
+          v-if="playerChatMessages[player.id]" 
+          class="chat-bubble"
+        >
+          <div class="bubble-content">
+            {{ playerChatMessages[player.id].message }}
+          </div>
+          <div class="bubble-tail"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -106,6 +119,10 @@ export default {
     roundEnded: {
       type: Boolean,
       default: false,
+    },
+    playerChatMessages: {
+      type: Object,
+      default: () => ({}),
     },
   },
 
@@ -229,9 +246,79 @@ export default {
 }
 
 .player-card.has-submitted {
-  background: #f4f9f4;
+  background: linear-gradient(135deg, #f4f9f4, #e8f5e8);
   border-left-color: #4cd964;
-  box-shadow: 0 2px 8px rgba(76, 217, 100, 0.2);
+  box-shadow: 0 2px 8px rgba(76, 217, 100, 0.3);
+  border: 2px solid rgba(76, 217, 100, 0.3);
+  animation: submitSuccess 0.5s ease-out;
+}
+
+@keyframes submitSuccess {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(76, 217, 100, 0.2);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 4px 16px rgba(76, 217, 100, 0.4);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(76, 217, 100, 0.3);
+  }
+}
+
+/* 플레이어 상태 배지 스타일 */
+.player-status {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.check-badge, .waiting-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.check-badge.submitted {
+  background: linear-gradient(135deg, #4cd964, #5ac467);
+  color: white;
+  box-shadow: 0 2px 6px rgba(76, 217, 100, 0.3);
+}
+
+.waiting-badge.waiting {
+  background: linear-gradient(135deg, #f39c12, #e67e22);
+  color: white;
+  box-shadow: 0 2px 6px rgba(243, 156, 18, 0.3);
+}
+
+.status-text {
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+}
+
+.check-badge i {
+  font-size: 0.9rem;
+}
+
+.waiting-badge i {
+  font-size: 0.8rem;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 
 .player-info {
@@ -425,5 +512,65 @@ export default {
 
 .first-place {
   color: gold;
+}
+
+/* 채팅 말풍선 스타일 */
+.chat-bubble {
+  position: absolute;
+  top: -10px;
+  right: -120px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  z-index: 10;
+  animation: chat-bubble-appear 0.3s ease-out;
+  max-width: 100px;
+  word-wrap: break-word;
+}
+
+.bubble-content {
+  position: relative;
+  z-index: 1;
+}
+
+.bubble-tail {
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-right: 6px solid #667eea;
+}
+
+.player-card {
+  position: relative;
+}
+
+@keyframes chat-bubble-appear {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* 모바일에서는 말풍선 위치 조정 */
+@media (max-width: 768px) {
+  .chat-bubble {
+    right: -80px;
+    max-width: 70px;
+    font-size: 0.7rem;
+    padding: 6px 8px;
+  }
 }
 </style>

@@ -12,17 +12,17 @@ export function useKakaoMapTeamVote(props, emit) {
     const rejectedVotes = ref([]);
     
     // Use the WebSocket service
-    const {
-        isConnected,
-        useDummyData,
-        currentPlayer,
-        connectWebSocket,
-        disconnectWebSocket,
-        sendTeamMarker,
-        simulateSendMarker,
-        getDummyTeamMembers,
-        subscribeToTeamMarkers
-    } = useTeamWebSocketService();
+    // 안전 가드: 서비스에서 일부 속성이 미구현일 수 있으므로 기본값을 채워줍니다
+    const service = useTeamWebSocketService() || {};
+    const isConnected = service.isConnected || ref(false);
+    const useDummyData = service.useDummyData || ref(true);
+    const currentPlayer = service.currentPlayer || ref({ id: 'dummy-player', teamId: null, nickname: 'Player' });
+    const connectWebSocket = service.connectWebSocket || (() => {});
+    const disconnectWebSocket = service.disconnectWebSocket || (() => {});
+    const sendTeamMarker = service.sendTeamMarker || (() => {});
+    const simulateSendMarker = service.simulateSendMarker || (() => {});
+    const getDummyTeamMembers = service.getDummyTeamMembers || (() => []);
+    const subscribeToTeamMarkers = service.subscribeToTeamMarkers || (() => {});
     
     // Set team ID if provided in props
     if (props.teamId) {
@@ -339,14 +339,19 @@ export function useKakaoMapTeamVote(props, emit) {
             return;
         }
         
-        // 멀티 게임 모드(team, individual)인 경우에만 WebSocket 연결 설정
-        console.log(`멀티 게임 모드(${props.gameMode}): WebSocket 연결을 설정합니다.`);
+        // 멀티 게임 모드(team)인 경우에만 팀 투표용 WebSocket 연결 설정
+        // 개인전(individual)에서는 팀 투표 기능을 사용하지 않습니다.
+        if (props.gameMode === 'individual') {
+            console.log('개인전 모드: 팀 투표 기능 비활성화');
+            return;
+        }
+        console.log(`멀티 게임 모드(${props.gameMode}): WebSocket/더미 모드 초기화`);
         
         // 1. 웹소켓 구독 설정 - 대기실에서 연결된 웹소켓을 재사용하거나 새로 연결
         setupTeamMarkerSubscription();
         
         // 2. 더미 데이터 모드인 경우 초기화 (개발 및 테스트 환경용)
-        if (useDummyData.value) {
+        if (useDummyData && useDummyData.value) {
             console.log('더미 데이터 모드 활성화 - 테스트용 더미 마커 생성');
             
             // 지도가 로드될 때까지 약간 대기 후 더미 데이터 초기화
@@ -368,7 +373,9 @@ export function useKakaoMapTeamVote(props, emit) {
         // 3. 플레이어 상태 변경 감지 설정 (입장/퇴장, 팀 변경 등)
         // 전역 웹소켓 관리자에서 플레이어 상태 변경 이벤트 구독
         const playerStatusTopic = '/topic/game/players/status';
-        webSocketManager.subscribe(playerStatusTopic, handlePlayerStatusChange);
+        if (webSocketManager && webSocketManager.subscribe) {
+            webSocketManager.subscribe(playerStatusTopic, handlePlayerStatusChange);
+        }
     });
     
     /**
