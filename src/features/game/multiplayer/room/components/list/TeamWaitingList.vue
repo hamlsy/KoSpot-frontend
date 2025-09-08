@@ -149,9 +149,9 @@ const handleJoinTeam = async (teamId) => {
 
 .team-players-card {
   background-color: white;
-  border-radius: 14px;
+  border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   transition: all 0.3s ease;
   position: relative;
 }
@@ -163,19 +163,19 @@ const handleJoinTeam = async (teamId) => {
 
 /* Team-specific styling */
 .team-blue-card {
-  border-top: 4px solid #3b82f6;
+  border-top: 3px solid #60a5fa; /* 라이트 블루 */
 }
 
 .team-red-card {
-  border-top: 4px solid #ef4444;
+  border-top: 3px solid #f87171; /* 라이트 레드 */
 }
 
 .team-green-card {
-  border-top: 4px solid #10b981;
+  border-top: 3px solid #34d399; /* 라이트 그린 */
 }
 
 .team-yellow-card {
-  border-top: 4px solid #f59e0b;
+  border-top: 3px solid #fbbf24; /* 라이트 옐로우 */
 }
 
 .team-header {
@@ -197,19 +197,19 @@ const handleJoinTeam = async (teamId) => {
 }
 
 .team-blue-bg {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #93c5fd 0%, #60a5fa 100%);
 }
 
 .team-red-bg {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: linear-gradient(135deg, #fca5a5 0%, #f87171 100%);
 }
 
 .team-green-bg {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #86efac 0%, #34d399 100%);
 }
 
 .team-yellow-bg {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 100%);
 }
 
 .team-title {
@@ -346,6 +346,87 @@ const handleJoinTeam = async (teamId) => {
   animation: teamJoinSuccess 1s ease-out;
 }
 
+/* Compact overrides to ensure nickname and avatar visibility inside BasePlayerCard */
+.team-players :deep(.player-card) {
+  padding: 0.5rem 0.6rem;
+  border-radius: 10px;
+}
+
+.team-players :deep(.player-avatar) {
+  margin-right: 0.5rem;
+}
+
+.team-players :deep(.avatar-wrapper) {
+  width: 42px;
+  height: 42px;
+}
+
+.team-players :deep(.player-info) {
+  min-width: 0;
+}
+
+.team-players :deep(.player-name) {
+  font-size: 0.9rem;
+  white-space: normal;
+  line-height: 1.2;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.team-players :deep(.player-stats) {
+  gap: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.team-players :deep(.player-ranks) {
+  gap: 0.35rem;
+}
+
+/* Reflow: place level and rank below nickname to protect name width */
+.team-players :deep(.player-card) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.team-players :deep(.player-info) {
+  order: 2;
+  width: 100%;
+  text-align: center;
+}
+
+.team-players :deep(.player-name) {
+  margin-bottom: 0.15rem;
+}
+
+.team-players :deep(.player-stats) {
+  order: 3;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  margin-top: 0.1rem;
+}
+
+.team-players :deep(.player-ranks) {
+  order: 4;
+  width: 100%;
+  display: flex;
+  flex-direction: row; /* 세로 → 가로 배치 */
+  flex-wrap: nowrap;   /* 한 줄에 2개 고정 */
+  justify-content: center;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.1rem;
+}
+
+.team-players :deep(.rank-badge) {
+  padding: 0.2rem 0.45rem;
+  border-radius: 14px;
+  font-size: 0.7rem;
+}
+
 @media (max-width: 768px) {
   .teams-container {
     grid-template-columns: 1fr;
@@ -354,11 +435,11 @@ const handleJoinTeam = async (teamId) => {
 
   .players-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.45rem 0.5rem;
+    gap: 0.4rem 0.45rem;
   }
 
   .team-players-card {
-    border-radius: 12px;
+    border-radius: 8px;
   }
 
   .team-title {
@@ -371,6 +452,39 @@ const handleJoinTeam = async (teamId) => {
 
   .join-team-button {
     padding: 0.45rem 0.55rem;
+  }
+
+  /* Further compact on small screens */
+  .team-players :deep(.player-card) {
+    padding: 0.45rem 0.5rem;
+  }
+
+  .team-players :deep(.avatar-wrapper) {
+    width: 38px;
+    height: 38px;
+  }
+
+  .team-players :deep(.player-name) {
+    font-size: 0.85rem;
+  }
+
+  .team-players :deep(.player-stats),
+  .team-players :deep(.player-ranks) {
+    display: none;
+  }
+}
+
+/* 최대 2열 제한 (반응형 구간에서 3열 방지) */
+@media (max-width: 1200px) {
+  .teams-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* 카드가 작아지는 구간에서는 랭크 숨김(닉네임 우선) */
+@media (max-width: 1024px) {
+  .team-players :deep(.player-ranks) {
+    display: none;
   }
 }
 </style>

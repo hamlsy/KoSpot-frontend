@@ -180,9 +180,9 @@ const leaveRoomWithConfirm = () => {
 <style scoped>
 .room-header {
   background: white;
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 1rem;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
   margin-bottom: 1rem;
   position: relative;
   overflow: hidden;
@@ -195,8 +195,8 @@ const leaveRoomWithConfirm = () => {
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  height: 2px;
+  background: linear-gradient(90deg, #93c5fd 0%, #c4b5fd 100%);
 }
 
 .header-content {
