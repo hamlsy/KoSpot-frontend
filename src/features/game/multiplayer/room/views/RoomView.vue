@@ -247,6 +247,9 @@ const emit = defineEmits([
   'team-change-success' // 팀 변경 성공 시 사용
 ]);
 
+// 알림 시스템 - 반드시 useRoom 호출보다 먼저 선언되어야 함
+const toastRef = ref(null);
+
 // Room composable 사용 - 알림 시스템과 연결
 const room = useRoom(props, emit, { toastRef });
 
@@ -317,9 +320,6 @@ const {
 // 반응형 디자인 상태 관리
 const isMobileView = ref(false);
 const isChatVisible = ref(false);
-
-// 알림 시스템
-const toastRef = ref(null);
 
 // 화면 크기 감지
 const checkScreenSize = () => {
@@ -418,6 +418,8 @@ const formatUpdateTime = (timestamp) => {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  /* 데스크톱에서는 자연스러운 레이아웃 유지 */
+  overflow: visible;
 }
 
 .section-title {
@@ -804,6 +806,13 @@ const formatUpdateTime = (timestamp) => {
     min-height: 45vh;
   }
 
+  /* 모바일/태블릿에서 플레이어 목록은 고정 높이 내 스크롤 */
+  .panel-section {
+    max-height: calc(100vh - 220px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   /* 모바일에서 채팅이 표시될 때 전체 화면 */
   .right-panel:not(.hidden-mobile) {
     position: fixed;
@@ -839,6 +848,9 @@ const formatUpdateTime = (timestamp) => {
 
   .panel-section {
     padding: 1rem;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .section-title {
@@ -889,6 +901,12 @@ const formatUpdateTime = (timestamp) => {
 @media (max-width: 480px) {
   .left-panel {
     min-height: 75vh;
+  }
+
+  /* 작은 화면에서 전체 컨테이너는 세로 스크롤 허용 */
+  .multiplayer-room-waiting {
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   .chat-welcome {

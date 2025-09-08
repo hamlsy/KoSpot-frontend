@@ -142,16 +142,16 @@ const handleJoinTeam = async (teamId) => {
 <style scoped>
 .teams-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
 }
 
 .team-players-card {
   background-color: white;
-  border-radius: 16px;
+  border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
   position: relative;
 }
@@ -181,13 +181,13 @@ const handleJoinTeam = async (teamId) => {
 .team-header {
   display: flex;
   align-items: center;
-  padding: 1.25rem;
+  padding: 1rem 1rem;
   border-bottom: 1px solid #f3f4f6;
 }
 
 .team-icon {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -213,7 +213,7 @@ const handleJoinTeam = async (teamId) => {
 }
 
 .team-title {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
   color: black;
   margin: 0;
@@ -222,15 +222,15 @@ const handleJoinTeam = async (teamId) => {
 
 .team-count {
   background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-  padding: 0.3rem 0.6rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 16px;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #6b7280;
 }
 
 .team-players {
-  padding: 1.25rem;
+  padding: 0.9rem 1rem 1rem;
 }
 
 .player-transition-group {
@@ -238,12 +238,12 @@ const handleJoinTeam = async (teamId) => {
 }
 
 .player-wrapper {
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.6rem;
   transition: all 0.3s ease;
 }
 
 .player-wrapper:last-child {
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
 }
 
 .player-wrapper.joining-team {
@@ -258,10 +258,10 @@ const handleJoinTeam = async (teamId) => {
   display: flex;
   align-items: center;
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.6rem 0.7rem;
   background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
   border: 1px dashed #d1d5db;
-  border-radius: 12px;
+  border-radius: 10px;
   color: #6b7280;
   font-weight: 600;
   cursor: pointer;
@@ -288,8 +288,8 @@ const handleJoinTeam = async (teamId) => {
 }
 
 .join-icon {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: white;
   display: flex;
@@ -342,6 +342,23 @@ const handleJoinTeam = async (teamId) => {
 @media (max-width: 768px) {
   .teams-container {
     grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .team-players-card {
+    border-radius: 12px;
+  }
+
+  .team-title {
+    font-size: 0.95rem;
+  }
+
+  .team-players {
+    padding: 0.75rem 0.85rem 0.85rem;
+  }
+
+  .join-team-button {
+    padding: 0.55rem 0.65rem;
   }
 }
 </style>
