@@ -9,6 +9,7 @@ import userRoutes from './userRoutes.js';
 import devRoutes from './devRoutes.js';
 import adminRoutes from './adminRoutes.js';
 import noticeRoutes from './noticeRoutes.js';
+import shopRoutes from './shopRoutes.js';
 
 // Combine all routes
 const routes = [
@@ -19,7 +20,8 @@ const routes = [
   ...userRoutes,
   ...adminRoutes,
   ...devRoutes,
-  ...noticeRoutes
+  ...noticeRoutes,
+  ...shopRoutes
 ];
 
 const router = createRouter({

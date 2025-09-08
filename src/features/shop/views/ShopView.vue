@@ -271,6 +271,9 @@ export default {
   },
   
   computed: {
+    shopService() {
+      return shopService;
+    },
     currentCategoryName() {
       const category = this.categories.find(cat => cat.id === this.currentCategory);
       return category ? category.name : '';
@@ -308,11 +311,6 @@ export default {
     formatNumber(num) {
       return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     },
-
-    // shopService를 템플릿에서 접근할 수 있도록 하는 헬퍼
-    get shopService() {
-      return shopService;
-    },
     
     async setCategory(categoryId) {
       this.currentCategory = categoryId;
@@ -332,8 +330,8 @@ export default {
             shopService.convertApiToUiFormat(item, this.currentCategory)
           );
           
-          // API 데이터를 카테고리별로 저장
-          this.$set(this.apiItems, this.currentCategory, apiItems);
+          // API 데이터를 카테고리별로 저장 (Vue 3에서는 직접 할당으로 반응성 보장)
+          this.apiItems[this.currentCategory] = apiItems;
           
           console.log(`${this.currentCategory} 아이템 로드 완료:`, apiItems);
         } else {

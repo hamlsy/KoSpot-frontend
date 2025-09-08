@@ -2,6 +2,7 @@
   <div 
     class="player-details-modal"
     :class="{ 'active': isActive }"
+    @click.self="$emit('close')"
   >
     <div class="modal-content">
       <div class="modal-header">

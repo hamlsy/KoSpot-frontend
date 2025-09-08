@@ -14,8 +14,9 @@
           :can-start-game="canStartGame"
           :unread-messages="unreadMessages"
           :is-team-mode="isTeamMode"
+          :show-chat-toggle="isMobileView"
           @open-settings="openRoomSettings"
-          @toggle-chat="toggleChat"
+          @toggle-chat="handleToggleChat"
           @leave-room="leaveRoom"
           @start-game="startGame"
         />
@@ -87,7 +88,7 @@
       </div>
 
       <!-- 오른쪽 패널: 채팅 전체 높이 -->
-      <div class="right-panel">
+      <div class="right-panel" :class="{ 'hidden-mobile': isMobileView && !isChatVisible }">
         <div class="chat-panel">
           <div class="chat-header">
             <div class="chat-title">
@@ -97,9 +98,19 @@
                 {{ unreadMessages > 9 ? '9+' : unreadMessages }}
               </div>
             </div>
-            <div class="chat-status">
-              <i class="fas fa-circle online-indicator"></i>
-              <span>{{ localPlayers.length }}명 온라인</span>
+            <div class="chat-controls">
+              <div class="chat-status">
+                <i class="fas fa-circle online-indicator"></i>
+                <span>{{ localPlayers.length }}명 온라인</span>
+              </div>
+              <button 
+                v-if="isMobileView" 
+                class="chat-close-button"
+                @click="handleToggleChat"
+                title="채팅 닫기"
+              >
+                <i class="fas fa-times"></i>
+              </button>
             </div>
           </div>
 
@@ -162,10 +173,14 @@
       @close="closePlayerDetails"
       @kick="confirmKickPlayer"
     />
+
+    <!-- 실시간 알림 토스트 -->
+    <ToastNotification ref="toastRef" />
   </div>
 </template>
 
 <script setup>
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import RoomHeader from 'src/features/game/multiplayer/room/components/header/RoomHeader.vue'
 //waiting list
 import TeamWaitingList from 'src/features/game/multiplayer/room/components/list/TeamWaitingList.vue'
@@ -176,6 +191,9 @@ import KickConfirmationModal from 'src/features/game/multiplayer/room/components
 import PlayerDetailsModal from 'src/features/game/multiplayer/room/components/player/PlayerDetailsModal.vue'
 import RoomSettingsModal from 'src/features/game/multiplayer/room/components/settings/RoomSettingsModal.vue'
 import ChatMessage from 'src/features/game/multiplayer/chat/components/Room/ChatMessage.vue'
+
+//notifications
+import ToastNotification from 'src/features/game/multiplayer/room/components/notifications/ToastNotification.vue'
 
 // Composables
 import { useRoom } from '../composables/useRoom';
@@ -225,11 +243,15 @@ const emit = defineEmits([
   'update-room-settings',
   'kick-player',
   'join-team',
-  'player-list-updated' // 웹소켓으로 플레이어 목록 업데이트 시 사용
+  'player-list-updated', // 웹소켓으로 플레이어 목록 업데이트 시 사용
+  'team-change-success' // 팀 변경 성공 시 사용
 ]);
 
-// Room composable 사용
-const room = useRoom(props, emit);
+// 알림 시스템 - 반드시 useRoom 호출보다 먼저 선언되어야 함
+const toastRef = ref(null);
+
+// Room composable 사용 - 알림 시스템과 연결
+const room = useRoom(props, emit, { toastRef });
 
 // 템플릿에서 사용할 상태와 메서드 추출
 const {
@@ -294,6 +316,38 @@ const {
   canJoinTeam,
   getTeamPlayerCount
 } = room;
+
+// 반응형 디자인 상태 관리
+const isMobileView = ref(false);
+const isChatVisible = ref(false);
+
+// 화면 크기 감지
+const checkScreenSize = () => {
+  isMobileView.value = window.innerWidth <= 1024;
+  if (!isMobileView.value) {
+    isChatVisible.value = true; // 데스크톱에서는 항상 채팅 표시
+  } else {
+    // 반응형 전환 시 기본은 플레이어 리스트 화면이 먼저 보이도록 채팅 숨김
+    isChatVisible.value = false;
+  }
+};
+
+// 채팅 토글 래퍼 함수
+const handleToggleChat = () => {
+  if (isMobileView.value) {
+    isChatVisible.value = !isChatVisible.value;
+  }
+  toggleChat();
+};
+
+onMounted(() => {
+  checkScreenSize();
+  window.addEventListener('resize', checkScreenSize);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', checkScreenSize);
+});
 
 // 시간 포맷팅 유틸리티
 const formatUpdateTime = (timestamp) => {
@@ -367,6 +421,8 @@ const formatUpdateTime = (timestamp) => {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  /* 데스크톱에서는 자연스러운 레이아웃 유지 */
+  overflow: visible;
 }
 
 .section-title {
@@ -519,6 +575,32 @@ const formatUpdateTime = (timestamp) => {
   align-items: center;
   border-radius: 16px 16px 0 0;
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+}
+
+.chat-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.chat-close-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.chat-close-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
 }
 
 .chat-title {
@@ -693,6 +775,11 @@ const formatUpdateTime = (timestamp) => {
   font-size: 0.9rem;
 }
 
+/* 모바일에서 채팅 숨김 */
+.right-panel.hidden-mobile {
+  display: none;
+}
+
 /* Responsive design */
 @media (max-width: 1200px) {
   .left-panel {
@@ -712,13 +799,40 @@ const formatUpdateTime = (timestamp) => {
 
   .left-panel {
     flex: none;
-    height: 50vh;
+    height: auto;
+    min-height: 50vh;
   }
 
   .right-panel {
     flex: 1;
     min-width: 0;
     min-height: 45vh;
+  }
+
+  /* 모바일/태블릿에서 플레이어 목록은 고정 높이 내 스크롤 */
+  .panel-section {
+    max-height: calc(100vh - 220px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 모바일에서 채팅이 표시될 때 전체 화면 */
+  .right-panel:not(.hidden-mobile) {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 1rem;
+    min-height: 100vh;
+  }
+
+  .right-panel:not(.hidden-mobile) .chat-panel {
+    max-width: 500px;
+    margin: 0 auto;
+    height: 100%;
   }
 }
 
@@ -731,8 +845,15 @@ const formatUpdateTime = (timestamp) => {
     gap: 0.75rem;
   }
 
+  .left-panel {
+    min-height: 70vh;
+  }
+
   .panel-section {
     padding: 1rem;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .section-title {
@@ -748,8 +869,16 @@ const formatUpdateTime = (timestamp) => {
     font-size: 1rem;
   }
 
+  .chat-controls {
+    gap: 0.75rem;
+  }
+
   .chat-status {
     font-size: 0.8rem;
+  }
+
+  .chat-status span {
+    display: none;
   }
 
   .chat-messages {
@@ -765,15 +894,22 @@ const formatUpdateTime = (timestamp) => {
     width: 40px;
     height: 40px;
   }
+
+  .right-panel:not(.hidden-mobile) .chat-panel {
+    max-width: 100%;
+    margin: 0;
+  }
 }
 
 @media (max-width: 480px) {
   .left-panel {
-    height: 45vh;
+    min-height: 75vh;
   }
 
-  .right-panel {
-    min-height: 50vh;
+  /* 작은 화면에서 전체 컨테이너는 세로 스크롤 허용 */
+  .multiplayer-room-waiting {
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   .chat-welcome {
@@ -800,6 +936,12 @@ const formatUpdateTime = (timestamp) => {
   }
 
   .send-button i {
+    font-size: 0.8rem;
+  }
+
+  .chat-close-button {
+    width: 28px;
+    height: 28px;
     font-size: 0.8rem;
   }
 }

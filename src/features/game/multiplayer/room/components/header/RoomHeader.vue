@@ -57,6 +57,19 @@
         <!-- 버튼 그룹 -->
         <div class="header-buttons">
           <button 
+            class="action-button chat-toggle-button" 
+            @click="$emit('toggle-chat')"
+            title="채팅 토글"
+            v-show="showChatToggle"
+          >
+            <i class="fas fa-comments"></i>
+            <span>채팅</span>
+            <div class="chat-notification-mini" v-if="unreadMessages > 0">
+              {{ unreadMessages > 9 ? '9+' : unreadMessages }}
+            </div>
+          </button>
+
+          <button 
             class="action-button settings-button" 
             @click="$emit('open-settings')"
             title="방 설정"
@@ -115,10 +128,14 @@ const props = defineProps({
   isTeamMode: {
     type: Boolean,
     default: false
+  },
+  showChatToggle: {
+    type: Boolean,
+    default: false
   }
 });
 
-const emit = defineEmits(['open-settings', 'leave-room', 'start-game']);
+const emit = defineEmits(['open-settings', 'leave-room', 'start-game', 'toggle-chat']);
 
 const gameModeName = computed(() => {
   switch(props.roomData.gameMode) {
@@ -163,9 +180,9 @@ const leaveRoomWithConfirm = () => {
 <style scoped>
 .room-header {
   background: white;
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 1rem;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
   margin-bottom: 1rem;
   position: relative;
   overflow: hidden;
@@ -178,8 +195,8 @@ const leaveRoomWithConfirm = () => {
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  height: 2px;
+  background: linear-gradient(90deg, #93c5fd 0%, #c4b5fd 100%);
 }
 
 .header-content {
@@ -374,6 +391,37 @@ const leaveRoomWithConfirm = () => {
   letter-spacing: 0.025em;
 }
 
+.chat-toggle-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  position: relative;
+}
+
+.chat-toggle-button:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #553c9a 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.chat-notification-mini {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+  border: 2px solid white;
+}
+
 .settings-button {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   color: #475569;
@@ -427,34 +475,34 @@ const leaveRoomWithConfirm = () => {
 
 /* Responsive design */
 @media (max-width: 1024px) {
-  .header-actions {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.75rem;
+  .room-header {
+    padding: 0.6rem 0.75rem;
+    border-radius: 14px;
   }
-  
-  .game-info-compact {
-    justify-content: center;
-    gap: 0.75rem;
-  }
-  
-  .header-buttons {
-    justify-content: center;
-  }
+  .header-content { gap: 0.6rem; }
+  .room-info-section { gap: 0.3rem; }
+  .room-title { font-size: 1.05rem; }
+  .game-info-compact { justify-content: center; gap: 0.6rem; }
+  .info-icon { width: 28px; height: 28px; font-size: 0.8rem; }
+  .info-value { font-size: 0.75rem; }
+  .header-actions { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+  .header-buttons { justify-content: center; }
+  .action-button { padding: 0.4rem 0.7rem; font-size: 0.73rem; border-radius: 9px; }
 }
 
 @media (max-width: 768px) {
   .room-header {
-    padding: 0.75rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: 12px;
   }
   
   .room-title {
-    font-size: 1.1rem;
+    font-size: 0.95rem;
   }
   
   .game-info-compact {
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
+    gap: 0.6rem;
   }
   
   .header-buttons {
@@ -462,10 +510,7 @@ const leaveRoomWithConfirm = () => {
     justify-content: stretch;
   }
   
-  .action-button {
-    flex: 1;
-    padding: 0.5rem;
-  }
+  .action-button { flex: 1; padding: 0.4rem; font-size: 0.72rem; }
 }
 
 @media (max-width: 480px) {
@@ -481,21 +526,18 @@ const leaveRoomWithConfirm = () => {
   }
   
   .room-title {
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
   
   .game-info-compact {
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.45rem;
   }
   
   .action-button span {
     display: none;
   }
   
-  .action-button {
-    padding: 0.5rem;
-    justify-content: center;
-  }
+  .action-button { padding: 0.4rem; justify-content: center; }
 }
 </style>

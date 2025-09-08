@@ -349,8 +349,7 @@ export default {
       this.gameTitle = `${this.selectedRegion.name} 로드뷰 연습게임`;
     }
 
-    // 게임 위치 데이터 요청
-    this.fetchGameLocationData();
+    // 게임 위치 데이터는 실제 "시작하기" 클릭 시 로드 (endIntro에서 호출)
   },
   beforeUnmount() {
     this.clearAllTimers();
@@ -360,6 +359,10 @@ export default {
     endIntro() {
       this.showIntro = false;
       this.showCountdown = true;
+
+      // 시작 버튼 클릭 시 게임 시작 API 호출
+      // 사전 로드가 필요할 수 있으므로 현재 위치가 없거나 새 게임을 강제 시작
+      this.fetchGameLocationData();
     },
 
     // 게임 상태 초기화
