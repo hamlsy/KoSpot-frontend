@@ -475,34 +475,34 @@ const leaveRoomWithConfirm = () => {
 
 /* Responsive design */
 @media (max-width: 1024px) {
-  .header-actions {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.75rem;
+  .room-header {
+    padding: 0.6rem 0.75rem;
+    border-radius: 14px;
   }
-  
-  .game-info-compact {
-    justify-content: center;
-    gap: 0.75rem;
-  }
-  
-  .header-buttons {
-    justify-content: center;
-  }
+  .header-content { gap: 0.6rem; }
+  .room-info-section { gap: 0.3rem; }
+  .room-title { font-size: 1.05rem; }
+  .game-info-compact { justify-content: center; gap: 0.6rem; }
+  .info-icon { width: 28px; height: 28px; font-size: 0.8rem; }
+  .info-value { font-size: 0.75rem; }
+  .header-actions { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+  .header-buttons { justify-content: center; }
+  .action-button { padding: 0.4rem 0.7rem; font-size: 0.73rem; border-radius: 9px; }
 }
 
 @media (max-width: 768px) {
   .room-header {
-    padding: 0.75rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: 12px;
   }
   
   .room-title {
-    font-size: 1.1rem;
+    font-size: 0.95rem;
   }
   
   .game-info-compact {
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
+    gap: 0.6rem;
   }
   
   .header-buttons {
@@ -510,10 +510,7 @@ const leaveRoomWithConfirm = () => {
     justify-content: stretch;
   }
   
-  .action-button {
-    flex: 1;
-    padding: 0.5rem;
-  }
+  .action-button { flex: 1; padding: 0.4rem; font-size: 0.72rem; }
 }
 
 @media (max-width: 480px) {
@@ -529,21 +526,18 @@ const leaveRoomWithConfirm = () => {
   }
   
   .room-title {
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
   
   .game-info-compact {
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.45rem;
   }
   
   .action-button span {
     display: none;
   }
   
-  .action-button {
-    padding: 0.5rem;
-    justify-content: center;
-  }
+  .action-button { padding: 0.4rem; justify-content: center; }
 }
 </style>

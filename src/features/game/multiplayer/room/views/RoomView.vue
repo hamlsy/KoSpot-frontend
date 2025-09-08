@@ -326,6 +326,9 @@ const checkScreenSize = () => {
   isMobileView.value = window.innerWidth <= 1024;
   if (!isMobileView.value) {
     isChatVisible.value = true; // 데스크톱에서는 항상 채팅 표시
+  } else {
+    // 반응형 전환 시 기본은 플레이어 리스트 화면이 먼저 보이도록 채팅 숨김
+    isChatVisible.value = false;
   }
 };
 

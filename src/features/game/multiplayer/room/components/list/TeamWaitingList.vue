@@ -20,7 +20,7 @@
         <TransitionGroup 
           name="player-list" 
           tag="div"
-          class="player-transition-group"
+          class="player-transition-group players-grid"
         >
           <div 
             v-for="player in getTeamPlayers(team.id)" 
@@ -181,7 +181,7 @@ const handleJoinTeam = async (teamId) => {
 .team-header {
   display: flex;
   align-items: center;
-  padding: 1rem 1rem;
+  padding: 0.75rem 0.8rem;
   border-bottom: 1px solid #f3f4f6;
 }
 
@@ -230,20 +230,27 @@ const handleJoinTeam = async (teamId) => {
 }
 
 .team-players {
-  padding: 0.9rem 1rem 1rem;
+  padding: 0.6rem 0.75rem 0.75rem;
 }
 
 .player-transition-group {
   position: relative;
 }
 
+/* 2열 그리드: 작은 화면에서도 2명씩 배치 */
+.players-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 0.6rem;
+}
+
 .player-wrapper {
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.5rem;
   transition: all 0.3s ease;
 }
 
 .player-wrapper:last-child {
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .player-wrapper.joining-team {
@@ -258,7 +265,7 @@ const handleJoinTeam = async (teamId) => {
   display: flex;
   align-items: center;
   width: 100%;
-  padding: 0.6rem 0.7rem;
+  padding: 0.5rem 0.6rem;
   background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
   border: 1px dashed #d1d5db;
   border-radius: 10px;
@@ -288,8 +295,8 @@ const handleJoinTeam = async (teamId) => {
 }
 
 .join-icon {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: white;
   display: flex;
@@ -345,6 +352,11 @@ const handleJoinTeam = async (teamId) => {
     gap: 1rem;
   }
 
+  .players-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem 0.5rem;
+  }
+
   .team-players-card {
     border-radius: 12px;
   }
@@ -354,11 +366,11 @@ const handleJoinTeam = async (teamId) => {
   }
 
   .team-players {
-    padding: 0.75rem 0.85rem 0.85rem;
+    padding: 0.55rem 0.7rem 0.7rem;
   }
 
   .join-team-button {
-    padding: 0.55rem 0.65rem;
+    padding: 0.45rem 0.55rem;
   }
 }
 </style>
