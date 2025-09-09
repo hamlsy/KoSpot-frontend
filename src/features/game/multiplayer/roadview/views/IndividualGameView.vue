@@ -16,7 +16,7 @@
     ref="baseGame"
   >
     <!-- 개인전용 플레이어 리스트 -->
-    <template #player-list>
+    <template #player-list="{ closePlayerList, isMobile }">
       <player-list
         :players="gameStore.state.players"
         :current-user-id="gameStore.state.currentUser.id"
@@ -25,13 +25,17 @@
         "
         :round-ended="gameStore.state.roundEnded"
         :player-chat-messages="playerChatMessages"
+        :is-mobile="isMobile"
+        @close-player-list="closePlayerList"
       />
     </template>
     <!-- 개인전 채팅창 -->
-    <template #chat>
+    <template #chat="{ closeChat, isChatOpen }">
       <chat-window
         :messages="gameStore.state.chatMessages"
+        :show-mobile-close="isChatOpen"
         @send-message="sendChatMessage"
+        @close="closeChat"
       />
     </template>
 
@@ -174,7 +178,13 @@ export default {
   methods: {
     //overlay 끝났음을 알림 - IntroOverlay 완료 후 라운드 타이머 시작
     handleEndOverlay() {
-      this.simulationTriggered = true;
+      // 더미 모드인지 확인
+      const isDummyMode = this.$route.query.test === 'true' || !this.$refs.baseGame?.isWebSocketConnected;
+      
+      if (isDummyMode) {
+        console.log('더미 모드: 인트로 오버레이 완료 후 시뮬레이션 트리거 설정');
+        this.simulationTriggered = true;
+      }
       
       // 인트로 오버레이가 끝난 후 라운드 타이머 시작
       this.startRoundTimer();
@@ -227,7 +237,9 @@ export default {
       const isDummyMode = this.$route.query.test === 'true' || !this.$refs.baseGame?.isWebSocketConnected;
       if (isDummyMode) {
         console.log('더미 모드: 다른 플레이어 시뮬레이션 트리거');
+        // 시뮬레이션 트리거를 확실히 설정
         this.simulationTriggered = true;
+        console.log('시뮬레이션 트리거 설정됨:', this.simulationTriggered);
       }
       
       console.log(`라운드 ${this.gameStore.state.currentRound} 데이터 준비 완료`);
@@ -286,7 +298,7 @@ export default {
         // 더미 모드에서는 다음 라운드 데이터 시뮬레이션
         console.log("더미 모드: 다음 라운드 시뮬레이션 시작");
         
-      // 베이스 게임 컴포넌트의 handleNextRound 호출
+        // 베이스 게임 컴포넌트의 handleNextRound 호출
         this.$refs.baseGame.handleNextRound();
         
         // 2초 후 다음 라운드 데이터 시뮬레이션
@@ -295,8 +307,8 @@ export default {
         }, 2000);
       } else {
         // 실제 서버 모드
-      this.$refs.baseGame.handleNextRound();
-      // BaseMultiRoadViewGame에서 이미 gameStore.startNextRound()를 호출하므로 여기서는 호출하지 않음
+        this.$refs.baseGame.handleNextRound();
+        // BaseMultiRoadViewGame에서 이미 gameStore.startNextRound()를 호출하므로 여기서는 호출하지 않음
       }
     },
     
@@ -755,6 +767,10 @@ export default {
       
       // 첫 라운드 데이터 가져오기
       this.fetchRoundData();
+      
+      // 더미 모드에서 시뮬레이션 트리거를 확실히 설정
+      console.log('더미 모드: 시뮬레이션 트리거 강제 설정');
+      this.simulationTriggered = true;
     },
 
     // 더미 라운드 종료 시뮬레이션 (모든 플레이어 제출 완료 시 호출)
@@ -871,6 +887,15 @@ export default {
       this.gameStore.state.userGuess = null;
       this.gameStore.state.playerGuesses = [];
       
+      // 시뮬레이션 관련 상태 초기화
+      this.simulationTriggered = false;
+      this.allPlayersSubmitted = false;
+      
+      // 플레이어 제출 상태 초기화
+      this.gameStore.state.players.forEach(player => {
+        player.hasSubmitted = false;
+      });
+      
       // 인트로 오버레이 표시 (기존 인트로 오버레이 사용)
       this.gameStore.state.showIntroOverlay = true;
       
@@ -900,10 +925,10 @@ export default {
 
       // 라운드가 이미 끝났거나 제출이 완료된 경우 중단
       if (
-        this.gameStore.state.hasSubmittedGuess ||
         this.gameStore.state.roundEnded ||
         this.allPlayersSubmitted
       ) {
+        console.log("시뮬레이션 중단: 라운드 종료됨 또는 모든 플레이어 제출 완료");
         return;
       }
 

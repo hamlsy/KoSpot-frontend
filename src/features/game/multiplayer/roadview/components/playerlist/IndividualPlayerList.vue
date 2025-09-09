@@ -1,6 +1,17 @@
 <template>
   <div class="player-list">
-    <h3 class="list-title">
+    <!-- 모바일 전용 헤더 (닫기 버튼 포함) -->
+    <div class="mobile-header" v-if="isMobile">
+      <h3 class="list-title">
+        플레이어 <span class="player-count">{{ players.length }}명</span>
+      </h3>
+      <button class="close-button" @click="$emit('close-player-list')" title="목록 닫기">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <!-- 데스크톱용 타이틀 -->
+    <h3 class="list-title" v-else>
       플레이어 <span class="player-count">{{ players.length }}명</span>
     </h3>
     <div class="players-container">
@@ -42,17 +53,16 @@
                 title="방장"
               ></i>
             </div>
+            <!-- 플레이어 제출 상태 (아이콘만 표시) -->
             <div class="player-status" v-if="!showScores">
               <template v-if="player.hasSubmitted">
-                <div class="check-badge submitted">
+                <div class="check-badge submitted" title="제출완료">
                   <i class="fas fa-check-circle"></i>
-                  <span class="status-text">제출완료</span>
                 </div>
               </template>
               <template v-else>
-                <div class="waiting-badge waiting">
+                <div class="waiting-badge waiting" title="대기중">
                   <i class="fas fa-clock"></i>
-                  <span class="status-text">대기중</span>
                 </div>
               </template>
             </div>
@@ -124,6 +134,11 @@ export default {
       type: Object,
       default: () => ({}),
     },
+    // 모바일 여부 prop 추가
+    isMobile: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   computed: {
@@ -192,12 +207,62 @@ export default {
   max-width: 100%;
 }
 
+/* 플레이어 목록 타이틀 */
 .list-title {
   margin: 0 0 0.8rem 0;
   font-size: 1.1rem;
   color: #333;
   display: flex;
   align-items: center;
+}
+
+/* 모바일 전용 헤더 */
+.mobile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border-bottom: 1px solid #dee2e6;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.mobile-header .list-title {
+  margin: 0;
+  padding: 0;
+  flex: 1;
+}
+
+/* 닫기 버튼 */
+.close-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.close-button:hover {
+  background: #ff4757;
+  color: white;
+  transform: scale(1.1);
+}
+
+.close-button:active {
+  transform: scale(0.95);
+}
+
+.close-button i {
+  font-size: 0.9rem;
 }
 
 .player-count {
@@ -223,17 +288,19 @@ export default {
   display: grid;
   grid-template-columns: auto auto 1fr;
   align-items: center;
-  padding: 0.8rem;
+  padding: 0.6rem 0.8rem;
   border-radius: 10px;
   background: #f9f9f9;
   transition: all 0.3s ease;
   border-left: 3px solid transparent;
-  gap: 0.8rem;
+  gap: 0.6rem;
   width: 100%;
   max-width: 100%;
   overflow-wrap: break-word;
   word-wrap: break-word;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
+  min-height: 60px;
+  max-height: 80px;
 }
 
 .player-card:hover {
@@ -275,14 +342,15 @@ export default {
   margin-left: auto;
 }
 
+/* 플레이어 상태 배지 (아이콘만) */
 .check-badge, .waiting-badge {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.3rem 0.6rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 0.9rem;
   transition: all 0.3s ease;
 }
 
@@ -290,6 +358,7 @@ export default {
   background: linear-gradient(135deg, #4cd964, #5ac467);
   color: white;
   box-shadow: 0 2px 6px rgba(76, 217, 100, 0.3);
+  animation: pulse 1.5s infinite; /* 제출 완료 시 펄스 애니메이션 */
 }
 
 .waiting-badge.waiting {
@@ -298,10 +367,6 @@ export default {
   box-shadow: 0 2px 6px rgba(243, 156, 18, 0.3);
 }
 
-.status-text {
-  font-size: 0.7rem;
-  letter-spacing: 0.02em;
-}
 
 .check-badge i {
   font-size: 0.9rem;
@@ -324,9 +389,10 @@ export default {
 .player-info {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.2rem;
   min-width: 0;
   flex: 1;
+  overflow: hidden;
 }
 
 .player-name-row {
@@ -343,20 +409,22 @@ export default {
   justify-content: space-between;
   width: 100%;
   background: rgba(245, 245, 245, 0.5);
-  padding: 0.3rem 0.5rem;
+  padding: 0.2rem 0.4rem;
   border-radius: 6px;
+  font-size: 0.8rem;
 }
 
 .player-avatar {
   position: relative;
-  min-width: 42px;
-  width: 42px;
-  height: 42px;
+  min-width: 36px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: #eee;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .player-avatar img {
@@ -369,14 +437,16 @@ export default {
 
 .player-name {
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   color: #333;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.3rem;
   word-break: break-word;
   overflow-wrap: break-word;
-  white-space: normal;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .host-badge {
@@ -394,31 +464,8 @@ export default {
   margin-top: 0.2rem;
 }
 
-.check-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: #4cd964;
-  color: white;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  box-shadow: 0 2px 5px rgba(76, 217, 100, 0.3);
-  animation: pulse 1.5s infinite;
-}
 
-.waiting-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: #ff9800;
-  color: white;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  box-shadow: 0 2px 5px rgba(255, 152, 0, 0.3);
-}
-
+/* 제출 완료 배지 펄스 애니메이션 */
 @keyframes pulse {
   0% {
     transform: scale(1);
@@ -571,6 +618,43 @@ export default {
     max-width: 70px;
     font-size: 0.7rem;
     padding: 6px 8px;
+  }
+  
+  .player-card {
+    padding: 0.4rem 0.6rem;
+    gap: 0.4rem;
+    min-height: 50px;
+    max-height: 65px;
+    margin-bottom: 0.3rem;
+  }
+  
+  .player-avatar {
+    min-width: 30px;
+    width: 30px;
+    height: 30px;
+  }
+  
+  .player-name {
+    font-size: 0.8rem;
+  }
+  
+  .player-score-row {
+    padding: 0.15rem 0.3rem;
+    font-size: 0.75rem;
+  }
+  
+  .player-info {
+    gap: 0.15rem;
+  }
+  
+  .list-title {
+    font-size: 1rem;
+    margin-bottom: 0.6rem;
+  }
+  
+  .player-count {
+    font-size: 0.8rem;
+    padding: 0.15rem 0.4rem;
   }
 }
 </style>

@@ -945,8 +945,69 @@ export default {
 
 /* 반응형 디자인 */
 @media (max-width: 768px) {
+  .round-results {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .results-container {
+    width: 100%;
+    max-width: 95vw;
+    height: auto;
+    max-height: 90vh;
+    border-radius: 16px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .results-header {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+    border-bottom: 1px solid #eee;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .results-summary {
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .top-player-info {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+  }
+
+  .map-container {
+    height: 300px;
+    min-height: 300px;
+  }
+
+  .results-footer {
+    position: sticky;
+    bottom: 0;
+    background: white;
+    border-top: 1px solid #eee;
+    z-index: 10;
+    padding: 1rem;
+  }
+
   .location-info {
     flex-direction: column;
+    padding: 1rem;
   }
 
   .location-map {
@@ -975,7 +1036,7 @@ export default {
   .results-container {
     width: 100%;
     height: 100%;
-    max-height: 100%;
+    max-height: 100vh;
     border-radius: 0;
   }
 
@@ -983,7 +1044,7 @@ export default {
   .location-info,
   .score-board,
   .results-footer {
-    padding: 1rem;
+    padding: 0.8rem;
   }
 
   .round-title {
@@ -1003,50 +1064,80 @@ export default {
   .player-avatar {
     margin-right: 0;
   }
+
+  .map-container {
+    height: 250px;
+    min-height: 250px;
+  }
+
+  .auto-progress-container {
+    padding: 0.6rem 0.8rem;
+    gap: 0.5rem;
+    max-width: 250px;
+    border-radius: 10px;
+  }
+
+  .progress-info {
+    font-size: 0.8rem;
+  }
+
+  .countdown-text {
+    font-size: 0.75rem;
+  }
+
+  .progress-bar-container {
+    height: 5px;
+    min-width: 60px;
+  }
 }
 
 /* 자동 진행 타이머 스타일 */
 .auto-progress-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 1rem;
-  padding: 1.5rem;
-  background: linear-gradient(135deg, rgba(46, 204, 113, 0.1), rgba(39, 174, 96, 0.1));
-  border-radius: 15px;
-  border: 2px solid rgba(46, 204, 113, 0.3);
+  gap: 0.75rem;
+  padding: 0.8rem 1rem;
+  background: linear-gradient(135deg, rgba(46, 204, 113, 0.08), rgba(39, 174, 96, 0.08));
+  border-radius: 12px;
+  border: 1px solid rgba(46, 204, 113, 0.2);
+  max-width: 300px;
+  margin: 0 auto;
 }
 
 .progress-info {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 1.1rem;
+  gap: 0.4rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #2ecc71;
+  white-space: nowrap;
 }
 
 .progress-info i {
-  font-size: 1.2rem;
+  font-size: 1rem;
   animation: pulse-clock 1s infinite;
 }
 
 .countdown-text {
   color: #27ae60;
+  font-size: 0.85rem;
 }
 
 .progress-bar-container {
-  width: 100%;
-  height: 8px;
+  flex: 1;
+  height: 6px;
   background-color: rgba(46, 204, 113, 0.2);
-  border-radius: 4px;
+  border-radius: 3px;
   overflow: hidden;
+  min-width: 80px;
 }
 
 .progress-bar {
   height: 100%;
   background: linear-gradient(90deg, #2ecc71, #27ae60);
-  border-radius: 4px;
+  border-radius: 3px;
   transition: width 1s linear;
   position: relative;
 }
@@ -1056,7 +1147,7 @@ export default {
   position: absolute;
   top: 0;
   right: 0;
-  width: 20px;
+  width: 15px;
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3));
   animation: progress-shine 2s infinite;
