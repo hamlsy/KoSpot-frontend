@@ -61,19 +61,6 @@
               </div>
             </div>
 
-            <!-- 순위 변화 -->
-            <div class="rank-change" v-if="player.rankChange">
-              <i 
-                class="fas"
-                :class="{
-                  'fa-arrow-up rank-up': player.rankChange > 0,
-                  'fa-arrow-down rank-down': player.rankChange < 0,
-                  'fa-minus rank-same': player.rankChange === 0
-                }"
-              ></i>
-              <span class="change-value" v-if="player.rankChange !== 0">{{ Math.abs(player.rankChange) }}</span>
-            </div>
-
             <!-- 특별 효과 (1등일 때) -->
             <div v-if="index === 0" class="winner-effect">
               <div class="sparkle sparkle-1"></div>
@@ -112,7 +99,6 @@
         </button>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -176,8 +162,8 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -188,21 +174,22 @@ export default {
 
 .final-results-container {
   width: 100%;
-  max-width: 600px;
-  max-height: 85vh;
-  background: white;
-  border-radius: 24px;
-  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+  max-width: 500px;
+  max-height: 90vh;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   overflow: hidden;
-  animation: modalSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: modalSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   transform-origin: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 @keyframes modalSlideIn {
   0% {
     opacity: 0;
-    transform: scale(0.9) translateY(20px);
+    transform: scale(0.85) translateY(30px);
   }
   100% {
     opacity: 1;
@@ -212,10 +199,10 @@ export default {
 
 /* 헤더 */
 .final-header {
-  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   text-align: center;
-  padding: 2rem;
+  padding: 1.5rem;
   position: relative;
   overflow: hidden;
 }
@@ -226,28 +213,35 @@ export default {
 }
 
 .trophy-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
+  font-size: 2.5rem;
+  margin-bottom: 0.8rem;
   color: #FFD700;
+  animation: trophyGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes trophyGlow {
+  from { filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.5)); }
+  to { filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.8)); }
 }
 
 .final-title {
-  font-size: 2.5rem;
-  font-weight: 800;
-  margin: 0 0 0.5rem 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 0.3rem 0;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .final-subtitle {
-  font-size: 1.2rem;
+  font-size: 1rem;
   margin: 0;
   opacity: 0.9;
+  font-weight: 400;
 }
 
 /* 순위 목록 */
 .rankings-container {
-  padding: 2rem;
-  max-height: 400px;
+  padding: 1.5rem;
+  max-height: 350px;
   overflow-y: auto;
 }
 
@@ -255,104 +249,113 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .rankings-header h3 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   color: #333;
+  font-weight: 600;
 }
 
 .total-players {
-  background: #f0f2f5;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
+  background: linear-gradient(135deg, #f0f2f5, #e9ecef);
+  padding: 0.4rem 0.8rem;
+  border-radius: 15px;
   color: #666;
-  font-weight: 600;
+  font-weight: 500;
+  font-size: 0.9rem;
 }
 
 .rankings-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.8rem;
 }
 
 .ranking-item {
   display: flex;
   align-items: center;
-  padding: 1rem;
-  background: #f9f9f9;
-  border-radius: 15px;
+  padding: 0.8rem;
+  background: #ffffff;
+  border-radius: 12px;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .ranking-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .ranking-item.current-user {
-  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-  border: 2px solid #2196f3;
+  background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+  border: 1px solid #2196f3;
+  box-shadow: 0 4px 15px rgba(33, 150, 243, 0.2);
 }
 
 .ranking-item.rank-1 {
-  background: linear-gradient(135deg, #fff8e1, #ffecb3);
-  border: 2px solid #ffc107;
+  background: linear-gradient(135deg, #fff8e1, #fffbf0);
+  border: 1px solid #ffc107;
+  box-shadow: 0 4px 15px rgba(255, 193, 7, 0.2);
 }
 
 .ranking-item.rank-2 {
-  background: linear-gradient(135deg, #f3e5f5, #e1bee7);
-  border: 2px solid #9c27b0;
+  background: linear-gradient(135deg, #f3e5f5, #faf5ff);
+  border: 1px solid #9c27b0;
+  box-shadow: 0 4px 15px rgba(156, 39, 176, 0.2);
 }
 
 .ranking-item.rank-3 {
-  background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
-  border: 2px solid #4caf50;
+  background: linear-gradient(135deg, #e8f5e8, #f0f8f0);
+  border: 1px solid #4caf50;
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
 }
 
 /* 순위 배지 */
 .rank-badge {
-  width: 50px;
-  height: 50px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
-  font-size: 1.2rem;
-  margin-right: 1rem;
+  font-weight: 700;
+  font-size: 1rem;
+  margin-right: 0.8rem;
   flex-shrink: 0;
 }
 
 .rank-badge.rank-1 {
   background: linear-gradient(135deg, #ffd700, #ffed4e);
   color: #333;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+  box-shadow: 0 3px 10px rgba(255, 215, 0, 0.3);
 }
 
 .rank-badge.rank-2 {
   background: linear-gradient(135deg, #c0c0c0, #e8e8e8);
   color: #333;
-  box-shadow: 0 4px 15px rgba(192, 192, 192, 0.4);
+  box-shadow: 0 3px 10px rgba(192, 192, 192, 0.3);
 }
 
 .rank-badge.rank-3 {
   background: linear-gradient(135deg, #cd7f32, #daa520);
   color: white;
-  box-shadow: 0 4px 15px rgba(205, 127, 50, 0.4);
+  box-shadow: 0 3px 10px rgba(205, 127, 50, 0.3);
 }
 
 .rank-badge:not(.rank-1):not(.rank-2):not(.rank-3) {
   background: linear-gradient(135deg, #666, #888);
   color: white;
+  box-shadow: 0 3px 10px rgba(102, 102, 102, 0.3);
 }
 
 .rank-icon {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
 }
 
 /* 플레이어 정보 */
@@ -360,16 +363,17 @@ export default {
   display: flex;
   align-items: center;
   flex: 1;
-  gap: 1rem;
+  gap: 0.8rem;
 }
 
 .player-avatar {
-  width: 60px;
-  height: 60px;
+  width: 45px;
+  height: 45px;
   border-radius: 50%;
   overflow: hidden;
   background: #eee;
   flex-shrink: 0;
+  border: 2px solid #e9ecef;
 }
 
 .player-avatar img {
@@ -383,49 +387,33 @@ export default {
 }
 
 .player-name {
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 600;
   color: #333;
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.2rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .host-icon {
   color: #ffc107;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .player-stats {
   display: flex;
-  gap: 1rem;
-  font-size: 0.9rem;
+  gap: 0.8rem;
+  font-size: 0.85rem;
   color: #666;
 }
 
 .total-score {
-  font-weight: 700;
+  font-weight: 600;
   color: #2196f3;
 }
 
-/* 순위 변화 */
-.rank-change {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.2rem;
-}
-
-.rank-up {
-  color: #4caf50;
-}
-
-.rank-down {
-  color: #f44336;
-}
-
-.rank-same {
+.average-distance {
   color: #666;
 }
 
@@ -441,8 +429,8 @@ export default {
 
 .sparkle {
   position: absolute;
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   background: #ffd700;
   border-radius: 50%;
   animation: sparkle 2s infinite;
@@ -467,8 +455,8 @@ export default {
 .game-stats {
   display: flex;
   justify-content: space-around;
-  padding: 1.5rem 2rem;
-  background: #f8f9fa;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
   border-top: 1px solid #e9ecef;
 }
 
@@ -477,14 +465,14 @@ export default {
 }
 
 .stat-value {
-  font-size: 1.8rem;
-  font-weight: 800;
+  font-size: 1.5rem;
+  font-weight: 700;
   color: #2196f3;
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.2rem;
 }
 
 .stat-label {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: #666;
   font-weight: 500;
 }
@@ -492,46 +480,46 @@ export default {
 /* 액션 버튼 */
 .final-actions {
   display: flex;
-  gap: 1rem;
-  padding: 2rem;
+  gap: 0.8rem;
+  padding: 1.5rem;
   justify-content: center;
 }
 
 .action-btn {
-  padding: 1rem 2rem;
+  padding: 0.8rem 1.5rem;
   border: none;
-  border-radius: 12px;
-  font-size: 1.1rem;
-  font-weight: 700;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   transition: all 0.3s ease;
-  min-width: 160px;
+  min-width: 140px;
   justify-content: center;
 }
 
 .primary-btn {
   background: linear-gradient(135deg, #2196f3, #1976d2);
   color: white;
-  box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+  box-shadow: 0 3px 12px rgba(33, 150, 243, 0.3);
 }
 
 .primary-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(33, 150, 243, 0.4);
+  box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
 }
 
 .secondary-btn {
   background: linear-gradient(135deg, #757575, #616161);
   color: white;
-  box-shadow: 0 4px 15px rgba(117, 117, 117, 0.3);
+  box-shadow: 0 3px 12px rgba(117, 117, 117, 0.3);
 }
 
 .secondary-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(117, 117, 117, 0.4);
+  box-shadow: 0 6px 20px rgba(117, 117, 117, 0.4);
 }
 
 
@@ -542,45 +530,72 @@ export default {
     max-width: none;
     max-height: 95vh;
     margin: 0;
+    border-radius: 15px;
   }
 
   .final-title {
+    font-size: 1.8rem;
+  }
+
+  .final-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .trophy-icon {
     font-size: 2rem;
   }
 
   .ranking-item {
-    padding: 0.8rem;
+    padding: 0.6rem;
   }
 
   .player-info {
-    gap: 0.8rem;
+    gap: 0.6rem;
+  }
+
+  .player-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .player-name {
+    font-size: 0.9rem;
+  }
+
+  .player-stats {
+    font-size: 0.8rem;
+    gap: 0.6rem;
   }
 
   .final-actions {
     flex-direction: column;
     align-items: center;
-    gap: 0.8rem;
-    padding: 1.5rem;
-    position: sticky;
-    bottom: 0;
-    background: white;
-    border-top: 1px solid #eee;
+    gap: 0.6rem;
+    padding: 1rem;
   }
 
   .action-btn {
     width: 100%;
-    max-width: 280px;
-    padding: 0.8rem 1.5rem;
-    font-size: 1rem;
-  }
-
-  .trophy-icon {
-    font-size: 2.5rem;
+    max-width: 250px;
+    padding: 0.7rem 1.2rem;
+    font-size: 0.9rem;
   }
 
   .rankings-container {
-    max-height: calc(95vh - 300px);
+    max-height: calc(95vh - 250px);
     overflow-y: auto;
+  }
+
+  .game-stats {
+    padding: 0.8rem 1rem;
+  }
+
+  .stat-value {
+    font-size: 1.3rem;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
   }
 }
 </style>

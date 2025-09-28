@@ -451,10 +451,10 @@ export default {
       this.$emit("finish-game");
     },
 
-    // 거리 포맷팅 메서드
+    // 거리 포맷팅 메서드 (소수점 3자리에서 반올림)
     formatDistance(distance) {
       if (!distance && distance !== 0) return "0";
-      return Math.round(distance * 100) / 100;
+      return Math.round(distance * 1000) / 1000;
     },
   },
 };

@@ -83,10 +83,10 @@
               <!-- 현재 점수와 추가 점수 -->
               <div class="score-wrapper">
                 <div class="score-value">
-                  {{ formatRoundScore(getPlayerRank(player)) }}
+                  {{ player.score || 0 }}점
                 </div>
                 <div class="round-score" v-if="player.lastRoundScore">
-                  <span class="plus-sign">+</span>{{ player.lastRoundScore }}
+                  <span class="plus-sign">+</span>{{ player.lastRoundScore }}점
                 </div>
               </div>
             </template>
@@ -190,7 +190,8 @@ export default {
 
     formatDistance(distance) {
       // 소수점 3자리에서 반올림
-      return Math.round(distance * 100) / 100;
+      if (!distance && distance !== 0) return "0";
+      return Math.round(distance * 1000) / 1000;
     },
   },
 };

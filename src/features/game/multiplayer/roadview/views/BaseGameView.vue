@@ -90,7 +90,10 @@
           <slot name="main">
             <road-view
               v-if="
-                !gameStore.state.roundEnded && gameStore.state.currentLocation
+                !gameStore.state.roundEnded && 
+                gameStore.state.currentLocation &&
+                !showIntroOverlay &&
+                !showNextRoundOverlay
               "
               :position="
                 gameStore.state.currentLocation || {
@@ -103,7 +106,7 @@
               @load-complete="onViewLoaded"
             />
             <div
-              v-else-if="!gameStore.state.roundEnded"
+              v-else-if="!gameStore.state.roundEnded && !showIntroOverlay && !showNextRoundOverlay"
               class="loading-container"
             >
               <p>로드뷰를 불러오는 중입니다...</p>
@@ -257,7 +260,9 @@ export default {
       totalPlayers: 1,
       // 게임 진행 상태 
       isGameStarted: false,
-      serverStartTime: 0
+      serverStartTime: 0,
+      // 라운드 타이머
+      roundTimer: null
     };
   },
 
@@ -310,6 +315,8 @@ export default {
     }
     window.removeEventListener("resize", this.checkResponsive);
     this.disconnectWebSocket();
+    // 라운드 타이머 정리
+    this.clearRoundTimer();
   },
   methods: {
     // 인트로 완료 처리
@@ -355,8 +362,7 @@ export default {
       // 게임 스토어의 다음 라운드 시작 메서드 호출
       this.gameStore.startNextRound();
       
-      // 다음 라운드 데이터 가져오기 준비
-      this.fetchRoundData();
+      // 라운드 데이터 처리는 각 게임 뷰에서 담당
     },
 
     // 다음 라운드 시작
@@ -366,18 +372,36 @@ export default {
       this.$nextTick(() => {
         setTimeout(() => {
           this.showNextRoundOverlay = true;
-          this.fetchRoundData();
+          // 라운드 데이터 처리는 각 게임 뷰에서 담당
         }, 500);
       });
     },
 
-    // 라운드 데이터 가져오기
-    fetchRoundData() {
-      // 라운드 종료 상태 초기화
-      this.gameStore.state.roundEnded = false;
-      this.gameStore.state.hasSubmittedGuess = false;
-      this.gameStore.state.userGuess = null;
-      this.gameStore.state.playerGuesses = [];
+    // 라운드 타이머 시작
+    startRoundTimer() {
+      console.log('라운드 타이머 시작');
+      
+      // 기존 타이머가 있다면 정리
+      this.clearRoundTimer();
+      
+      // 타이머 시작
+      this.roundTimer = setInterval(() => {
+        if (this.gameStore.state.remainingTime > 0) {
+          this.gameStore.state.remainingTime--;
+        } else {
+          this.clearRoundTimer();
+          // 시간 초과 시 라운드 종료
+          this.$emit('round-timeout');
+        }
+      }, 1000);
+    },
+
+    // 라운드 타이머 정리
+    clearRoundTimer() {
+      if (this.roundTimer) {
+        clearInterval(this.roundTimer);
+        this.roundTimer = null;
+      }
     },
 
     // 사용자의 현재 등수 가져오기
@@ -699,6 +723,11 @@ export default {
       this.gameStore.state.roundEnded = false;
       this.gameStore.state.hasSubmittedGuess = false;
       this.gameStore.state.playerGuesses = [];
+      
+      // 라운드 타이머 시작 (오버레이가 표시되지 않은 경우에만)
+      if (!this.showIntroOverlay && !this.showNextRoundOverlay) {
+        this.startRoundTimer();
+      }
       
       // 부모 컴포넌트에 라운드 데이터 이벤트 전달
       this.$emit('round-data-received', message);
@@ -1310,15 +1339,15 @@ export default {
 
   /* 채팅 패널을 position: absolute로 플렉스에서 제거 */
   .right-panel {
-    position: absolute;
+    position: fixed;
     top: 0;
     right: -100%; /* 화면 밖으로 숨김 */
     width: 100%;
     max-width: 400px;
-    height: 60%; /* 전체 높이의 60%만 사용 */
+    height: 100vh; /* 전체 화면 높이 사용 */
     background: white;
     box-shadow: -2px 0 20px rgba(0, 0, 0, 0.3);
-    z-index: 100; /* 충분히 높은 z-index */
+    z-index: 1000; /* 더 높은 z-index로 다른 요소들 위에 표시 */
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow-y: auto;
     border-radius: 0 0 0 12px; /* 왼쪽 하단 모서리만 둥글게 */
@@ -1420,8 +1449,9 @@ export default {
   /* 모바일에서 채팅 패널 최적화 */
   .right-panel {
     max-width: 100%; /* 모바일에서는 전체 너비 */
-    height: 50%; /* 모바일에서는 50% 높이 */
+    height: 100vh; /* 모바일에서도 전체 화면 높이 사용 */
     right: -100%;
+    z-index: 1000; /* 모바일에서도 높은 z-index 유지 */
   }
   
   .game-view {
@@ -1479,7 +1509,8 @@ export default {
 
   /* 더 작은 화면에서 채팅 패널 높이 조정 */
   .right-panel {
-    height: 45%; /* 더 작은 화면에서는 45% 높이 */
+    height: 100vh; /* 더 작은 화면에서도 전체 화면 높이 사용 */
+    z-index: 1000; /* 높은 z-index 유지 */
   }
 }
 
