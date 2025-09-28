@@ -4,7 +4,7 @@ import kakaoMapTest from '@/dummy/KakaoMapTest.vue'
 import EncryptTest from 'src/dummy/EncryptTest.vue'
 import ComponentTest from 'src/dummy/ComponentTest.vue'
 import TempLoginView from '@/features/auth/views/TempLoginView.vue'
-import IndividualGameView from '@/features/game/multiplayer/roadview/views/IndividualGameView.vue'
+import SoloGameView from '@/features/game/multiplayer/roadview/views/SoloGameView.vue'
 
 const devRoutes = [
     {
@@ -38,9 +38,9 @@ const devRoutes = [
         component: TempLoginView
     },
     {
-        path: '/test/roadview-individual',
-        name: "TestRoadviewIndividual",
-        component: IndividualGameView,
+        path: '/test/roadview-solo',
+        name: "TestRoadviewSolo",
+        component: SoloGameView,
         meta: {
             title: '로드뷰 개인전 테스트'
         }

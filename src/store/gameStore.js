@@ -1,5 +1,5 @@
 import { reactive } from 'vue';
-import { testData, individualTestData } from '@/store/MultiplayerGameTestData'
+import { testData, soloTestData } from '@/store/MultiplayerGameTestData'
 
 // 게임 상태 관리 스토어 생성
 const gameStore = {
@@ -45,7 +45,7 @@ const gameStore = {
   // 테스트용 데이터 로드
   loadTestData(isTeamMode = true) {
     console.log("테스트 데이터를 로드합니다")
-    const data = isTeamMode ? testData : individualTestData;
+    const data = isTeamMode ? testData : soloTestData;
     this.state.roomData = data.roomData;
     this.state.currentUser = data.currentUser;
     this.state.players = data.players;

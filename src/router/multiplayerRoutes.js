@@ -1,7 +1,7 @@
 import LobbyView from 'src/features/game/multiplayer/lobby/views/LobbyView.vue'
 
 //roadview
-import IndividualRoadViewGameView from 'src/features/game/multiplayer/roadview/views/IndividualGameView.vue'
+import SoloRoadViewGameView from '@/features/game/multiplayer/roadview/views/SoloGameView.vue'
 import TeamRoadViewGameView from 'src/features/game/multiplayer/roadview/views/TeamGameView.vue'
 
 //photo
@@ -23,9 +23,9 @@ const multiplayerRoutes = [
         props: true
     },
     {
-        path: '/game/roadview/:roomId/individual',
-        name: "IndividualRoadViewGameView",
-        component: IndividualRoadViewGameView,
+        path: '/game/roadview/:roomId/solo',
+        name: "SoloRoadViewGameView",
+        component: SoloRoadViewGameView,
         props: true
     },
     {
@@ -35,10 +35,10 @@ const multiplayerRoutes = [
         props: true
     },
     {
-        path: '/testPhotoIndividual',
-        name: "TestPhotoIndividual",
+        path: '/testPhotoSolo',
+        name: "TestPhotoSolo",
         component: PhotoGameView,
-        props: { roomId: 'test-individual', isTeamMode: false }
+        props: { roomId: 'test-solo', isTeamMode: false }
     },
     {
         path: '/testPhotoTeam',
@@ -53,16 +53,16 @@ const multiplayerRoutes = [
         props: { roomId: 'team-test-123', isTeamMode: true }
     },
     {
-        path: '/testIndividualGame',
-        name: "TestIndividualGame",
-        component: IndividualRoadViewGameView,
-        props: { roomId: 'individual-test-123', isTeamMode: false }
+        path: '/testSoloGame',
+        name: "TestSoloGame",
+        component: SoloRoadViewGameView,
+        props: { roomId: 'solo-test-123', isTeamMode: false }
     },
     {
-        path: '/testPhotoIndividual',
-        name: "TestPhotoIndividual",
+        path: '/testPhotoSolo',
+        name: "TestPhotoSolo",
         component: PhotoGameView,
-        props: { roomId: 'photo-individual-test', isTeamMode: false }
+        props: { roomId: 'photo-solo-test', isTeamMode: false }
     },
     {
         path: '/testPhotoTeam',

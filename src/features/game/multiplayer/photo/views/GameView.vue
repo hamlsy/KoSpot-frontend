@@ -91,7 +91,7 @@
       @finish-game="finishGame"
     />
 
-    <individual-game-results
+    <solo-game-results
       v-if="gameStore.state.showGameResults && !isTeamMode"
       :visible="gameStore.state.showGameResults"
       :players="gameStore.state.players"
@@ -123,7 +123,7 @@ import RegionMap from 'src/features/game/shared/components/Region/RegionMap.vue'
 
 //results
 import RoundResults from 'src/features/game/multiplayer/roadview/components/results/RoundResults.vue'
-import IndividualGameResults from 'src/features/game/multiplayer/shared/components/results/IndividualGameResults.vue'
+import SoloGameResults from '@/features/game/multiplayer/shared/components/results/SoloGameResults.vue'
 import TeamGameResults from 'src/features/game/multiplayer/shared/components/results/TeamGameResults.vue'
 
 //header
@@ -144,7 +144,7 @@ export default {
     PhotoGrid,
     RegionMap,
     RoundResults,
-    IndividualGameResults,
+    SoloGameResults,
     TeamGameResults,
     PlayerMarkers,
     MultiplayerGameHeader,

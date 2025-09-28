@@ -340,8 +340,8 @@ export function useKakaoMapTeamVote(props, emit) {
         }
         
         // 멀티 게임 모드(team)인 경우에만 팀 투표용 WebSocket 연결 설정
-        // 개인전(individual)에서는 팀 투표 기능을 사용하지 않습니다.
-        if (props.gameMode === 'individual') {
+        // 개인전(solo)에서는 팀 투표 기능을 사용하지 않습니다.
+        if (props.gameMode === 'solo') {
             console.log('개인전 모드: 팀 투표 기능 비활성화');
             return;
         }

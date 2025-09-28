@@ -1,5 +1,5 @@
 <template>
-  <div class="individual-players-container">
+  <div class="solo-players-container">
     <div class="players-grid">
       <div 
         v-for="player in players"
@@ -95,7 +95,7 @@ const emptySlots = computed(() => {
 </script>
 
 <style scoped>
-.individual-players-container {
+.solo-players-container {
   height: 100%;
   display: flex;
   flex-direction: column;

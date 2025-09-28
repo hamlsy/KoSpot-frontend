@@ -88,10 +88,10 @@ import FinalResults from 'src/features/game/multiplayer/roadview/components/resu
 
 
 import gameStore from 'src/store/gameStore.js'
-import PlayerList from 'src/features/game/multiplayer/roadview/components/playerlist/IndividualPlayerList.vue'
+import PlayerList from 'src/features/game/multiplayer/roadview/components/playerlist/SoloPlayerList.vue'
 
 export default {
-  name: "IndividualRoadViewGame",
+  name: "SoloRoadViewGame",
 
   components: {
     BaseMultiRoadViewGame,
@@ -105,8 +105,8 @@ export default {
     return {
       gameStore, // 게임 스토어 참조
       // 게임 설정 데이터
-      gameMode: "individual",
-      roomId: "individual-room-1", // 테스트용 방 ID
+      gameMode: "solo",
+      roomId: "solo-room-1", // 테스트용 방 ID
 
       // 개인 게임 특화 데이터
       allPlayersSubmitted: false,

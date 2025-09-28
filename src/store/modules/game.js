@@ -1,5 +1,5 @@
 import { reactive } from 'vue';
-import { testData, individualTestData } from '../MultiplayerGameTestData';
+import { testData, soloTestData } from '../MultiplayerGameTestData';
 
 // 게임 상태 관리 스토어 모듈
 export default {
@@ -51,7 +51,7 @@ export default {
     // 테스트 데이터 설정
     SET_TEST_DATA(state, { isTeamMode }) {
       console.log("테스트 데이터를 로드합니다");
-      const data = isTeamMode ? testData : individualTestData;
+      const data = isTeamMode ? testData : soloTestData;
       state.roomData = data.roomData;
       state.currentUser = data.currentUser;
       state.players = data.players;

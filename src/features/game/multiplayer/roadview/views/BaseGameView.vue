@@ -135,7 +135,7 @@
       :showDistance="false"
       :showMarker="true"
       :isTeamMode="false"
-      :gameMode="'individual'"
+      :gameMode="'solo'"
       @spot-answer="handlePhoneMapGuess"
     />
 
@@ -178,8 +178,8 @@ export default {
     // 게임 모드에 따라 필요한 추가 props
     gameMode: {
       type: String,
-      default: "individual",
-      validator: (value) => ["individual", "team"].includes(value),
+      default: "solo",
+      validator: (value) => ["solo", "team"].includes(value),
     },
     currentUserRank: {
       type: Number,

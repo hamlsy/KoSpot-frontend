@@ -171,7 +171,7 @@ class RoomApiService {
       id: backendRoomDetail.id,
       title: backendRoomDetail.title || '제목 없음',
       gameMode: backendRoomDetail.gameMode || 'roadview',
-      gameType: backendRoomDetail.gameType || 'individual',
+      gameType: backendRoomDetail.gameType || 'solo',
       isTeamMode: backendRoomDetail.gameType === 'team',
       maxPlayers: backendRoomDetail.maxPlayers || 8,
       isPrivate: backendRoomDetail.privateRoom || false,

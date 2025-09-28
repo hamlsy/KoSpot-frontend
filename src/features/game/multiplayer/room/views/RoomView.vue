@@ -66,7 +66,7 @@
           />
 
           <!-- 개인 모드인 경우 플레이어 목록 표시 -->
-          <IndividualWaitingList
+          <SoloWaitingList
             v-else
             :players="localPlayers"
             :current-user-id="currentUserId"
@@ -184,7 +184,7 @@ import { ref, onMounted, onBeforeUnmount } from 'vue';
 import RoomHeader from 'src/features/game/multiplayer/room/components/header/RoomHeader.vue'
 //waiting list
 import TeamWaitingList from 'src/features/game/multiplayer/room/components/list/TeamWaitingList.vue'
-import IndividualWaitingList from 'src/features/game/multiplayer/room/components/list/IndividualWaitingList.vue'
+import SoloWaitingList from '@/features/game/multiplayer/room/components/list/SoloWaitingList.vue'
 
 //modal
 import KickConfirmationModal from 'src/features/game/multiplayer/room/components/player/KickConfirmationModal.vue'

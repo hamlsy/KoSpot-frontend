@@ -13,7 +13,7 @@ const gameState = ref({
     currentRound: 0,
     totalRounds: 0,
     timeRemaining: 0,
-    gameMode: null, // 'team' 또는 'individual'
+    gameMode: null, // 'team' 또는 'solo'
     gameId: null
 });
 

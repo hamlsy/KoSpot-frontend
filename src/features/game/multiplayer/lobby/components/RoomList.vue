@@ -51,7 +51,7 @@
               <span 
                 class="type-badge"
                 :class="{ 
-                  'individual': room.gameType === '개인전',
+                  'solo': room.gameType === '개인전',
                   'team': room.gameType === '팀전'
                 }"
               >
@@ -487,7 +487,7 @@ export default {
   color: #d97706;
 }
 
-.individual {
+.solo {
   background: linear-gradient(135deg, #f3e8ff, #e9d5ff);
   color: #8b5cf6;
 }
