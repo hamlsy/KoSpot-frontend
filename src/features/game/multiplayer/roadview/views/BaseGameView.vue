@@ -31,6 +31,17 @@
       </div>
 
       <div class="header-right col-md-4">
+        <!-- 플레이어 리스트 토글 버튼 (항상 표시) -->
+        <button 
+          class="player-list-toggle-btn"
+          @click="togglePlayerList"
+          :class="{ 'active': isPlayerListOpen }"
+          :title="isPlayerListOpen ? '플레이어 목록 닫기' : '플레이어 목록 열기'"
+        >
+          <i class="fas fa-users"></i>
+          <span class="toggle-text">{{ isPlayerListOpen ? '목록 닫기' : '플레이어' }}</span>
+        </button>
+        
         <game-timer
           :initialTime="gameStore.state.remainingTime"
           :totalTime="120"
@@ -43,9 +54,12 @@
 
     <!-- 게임 메인 영역 -->
     <div class="game-content">
-      <!-- 왼쪽 패널: 플레이어 목록 (슬롯으로 변경) -->
-      <div class="left-panel">
-        <slot name="player-list"> </slot>
+      <!-- 왼쪽 패널: 플레이어 목록 (토글 가능) -->
+      <div class="left-panel" :class="{ 
+        'hidden': !isPlayerListOpen,
+        'mobile-open': isMobile && isPlayerListOpen 
+      }">
+        <slot name="player-list" :close-player-list="closePlayerList" :is-mobile="isMobile"> </slot>
       </div>
 
       <!-- 중앙 패널: 게임 화면 -->
@@ -115,8 +129,8 @@
       </div>
 
       <!-- 오른쪽 패널: 채팅 -->
-      <div class="right-panel">
-        <slot name="chat"></slot>
+      <div class="right-panel" :class="{ 'chat-open': isChatOpen }">
+        <slot name="chat" :close-chat="closeChat" :is-chat-open="isChatOpen"></slot>
       </div>
 
       <!-- 결과 모달 -->
@@ -222,6 +236,9 @@ export default {
       isChatOpen: false,
       isResponsiveMode: false,
       showToastFlag: false,
+      // UI 상태 관리
+      isPlayerListOpen: true, // 플레이어 리스트 표시 여부 (기본값: 열림)
+      isMobile: false, // 모바일 화면 여부 (768px 이하)
       // Next Round Voting State
       playersReadyForNextRound: new Set(),
       nextRoundVoteTimerId: null,
@@ -385,12 +402,15 @@ export default {
       // 인덱스 + 1이 등수
       return currentUserIndex !== -1 ? currentUserIndex + 1 : 1;
     },
+    // 반응형 상태 확인 및 설정
     checkResponsive() {
       const isMobile = window.innerWidth <= 992;
+      this.isMobile = window.innerWidth <= 768;
+      this.isResponsiveMode = isMobile;
+      
+      // 채팅 패널 표시/숨김 처리
       const rightPanel = document.querySelector(".right-panel");
-
       if (rightPanel) {
-        // 모바일이 아닐 때는 채팅창 항상 표시
         if (!isMobile) {
           rightPanel.style.display = "block";
         } else if (!this.isChatOpen) {
@@ -399,27 +419,37 @@ export default {
       }
     },
 
-    toggleChat() {
-      this.isChatOpen = !this.isChatOpen;
-      const rightPanel = document.querySelector(".right-panel");
-      if (rightPanel) {
-        rightPanel.style.display = this.isChatOpen ? "block" : "none";
-      }
+    // 플레이어 리스트 토글
+    togglePlayerList() {
+      this.isPlayerListOpen = !this.isPlayerListOpen;
     },
 
+    // 플레이어 리스트 닫기 (모바일 전용)
+    closePlayerList() {
+      this.isPlayerListOpen = false;
+    },
+
+    // 채팅 패널 토글 (모바일에서만 사용)
+    toggleChat() {
+      this.isChatOpen = !this.isChatOpen;
+    },
+
+    // 채팅 패널 닫기
+    closeChat() {
+      this.isChatOpen = false;
+    },
+
+    // 로드뷰 로딩 완료 처리
     onViewLoaded() {
-      // 로드뷰 로딩 완료 처리
       console.log("로드뷰 로딩 완료");
     },
 
+    // 추측 위치 설정
     onGuessPlaced(position) {
       this.guessPosition = position;
     },
 
-    toggleMapExpansion() {
-      this.isMapExpanded = !this.isMapExpanded;
-    },
-
+    // 좌표를 문자열로 포맷팅 (소수점 4자리까지)
     formatCoords(position) {
       if (!position) return "";
 
@@ -1023,6 +1053,8 @@ export default {
   color: white;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   z-index: 10;
+  min-height: 80px; /* 최소 높이 고정 */
+  flex-shrink: 0; /* 축소 방지 */
 }
 
 .header-left {
@@ -1110,6 +1142,7 @@ export default {
   overflow: hidden;
 }
 
+/* 왼쪽 패널: 플레이어 목록 */
 .left-panel {
   width: 250px;
   background-color: white;
@@ -1119,6 +1152,37 @@ export default {
   max-height: calc(100vh - 140px);
   display: flex;
   flex-direction: column;
+  /* 개별 속성별 애니메이션 설정 */
+  transition: 
+    width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.2s ease-out,
+    overflow 0.1s ease-out;
+}
+
+/* 데스크톱에서 숨김 상태 */
+.left-panel.hidden {
+  width: 0;
+  overflow: hidden;
+  box-shadow: none;
+  /* 숨김 시 더 빠른 애니메이션 */
+  transition: 
+    width 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.1s ease-in,
+    overflow 0.05s ease-in;
+}
+
+/* 모바일에서만 플레이어 리스트가 닫힐 때 적용 */
+@media (max-width: 768px) {
+  .left-panel:not(.mobile-open) {
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
+    /* 닫힐 때 더 빠른 애니메이션 */
+    transition: 
+      transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 0.15s ease-in,
+      box-shadow 0.1s ease-in;
+  }
 }
 
 .main-panel {
@@ -1236,32 +1300,52 @@ export default {
   }
 }
 
+/* 태블릿 사이즈 (992px 이하) */
 @media (max-width: 992px) {
   .game-content {
-    flex-direction: column;
+    flex-direction: row; /* 다시 row로 변경 */
+    height: calc(100vh - 80px);
+    position: relative;
   }
 
-  .left-panel {
-    display: none; /* 모바일에서는 기존 플레이어 리스트 숨김 */
-  }
-
+  /* 채팅 패널을 position: absolute로 플렉스에서 제거 */
   .right-panel {
+    position: absolute;
+    top: 0;
+    right: -100%; /* 화면 밖으로 숨김 */
     width: 100%;
-    height: auto;
-    max-height: 200px;
+    max-width: 400px;
+    height: 60%; /* 전체 높이의 60%만 사용 */
+    background: white;
+    box-shadow: -2px 0 20px rgba(0, 0, 0, 0.3);
+    z-index: 100; /* 충분히 높은 z-index */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow-y: auto;
-    display: none; /* 모바일에서는 기본적으로 채팅 패널 숨김 */
+    border-radius: 0 0 0 12px; /* 왼쪽 하단 모서리만 둥글게 */
+  }
+
+  .right-panel.chat-open {
+    right: 0; /* 화면으로 슬라이드 인 */
+  }
+
+  /* 채팅창 내부 스타일 조정 */
+  .right-panel .chat-window {
+    height: 100%;
+    border-radius: 0; /* 채팅창 내부 둥근 모서리 제거 */
   }
 
   .main-panel {
-    order: -1;
-    height: calc(100vh - 300px); /* 400px에서 300px로 변경하여 공간 확장 */
-    min-height: 350px; /* 300px에서 350px로 증가 */
+    width: 100%; /* 전체 너비 사용 */
+    height: 100%;
+    display: flex;
+    flex-direction: column;
   }
 
   .game-view {
+    flex: 1;
     height: 100%;
     position: relative;
+    min-height: 300px; /* 최소 높이 축소 */
   }
 
   .map-container.expanded {
@@ -1275,32 +1359,127 @@ export default {
   }
 
   .chat-toggle {
-    display: flex;
+    display: flex; /* 태블릿에서도 표시 */
   }
 }
 
 @media (max-width: 768px) {
   .game-header {
     flex-direction: row;
-    padding: 0.5rem;
-    flex-wrap: wrap;
+    padding: 0.5rem 0.8rem;
+    flex-wrap: nowrap; /* wrap 제거하여 요소들이 한 줄에 유지 */
     justify-content: space-between;
     align-items: center;
+    min-height: 70px; /* 모바일에서 약간 작은 높이 */
+    overflow: hidden; /* 넘치는 요소 숨김 */
   }
 
   .header-left {
-    flex: 1;
-    min-width: 150px;
+    flex: 0 0 auto; /* 고정 크기 */
+    min-width: 120px;
+    max-width: 40%;
   }
 
   .header-center {
     flex: 1;
-    margin: 0 0.5rem;
-    max-width: 100%;
+    margin: 0 0.3rem;
+    max-width: 30%;
+    text-align: center;
   }
 
   .header-right {
-    align-self: center;
+    flex: 0 0 auto; /* 고정 크기 */
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  /* 헤더 내부 요소들 크기 조정 */
+  .room-name {
+    font-size: 0.9rem;
+  }
+
+  .game-mode {
+    font-size: 0.75rem;
+  }
+
+  .round-number {
+    font-size: 0.8rem;
+  }
+
+  .player-list-toggle-btn {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+    min-width: 70px;
+  }
+
+  .toggle-text {
+    font-size: 0.7rem;
+  }
+
+  /* 모바일에서 채팅 패널 최적화 */
+  .right-panel {
+    max-width: 100%; /* 모바일에서는 전체 너비 */
+    height: 50%; /* 모바일에서는 50% 높이 */
+    right: -100%;
+  }
+  
+  .game-view {
+    min-height: 250px; /* 모바일에서 더 작은 최소 높이 */
+  }
+
+  /* 모바일에서 채팅 토글 버튼 표시 */
+  .chat-toggle {
+    display: flex;
+  }
+}
+
+/* 더 작은 화면에서 헤더 최적화 */
+@media (max-width: 480px) {
+  .game-header {
+    padding: 0.4rem 0.6rem;
+    min-height: 65px;
+  }
+
+  .header-left {
+    min-width: 100px;
+    max-width: 35%;
+  }
+
+  .header-center {
+    max-width: 25%;
+    margin: 0 0.2rem;
+  }
+
+  .header-right {
+    gap: 0.2rem;
+  }
+
+  .room-name {
+    font-size: 0.8rem;
+  }
+
+  .game-mode {
+    font-size: 0.7rem;
+  }
+
+  .round-number {
+    font-size: 0.75rem;
+  }
+
+  .player-list-toggle-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+    min-width: 60px;
+  }
+
+  .toggle-text {
+    font-size: 0.65rem;
+  }
+
+  /* 더 작은 화면에서 채팅 패널 높이 조정 */
+  .right-panel {
+    height: 45%; /* 더 작은 화면에서는 45% 높이 */
   }
 }
 
@@ -1454,6 +1633,113 @@ export default {
     font-size: 0.9rem;
     bottom: 20px;
     left: 20px;
+  }
+}
+
+/* 플레이어 리스트 토글 버튼 (항상 표시) */
+.player-list-toggle-btn {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex; /* 항상 표시 */
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+  margin-right: 1rem;
+  min-width: 100px;
+  justify-content: center;
+}
+
+.player-list-toggle-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+  background: linear-gradient(135deg, #45a049, #388e3c);
+}
+
+.player-list-toggle-btn.active {
+  background: linear-gradient(135deg, #FF6B6B, #E55A5A);
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+}
+
+.player-list-toggle-btn.active:hover {
+  background: linear-gradient(135deg, #E55A5A, #D32F2F);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+}
+
+.toggle-text {
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+/* 모바일 사이즈 (768px 이하) - 플레이어 리스트 오버레이 스타일 */
+@media (max-width: 768px) {
+  /* 게임 헤더 높이 계산용 변수 */
+  .game-header {
+    height: 80px; /* 헤더 고정 높이 설정 */
+  }
+  
+  /* 모바일에서 플레이어 리스트가 열린 상태일 때 오버레이로 표시 */
+  .left-panel.mobile-open {
+    position: fixed;
+    top: 80px; /* 헤더 높이만큼 아래에서 시작 */
+    left: 0;
+    width: 100%;
+    max-width: 320px;
+    height: calc(100vh - 80px); /* 헤더 높이를 제외한 나머지 영역 */
+    z-index: 500; /* 헤더보다 낮게 설정 */
+    background: white;
+    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.3);
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+    overflow-y: auto;
+    padding: 0; /* 상단 패딩 제거 */
+    /* 개별 속성별 애니메이션으로 부드러운 전환 */
+    transition: 
+      transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 0.25s ease-out,
+      box-shadow 0.2s ease-out;
+    border-top: 1px solid #dee2e6;
+  }
+  
+  /* 게임 화면 최적화 */
+  .game-view {
+    min-height: 300px; /* 모바일에서 최소 높이 축소 */
+  }
+  
+  /* 토글 버튼 모바일 최적화 */
+  .player-list-toggle-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    margin-right: 0.5rem;
+    min-width: 80px;
+  }
+  
+  .toggle-text {
+    font-size: 0.75rem;
+  }
+}
+
+/* 더 작은 화면에서 추가 최적화 */
+@media (max-width: 480px) {
+  .left-panel.mobile-open {
+    width: 100vw; /* 전체 화면 너비 사용 */
+    max-width: none;
+  }
+  
+  .mobile-header {
+    padding: 0.8rem;
+  }
+  
+  .close-button {
+    width: 28px;
+    height: 28px;
   }
 }
 

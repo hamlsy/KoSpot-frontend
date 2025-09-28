@@ -113,10 +113,6 @@
       </div>
     </div>
 
-    <!-- 배경 효과 -->
-    <div class="background-particles">
-      <div v-for="i in 50" :key="i" class="particle" :style="getParticleStyle(i)"></div>
-    </div>
   </div>
 </template>
 
@@ -169,13 +165,6 @@ export default {
       return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
     },
 
-    getParticleStyle(index) {
-      return {
-        left: `${Math.random() * 100}%`,
-        animationDelay: `${Math.random() * 3}s`,
-        animationDuration: `${3 + Math.random() * 2}s`
-      };
-    }
   }
 };
 </script>
@@ -187,30 +176,33 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  z-index: 10000;
   overflow-y: auto;
+  padding: 1rem;
 }
 
 .final-results-container {
-  width: 90%;
-  max-width: 800px;
-  max-height: 90vh;
+  width: 100%;
+  max-width: 600px;
+  max-height: 85vh;
   background: white;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border-radius: 24px;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
   overflow: hidden;
-  animation: finalResultsAppear 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: modalSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
+  transform-origin: center;
 }
 
-@keyframes finalResultsAppear {
+@keyframes modalSlideIn {
   0% {
     opacity: 0;
-    transform: scale(0.8) translateY(50px);
+    transform: scale(0.9) translateY(20px);
   }
   100% {
     opacity: 1;
@@ -234,14 +226,9 @@ export default {
 }
 
 .trophy-icon {
-  font-size: 4rem;
+  font-size: 3rem;
   margin-bottom: 1rem;
-  animation: trophy-bounce 2s ease-in-out infinite;
-}
-
-@keyframes trophy-bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  color: #FFD700;
 }
 
 .final-title {
@@ -547,48 +534,14 @@ export default {
   box-shadow: 0 8px 25px rgba(117, 117, 117, 0.4);
 }
 
-/* 배경 파티클 */
-.background-particles {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.particle {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 50%;
-  animation: float infinite linear;
-}
-
-@keyframes float {
-  0% {
-    opacity: 0;
-    transform: translateY(100vh) rotate(0deg);
-  }
-  10% {
-    opacity: 1;
-  }
-  90% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-100px) rotate(360deg);
-  }
-}
 
 /* 반응형 */
 @media (max-width: 768px) {
   .final-results-container {
     width: 95%;
-    margin: 2rem auto;
+    max-width: none;
+    max-height: 95vh;
+    margin: 0;
   }
 
   .final-title {
@@ -606,11 +559,28 @@ export default {
   .final-actions {
     flex-direction: column;
     align-items: center;
+    gap: 0.8rem;
+    padding: 1.5rem;
+    position: sticky;
+    bottom: 0;
+    background: white;
+    border-top: 1px solid #eee;
   }
 
   .action-btn {
     width: 100%;
-    max-width: 300px;
+    max-width: 280px;
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+  }
+
+  .trophy-icon {
+    font-size: 2.5rem;
+  }
+
+  .rankings-container {
+    max-height: calc(95vh - 300px);
+    overflow-y: auto;
   }
 }
 </style>

@@ -116,6 +116,14 @@ const gameStore = {
     this.state.guessPosition = null;
     this.state.actualLocation = null;
     this.state.isLoading = true;
+    
+    // 플레이어 추측 배열 초기화 (중요: 다음 라운드에서 더미 플레이어 제출을 위해)
+    this.state.playerGuesses = [];
+    
+    // 플레이어 제출 상태 초기화
+    this.state.players.forEach(player => {
+      player.hasSubmitted = false;
+    });
   },
   
   // 게임 종료
