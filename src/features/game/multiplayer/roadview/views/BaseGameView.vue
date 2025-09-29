@@ -65,6 +65,7 @@
       <!-- 중앙 패널: 게임 화면 -->
       <div class="main-panel">
         <div class="game-view">
+
           <!-- 멀티플레이어 인트로 오버레이 -->
           <multiplayer-intro-overlay
             v-if="showIntroOverlay && !showNextRoundOverlay"
@@ -91,9 +92,7 @@
             <road-view
               v-if="
                 !gameStore.state.roundEnded && 
-                gameStore.state.currentLocation &&
-                !showIntroOverlay &&
-                !showNextRoundOverlay
+                gameStore.state.currentLocation
               "
               :position="
                 gameStore.state.currentLocation || {
@@ -105,12 +104,6 @@
               :prevent-mouse-events="gameStore.state.hasSubmittedGuess"
               @load-complete="onViewLoaded"
             />
-            <div
-              v-else-if="!gameStore.state.roundEnded && !showIntroOverlay && !showNextRoundOverlay"
-              class="loading-container"
-            >
-              <p>로드뷰를 불러오는 중입니다...</p>
-            </div>
           </slot>
 
           <!-- 지도 버튼 -->
@@ -262,7 +255,7 @@ export default {
       isGameStarted: false,
       serverStartTime: 0,
       // 라운드 타이머
-      roundTimer: null
+      roundTimer: null,
     };
   },
 
@@ -328,6 +321,7 @@ export default {
     // 다음 라운드 인트로 완료 처리
     handleNextRoundComplete() {
       this.showNextRoundOverlay = false;
+      console.log("next round complete");
       this.handleEndOverlay();
       this.$emit("next-round-ready");
     },
@@ -1435,33 +1429,34 @@ export default {
   .round-number {
     font-size: 0.8rem;
   }
+}
 
-  .player-list-toggle-btn {
-    padding: 0.3rem 0.6rem;
-    font-size: 0.75rem;
-    min-width: 70px;
-  }
 
-  .toggle-text {
-    font-size: 0.7rem;
-  }
+.player-list-toggle-btn {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.75rem;
+  min-width: 70px;
+}
 
-  /* 모바일에서 채팅 패널 최적화 */
-  .right-panel {
-    max-width: 100%; /* 모바일에서는 전체 너비 */
-    height: 100vh; /* 모바일에서도 전체 화면 높이 사용 */
-    right: -100%;
-    z-index: 1000; /* 모바일에서도 높은 z-index 유지 */
-  }
-  
-  .game-view {
-    min-height: 250px; /* 모바일에서 더 작은 최소 높이 */
-  }
+.toggle-text {
+  font-size: 0.7rem;
+}
 
-  /* 모바일에서 채팅 토글 버튼 표시 */
-  .chat-toggle {
-    display: flex;
-  }
+/* 모바일에서 채팅 패널 최적화 */
+.right-panel {
+  max-width: 100%; /* 모바일에서는 전체 너비 */
+  height: 100vh; /* 모바일에서도 전체 화면 높이 사용 */
+  right: -100%;
+  z-index: 1000; /* 모바일에서도 높은 z-index 유지 */
+}
+
+.game-view {
+  min-height: 250px; /* 모바일에서 더 작은 최소 높이 */
+}
+
+/* 모바일에서 채팅 토글 버튼 표시 */
+.chat-toggle {
+  display: flex;
 }
 
 /* 더 작은 화면에서 헤더 최적화 */

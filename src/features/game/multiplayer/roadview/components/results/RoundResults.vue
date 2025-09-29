@@ -1073,8 +1073,10 @@ export default {
   .auto-progress-container {
     padding: 0.6rem 0.8rem;
     gap: 0.5rem;
-    max-width: 250px;
+    max-width: 280px;
     border-radius: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .progress-info {
@@ -1087,7 +1089,8 @@ export default {
 
   .progress-bar-container {
     height: 5px;
-    min-width: 60px;
+    min-width: 80px;
+    width: 100%;
   }
 }
 

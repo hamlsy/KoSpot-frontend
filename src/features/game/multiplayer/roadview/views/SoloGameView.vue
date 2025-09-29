@@ -784,11 +784,8 @@ export default {
           this.simulateGameEnd();
         }, 2000);
       } else {
-        console.log("다음 라운드로 진행 - NextRoundOverlay 표시");
-        // 2초 후 다음 라운드 요청
-        setTimeout(() => {
-          this.requestNextRound();
-        }, 2000);
+        console.log("다음 라운드로 진행 - RoundResults 자동 카운트다운 대기");
+        // RoundResults의 10초 자동 카운트다운이 requestNextRound를 호출하도록 함
       }
     },
 
