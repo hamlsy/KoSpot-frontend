@@ -430,9 +430,24 @@ export default {
       const rightPanel = document.querySelector(".right-panel");
       if (rightPanel) {
         if (!isMobile) {
+          // 데스크톱에서는 항상 표시하고 애니메이션 클래스 제거
           rightPanel.style.display = "block";
-        } else if (!this.isChatOpen) {
-          rightPanel.style.display = "none";
+          rightPanel.classList.remove("chat-open");
+        } else {
+          // 모바일에서는 채팅 열림 상태에 따라 처리
+          if (this.isChatOpen) {
+            rightPanel.style.display = "block";
+            this.$nextTick(() => {
+              rightPanel.classList.add("chat-open");
+            });
+          } else {
+            rightPanel.classList.remove("chat-open");
+            setTimeout(() => {
+              if (!this.isChatOpen) {
+                rightPanel.style.display = "none";
+              }
+            }, 400);
+          }
         }
       }
     },
@@ -450,11 +465,43 @@ export default {
     // 채팅 패널 토글 (모바일에서만 사용)
     toggleChat() {
       this.isChatOpen = !this.isChatOpen;
+      
+      // CSS 클래스 기반으로 애니메이션 처리
+      const rightPanel = document.querySelector(".right-panel");
+      if (rightPanel && this.isResponsiveMode) {
+        if (this.isChatOpen) {
+          rightPanel.style.display = "block";
+          // 애니메이션을 위해 다음 프레임에서 클래스 추가
+          this.$nextTick(() => {
+            rightPanel.classList.add("chat-open");
+          });
+        } else {
+          rightPanel.classList.remove("chat-open");
+          // 애니메이션 완료 후 display 숨김
+          setTimeout(() => {
+            if (!this.isChatOpen) {
+              rightPanel.style.display = "none";
+            }
+          }, 400); // CSS transition 시간과 동일
+        }
+      }
     },
 
     // 채팅 패널 닫기
     closeChat() {
       this.isChatOpen = false;
+      
+      // CSS 클래스 기반으로 애니메이션 처리
+      const rightPanel = document.querySelector(".right-panel");
+      if (rightPanel && this.isResponsiveMode) {
+        rightPanel.classList.remove("chat-open");
+        // 애니메이션 완료 후 display 숨김
+        setTimeout(() => {
+          if (!this.isChatOpen) {
+            rightPanel.style.display = "none";
+          }
+        }, 400); // CSS transition 시간과 동일
+      }
     },
 
     // 로드뷰 로딩 완료 처리
@@ -1261,6 +1308,7 @@ export default {
 }
 
 .right-panel {
+  display: block; /* 명시적으로 표시 */
   width: 300px;
   background-color: white;
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.05);
@@ -1333,22 +1381,30 @@ export default {
 
   /* 채팅 패널을 position: absolute로 플렉스에서 제거 */
   .right-panel {
+    display: block; /* 명시적으로 표시 */
     position: fixed;
     top: 0;
-    right: -100%; /* 화면 밖으로 숨김 */
+    right: 0;
     width: 100%;
     max-width: 400px;
     height: 100vh; /* 전체 화면 높이 사용 */
     background: white;
     box-shadow: -2px 0 20px rgba(0, 0, 0, 0.3);
     z-index: 1000; /* 더 높은 z-index로 다른 요소들 위에 표시 */
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow-y: auto;
     border-radius: 0 0 0 12px; /* 왼쪽 하단 모서리만 둥글게 */
+    
+    /* 부드러운 애니메이션 설정 */
+    transform: translateX(100%); /* 기본적으로 화면 밖으로 숨김 */
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    pointer-events: none; /* 숨겨진 상태에서는 클릭 방지 */
   }
 
   .right-panel.chat-open {
-    right: 0; /* 화면으로 슬라이드 인 */
+    transform: translateX(0); /* 화면으로 슬라이드 인 */
+    opacity: 1;
+    pointer-events: auto; /* 표시된 상태에서는 클릭 허용 */
   }
 
   /* 채팅창 내부 스타일 조정 */
@@ -1429,6 +1485,18 @@ export default {
   .round-number {
     font-size: 0.8rem;
   }
+
+  /* 모바일에서 채팅 패널 최적화 */
+  .right-panel {
+    display: block; /* 명시적으로 표시 */
+    max-width: 100%; /* 모바일에서는 전체 너비 */
+    height: 100vh; /* 모바일에서도 전체 화면 높이 사용 */
+  }
+
+  /* 모바일에서 채팅 토글 버튼 표시 */
+  .chat-toggle {
+    display: flex;
+  }
 }
 
 
@@ -1442,21 +1510,8 @@ export default {
   font-size: 0.7rem;
 }
 
-/* 모바일에서 채팅 패널 최적화 */
-.right-panel {
-  max-width: 100%; /* 모바일에서는 전체 너비 */
-  height: 100vh; /* 모바일에서도 전체 화면 높이 사용 */
-  right: -100%;
-  z-index: 1000; /* 모바일에서도 높은 z-index 유지 */
-}
-
 .game-view {
   min-height: 250px; /* 모바일에서 더 작은 최소 높이 */
-}
-
-/* 모바일에서 채팅 토글 버튼 표시 */
-.chat-toggle {
-  display: flex;
 }
 
 /* 더 작은 화면에서 헤더 최적화 */
@@ -1504,8 +1559,8 @@ export default {
 
   /* 더 작은 화면에서 채팅 패널 높이 조정 */
   .right-panel {
+    display: block; /* 명시적으로 표시 */
     height: 100vh; /* 더 작은 화면에서도 전체 화면 높이 사용 */
-    z-index: 1000; /* 높은 z-index 유지 */
   }
 }
 
@@ -1643,13 +1698,19 @@ export default {
   gap: 8px;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   z-index: 50;
+  transform: scale(1);
 }
 
 .chat-toggle:hover {
-  transform: translateY(-3px);
+  transform: translateY(-3px) scale(1.05);
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+}
+
+.chat-toggle:active {
+  transform: translateY(-1px) scale(0.98);
+  transition: all 0.1s ease;
 }
 
 @media (max-width: 992px) {
