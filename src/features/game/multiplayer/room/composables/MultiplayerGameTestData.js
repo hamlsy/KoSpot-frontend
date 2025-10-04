@@ -15,7 +15,7 @@ export const testData = {
     id: 'room123',
     name: '즐거운 협동전 게임방',
     gameMode: '로드뷰',
-    matchType: 'team', // 'individual' 또는 'team'
+    matchType: 'team', // 'solo' 또는 'team'
     region: '서울',
     maxPlayers: 8,
     rounds: 5,
@@ -238,11 +238,11 @@ export const testData = {
 };
 
 // 개인전 모드 게임 데이터
-export const individualTestData = {
+export const soloTestData = {
   roomData: {
     ...testData.roomData,
     name: '개인전 게임방',
-    matchType: 'individual'
+    matchType: 'solo'
   },
   
   currentUser: {

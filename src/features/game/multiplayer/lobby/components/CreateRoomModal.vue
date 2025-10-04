@@ -58,7 +58,7 @@
               <input
                 type="radio"
                 name="gameType"
-                value="individual"
+                value="solo"
                 v-model="gameType"
               />
               <div class="radio-content">
@@ -153,7 +153,7 @@ export default {
       gameMode: "로드뷰",
       region: "전국",
       maxPlayers: 4,
-      gameType: "individual",
+      gameType: "solo",
       password: "",
       gameSettings: {
         isPrivate: false,

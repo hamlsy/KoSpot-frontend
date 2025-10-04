@@ -31,6 +31,17 @@
       </div>
 
       <div class="header-right col-md-4">
+        <!-- 플레이어 리스트 토글 버튼 (항상 표시) -->
+        <button 
+          class="player-list-toggle-btn"
+          @click="togglePlayerList"
+          :class="{ 'active': isPlayerListOpen }"
+          :title="isPlayerListOpen ? '플레이어 목록 닫기' : '플레이어 목록 열기'"
+        >
+          <i class="fas fa-users"></i>
+          <span class="toggle-text">{{ isPlayerListOpen ? '목록 닫기' : '플레이어' }}</span>
+        </button>
+        
         <game-timer
           :initialTime="gameStore.state.remainingTime"
           :totalTime="120"
@@ -43,14 +54,18 @@
 
     <!-- 게임 메인 영역 -->
     <div class="game-content">
-      <!-- 왼쪽 패널: 플레이어 목록 (슬롯으로 변경) -->
-      <div class="left-panel">
-        <slot name="player-list"> </slot>
+      <!-- 왼쪽 패널: 플레이어 목록 (토글 가능) -->
+      <div class="left-panel" :class="{ 
+        'hidden': !isPlayerListOpen,
+        'mobile-open': isMobile && isPlayerListOpen 
+      }">
+        <slot name="player-list" :close-player-list="closePlayerList" :is-mobile="isMobile"> </slot>
       </div>
 
       <!-- 중앙 패널: 게임 화면 -->
       <div class="main-panel">
         <div class="game-view">
+
           <!-- 멀티플레이어 인트로 오버레이 -->
           <multiplayer-intro-overlay
             v-if="showIntroOverlay && !showNextRoundOverlay"
@@ -76,7 +91,8 @@
           <slot name="main">
             <road-view
               v-if="
-                !gameStore.state.roundEnded && gameStore.state.currentLocation
+                !gameStore.state.roundEnded && 
+                gameStore.state.currentLocation
               "
               :position="
                 gameStore.state.currentLocation || {
@@ -88,12 +104,6 @@
               :prevent-mouse-events="gameStore.state.hasSubmittedGuess"
               @load-complete="onViewLoaded"
             />
-            <div
-              v-else-if="!gameStore.state.roundEnded"
-              class="loading-container"
-            >
-              <p>로드뷰를 불러오는 중입니다...</p>
-            </div>
           </slot>
 
           <!-- 지도 버튼 -->
@@ -115,8 +125,8 @@
       </div>
 
       <!-- 오른쪽 패널: 채팅 -->
-      <div class="right-panel">
-        <slot name="chat"></slot>
+      <div class="right-panel" :class="{ 'chat-open': isChatOpen }">
+        <slot name="chat" :close-chat="closeChat" :is-chat-open="isChatOpen"></slot>
       </div>
 
       <!-- 결과 모달 -->
@@ -125,7 +135,7 @@
 
     <!-- 휴대폰 프레임 -->
     <PhoneFrame
-      :style="{ zIndex: isMapOpen ? 15 : -1 }"
+      :style="{ zIndex: isMapOpen && !gameStore.state.roundEnded ? 15 : -1 }"
       :centerLocation="mapCenter || { lat: 37.5665, lng: 126.978 }"
       :actualLocation="
         gameStore.state.actualLocation || { lat: 37.5665, lng: 126.978 }
@@ -134,8 +144,8 @@
       :disabled="gameStore.state.roundEnded"
       :showDistance="false"
       :showMarker="true"
-      :isTeamMode="isTeamMode"
-      :gameMode="gameMode"
+      :isTeamMode="false"
+      :gameMode="'solo'"
       @spot-answer="handlePhoneMapGuess"
     />
 
@@ -153,8 +163,8 @@ import PhoneFrame from 'src/features/game/shared/components/Phone/PhoneFrame.vue
 import MultiplayerIntroOverlay from "@/features/game/multiplayer/shared/components/intro/IntroOverlay.vue";
 import MultiplayNextRoundOverlay from "@/features/game/multiplayer/shared/components/intro/NextRoundOverlay.vue";
 import gameStore from "@/store/gameStore";
-// import { Client } from '@stomp/stompjs'; // STOMP Placeholder: Uncomment when integrating
-// import SockJS from 'sockjs-client'; // STOMP Placeholder: Uncomment when integrating
+import webSocketManager from "@/features/game/multiplayer/shared/services/websocket/composables/index.js";
+import { useRoomWebSocket } from "@/features/game/multiplayer/room/composables/useRoomWebSocket.js";
 
 const NEXT_ROUND_VOTE_TIME_LIMIT_MS = 15000;
 
@@ -178,8 +188,8 @@ export default {
     // 게임 모드에 따라 필요한 추가 props
     gameMode: {
       type: String,
-      default: "individual",
-      validator: (value) => ["individual", "team"].includes(value),
+      default: "solo",
+      validator: (value) => ["solo", "team"].includes(value),
     },
     currentUserRank: {
       type: Number,
@@ -213,19 +223,18 @@ export default {
   },
 
   data() {
-    // STOMP Placeholder: WebSocket client instance
-    // this.stompClient = null;
-    // this.stompSubscriptions = [];
-
     return {
       //room
-      roomData: "asd",
+      roomData: null,
       gameStore,
       isMapOpen: false,
       mapCenter: null,
       isChatOpen: false,
       isResponsiveMode: false,
       showToastFlag: false,
+      // UI 상태 관리
+      isPlayerListOpen: true, // 플레이어 리스트 표시 여부 (기본값: 열림)
+      isMobile: false, // 모바일 화면 여부 (768px 이하)
       // Next Round Voting State
       playersReadyForNextRound: new Set(),
       nextRoundVoteTimerId: null,
@@ -233,16 +242,20 @@ export default {
       nextRoundVoteRemainingTime: NEXT_ROUND_VOTE_TIME_LIMIT_MS,
       toastMessage: "",
       toastTimeout: null,
-      socket: null,
+      // WebSocket 관련 상태
       socketConnected: false,
-      socketRetryCount: 0,
-      socketRetryInterval: null,
+      gameSubscriptions: new Map(),
       userGuessPosition: null,
       userHasSubmitted: false,
       showIntroOverlay: false,
       showNextRoundOverlay: false,
       userRank: 1,
-      totalPlayers: 1
+      totalPlayers: 1,
+      // 게임 진행 상태 
+      isGameStarted: false,
+      serverStartTime: 0,
+      // 라운드 타이머
+      roundTimer: null,
     };
   },
 
@@ -264,10 +277,10 @@ export default {
       if (!this.isNextRoundVoteActive) return "";
       return `${this.numPlayersReadyForNextRound} / ${this.totalPlayersInRoom}`;
     },
-    // STOMP Placeholder: Websocket connection status
-    // isWebSocketConnected() { 
-    //   return this.stompClient && this.stompClient.connected;
-    // },
+    // WebSocket 연결 상태
+    isWebSocketConnected() {
+      return webSocketManager.isConnected.value;
+    },
     canSubmit() {
       return (
         !this.gameStore.state.hasSubmittedGuess &&
@@ -277,9 +290,8 @@ export default {
   },
 
   created() {
-    // WebSocket 연결은 LobbyView에서만 시도
-    // this.connectWebSocket();
-    console.log('BaseGameView: WebSocket 자동 연결 비활성화됨');
+    // 게임 중에도 WebSocket 연결 상태 확인 및 구독 설정
+    this.initializeWebSocketConnection();
   },
 
   mounted() {
@@ -296,6 +308,8 @@ export default {
     }
     window.removeEventListener("resize", this.checkResponsive);
     this.disconnectWebSocket();
+    // 라운드 타이머 정리
+    this.clearRoundTimer();
   },
   methods: {
     // 인트로 완료 처리
@@ -307,6 +321,7 @@ export default {
     // 다음 라운드 인트로 완료 처리
     handleNextRoundComplete() {
       this.showNextRoundOverlay = false;
+      console.log("next round complete");
       this.handleEndOverlay();
       this.$emit("next-round-ready");
     },
@@ -341,8 +356,7 @@ export default {
       // 게임 스토어의 다음 라운드 시작 메서드 호출
       this.gameStore.startNextRound();
       
-      // 다음 라운드 데이터 가져오기 준비
-      this.fetchRoundData();
+      // 라운드 데이터 처리는 각 게임 뷰에서 담당
     },
 
     // 다음 라운드 시작
@@ -352,18 +366,36 @@ export default {
       this.$nextTick(() => {
         setTimeout(() => {
           this.showNextRoundOverlay = true;
-          this.fetchRoundData();
+          // 라운드 데이터 처리는 각 게임 뷰에서 담당
         }, 500);
       });
     },
 
-    // 라운드 데이터 가져오기
-    fetchRoundData() {
-      // 라운드 종료 상태 초기화
-      this.gameStore.state.roundEnded = false;
-      this.gameStore.state.hasSubmittedGuess = false;
-      this.gameStore.state.userGuess = null;
-      this.gameStore.state.playerGuesses = [];
+    // 라운드 타이머 시작
+    startRoundTimer() {
+      console.log('라운드 타이머 시작');
+      
+      // 기존 타이머가 있다면 정리
+      this.clearRoundTimer();
+      
+      // 타이머 시작
+      this.roundTimer = setInterval(() => {
+        if (this.gameStore.state.remainingTime > 0) {
+          this.gameStore.state.remainingTime--;
+        } else {
+          this.clearRoundTimer();
+          // 시간 초과 시 라운드 종료
+          this.$emit('round-timeout');
+        }
+      }, 1000);
+    },
+
+    // 라운드 타이머 정리
+    clearRoundTimer() {
+      if (this.roundTimer) {
+        clearInterval(this.roundTimer);
+        this.roundTimer = null;
+      }
     },
 
     // 사용자의 현재 등수 가져오기
@@ -388,41 +420,101 @@ export default {
       // 인덱스 + 1이 등수
       return currentUserIndex !== -1 ? currentUserIndex + 1 : 1;
     },
+    // 반응형 상태 확인 및 설정
     checkResponsive() {
       const isMobile = window.innerWidth <= 992;
+      this.isMobile = window.innerWidth <= 768;
+      this.isResponsiveMode = isMobile;
+      
+      // 채팅 패널 표시/숨김 처리
       const rightPanel = document.querySelector(".right-panel");
-
       if (rightPanel) {
-        // 모바일이 아닐 때는 채팅창 항상 표시
         if (!isMobile) {
+          // 데스크톱에서는 항상 표시하고 애니메이션 클래스 제거
           rightPanel.style.display = "block";
-        } else if (!this.isChatOpen) {
-          rightPanel.style.display = "none";
+          rightPanel.classList.remove("chat-open");
+        } else {
+          // 모바일에서는 채팅 열림 상태에 따라 처리
+          if (this.isChatOpen) {
+            rightPanel.style.display = "block";
+            this.$nextTick(() => {
+              rightPanel.classList.add("chat-open");
+            });
+          } else {
+            rightPanel.classList.remove("chat-open");
+            setTimeout(() => {
+              if (!this.isChatOpen) {
+                rightPanel.style.display = "none";
+              }
+            }, 400);
+          }
         }
       }
     },
 
+    // 플레이어 리스트 토글
+    togglePlayerList() {
+      this.isPlayerListOpen = !this.isPlayerListOpen;
+    },
+
+    // 플레이어 리스트 닫기 (모바일 전용)
+    closePlayerList() {
+      this.isPlayerListOpen = false;
+    },
+
+    // 채팅 패널 토글 (모바일에서만 사용)
     toggleChat() {
       this.isChatOpen = !this.isChatOpen;
+      
+      // CSS 클래스 기반으로 애니메이션 처리
       const rightPanel = document.querySelector(".right-panel");
-      if (rightPanel) {
-        rightPanel.style.display = this.isChatOpen ? "block" : "none";
+      if (rightPanel && this.isResponsiveMode) {
+        if (this.isChatOpen) {
+          rightPanel.style.display = "block";
+          // 애니메이션을 위해 다음 프레임에서 클래스 추가
+          this.$nextTick(() => {
+            rightPanel.classList.add("chat-open");
+          });
+        } else {
+          rightPanel.classList.remove("chat-open");
+          // 애니메이션 완료 후 display 숨김
+          setTimeout(() => {
+            if (!this.isChatOpen) {
+              rightPanel.style.display = "none";
+            }
+          }, 400); // CSS transition 시간과 동일
+        }
       }
     },
 
+    // 채팅 패널 닫기
+    closeChat() {
+      this.isChatOpen = false;
+      
+      // CSS 클래스 기반으로 애니메이션 처리
+      const rightPanel = document.querySelector(".right-panel");
+      if (rightPanel && this.isResponsiveMode) {
+        rightPanel.classList.remove("chat-open");
+        // 애니메이션 완료 후 display 숨김
+        setTimeout(() => {
+          if (!this.isChatOpen) {
+            rightPanel.style.display = "none";
+          }
+        }, 400); // CSS transition 시간과 동일
+      }
+    },
+
+    // 로드뷰 로딩 완료 처리
     onViewLoaded() {
-      // 로드뷰 로딩 완료 처리
       console.log("로드뷰 로딩 완료");
     },
 
+    // 추측 위치 설정
     onGuessPlaced(position) {
       this.guessPosition = position;
     },
 
-    toggleMapExpansion() {
-      this.isMapExpanded = !this.isMapExpanded;
-    },
-
+    // 좌표를 문자열로 포맷팅 (소수점 4자리까지)
     formatCoords(position) {
       if (!position) return "";
 
@@ -487,63 +579,292 @@ export default {
       this.$emit("guess-submitted", position);
     },
 
-    // WebSocket 관련 메서드
-    connectWebSocket() {
-      // 실제 구현 시 서버 주소로 변경
-      // this.webSocket = new WebSocket('ws://your-server-url/game/' + this.roomId);
-
-      // 테스트용 더미 구현
-      console.log("WebSocket 연결 시도 (더미)");
-
-      // 실제 WebSocket 구현 시 이벤트 핸들러 추가
-      /*
-        this.webSocket.onopen = () => {
-          console.log('WebSocket 연결됨');
-        };
-        
-        this.webSocket.onmessage = (event) => {
-          const data = JSON.parse(event.data);
-          this.handleWebSocketMessage(data);
-        };
-        
-        this.webSocket.onerror = (error) => {
-          console.error('WebSocket 오류:', error);
-        };
-        
-        this.webSocket.onclose = () => {
-          console.log('WebSocket 연결 종료');
-        };
-        */
-    },
-
-    disconnectWebSocket() {
-      if (this.webSocket) {
-        // this.webSocket.close();
-        console.log("WebSocket 연결 종료 (더미)");
+    // WebSocket 초기화 및 연결
+    initializeWebSocketConnection() {
+      console.log('게임 WebSocket 연결 초기화 시작');
+      
+      // WebSocket이 이미 연결되어 있다면 게임 구독만 설정
+      if (this.isWebSocketConnected) {
+        this.setupGameSubscriptions();
+        console.log('WebSocket이 이미 연결됨. 게임 구독 설정 완료');
+        return;
       }
+      
+      // WebSocket 연결 시도
+      webSocketManager.connect('/ws', () => {
+        // core.js에서 실제 연결 실패 시에도 콜백은 호출될 수 있으므로, isConnected를 신뢰
+        if (webSocketManager.isConnected && webSocketManager.isConnected.value) {
+          console.log('게임 WebSocket 연결 성공');
+          this.socketConnected = true;
+          this.setupGameSubscriptions();
+        } else {
+          console.warn('WebSocket 연결 실패로 더미 모드로 진행합니다.');
+          this.socketConnected = false;
+          // 더미 모드에서는 즉시 게임 시작 흐름을 트리거하지 않음. 상위 뷰에서 처리
+        }
+      });
     },
 
-    handleWebSocketMessage(data) {
-      // 메시지 타입에 따라 처리
-      switch (data.type) {
-        case "PLAYER_GUESS":
-          // 다른 플레이어의 추측 정보 처리
-          this.handlePlayerGuess(data.payload);
-          break;
+    // 게임 관련 WebSocket 구독 설정
+    setupGameSubscriptions() {
+      if (!this.roomId) {
+        console.warn('방 ID가 없어 게임 구독을 설정할 수 없습니다.');
+        return;
+      }
 
-        case "ALL_PLAYERS_SUBMITTED":
-          // 모든 플레이어가 제출 완료
-          this.allPlayersSubmitted = true;
-          this.endRound();
-          break;
+      console.log(`방 ${this.roomId}의 게임 구독 설정 시작`);
 
-        case "CHAT_MESSAGE":
-          // 채팅 메시지 처리
-          gameStore.addChatMessage(data.payload.message, data.payload.sender);
-          break;
+      // 게임 시작 신호 구독
+      this.subscribeToGameStart();
+      
+      // 라운드 데이터 구독  
+      this.subscribeToRoundData();
+      
+      // 플레이어 제출 상태 구독
+      this.subscribeToPlayerSubmissions();
+      
+      // 라운드 종료 구독
+      this.subscribeToRoundEnd();
+      
+      // 게임 종료 구독
+      this.subscribeToGameEnd();
+      
+      // 서버 시간 동기화 구독
+      this.subscribeToServerTime();
 
-        default:
-          console.log("알 수 없는 메시지 타입:", data.type);
+      console.log('모든 게임 구독 설정 완료');
+    },
+
+    // 게임 시작 신호 구독
+    subscribeToGameStart() {
+      const topic = `/topic/room/${this.roomId}/game/start`;
+      const subscriptionId = webSocketManager.subscribe(topic, (message) => {
+        console.log('게임 시작 신호 수신:', message);
+        this.handleGameStart(message);
+      });
+      this.gameSubscriptions.set('gameStart', subscriptionId);
+    },
+
+    // 라운드 데이터 구독
+    subscribeToRoundData() {
+      const topic = `/topic/room/${this.roomId}/game/round/data`;
+      const subscriptionId = webSocketManager.subscribe(topic, (message) => {
+        console.log('라운드 데이터 수신:', message);
+        this.handleRoundData(message);
+      });
+      this.gameSubscriptions.set('roundData', subscriptionId);
+    },
+
+    // 플레이어 제출 상태 구독
+    subscribeToPlayerSubmissions() {
+      const topic = `/topic/room/${this.roomId}/game/submissions`;
+      const subscriptionId = webSocketManager.subscribe(topic, (message) => {
+        console.log('플레이어 제출 상태 수신:', message);
+        this.handlePlayerSubmission(message);
+      });
+      this.gameSubscriptions.set('submissions', subscriptionId);
+    },
+
+    // 라운드 종료 구독
+    subscribeToRoundEnd() {
+      const topic = `/topic/room/${this.roomId}/game/round/end`;
+      const subscriptionId = webSocketManager.subscribe(topic, (message) => {
+        console.log('라운드 종료 신호 수신:', message);
+        this.handleRoundEnd(message);
+      });
+      this.gameSubscriptions.set('roundEnd', subscriptionId);
+    },
+
+    // 게임 종료 구독
+    subscribeToGameEnd() {
+      const topic = `/topic/room/${this.roomId}/game/end`;
+      const subscriptionId = webSocketManager.subscribe(topic, (message) => {
+        console.log('게임 종료 신호 수신:', message);
+        this.handleGameEnd(message);
+      });
+      this.gameSubscriptions.set('gameEnd', subscriptionId);
+    },
+
+    // 서버 시간 동기화 구독
+    subscribeToServerTime() {
+      const topic = `/topic/room/${this.roomId}/game/time`;
+      const subscriptionId = webSocketManager.subscribe(topic, (message) => {
+        console.log('서버 시간 수신:', message);
+        this.handleServerTime(message);
+      });
+      this.gameSubscriptions.set('serverTime', subscriptionId);
+    },
+
+    // WebSocket 구독 해제
+    disconnectWebSocket() {
+      console.log('게임 WebSocket 구독 해제 시작');
+      
+      // 모든 게임 구독 해제
+      this.gameSubscriptions.forEach((subscriptionId, topic) => {
+        webSocketManager.unsubscribe(subscriptionId);
+        console.log(`구독 해제: ${topic}`);
+      });
+      
+      this.gameSubscriptions.clear();
+      this.socketConnected = false;
+      
+      console.log('게임 WebSocket 구독 해제 완료');
+    },
+
+    // 게임 시작 처리
+    handleGameStart(message) {
+      console.log('게임 시작 처리:', message);
+      
+      // 서버에서 받은 게임 시작 정보 처리
+      if (message.serverStartTime) {
+        this.serverStartTime = message.serverStartTime;
+      }
+      
+      if (message.totalRounds) {
+        this.gameStore.state.totalRounds = message.totalRounds;
+      }
+      
+      // 게임 시작 상태로 변경
+      this.isGameStarted = true;
+      this.gameStore.state.currentRound = 1;
+      
+      // IntroOverlay 표시
+      this.showIntroOverlay = true;
+      
+      // 부모 컴포넌트에 게임 시작 이벤트 전달
+      this.$emit('game-started', message);
+    },
+
+    // 라운드 데이터 처리
+    handleRoundData(message) {
+      console.log('라운드 데이터 처리:', message);
+      
+      // 라운드 정보 업데이트
+      if (message.roundNumber) {
+        this.gameStore.state.currentRound = message.roundNumber;
+      }
+      
+      // 위치 정보 업데이트
+      if (message.location) {
+        this.gameStore.state.currentLocation = message.location;
+        this.gameStore.state.actualLocation = message.location; // 정답 좌표
+      }
+      
+      // 위치 상세 정보 업데이트
+      if (message.locationInfo) {
+        this.gameStore.state.locationInfo = message.locationInfo;
+      }
+      
+      // 라운드 시간 설정
+      if (message.roundTime) {
+        this.gameStore.state.remainingTime = message.roundTime;
+      }
+      
+      // 라운드 상태 초기화
+      this.gameStore.state.roundEnded = false;
+      this.gameStore.state.hasSubmittedGuess = false;
+      this.gameStore.state.playerGuesses = [];
+      
+      // 라운드 타이머 시작 (오버레이가 표시되지 않은 경우에만)
+      if (!this.showIntroOverlay && !this.showNextRoundOverlay) {
+        this.startRoundTimer();
+      }
+      
+      // 부모 컴포넌트에 라운드 데이터 이벤트 전달
+      this.$emit('round-data-received', message);
+    },
+
+    // 플레이어 제출 상태 처리
+    handlePlayerSubmission(message) {
+      console.log('플레이어 제출 상태 처리:', message);
+      
+      // 플레이어 리스트에서 해당 플레이어의 제출 상태 업데이트
+      const player = this.gameStore.state.players.find(p => p.id === message.playerId);
+      if (player) {
+        player.hasSubmitted = true;
+        
+        // 제출한 플레이어의 추측 정보 저장 (위치는 숨김)
+        if (message.position && message.playerId !== this.gameStore.state.currentUser.id) {
+          this.gameStore.state.playerGuesses.push({
+            playerId: message.playerId,
+            playerName: player.nickname,
+            position: message.position,
+            color: this.getRandomColor(message.playerId)
+          });
+        }
+        
+        console.log(`플레이어 ${player.nickname} 제출 완료`);
+      }
+      
+      // 부모 컴포넌트에 제출 상태 이벤트 전달
+      this.$emit('player-submitted', message);
+    },
+
+    // 라운드 종료 처리
+    handleRoundEnd(message) {
+      console.log('라운드 종료 처리:', message);
+      
+      // 라운드 종료 상태로 변경
+      this.gameStore.state.roundEnded = true;
+      
+      // 결과 데이터 처리
+      if (message.results) {
+        // 플레이어 점수 및 순위 업데이트
+        if (message.results.playerResults) {
+          message.results.playerResults.forEach(result => {
+            const player = this.gameStore.state.players.find(p => p.id === result.playerId);
+            if (player) {
+              player.score = result.totalScore;
+              player.lastRoundScore = result.roundScore;
+              player.distanceToTarget = result.distance;
+            }
+          });
+          
+          // 점수 순으로 정렬
+          this.gameStore.state.players.sort((a, b) => (b.score || 0) - (a.score || 0));
+        }
+        
+        // 모든 플레이어 추측 위치 표시 (라운드 종료 후)
+        if (message.results.allGuesses) {
+          this.gameStore.state.playerGuesses = message.results.allGuesses;
+        }
+        
+        // 최고 점수 플레이어 정보
+        if (message.results.topPlayer) {
+          this.gameStore.state.topPlayer = message.results.topPlayer;
+        }
+      }
+      
+      // 부모 컴포넌트에 라운드 종료 이벤트 전달
+      this.$emit('round-ended', message);
+    },
+
+    // 게임 종료 처리
+    handleGameEnd(message) {
+      console.log('게임 종료 처리:', message);
+      
+      // 최종 결과 화면 표시
+      this.gameStore.state.showGameResults = true;
+      
+      // 최종 순위 정보 업데이트
+      if (message.finalResults) {
+        this.gameStore.state.players = message.finalResults.rankings || this.gameStore.state.players;
+      }
+      
+      // 부모 컴포넌트에 게임 종료 이벤트 전달
+      this.$emit('game-ended', message);
+    },
+
+    // 서버 시간 동기화 처리
+    handleServerTime(message) {
+      console.log('서버 시간 동기화:', message);
+      
+      if (message.serverTime) {
+        this.serverStartTime = message.serverTime;
+      }
+      
+      if (message.remainingTime !== undefined) {
+        this.gameStore.state.remainingTime = message.remainingTime;
       }
     },
 
@@ -575,21 +896,94 @@ export default {
       }
     },
 
+    // 서버로 플레이어 추측 정보 전송
     sendGuessToServer(guessData) {
-      // 실제 구현 시 WebSocket으로 전송
       console.log("서버에 추측 정보 전송:", guessData);
 
-      // 테스트용 더미 구현
-      /*
-      if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
-        this.webSocket.send(JSON.stringify({
-          type: 'PLAYER_GUESS',
-          payload: guessData
-        }));
+      const topic = `/app/room/${this.roomId}/game/submit-guess`;
+      const payload = {
+        roomId: this.roomId,
+        playerId: this.gameStore.state.currentUser.id,
+        position: guessData.position,
+        roundNumber: this.gameStore.state.currentRound,
+        timestamp: Date.now()
+      };
+      
+      const success = webSocketManager.publish(topic, payload);
+      
+      if (!success) {
+        console.error('❌ 추측 정보 전송 실패 - 더미 모드로 처리');
+        // 더미 모드에서는 로컬에서 처리
+        this.handleLocalGuessSubmission(guessData);
       } else {
-        console.error('웹소켓 연결이 없습니다.');
+        console.log('✅ 추측 정보 전송 성공');
       }
-      */
+      
+      return success;
+    },
+
+    // 더미 모드에서 로컬 추측 처리
+    handleLocalGuessSubmission(guessData) {
+      // 현재 플레이어의 제출 상태 업데이트
+      const currentPlayer = this.gameStore.state.players.find(
+        p => p.id === this.gameStore.state.currentUser.id
+      );
+      if (currentPlayer) {
+        currentPlayer.hasSubmitted = true;
+      }
+      
+      // 게임 스토어 상태 업데이트
+      this.gameStore.state.hasSubmittedGuess = true;
+      this.gameStore.state.userGuess = { position: guessData.position };
+    },
+
+    // 서버로 다음 라운드 준비 완료 신호 전송
+    sendNextRoundReadyToServer(userId) {
+      console.log(`서버에 다음 라운드 준비 완료 신호 전송: ${userId}`);
+      
+      const topic = `/app/room/${this.roomId}/game/next-round-ready`;
+      const payload = {
+        roomId: this.roomId,
+        playerId: userId,
+        roundNumber: this.gameStore.state.currentRound,
+        timestamp: Date.now()
+      };
+      
+      const success = webSocketManager.publish(topic, payload);
+      
+      if (!success) {
+        console.error('❌ 다음 라운드 준비 신호 전송 실패');
+      } else {
+        console.log('✅ 다음 라운드 준비 신호 전송 성공');
+      }
+      
+      return success;
+    },
+
+    // 서버로 채팅 메시지 전송
+    sendChatMessageToServer(message) {
+      console.log("서버에 채팅 메시지 전송:", message);
+      
+      const topic = `/app/room/${this.roomId}/chat`;
+      const payload = {
+        roomId: this.roomId,
+        senderId: this.gameStore.state.currentUser.id,
+        senderName: this.gameStore.state.currentUser.nickname,
+        message: message,
+        timestamp: Date.now()
+      };
+      
+      const success = webSocketManager.publish(topic, payload);
+      
+      if (!success) {
+        console.error('❌ 채팅 메시지 전송 실패');
+        // 더미 모드에서는 로컬에 추가
+        this.gameStore.addChatMessage(message, this.gameStore.state.currentUser.nickname);
+      } else {
+        console.log('✅ 채팅 메시지 전송 성공');
+      }
+      
+      return success;
     },
 
     calculatePlayerScores() {
@@ -729,6 +1123,8 @@ export default {
   color: white;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   z-index: 10;
+  min-height: 80px; /* 최소 높이 고정 */
+  flex-shrink: 0; /* 축소 방지 */
 }
 
 .header-left {
@@ -816,15 +1212,48 @@ export default {
   overflow: hidden;
 }
 
+/* 왼쪽 패널: 플레이어 목록 */
 .left-panel {
   width: 250px;
   background-color: white;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
   z-index: 5;
   overflow-y: auto;
-  max-height: calc(100vh - 140px);
+  max-height: calc(100vh - 160px);
   display: flex;
   flex-direction: column;
+  border-radius: 10px;
+  /* 개별 속성별 애니메이션 설정 */
+  transition: 
+    width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.2s ease-out,
+    overflow 0.1s ease-out;
+}
+
+/* 데스크톱에서 숨김 상태 */
+.left-panel.hidden {
+  width: 0;
+  overflow: hidden;
+  box-shadow: none;
+  /* 숨김 시 더 빠른 애니메이션 */
+  transition: 
+    width 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.1s ease-in,
+    overflow 0.05s ease-in;
+}
+
+/* 모바일에서만 플레이어 리스트가 닫힐 때 적용 */
+@media (max-width: 768px) {
+  .left-panel:not(.mobile-open) {
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
+    /* 닫힐 때 더 빠른 애니메이션 */
+    transition: 
+      transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 0.15s ease-in,
+      box-shadow 0.1s ease-in;
+  }
 }
 
 .main-panel {
@@ -880,6 +1309,7 @@ export default {
 }
 
 .right-panel {
+  display: block; /* 명시적으로 표시 */
   width: 300px;
   background-color: white;
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.05);
@@ -942,32 +1372,60 @@ export default {
   }
 }
 
+/* 태블릿 사이즈 (992px 이하) */
 @media (max-width: 992px) {
   .game-content {
-    flex-direction: column;
+    flex-direction: row; /* 다시 row로 변경 */
+    height: calc(100vh - 80px);
+    position: relative;
   }
 
-  .left-panel {
-    display: none; /* 모바일에서는 기존 플레이어 리스트 숨김 */
-  }
-
+  /* 채팅 패널을 position: absolute로 플렉스에서 제거 */
   .right-panel {
+    display: block; /* 명시적으로 표시 */
+    position: fixed;
+    top: 0;
+    right: 0;
     width: 100%;
-    height: auto;
-    max-height: 200px;
+    max-width: 400px;
+    height: 100vh; /* 전체 화면 높이 사용 */
+    background: white;
+    box-shadow: -2px 0 20px rgba(0, 0, 0, 0.3);
+    z-index: 15000; /* RoundResults보다 높은 z-index로 다른 요소들 위에 표시 */
     overflow-y: auto;
-    display: none; /* 모바일에서는 기본적으로 채팅 패널 숨김 */
+    border-radius: 0 0 0 12px; /* 왼쪽 하단 모서리만 둥글게 */
+    
+    /* 부드러운 애니메이션 설정 */
+    transform: translateX(100%); /* 기본적으로 화면 밖으로 숨김 */
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    pointer-events: none; /* 숨겨진 상태에서는 클릭 방지 */
+  }
+
+  .right-panel.chat-open {
+    transform: translateX(0); /* 화면으로 슬라이드 인 */
+    opacity: 1;
+    pointer-events: auto; /* 표시된 상태에서는 클릭 허용 */
+  }
+
+  /* 채팅창 내부 스타일 조정 */
+  .right-panel .chat-window {
+    height: 100%;
+    border-radius: 0; /* 채팅창 내부 둥근 모서리 제거 */
   }
 
   .main-panel {
-    order: -1;
-    height: calc(100vh - 300px); /* 400px에서 300px로 변경하여 공간 확장 */
-    min-height: 350px; /* 300px에서 350px로 증가 */
+    width: 100%; /* 전체 너비 사용 */
+    height: 100%;
+    display: flex;
+    flex-direction: column;
   }
 
   .game-view {
+    flex: 1;
     height: 100%;
     position: relative;
+    min-height: 300px; /* 최소 높이 축소 */
   }
 
   .map-container.expanded {
@@ -981,32 +1439,129 @@ export default {
   }
 
   .chat-toggle {
-    display: flex;
+    display: flex; /* 태블릿에서도 표시 */
   }
 }
 
 @media (max-width: 768px) {
   .game-header {
     flex-direction: row;
-    padding: 0.5rem;
-    flex-wrap: wrap;
+    padding: 0.5rem 0.8rem;
+    flex-wrap: nowrap; /* wrap 제거하여 요소들이 한 줄에 유지 */
     justify-content: space-between;
     align-items: center;
+    min-height: 70px; /* 모바일에서 약간 작은 높이 */
+    overflow: hidden; /* 넘치는 요소 숨김 */
   }
 
   .header-left {
-    flex: 1;
-    min-width: 150px;
+    flex: 0 0 auto; /* 고정 크기 */
+    min-width: 120px;
+    max-width: 40%;
   }
 
   .header-center {
     flex: 1;
-    margin: 0 0.5rem;
-    max-width: 100%;
+    margin: 0 0.3rem;
+    max-width: 30%;
+    text-align: center;
   }
 
   .header-right {
-    align-self: center;
+    flex: 0 0 auto; /* 고정 크기 */
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  /* 헤더 내부 요소들 크기 조정 */
+  .room-name {
+    font-size: 0.9rem;
+  }
+
+  .game-mode {
+    font-size: 0.75rem;
+  }
+
+  .round-number {
+    font-size: 0.8rem;
+  }
+
+  /* 모바일에서 채팅 패널 최적화 */
+  .right-panel {
+    display: block; /* 명시적으로 표시 */
+    max-width: 100%; /* 모바일에서는 전체 너비 */
+    height: 100vh; /* 모바일에서도 전체 화면 높이 사용 */
+  }
+
+  /* 모바일에서 채팅 토글 버튼 표시 */
+  .chat-toggle {
+    display: flex;
+  }
+}
+
+
+.player-list-toggle-btn {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.75rem;
+  min-width: 70px;
+}
+
+.toggle-text {
+  font-size: 0.7rem;
+}
+
+.game-view {
+  min-height: 250px; /* 모바일에서 더 작은 최소 높이 */
+}
+
+/* 더 작은 화면에서 헤더 최적화 */
+@media (max-width: 480px) {
+  .game-header {
+    padding: 0.4rem 0.6rem;
+    min-height: 65px;
+  }
+
+  .header-left {
+    min-width: 100px;
+    max-width: 35%;
+  }
+
+  .header-center {
+    max-width: 25%;
+    margin: 0 0.2rem;
+  }
+
+  .header-right {
+    gap: 0.2rem;
+  }
+
+  .room-name {
+    font-size: 0.8rem;
+  }
+
+  .game-mode {
+    font-size: 0.7rem;
+  }
+
+  .round-number {
+    font-size: 0.75rem;
+  }
+
+  .player-list-toggle-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+    min-width: 60px;
+  }
+
+  .toggle-text {
+    font-size: 0.65rem;
+  }
+
+  /* 더 작은 화면에서 채팅 패널 높이 조정 */
+  .right-panel {
+    display: block; /* 명시적으로 표시 */
+    height: 100vh; /* 더 작은 화면에서도 전체 화면 높이 사용 */
   }
 }
 
@@ -1144,13 +1699,19 @@ export default {
   gap: 8px;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   z-index: 50;
+  transform: scale(1);
 }
 
 .chat-toggle:hover {
-  transform: translateY(-3px);
+  transform: translateY(-3px) scale(1.05);
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+}
+
+.chat-toggle:active {
+  transform: translateY(-1px) scale(0.98);
+  transition: all 0.1s ease;
 }
 
 @media (max-width: 992px) {
@@ -1160,6 +1721,113 @@ export default {
     font-size: 0.9rem;
     bottom: 20px;
     left: 20px;
+  }
+}
+
+/* 플레이어 리스트 토글 버튼 (항상 표시) */
+.player-list-toggle-btn {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex; /* 항상 표시 */
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+  margin-right: 1rem;
+  min-width: 100px;
+  justify-content: center;
+}
+
+.player-list-toggle-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+  background: linear-gradient(135deg, #45a049, #388e3c);
+}
+
+.player-list-toggle-btn.active {
+  background: linear-gradient(135deg, #FF6B6B, #E55A5A);
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+}
+
+.player-list-toggle-btn.active:hover {
+  background: linear-gradient(135deg, #E55A5A, #D32F2F);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+}
+
+.toggle-text {
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+/* 모바일 사이즈 (768px 이하) - 플레이어 리스트 오버레이 스타일 */
+@media (max-width: 768px) {
+  /* 게임 헤더 높이 계산용 변수 */
+  .game-header {
+    height: 80px; /* 헤더 고정 높이 설정 */
+  }
+  
+  /* 모바일에서 플레이어 리스트가 열린 상태일 때 오버레이로 표시 */
+  .left-panel.mobile-open {
+    position: fixed;
+    top: 80px; /* 헤더 높이만큼 아래에서 시작 */
+    left: 0;
+    width: 100%;
+    max-width: 320px;
+    height: calc(100vh - 80px); /* 헤더 높이를 제외한 나머지 영역 */
+    z-index: 500; /* 헤더보다 낮게 설정 */
+    background: white;
+    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.3);
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+    overflow-y: auto;
+    padding: 0; /* 상단 패딩 제거 */
+    /* 개별 속성별 애니메이션으로 부드러운 전환 */
+    transition: 
+      transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 0.25s ease-out,
+      box-shadow 0.2s ease-out;
+    border-top: 1px solid #dee2e6;
+  }
+  
+  /* 게임 화면 최적화 */
+  .game-view {
+    min-height: 300px; /* 모바일에서 최소 높이 축소 */
+  }
+  
+  /* 토글 버튼 모바일 최적화 */
+  .player-list-toggle-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    margin-right: 0.5rem;
+    min-width: 80px;
+  }
+  
+  .toggle-text {
+    font-size: 0.75rem;
+  }
+}
+
+/* 더 작은 화면에서 추가 최적화 */
+@media (max-width: 480px) {
+  .left-panel.mobile-open {
+    width: 100vw; /* 전체 화면 너비 사용 */
+    max-width: none;
+  }
+  
+  .mobile-header {
+    padding: 0.8rem;
+  }
+  
+  .close-button {
+    width: 28px;
+    height: 28px;
   }
 }
 

@@ -9,12 +9,8 @@ min-height: 100vh;
 }
 
 /* Used in:
- * src\shared\assets\styles\game\roadView\roadview-main.css (/* RoadView 모드 메인 페이지 스타일 */
-
-.road-view-container)
- * src\shared\assets\styles\game\photoMode\photomode-main.css (/* PhotoMode 메인 페이지 스타일 */
-
-.photo-mode-container)
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.road-view-container)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.photo-mode-container)
  */
 
 .common-style-2 {
@@ -450,11 +446,8 @@ transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Used in:
- * src\shared\assets\styles\game\roadView\roadview-main.css (.popup-slide-enter-active,
-.popup-slide-leave-active)
- * src\shared\assets\styles\game\photoMode\photomode-main.css (/* 애니메이션 */
-.popup-slide-enter-active,
-.popup-slide-leave-active)
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.popup-slide-enter-active, .popup-slide-leave-active)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.popup-slide-enter-active, .popup-slide-leave-active)
  */
 
 .common-style-34 {
@@ -472,10 +465,8 @@ position: fixed;
 }
 
 /* Used in:
- * src\shared\assets\styles\game\roadView\roadview-main.css (/* 로딩 오버레이 */
-.loading-overlay)
- * src\shared\assets\styles\game\photoMode\photomode-main.css (/* 로딩 오버레이 */
-.loading-overlay)
+ * src\shared\assets\styles\game\roadView\roadview-main.css (.loading-overlay)
+ * src\shared\assets\styles\game\photoMode\photomode-main.css (.loading-overlay)
  */
 
 .common-style-35 {
@@ -553,8 +544,7 @@ width: 100%;
  * src\features\user\components\FriendsList.vue (.friends-page)
  * src\features\user\components\AccountSettings.vue (.account-settings-page)
  * src\features\shop\views\ShopView.vue (.shop-page)
- * src\features\admin\views\DashboardView.vue (/* 기존 스타일 유지 */
-.admin-page)
+ * src\features\admin\views\DashboardView.vue (.admin-page)
  */
 
 .common-style-41 {
@@ -725,8 +715,7 @@ display: flex;
 
 /* Used in:
  * src\features\user\components\Inventory.vue (.details-header)
- * src\features\game\multiplayer\roadview\components\results\RoundResults.vue (/* 헤더 */
-.results-header)
+ * src\features\game\multiplayer\roadview\components\results\RoundResults.vue (.results-header)
  */
 
 .common-style-54 {
@@ -811,7 +800,7 @@ width: 100%;
  * src\features\user\components\FriendsList.vue (.result-avatar img)
  * src\features\game\shared\components\Kakao\VoteOverlay.vue (.player-avatar img)
  * src\features\game\shared\components\Kakao\KakaoMapGame\KakaoMapGame.vue (.player-marker img)
- * src\features\game\multiplayer\shared\components\results\IndividualGameResults.vue (.podium-player .player-avatar img)
+ * src\features\game\multiplayer\shared\components\results\SoloGameResults.vue (.podium-player .player-avatar img)
  * src\features\admin\components\AdminPanel.vue (.admin-avatar img)
  * src\core\components\TheHeader.vue (.user-avatar img)
  * src\core\components\NavigationBar.vue (.user-avatar img)
@@ -831,10 +820,8 @@ position: fixed;
 }
 
 /* Used in:
- * src\features\user\components\FriendsList.vue (/* 모달 스타일 */
-.modal-overlay)
- * src\features\user\components\AccountSettings.vue (/* 모달 스타일 */
-.modal-overlay)
+ * src\features\user\components\FriendsList.vue (.modal-overlay)
+ * src\features\user\components\AccountSettings.vue (.modal-overlay)
  */
 
 .common-style-61 {
@@ -955,12 +942,9 @@ position: fixed;
 }
 
 /* Used in:
- * src\features\main\views\MainView.vue (/* 수정: 오버레이 스타일 추가 */
-.overlay)
- * src\core\components\TheHeader.vue (/* 오버레이 스타일 */
-.overlay)
- * src\core\components\NavigationBar.vue (/* 오버레이 스타일 */
-.overlay)
+ * src\features\main\views\MainView.vue (.overlay)
+ * src\core\components\TheHeader.vue (.overlay)
+ * src\core\components\NavigationBar.vue (.overlay)
  */
 
 .common-style-71 {
@@ -1065,10 +1049,8 @@ position: absolute;
 }
 
 /* Used in:
- * src\features\game\single\roadview\views\RankView.vue (/* 헤더 스타일 */
-.game-header)
- * src\features\game\single\roadview\views\PracticeView.vue (/* 헤더 스타일 */
-.game-header)
+ * src\features\game\single\roadview\views\RankView.vue (.game-header)
+ * src\features\game\single\roadview\views\PracticeView.vue (.game-header)
  */
 
 .common-style-79 {
@@ -1129,14 +1111,7 @@ width: 100%;
 }
 
 /* Used in:
- * src\features\game\single\roadview\views\RankView.vue (/* 게임 컨테이너 */
-.game-content)
- * src\features\game\single\roadview\views\PracticeView.vue (/* IntroOverlay 컴포넌트에서 관리하므로 제거 */
-
-/* 로딩 관련 스타일 - 사용하지 않는 부분 제거 */
-
-/* 게임 컨테이너 */
-.game-content)
+ * src\features\game\single\roadview\views\PracticeView.vue (.game-content)
  * src\features\game\shared\components\photo\PhotoGameController.vue (.map-container)
  */
 
@@ -1149,10 +1124,8 @@ width: 100%;
 }
 
 /* Used in:
- * src\features\game\single\roadview\views\RankView.vue (/* 로드뷰 컨테이너 */
-.road-view-container)
- * src\features\game\single\roadview\views\PracticeView.vue (/* 로드뷰 컨테이너 */
-.road-view-container)
+ * src\features\game\single\roadview\views\RankView.vue (.road-view-container)
+ * src\features\game\single\roadview\views\PracticeView.vue (.road-view-container)
  */
 
 .common-style-85 {
@@ -1177,10 +1150,8 @@ position: fixed;
 }
 
 /* Used in:
- * src\features\game\single\roadview\views\RankView.vue (/* Spot 버튼 스타일 */
-.spot-button)
- * src\features\game\single\roadview\views\PracticeView.vue (/* Spot 버튼 스타일 */
-.spot-button)
+ * src\features\game\single\roadview\views\RankView.vue (.spot-button)
+ * src\features\game\single\roadview\views\PracticeView.vue (.spot-button)
  */
 
 .common-style-86 {
@@ -1215,9 +1186,7 @@ position: fixed;
 
 /* Used in:
  * src\features\game\single\roadview\views\RankView.vue (.map-toggle)
- * src\features\game\single\roadview\views\PracticeView.vue (/* 지도 토글 버튼 스타일 */
-
-.map-toggle)
+ * src\features\game\single\roadview\views\PracticeView.vue (.map-toggle)
  */
 
 .common-style-88 {
@@ -1263,12 +1232,8 @@ position: absolute;
 }
 
 /* Used in:
- * src\features\game\single\roadview\views\RankView.vue (/* 로드뷰 토스트 메시지 */
-.toast-message)
- * src\features\game\single\roadview\views\RankView.vue (/* 로드뷰 토스트 메시지 */
-.toast-message)
- * src\features\game\single\roadview\views\PracticeView.vue (/* 로드뷰 토스트 메시지 */
-.toast-message)
+ * src\features\game\single\roadview\views\RankView.vue (.toast-message)
+ * src\features\game\single\roadview\views\PracticeView.vue (.toast-message)
  */
 
 .common-style-91 {
@@ -1286,10 +1251,8 @@ position: absolute;
 }
 
 /* Used in:
- * src\features\game\single\roadview\views\RankView.vue (/* 모달 */
-.modal-overlay)
- * src\features\game\single\roadview\views\PracticeView.vue (/* 모달 */
-.modal-overlay)
+ * src\features\game\single\roadview\views\RankView.vue (.modal-overlay)
+ * src\features\game\single\roadview\views\PracticeView.vue (.modal-overlay)
  */
 
 .common-style-92 {
@@ -1397,8 +1360,7 @@ display: flex;
 
 /* Used in:
  * src\features\game\single\photo\components\Result\GameResult.vue (.rounds-list)
- * src\features\game\multiplayer\room\components\player\PlayerDetailsModal.vue (/* Rank section */
-.rank-cards)
+ * src\features\game\multiplayer\room\components\player\PlayerDetailsModal.vue (.rank-cards)
  */
 
 .common-style-101 {
@@ -1614,10 +1576,8 @@ position: absolute;
 }
 
 /* Used in:
- * src\features\game\shared\components\Player\List.vue (/* Voting indicators */
-.voting-indicator)
- * src\features\game\shared\components\Player\Card.vue (/* Voting indicators */
-.voting-indicator)
+ * src\features\game\shared\components\Player\List.vue (.voting-indicator)
+ * src\features\game\shared\components\Player\Card.vue (.voting-indicator)
  */
 
 .common-style-118 {
@@ -1739,7 +1699,7 @@ padding: 0.8rem 1.5rem;
 }
 
 /* Used in:
- * src\features\game\multiplayer\shared\components\results\IndividualGameResults.vue (.action-button)
+ * src\features\game\multiplayer\shared\components\results\SoloGameResults.vue (.action-button)
  * src\features\game\multiplayer\roadview\components\results\RoundResults.vue (.action-button)
  */
 
@@ -1750,7 +1710,7 @@ background: linear-gradient(135deg, #667eea, #764ba2);
 }
 
 /* Used in:
- * src\features\game\multiplayer\shared\components\results\IndividualGameResults.vue (.play-again)
+ * src\features\game\multiplayer\shared\components\results\SoloGameResults.vue (.play-again)
  * src\features\game\multiplayer\roadview\components\results\RoundResults.vue (.next-button)
  */
 
@@ -1760,7 +1720,7 @@ transform: translateY(-2px);
 }
 
 /* Used in:
- * src\features\game\multiplayer\shared\components\results\IndividualGameResults.vue (.play-again:hover)
+ * src\features\game\multiplayer\shared\components\results\SoloGameResults.vue (.play-again:hover)
  * src\features\game\multiplayer\roadview\components\results\RoundResults.vue (.next-button:hover)
  */
 
@@ -1772,7 +1732,7 @@ width: 100%;
 }
 
 /* Used in:
- * src\features\game\multiplayer\shared\components\results\IndividualGameResults.vue (.results-container)
+ * src\features\game\multiplayer\shared\components\results\SoloGameResults.vue (.results-container)
  * src\features\game\multiplayer\roadview\components\results\RoundResults.vue (.results-container)
  */
 
@@ -1793,10 +1753,8 @@ position: absolute;
 }
 
 /* Used in:
- * src\features\game\multiplayer\shared\components\intro\NextRoundOverlay.vue (/* 게임 소개 화면 */
-.intro-overlay)
- * src\features\game\multiplayer\shared\components\intro\IntroOverlay.vue (/* 게임 소개 화면 */
-.intro-overlay)
+ * src\features\game\multiplayer\shared\components\intro\NextRoundOverlay.vue (.intro-overlay)
+ * src\features\game\multiplayer\shared\components\intro\IntroOverlay.vue (.intro-overlay)
  */
 
 .common-style-131 {
@@ -1841,12 +1799,8 @@ transition: opacity 0.6s ease, transform 0.6s ease;
 }
 
 /* Used in:
- * src\features\game\multiplayer\shared\components\intro\NextRoundOverlay.vue (/* 페이드 트랜지션 (오버레이 전체) */
-.fade-enter-active,
-.fade-leave-active)
- * src\features\game\multiplayer\shared\components\intro\IntroOverlay.vue (/* 페이드 트랜지션 (오버레이 전체) */
-.fade-enter-active,
-.fade-leave-active)
+ * src\features\game\multiplayer\shared\components\intro\NextRoundOverlay.vue (.fade-enter-active, .fade-leave-active)
+ * src\features\game\multiplayer\shared\components\intro\IntroOverlay.vue (.fade-enter-active, .fade-leave-active)
  */
 
 .common-style-135 {
@@ -2123,8 +2077,8 @@ transform: scale(1);
 }
 
 /* Used in:
- * src\features\game\multiplayer\roadview\components\playerlist\IndividualPlayerList.vue (0%)
- * src\features\game\multiplayer\roadview\components\playerlist\IndividualPlayerList.vue (100%)
+ * src\features\game\multiplayer\roadview\components\playerlist\SoloPlayerList.vue (0%)
+ * src\features\game\multiplayer\roadview\components\playerlist\SoloPlayerList.vue (100%)
  */
 
 .common-style-157 {
@@ -2211,8 +2165,7 @@ position: fixed;
 }
 
 /* Used in:
- * src\features\game\multiplayer\lobby\components\RoomList.vue (/* 비밀번호 모달 스타일 */
-.modal-overlay)
+ * src\features\game\multiplayer\lobby\components\RoomList.vue (.modal-overlay)
  * src\features\game\multiplayer\lobby\components\CreateRoomModal.vue (.modal-backdrop)
  */
 
@@ -2224,8 +2177,7 @@ border-color: #60a5fa;
 
 /* Used in:
  * src\features\game\multiplayer\lobby\components\RoomList.vue (.password-modal input:focus)
- * src\features\game\multiplayer\lobby\components\CreateRoomModal.vue (.form-group input[type="text"]:focus,
-.form-group select:focus)
+ * src\features\game\multiplayer\lobby\components\CreateRoomModal.vue (.form-group input[type="text"]:focus, .form-group select:focus)
  */
 
 .common-style-164 {
@@ -2254,7 +2206,7 @@ display: flex;
 /* Used in:
  * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.chat-window)
  * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.chat-window)
- * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.chat-window)
+ * src\features\game\multiplayer\chat\components\Game\SoloChat.vue (.chat-window)
  */
 
 .common-style-166 {
@@ -2270,7 +2222,7 @@ display: flex;
 /* Used in:
  * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.chat-header)
  * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.chat-header)
- * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.chat-header)
+ * src\features\game\multiplayer\chat\components\Game\SoloChat.vue (.chat-header)
  */
 
 .common-style-167 {
@@ -2284,7 +2236,7 @@ margin: 0;
 /* Used in:
  * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.chat-title)
  * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.chat-title)
- * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.chat-title)
+ * src\features\game\multiplayer\chat\components\Game\SoloChat.vue (.chat-title)
  */
 
 .common-style-168 {
@@ -2301,7 +2253,7 @@ content: '';
 /* Used in:
  * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.chat-title::after)
  * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.chat-title::after)
- * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.chat-title::after)
+ * src\features\game\multiplayer\chat\components\Game\SoloChat.vue (.chat-title::after)
  */
 
 .common-style-169 {
@@ -2315,7 +2267,7 @@ display: flex;
 /* Used in:
  * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.online-users)
  * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.online-users)
- * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.online-users)
+ * src\features\game\multiplayer\chat\components\Game\SoloChat.vue (.online-users)
  */
 
 .common-style-170 {
@@ -2329,7 +2281,7 @@ display: inline-block;
 /* Used in:
  * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.online-indicator)
  * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.online-indicator)
- * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.online-indicator)
+ * src\features\game\multiplayer\chat\components\Game\SoloChat.vue (.online-indicator)
  */
 
 .common-style-171 {
@@ -2347,7 +2299,7 @@ flex: 1;
 /* Used in:
  * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.chat-messages)
  * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.chat-messages)
- * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.chat-messages)
+ * src\features\game\multiplayer\chat\components\Game\SoloChat.vue (.chat-messages)
  */
 
 .common-style-172 {
@@ -2361,7 +2313,7 @@ background: white;
 /* Used in:
  * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.message:not(.system-message))
  * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.message:not(.system-message))
- * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.message:not(.system-message))
+ * src\features\game\multiplayer\chat\components\Game\SoloChat.vue (.message:not(.system-message))
  */
 
 .common-style-173 {
@@ -2371,12 +2323,9 @@ align-self: flex-end;
 }
 
 /* Used in:
- * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (/* 내가 보낸 메시지 스타일 */
-.message.my-message)
- * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (/* 내가 보낸 메시지 스타일 */
-.message.my-message)
- * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (/* 내가 보낸 메시지 스타일 */
-.message.my-message)
+ * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.message.my-message)
+ * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.message.my-message)
+ * src\features\game\multiplayer\chat\components\Game\SoloChat.vue (.message.my-message)
  */
 
 .common-style-174 {
@@ -2388,7 +2337,7 @@ align-self: center;
 /* Used in:
  * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.system-message)
  * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.system-message)
- * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.system-message)
+ * src\features\game\multiplayer\chat\components\Game\SoloChat.vue (.system-message)
  */
 
 .common-style-175 {
@@ -2401,7 +2350,7 @@ display: flex;
 /* Used in:
  * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.message-header)
  * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.message-header)
- * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.message-header)
+ * src\features\game\multiplayer\chat\components\Game\SoloChat.vue (.message-header)
  */
 
 .common-style-176 {
@@ -2413,7 +2362,7 @@ font-weight: 600;
 /* Used in:
  * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.message-sender)
  * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.message-sender)
- * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.message-sender)
+ * src\features\game\multiplayer\chat\components\Game\SoloChat.vue (.message-sender)
  */
 
 .common-style-177 {
@@ -2425,7 +2374,7 @@ font-size: 0.95rem;
 /* Used in:
  * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.message-content)
  * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.message-content)
- * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.message-content)
+ * src\features\game\multiplayer\chat\components\Game\SoloChat.vue (.message-content)
  */
 
 .common-style-178 {
@@ -2437,7 +2386,7 @@ font-size: 0.85rem;
 /* Used in:
  * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.system-content)
  * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.system-content)
- * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.system-content)
+ * src\features\game\multiplayer\chat\components\Game\SoloChat.vue (.system-content)
  */
 
 .common-style-179 {
@@ -2453,7 +2402,7 @@ display: flex;
 /* Used in:
  * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.chat-input)
  * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.chat-input)
- * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.chat-input)
+ * src\features\game\multiplayer\chat\components\Game\SoloChat.vue (.chat-input)
  */
 
 .common-style-180 {
@@ -2469,7 +2418,7 @@ flex: 1;
 /* Used in:
  * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.chat-input input)
  * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.chat-input input)
- * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.chat-input input)
+ * src\features\game\multiplayer\chat\components\Game\SoloChat.vue (.chat-input input)
  */
 
 .common-style-181 {
@@ -2480,7 +2429,7 @@ border-color: #667eea;
 /* Used in:
  * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.chat-input input:focus)
  * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.chat-input input:focus)
- * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.chat-input input:focus)
+ * src\features\game\multiplayer\chat\components\Game\SoloChat.vue (.chat-input input:focus)
  */
 
 .common-style-182 {
@@ -2504,7 +2453,7 @@ background: #667eea;
 /* Used in:
  * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.send-button)
  * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.send-button)
- * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.send-button)
+ * src\features\game\multiplayer\chat\components\Game\SoloChat.vue (.send-button)
  */
 
 .common-style-183 {
@@ -2515,7 +2464,7 @@ background: #5a6edb;
 /* Used in:
  * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.send-button:hover:not(:disabled))
  * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.send-button:hover:not(:disabled))
- * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.send-button:hover:not(:disabled))
+ * src\features\game\multiplayer\chat\components\Game\SoloChat.vue (.send-button:hover:not(:disabled))
  */
 
 .common-style-184 {
@@ -2537,12 +2486,9 @@ background: #ef4444;
 }
 
 /* Used in:
- * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (/* 채팅방 닫기 버튼 */
-.close-chat-button)
- * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (/* 채팅방 닫기 버튼 */
-.close-chat-button)
- * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (/* 채팅방 닫기 버튼 */
-.close-chat-button)
+ * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.close-chat-button)
+ * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.close-chat-button)
+ * src\features\game\multiplayer\chat\components\Game\SoloChat.vue (.close-chat-button)
  */
 
 .common-style-185 {
@@ -2553,7 +2499,7 @@ background: #dc2626;
 /* Used in:
  * src\features\game\multiplayer\chat\components\Lobby\ChatWindow.vue (.close-chat-button:hover)
  * src\features\game\multiplayer\chat\components\Game\TeamChat.vue (.close-chat-button:hover)
- * src\features\game\multiplayer\chat\components\Game\IndividualChat.vue (.close-chat-button:hover)
+ * src\features\game\multiplayer\chat\components\Game\SoloChat.vue (.close-chat-button:hover)
  */
 
 .common-style-186 {
@@ -2564,10 +2510,8 @@ position: relative;
 }
 
 /* Used in:
- * src\features\admin\views\DashboardView.vue (/* Toggle Switch 스타일 */
-.switch)
- * src\features\admin\components\Game\GameModeManagement.vue (/* Toggle Switch 스타일 */
-.switch)
+ * src\features\admin\views\DashboardView.vue (.switch)
+ * src\features\admin\components\Game\GameModeManagement.vue (.switch)
  */
 
 .common-style-187 {
@@ -2669,20 +2613,9 @@ width: 100%;
 }
 
 /* Used in:
- * src\features\admin\components\Game\ThemeModeSettings.vue (/* 폼 요소 스타일링 */
-input[type="text"],
-input[type="number"],
-select,
-textarea)
- * src\features\admin\components\Game\RoadviewModeSettings.vue (/* 폼 요소 스타일링 */
-input[type="text"],
-input[type="number"],
-select)
- * src\features\admin\components\Game\PhotoModeSettings.vue (/* 폼 요소 스타일링 */
-input[type="text"],
-input[type="number"],
-select,
-textarea)
+ * src\features\admin\components\Game\ThemeModeSettings.vue (input[type="text"], input[type="number"], select, textarea)
+ * src\features\admin\components\Game\RoadviewModeSettings.vue (input[type="text"], input[type="number"], select)
+ * src\features\admin\components\Game\PhotoModeSettings.vue (input[type="text"], input[type="number"], select, textarea)
  */
 
 .common-style-195 {
@@ -2832,10 +2765,8 @@ position: fixed;
 }
 
 /* Used in:
- * src\core\components\TheHeader.vue (/* 프로필 메뉴 스타일 */
-.profile-menu)
- * src\core\components\NavigationBar.vue (/* 프로필 메뉴 스타일 */
-.profile-menu)
+ * src\core\components\TheHeader.vue (.profile-menu)
+ * src\core\components\NavigationBar.vue (.profile-menu)
  */
 
 .common-style-205 {

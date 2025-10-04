@@ -323,7 +323,7 @@ class RoomWebSocketService {
         roomId,
         title: settings.title,
         gameModeKey: settings.gameMode,
-        playerMatchTypeKey: settings.isTeamMode ? 'team' : 'individual',
+        playerMatchTypeKey: settings.isTeamMode ? 'team' : 'solo',
         privateRoom: settings.isPrivate || false,
         teamCount: settings.teamCount || 2,
         updatedBy: userId,

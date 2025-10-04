@@ -205,8 +205,8 @@
             <span>협동전 테스트</span>
           </router-link>
           <router-link
-            to="/testIndividualGame"
-            class="test-link individual-test"
+            to="/testSoloGame"
+            class="test-link solo-test"
           >
             <i class="fas fa-user"></i>
             <span>개인전 테스트</span>
@@ -951,7 +951,7 @@ function showLockedMessage() {
   color: #1d4ed8;
 }
 
-.test-link.individual-test {
+.test-link.solo-test {
   background-color: #fef3c7;
   color: #d97706;
 }

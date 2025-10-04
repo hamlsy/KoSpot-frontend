@@ -4,6 +4,7 @@ import kakaoMapTest from '@/dummy/KakaoMapTest.vue'
 import EncryptTest from 'src/dummy/EncryptTest.vue'
 import ComponentTest from 'src/dummy/ComponentTest.vue'
 import TempLoginView from '@/features/auth/views/TempLoginView.vue'
+import SoloGameView from '@/features/game/multiplayer/roadview/views/SoloGameView.vue'
 
 const devRoutes = [
     {
@@ -35,6 +36,14 @@ const devRoutes = [
         path: '/temp-login',
         name: "TempLogin",
         component: TempLoginView
+    },
+    {
+        path: '/test/roadview-solo',
+        name: "TestRoadviewSolo",
+        component: SoloGameView,
+        meta: {
+            title: '로드뷰 개인전 테스트'
+        }
     }
 ];
 

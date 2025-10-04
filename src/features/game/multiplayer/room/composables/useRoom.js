@@ -306,7 +306,7 @@ export function useRoom(props, emit, options = {}) {
         title: settings.title || localRoomData.value.title,
         password: settings.password || localRoomData.value.password,
         gameModeKey: settings.gameMode || localRoomData.value.gameMode,
-        playerMatchTypeKey: settings.isTeamMode ? 'team' : 'individual',
+        playerMatchTypeKey: settings.isTeamMode ? 'team' : 'solo',
         privateRoom: settings.isPrivate !== undefined ? settings.isPrivate : localRoomData.value.isPrivate,
         teamCount: settings.teamCount || localRoomData.value.teamCount || 2
       };

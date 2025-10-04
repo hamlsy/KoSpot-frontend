@@ -1,5 +1,5 @@
 import { reactive } from 'vue';
-import { testData, individualTestData } from '@/store/MultiplayerGameTestData'
+import { testData, soloTestData } from '@/store/MultiplayerGameTestData'
 
 // 게임 상태 관리 스토어 생성
 const gameStore = {
@@ -45,7 +45,7 @@ const gameStore = {
   // 테스트용 데이터 로드
   loadTestData(isTeamMode = true) {
     console.log("테스트 데이터를 로드합니다")
-    const data = isTeamMode ? testData : individualTestData;
+    const data = isTeamMode ? testData : soloTestData;
     this.state.roomData = data.roomData;
     this.state.currentUser = data.currentUser;
     this.state.players = data.players;
@@ -116,6 +116,14 @@ const gameStore = {
     this.state.guessPosition = null;
     this.state.actualLocation = null;
     this.state.isLoading = true;
+    
+    // 플레이어 추측 배열 초기화 (중요: 다음 라운드에서 더미 플레이어 제출을 위해)
+    this.state.playerGuesses = [];
+    
+    // 플레이어 제출 상태 초기화
+    this.state.players.forEach(player => {
+      player.hasSubmitted = false;
+    });
   },
   
   // 게임 종료

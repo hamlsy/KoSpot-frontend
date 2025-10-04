@@ -92,7 +92,7 @@ const props = defineProps({
   gameMode: {
     type: String,
     default: 'single',
-    validator: (value) => ['single', 'team', 'individual'].includes(value)
+    validator: (value) => ['single', 'team', 'solo'].includes(value)
   }
 });
 
@@ -185,7 +185,7 @@ onMounted(() => {
     createHintCircles();
   }
   
-  // gameMode가 'single'이 아닌 경우(team, individual)에만 WebSocket 연결 설정
+  // gameMode가 'single'이 아닌 경우(team, solo)에만 WebSocket 연결 설정
   console.log(`게임 모드: ${props.gameMode}`);
 });
 

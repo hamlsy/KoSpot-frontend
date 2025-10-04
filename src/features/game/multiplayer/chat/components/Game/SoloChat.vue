@@ -66,7 +66,7 @@
 import { ref, nextTick, onMounted, onUpdated, watch } from 'vue';
 
 export default {
-  name: "IndividualChat",
+  name: "SoloChat",
   
   props: {
     messages: {
