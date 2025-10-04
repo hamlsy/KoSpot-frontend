@@ -9,8 +9,14 @@ import router from './router';
 import axios from 'axios';
 import * as VueCompositionAPI from 'vue';
 
-// local api 경로 분기
-axios.defaults.baseURL = process.env.VUE_APP_API_BASE_URL;
+// 환경변수 설정 가져오기
+import environmentConfig from '@/core/config/environment.js'
+
+// API 기본 URL 설정
+axios.defaults.baseURL = environmentConfig.get('apiBaseUrl', 'http://localhost:8080/api');
+
+// 전역 환경설정 등록
+app.config.globalProperties.$env = environmentConfig;
 
 import "@fortawesome/fontawesome-free/css/all.css";
 import "@fortawesome/fontawesome-free/js/all.js";

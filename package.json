@@ -4,12 +4,18 @@
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
+    "serve:dev": "node scripts/setup-env.js development setup && vue-cli-service serve",
     "build": "vue-cli-service build",
+    "build:dev": "node scripts/setup-env.js development setup && vue-cli-service build --mode development",
+    "build:prod": "node scripts/setup-env.js production setup && vue-cli-service build --mode production",
     "lint": "vue-cli-service lint",
     "fix-imports": "node scripts/fix-imports.js",
     "dedup": "node scripts/deduplicator.js",
     "restore": "node scripts/restore-imports.js",
-    "optimize": "npm run fix-imports && npm run dedup"
+    "optimize": "npm run fix-imports && npm run dedup",
+    "env:setup": "node scripts/setup-env.js",
+    "env:validate": "node scripts/setup-env.js development validate",
+    "env:show": "node scripts/setup-env.js development show"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.7.1",
