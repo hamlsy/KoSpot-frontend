@@ -90,12 +90,12 @@
       <!-- 액션 버튼 -->
       <div class="final-actions">
         <button class="action-btn secondary-btn" @click="$emit('play-again')">
-          <i class="fas fa-redo"></i>
-          <span>다시 하기</span>
+          <i class="fas fa-arrow-left"></i>
+          <span>돌아가기</span>
         </button>
         <button class="action-btn primary-btn" @click="$emit('exit-to-lobby')">
-          <i class="fas fa-home"></i>
-          <span>로비로 나가기</span>
+          <i class="fas fa-sign-out-alt"></i>
+          <span>나가기</span>
         </button>
       </div>
     </div>
@@ -162,34 +162,33 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(12px);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10000;
   overflow-y: auto;
-  padding: 1rem;
+  padding: 2rem 1rem;
 }
 
 .final-results-container {
   width: 100%;
-  max-width: 500px;
-  max-height: 90vh;
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
-  animation: modalSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 480px;
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  animation: modalSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
-  transform-origin: center;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 @keyframes modalSlideIn {
   0% {
     opacity: 0;
-    transform: scale(0.85) translateY(30px);
+    transform: scale(0.9) translateY(20px);
   }
   100% {
     opacity: 1;
@@ -199,163 +198,145 @@ export default {
 
 /* 헤더 */
 .final-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #3182f6;
   color: white;
   text-align: center;
-  padding: 1.5rem;
-  position: relative;
-  overflow: hidden;
+  padding: 2rem 1.5rem;
 }
 
 .header-content {
   position: relative;
-  z-index: 2;
 }
 
 .trophy-icon {
   font-size: 2.5rem;
-  margin-bottom: 0.8rem;
+  margin-bottom: 0.75rem;
   color: #FFD700;
-  animation: trophyGlow 2s ease-in-out infinite alternate;
-}
-
-@keyframes trophyGlow {
-  from { filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.5)); }
-  to { filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.8)); }
 }
 
 .final-title {
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 700;
-  margin: 0 0 0.3rem 0;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.02em;
 }
 
 .final-subtitle {
-  font-size: 1rem;
+  font-size: 0.95rem;
   margin: 0;
-  opacity: 0.9;
+  opacity: 0.95;
   font-weight: 400;
 }
 
 /* 순위 목록 */
 .rankings-container {
   padding: 1.5rem;
-  max-height: 350px;
+  flex: 1;
   overflow-y: auto;
+  max-height: 400px;
 }
 
 .rankings-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .rankings-header h3 {
   margin: 0;
-  font-size: 1.3rem;
-  color: #333;
-  font-weight: 600;
+  font-size: 1.125rem;
+  color: #191f28;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .total-players {
-  background: linear-gradient(135deg, #f0f2f5, #e9ecef);
-  padding: 0.4rem 0.8rem;
-  border-radius: 15px;
-  color: #666;
-  font-weight: 500;
-  font-size: 0.9rem;
+  background: #f2f4f6;
+  padding: 0.375rem 0.75rem;
+  border-radius: 12px;
+  color: #4e5968;
+  font-weight: 600;
+  font-size: 0.875rem;
 }
 
 .rankings-list {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 0.75rem;
 }
 
 .ranking-item {
   display: flex;
   align-items: center;
-  padding: 0.8rem;
-  background: #ffffff;
-  border-radius: 12px;
-  transition: all 0.3s ease;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 16px;
+  transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
-  border: 1px solid #e9ecef;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .ranking-item:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  background: #f2f4f6;
 }
 
 .ranking-item.current-user {
-  background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
-  border: 1px solid #2196f3;
-  box-shadow: 0 4px 15px rgba(33, 150, 243, 0.2);
+  background: #e8f3ff;
+  border: 1.5px solid #3182f6;
 }
 
 .ranking-item.rank-1 {
-  background: linear-gradient(135deg, #fff8e1, #fffbf0);
-  border: 1px solid #ffc107;
-  box-shadow: 0 4px 15px rgba(255, 193, 7, 0.2);
+  background: #fffbf0;
+  border: 1.5px solid #ffc107;
 }
 
 .ranking-item.rank-2 {
-  background: linear-gradient(135deg, #f3e5f5, #faf5ff);
-  border: 1px solid #9c27b0;
-  box-shadow: 0 4px 15px rgba(156, 39, 176, 0.2);
+  background: #f8f4fb;
+  border: 1.5px solid #9c27b0;
 }
 
 .ranking-item.rank-3 {
-  background: linear-gradient(135deg, #e8f5e8, #f0f8f0);
-  border: 1px solid #4caf50;
-  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
+  background: #f0f8f4;
+  border: 1.5px solid #4caf50;
 }
 
 /* 순위 배지 */
 .rank-badge {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
   font-size: 1rem;
-  margin-right: 0.8rem;
+  margin-right: 0.875rem;
   flex-shrink: 0;
 }
 
 .rank-badge.rank-1 {
-  background: linear-gradient(135deg, #ffd700, #ffed4e);
-  color: #333;
-  box-shadow: 0 3px 10px rgba(255, 215, 0, 0.3);
+  background: #ffd700;
+  color: #191f28;
 }
 
 .rank-badge.rank-2 {
-  background: linear-gradient(135deg, #c0c0c0, #e8e8e8);
-  color: #333;
-  box-shadow: 0 3px 10px rgba(192, 192, 192, 0.3);
+  background: #e0e0e0;
+  color: #191f28;
 }
 
 .rank-badge.rank-3 {
-  background: linear-gradient(135deg, #cd7f32, #daa520);
+  background: #cd7f32;
   color: white;
-  box-shadow: 0 3px 10px rgba(205, 127, 50, 0.3);
 }
 
 .rank-badge:not(.rank-1):not(.rank-2):not(.rank-3) {
-  background: linear-gradient(135deg, #666, #888);
+  background: #8b95a1;
   color: white;
-  box-shadow: 0 3px 10px rgba(102, 102, 102, 0.3);
 }
 
 .rank-icon {
-  font-size: 1.2rem;
+  font-size: 1.125rem;
 }
 
 /* 플레이어 정보 */
@@ -363,17 +344,17 @@ export default {
   display: flex;
   align-items: center;
   flex: 1;
-  gap: 0.8rem;
+  gap: 0.875rem;
 }
 
 .player-avatar {
-  width: 45px;
-  height: 45px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   overflow: hidden;
-  background: #eee;
+  background: #e5e8eb;
   flex-shrink: 0;
-  border: 2px solid #e9ecef;
+  border: 2px solid white;
 }
 
 .player-avatar img {
@@ -389,75 +370,48 @@ export default {
 .player-name {
   font-size: 1rem;
   font-weight: 600;
-  color: #333;
-  margin-bottom: 0.2rem;
+  color: #191f28;
+  margin-bottom: 0.25rem;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
+  letter-spacing: -0.01em;
 }
 
 .host-icon {
   color: #ffc107;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
 }
 
 .player-stats {
   display: flex;
-  gap: 0.8rem;
-  font-size: 0.85rem;
-  color: #666;
+  gap: 0.875rem;
+  font-size: 0.875rem;
+  color: #6b7684;
 }
 
 .total-score {
-  font-weight: 600;
-  color: #2196f3;
+  font-weight: 700;
+  color: #3182f6;
 }
 
 .average-distance {
-  color: #666;
+  color: #6b7684;
+  font-weight: 500;
 }
 
-/* 우승자 효과 */
+/* 우승자 효과 제거 (심플하게) */
 .winner-effect {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-}
-
-.sparkle {
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  background: #ffd700;
-  border-radius: 50%;
-  animation: sparkle 2s infinite;
-}
-
-.sparkle-1 { top: 20%; left: 20%; animation-delay: 0s; }
-.sparkle-2 { top: 30%; right: 25%; animation-delay: 0.7s; }
-.sparkle-3 { bottom: 25%; left: 70%; animation-delay: 1.4s; }
-
-@keyframes sparkle {
-  0%, 100% { 
-    opacity: 0; 
-    transform: scale(0); 
-  }
-  50% { 
-    opacity: 1; 
-    transform: scale(1); 
-  }
+  display: none;
 }
 
 /* 게임 통계 */
 .game-stats {
   display: flex;
   justify-content: space-around;
-  padding: 1rem 1.5rem;
-  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-  border-top: 1px solid #e9ecef;
+  padding: 1.5rem;
+  background: #f9fafb;
+  border-top: 1px solid #e5e8eb;
 }
 
 .stat-item {
@@ -467,131 +421,138 @@ export default {
 .stat-value {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #2196f3;
-  margin-bottom: 0.2rem;
+  color: #191f28;
+  margin-bottom: 0.25rem;
+  letter-spacing: -0.02em;
 }
 
 .stat-label {
-  font-size: 0.8rem;
-  color: #666;
+  font-size: 0.8125rem;
+  color: #6b7684;
   font-weight: 500;
 }
 
 /* 액션 버튼 */
 .final-actions {
   display: flex;
-  gap: 0.8rem;
+  gap: 0.75rem;
   padding: 1.5rem;
-  justify-content: center;
+  background: white;
 }
 
 .action-btn {
-  padding: 0.8rem 1.5rem;
+  flex: 1;
+  padding: 1rem;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  transition: all 0.3s ease;
-  min-width: 140px;
   justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  letter-spacing: -0.01em;
 }
 
 .primary-btn {
-  background: linear-gradient(135deg, #2196f3, #1976d2);
+  background: #3182f6;
   color: white;
-  box-shadow: 0 3px 12px rgba(33, 150, 243, 0.3);
 }
 
 .primary-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+  background: #1b64da;
+}
+
+.primary-btn:active {
+  background: #1957c2;
 }
 
 .secondary-btn {
-  background: linear-gradient(135deg, #757575, #616161);
-  color: white;
-  box-shadow: 0 3px 12px rgba(117, 117, 117, 0.3);
+  background: #f2f4f6;
+  color: #191f28;
 }
 
 .secondary-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(117, 117, 117, 0.4);
+  background: #e5e8eb;
 }
 
+.secondary-btn:active {
+  background: #d1d6db;
+}
 
 /* 반응형 */
 @media (max-width: 768px) {
+  .final-results-overlay {
+    padding: 1rem;
+  }
+
   .final-results-container {
-    width: 95%;
-    max-width: none;
-    max-height: 95vh;
-    margin: 0;
-    border-radius: 15px;
+    max-width: 100%;
+    border-radius: 20px;
+  }
+
+  .final-header {
+    padding: 1.75rem 1.25rem;
   }
 
   .final-title {
-    font-size: 1.8rem;
+    font-size: 1.5rem;
   }
 
   .final-subtitle {
-    font-size: 0.9rem;
+    font-size: 0.875rem;
   }
 
   .trophy-icon {
-    font-size: 2rem;
+    font-size: 2.25rem;
+  }
+
+  .rankings-container {
+    padding: 1.25rem;
+    max-height: 320px;
   }
 
   .ranking-item {
-    padding: 0.6rem;
+    padding: 0.875rem;
   }
 
   .player-info {
-    gap: 0.6rem;
+    gap: 0.75rem;
   }
 
   .player-avatar {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
   }
 
   .player-name {
-    font-size: 0.9rem;
+    font-size: 0.9375rem;
   }
 
   .player-stats {
-    font-size: 0.8rem;
-    gap: 0.6rem;
+    font-size: 0.8125rem;
+    gap: 0.75rem;
   }
 
   .final-actions {
     flex-direction: column;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 1rem;
+    gap: 0.625rem;
+    padding: 1.25rem;
   }
 
   .action-btn {
-    width: 100%;
-    max-width: 250px;
-    padding: 0.7rem 1.2rem;
-    font-size: 0.9rem;
-  }
-
-  .rankings-container {
-    max-height: calc(95vh - 250px);
-    overflow-y: auto;
+    padding: 0.875rem;
+    font-size: 0.9375rem;
   }
 
   .game-stats {
-    padding: 0.8rem 1rem;
+    padding: 1.25rem 1rem;
   }
 
   .stat-value {
-    font-size: 1.3rem;
+    font-size: 1.375rem;
   }
 
   .stat-label {
