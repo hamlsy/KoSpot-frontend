@@ -1,0 +1,3 @@
+[submodule "KoSpot-frontend-private"]
+	path = KoSpot-frontend-private
+	url = https://github.com/hamlsy/KoSpot-frontend-private.git
