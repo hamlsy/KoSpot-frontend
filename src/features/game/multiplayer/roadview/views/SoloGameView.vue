@@ -60,9 +60,12 @@
         :is-vote-timer-active="false"
         :vote-time-remaining="15000"
         :current-user-has-voted="false"
+        :is-mobile="$refs.baseGame ? $refs.baseGame.isMobile : false"
         @close="closeRoundResults"
         @request-next-round="requestNextRound"
         @finish-game="finishGame"
+        @toggle-player-list="togglePlayerList"
+        @toggle-chat="toggleChat"
       />
     </template>
 
@@ -831,6 +834,19 @@ export default {
 
     exitToLobby() {
       this.$router.push("/lobby");
+    },
+
+    // 모바일 액션 핸들러
+    togglePlayerList() {
+      if (this.$refs.baseGame) {
+        this.$refs.baseGame.togglePlayerList();
+      }
+    },
+
+    toggleChat() {
+      if (this.$refs.baseGame) {
+        this.$refs.baseGame.toggleChat();
+      }
     },
   
     // NextRoundOverlay 완료 후 다음 라운드 시작 처리

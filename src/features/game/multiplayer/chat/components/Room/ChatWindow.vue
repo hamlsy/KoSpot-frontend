@@ -121,7 +121,7 @@ export default {
   border: none;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   cursor: pointer;
-  z-index: 2000;
+  z-index: 16000;
   display: none; /* 기본적으로 숨김 (반응형에서만 표시) */
   flex-direction: column;
   align-items: center;
@@ -160,7 +160,7 @@ export default {
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 1500;
+    z-index: 15000;
     background-color: white;
     transform: translateY(100%);
     transition: transform 0.3s ease-in-out;
@@ -186,7 +186,7 @@ export default {
   .mobile-chat-header {
     display: flex;
     position: relative;
-    z-index: 1600;
+    z-index: 16001;
     height: 130px;
   }
 }

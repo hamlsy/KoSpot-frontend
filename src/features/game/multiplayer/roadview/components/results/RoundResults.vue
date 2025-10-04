@@ -20,6 +20,18 @@
             <span class="top-player-distance">{{ formatDistance(topPlayer.distance) }}km</span>
           </div>
         </div>
+        
+        <!-- 모바일 전용 액션 버튼들 -->
+        <div class="mobile-actions" v-if="isMobile">
+          <button class="mobile-action-btn player-list-btn" @click="$emit('toggle-player-list')" title="플레이어 목록">
+            <i class="fas fa-users"></i>
+            <span>플레이어</span>
+          </button>
+          <button class="mobile-action-btn chat-btn" @click="$emit('toggle-chat')" title="채팅">
+            <i class="fas fa-comments"></i>
+            <span>채팅</span>
+          </button>
+        </div>
       </div>
 
       <!-- 지도 영역 -->
@@ -224,6 +236,10 @@ export default {
     teamMessages: {
       type: Object,
       default: () => ({}),
+    },
+    isMobile: {
+      type: Boolean,
+      default: false,
     },
   },
 
@@ -943,6 +959,72 @@ export default {
   }
 }
 
+/* 모바일 액션 버튼 스타일 */
+.mobile-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.mobile-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.75rem;
+  font-weight: 600;
+  min-width: 70px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(226, 232, 240, 0.5);
+}
+
+.mobile-action-btn:hover {
+  background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-action-btn:active {
+  transform: translateY(0);
+}
+
+.mobile-action-btn i {
+  font-size: 1rem;
+  color: #64748b;
+}
+
+.mobile-action-btn span {
+  font-size: 0.6875rem;
+  letter-spacing: -0.01em;
+}
+
+.player-list-btn:hover {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 197, 253, 0.1));
+  color: #3182f6;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.player-list-btn:hover i {
+  color: #3182f6;
+}
+
+.chat-btn:hover {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(134, 239, 172, 0.1));
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.chat-btn:hover i {
+  color: #22c55e;
+}
+
 /* 반응형 디자인 */
 @media (max-width: 768px) {
   .round-results {
@@ -979,6 +1061,7 @@ export default {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
+    padding: 1.25rem;
   }
 
   .results-summary {
@@ -989,6 +1072,17 @@ export default {
   .top-player-info {
     font-size: 0.8rem;
     padding: 0.4rem 0.8rem;
+  }
+  
+  .mobile-actions {
+    width: 100%;
+    justify-content: center;
+    margin-top: 0.75rem;
+  }
+  
+  .mobile-action-btn {
+    flex: 1;
+    max-width: 120px;
   }
 
   .map-container {

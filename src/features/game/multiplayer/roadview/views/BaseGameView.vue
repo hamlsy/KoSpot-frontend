@@ -1219,9 +1219,10 @@ export default {
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
   z-index: 5;
   overflow-y: auto;
-  max-height: calc(100vh - 140px);
+  max-height: calc(100vh - 160px);
   display: flex;
   flex-direction: column;
+  border-radius: 10px;
   /* 개별 속성별 애니메이션 설정 */
   transition: 
     width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
@@ -1390,7 +1391,7 @@ export default {
     height: 100vh; /* 전체 화면 높이 사용 */
     background: white;
     box-shadow: -2px 0 20px rgba(0, 0, 0, 0.3);
-    z-index: 1000; /* 더 높은 z-index로 다른 요소들 위에 표시 */
+    z-index: 15000; /* RoundResults보다 높은 z-index로 다른 요소들 위에 표시 */
     overflow-y: auto;
     border-radius: 0 0 0 12px; /* 왼쪽 하단 모서리만 둥글게 */
     
