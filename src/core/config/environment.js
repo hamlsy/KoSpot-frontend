@@ -46,6 +46,11 @@ class EnvironmentConfig {
       // AWS 설정
       awsRegion: process.env.VUE_APP_AWS_REGION || 'ap-northeast-2',
       awsS3Bucket: process.env.VUE_APP_AWS_S3_BUCKET || '',
+      
+      // API 키들
+      kakaoMapApiKey: process.env.VUE_APP_KAKAO_MAP_API_KEY || '',
+      kakaoClientId: process.env.VUE_APP_KAKAO_CLIENT_ID || '',
+      googleClientId: process.env.VUE_APP_GOOGLE_CLIENT_ID || '',
     }
   }
 

@@ -59,6 +59,14 @@ module.exports = defineConfig({
         'src': path.resolve(__dirname, 'src'),
       },
       extensions: ['.js', '.vue', '.json']
-    }
+    },
+    plugins: [
+      new (require('html-webpack-plugin'))({
+        template: 'public/index.html',
+        templateParameters: {
+          KAKAO_MAP_API_KEY: process.env.VUE_APP_KAKAO_MAP_API_KEY || 'your_kakao_map_api_key_here'
+        }
+      })
+    ]
   }
 })
