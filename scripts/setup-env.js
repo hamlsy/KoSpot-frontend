@@ -57,7 +57,7 @@ function setupEnvironment() {
   
   // 경로 설정
   const submodulePath = path.resolve(__dirname, '..', 'KoSpot-frontend-private')
-  const configPath = path.resolve(__dirname, '..', 'config', 'environments', `${environment}.env`)
+  const configPath = path.resolve(__dirname, '..', `${environment}.env`) //환경변수
   const targetPath = path.resolve(submodulePath, '.env')
   const targetEnvPath = path.resolve(submodulePath, `.env.${environment}`)
   
