@@ -42,13 +42,13 @@ export function loadEnvConfig() {
 }
 
 /**
- * 환경변수 파일 로드
+ * 환경변수 파일 로드 (Node.js 빌드 환경에서만 실행)
  * @param {string} filePath - 파일 경로
  * @returns {Object|null} 환경변수 객체 또는 null
  */
 function loadEnvFile(filePath) {
   try {
-    // Node.js 환경에서 파일 시스템 접근
+    // Node.js 환경에서만 파일 시스템 접근
     if (typeof window === 'undefined' && typeof require !== 'undefined') {
       const fs = require('fs')
       const path = require('path')
@@ -61,39 +61,11 @@ function loadEnvFile(filePath) {
       }
     }
     
-    // 브라우저 환경에서는 동적 import 시도
-    if (typeof window !== 'undefined') {
-      return loadEnvFileBrowser(filePath)
-    }
-    
+    // 브라우저 환경에서는 null 반환 (빌드 시점에 이미 process.env에 주입됨)
     return null
     
   } catch (error) {
     console.warn(`Failed to load env file ${filePath}:`, error.message)
-    return null
-  }
-}
-
-/**
- * 브라우저 환경에서 환경변수 파일 로드
- * @param {string} filePath - 파일 경로
- * @returns {Object|null} 환경변수 객체 또는 null
- */
-async function loadEnvFileBrowser(filePath) {
-  try {
-    // public 폴더에서 환경변수 파일 로드
-    const publicPath = filePath.replace('./KoSpot-frontend-private/', '/config/')
-    const response = await fetch(publicPath)
-    
-    if (response.ok) {
-      const content = await response.text()
-      return parseEnvContent(content)
-    }
-    
-    return null
-    
-  } catch (error) {
-    console.warn(`Failed to load env file in browser ${filePath}:`, error.message)
     return null
   }
 }
