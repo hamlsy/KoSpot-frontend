@@ -29,7 +29,8 @@ loadSubmoduleEnv()
 
 module.exports = defineConfig({
   transpileDependencies: true,
-  publicPath: process.env.NODE_ENV === 'production' ? '/app/' : '/',
+  // publicPath: process.env.NODE_ENV === 'production' ? '/app/' : '/',
+  publicPath: process.env.NODE_ENV === 'production' ? '/' : '/',
   devServer: {
     hot: true,
     port: 3000,
