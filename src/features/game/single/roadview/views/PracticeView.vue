@@ -57,14 +57,6 @@
           {{ isMapOpen ? "로드뷰로 돌아가기" : "지도 열기" }}
         </button>
 
-        <!-- Spot 버튼 (지도 모드에서만 표시) -->
-        <button
-          v-if="isMapOpen && !showResult && false"
-          class="spot-button"
-          @click="checkSpotAnswer"
-        >
-          <i class="fas fa-crosshairs"></i> Spot!
-        </button>
       </div>
 
       <!-- 휴대폰 프레임 -->
@@ -76,6 +68,7 @@
         :disabled="showResult"
         :showDistance="false"
         :showActionButton="false"
+        :gameMode="'single'"
         @close="toggleMap"
         @check-answer="checkAnswer"
         @spot-answer="checkSpotAnswer"
@@ -1115,43 +1108,6 @@ export default {
   border-radius: 10px;
 }
 
-.hint-btn {
-  position: fixed;
-  bottom: 30px;
-  left: 30px;
-  background: linear-gradient(135deg, #9b59b6, #8e44ad);
-  color: white;
-  border: none;
-  padding: 10px 15px;
-  border-radius: 15px;
-  cursor: pointer;
-  font-size: 0.95rem;
-  font-weight: bold;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.hint-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-}
-
-.hint-btn:active {
-  transform: translateY(-1px);
-}
-
-.hint-btn i {
-  font-size: 1.1rem;
-}
-
-/* IntroOverlay 컴포넌트에서 관리하므로 제거 */
-
-/* 로딩 관련 스타일 - 사용하지 않는 부분 제거 */
-
 /* 게임 컨테이너 */
 .game-content {
   width: 100%;
@@ -1168,43 +1124,7 @@ export default {
   left: 0;
 }
 
-/* Spot 버튼 스타일 */
-.spot-button {
-  position: fixed;
-  bottom: 150px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: linear-gradient(135deg, #27ae60, #2ecc71);
-  color: white;
-  border: none;
-  padding: 12px 25px;
-  border-radius: 30px;
-  font-weight: bold;
-  font-size: 1rem;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(46, 204, 113, 0.4);
-  transition: all 0.3s ease;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.spot-button:hover {
-  transform: translateX(-50%) translateY(-3px);
-  box-shadow: 0 6px 15px rgba(46, 204, 113, 0.6);
-}
-
-.spot-button:active {
-  transform: translateX(-50%) translateY(-1px);
-}
-
-.spot-button i {
-  font-size: 1.1rem;
-}
-
 /* 지도 토글 버튼 스타일 */
-
 .map-toggle {
   position: fixed;
   bottom: 30px;
@@ -1491,13 +1411,6 @@ export default {
     bottom: 20px;
     right: 20px;
   }
-
-  .hint-btn {
-    padding: 8px 12px;
-    font-size: 0.85rem;
-    bottom: 20px;
-    left: 20px;
-  }
 }
 
 /* 로드뷰 토스트 메시지 */
@@ -1524,10 +1437,6 @@ export default {
     opacity: 1;
   }
 }
-
-/* 휴대폰 프레임 스타일은 PhoneFrame 컴포넌트에서 관리하므로 제거 */
-
-/* PhoneFrame 컴포넌트에서 관리하므로 제거 */
 
 .phone-hint-button {
   position: absolute;

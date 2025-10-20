@@ -12,6 +12,7 @@ import * as VueCompositionAPI from 'vue';
 // 환경변수 설정 가져오기
 import environmentConfig from '@/core/config/environment.js'
 
+
 import "@fortawesome/fontawesome-free/css/all.css";
 import "@fortawesome/fontawesome-free/js/all.js";
 
@@ -23,9 +24,6 @@ import CountUp from 'vue-countup-v3';
 
 // 앱 인스턴스 생성
 const app = createApp(App);
-
-// API 기본 URL 설정
-axios.defaults.baseURL = environmentConfig.get('apiBaseUrl', 'http://localhost:8080/api');
 
 app.component('CountUp', CountUp);
 

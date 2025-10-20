@@ -10,8 +10,8 @@ export function useKakaoMapGame(props, emit) {
   
   const { getMarkerPosition } = useKakaoMapControls(props, emit);
   
-  // 팀 투표 기능 - solo 모드에서는 사용하지 않음
-  const teamVote = props.gameMode === 'solo' ? null : useKakaoMapTeamVote(props, emit);
+  // 팀 투표 기능 - team 모드에서만 사용
+  const teamVote = props.gameMode === 'team' ? useKakaoMapTeamVote(props, emit) : null;
   
   const submitAnswer = async () => {
     if (!marker.value) return;
