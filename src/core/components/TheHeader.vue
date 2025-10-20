@@ -2,7 +2,7 @@
   <header class="header">
     <div class="header-content">
       <div class="header-left">
-        <app-logo class="home-link" to="/mainPage" />
+        <app-logo class="home-link" to="/main" />
       </div>
 
       <!-- 네비게이션 추가 - 웹 전용 -->

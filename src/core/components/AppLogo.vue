@@ -11,7 +11,7 @@ export default {
   props: {
     to: {
       type: String,
-      default: '/mainPage'
+      default: '/main'
     }
   }
 }
