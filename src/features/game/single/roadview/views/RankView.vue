@@ -41,6 +41,7 @@
         :disabled="showResult"
         :showDistance="false"
         :showActionButton="false"
+        :gameMode="'single'"
         @close="toggleMap"
         @check-answer="checkAnswer"
         @spot-answer="checkSpotAnswer"
@@ -736,62 +737,6 @@ export default {
   }
 }
 
-/* 로딩 화면 */
-.loading-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: rgba(0, 0, 0, 0.7);
-  z-index: 10;
-}
-
-.loading-spinner {
-  width: 60px;
-  height: 60px;
-  border: 6px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: white;
-  animation: spin 1s infinite linear;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.load-error {
-  background-color: white;
-  padding: 25px;
-  border-radius: 12px;
-  text-align: center;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-}
-
-.load-error button {
-  background: linear-gradient(135deg, #3498db, #2980b9);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  margin-top: 15px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.load-error button:hover {
-  transform: translateY(-2px);
-}
-
 /* 게임 컨테이너 */
 .game-content {
   width: 100%;
@@ -808,49 +753,7 @@ export default {
   left: 0;
 }
 
-/* Spot 버튼 스타일 */
-.spot-button {
-  position: fixed;
-  bottom: 150px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: linear-gradient(135deg, #27ae60, #2ecc71);
-  color: white;
-  border: none;
-  padding: 12px 25px;
-  border-radius: 30px;
-  font-weight: bold;
-  font-size: 1rem;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(46, 204, 113, 0.4);
-  transition: all 0.3s ease;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.spot-button:hover {
-  transform: translateX(-50%) translateY(-3px);
-  box-shadow: 0 6px 15px rgba(46, 204, 113, 0.6);
-}
-
-.spot-button:active {
-  transform: translateX(-50%) translateY(-1px);
-}
-
-.spot-button i {
-  font-size: 1.1rem;
-}
-
-/* 지도 토글 컨테이너 */
-.map-toggle-container {
-  position: absolute;
-  bottom: 30px;
-  right: 30px;
-  z-index: 10;
-}
-
+/* 지도 토글 버튼 스타일 */
 .map-toggle {
   position: fixed;
   bottom: 30px;
@@ -884,52 +787,13 @@ export default {
   font-size: 1.1rem;
 }
 
-/* 결과 화면 */
-/* 결과 화면 스타일은 ResultOverlay 컴포넌트로 이동됨 */
-
-/* 결과 지도 섹션 스타일은 ResultMapSection 컴포넌트로 이동됨 */
-
-/* 결과 화면 버튼 스타일은 ResultOverlay 컴포넌트로 이동됨 */
-
+/* 반응형 디자인 */
 @media (max-width: 480px) {
-  .result-score-section {
-    flex-direction: column;
-  }
-
-  .result-container {
-    width: 95%;
-    height: auto;
-    max-height: 85vh;
-  }
-
-  .result-map {
-    height: 150px;
-  }
-
-  .result-content {
-    padding: 25px;
-  }
-
-  .result-buttons {
-    flex-direction: column;
-    gap: 15px;
-  }
-
-  .map-toggle-container {
-    bottom: 20px;
-    right: 20px;
-  }
-
   .map-toggle {
     padding: 10px 15px;
     font-size: 0.9rem;
     bottom: 20px;
     right: 20px;
-  }
-
-  .phone-spot-button {
-    padding: 8px 16px;
-    font-size: 0.85rem;
   }
 }
 
@@ -965,29 +829,6 @@ export default {
   transform: translateX(-50%);
   z-index: 20;
 }
-
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-/* Modal action buttons styling */
-.modal-action-buttons {
-  border-top: 1px solid #eee;
-  background-color: #f8f9fa;
-  border-radius: 0 0 20px 20px;
-}
-
-
-
-
 
 /* 모달 */
 .modal-overlay {
@@ -1056,21 +897,6 @@ export default {
 }
 
 /* 반응형 디자인 */
-@media (max-width: 768px) {
-  .countdown {
-    font-size: 8rem;
-  }
-
-  .phone-frame {
-    width: 340px;
-    height: 640px;
-  }
-
-  .result-map {
-    height: 250px;
-  }
-}
-
 @media (max-width: 480px) {
   .game-header {
     padding: 10px;
@@ -1082,43 +908,11 @@ export default {
     gap: 5px;
   }
 
-  .countdown {
-    font-size: 5rem;
-  }
-
-  .phone-frame {
-    width: 300px;
-    height: 600px;
-  }
-
-  .result-map {
-    height: 200px;
-  }
-
-  .result-content {
-    padding: 25px;
-  }
-
-  .result-buttons {
-    flex-direction: column;
-    gap: 15px;
-  }
-
-  .map-toggle-container {
-    bottom: 20px;
-    right: 20px;
-  }
-
   .map-toggle {
     padding: 10px 15px;
     font-size: 0.9rem;
     bottom: 20px;
     right: 20px;
-  }
-
-  .phone-spot-button {
-    padding: 8px 16px;
-    font-size: 0.85rem;
   }
 }
 
@@ -1146,7 +940,4 @@ export default {
     opacity: 1;
   }
 }
-
-
-
 </style>

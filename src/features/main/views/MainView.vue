@@ -74,7 +74,7 @@
             </div>
           </div>
 
-          <div class="mode-card photo" @click="navigateTo('photo/main')">
+          <div class="mode-card photo locked" @click="showLockedMessage">
             <div class="mode-background"></div>
             <div class="mode-icon">
               <i class="fas fa-camera"></i>
@@ -84,13 +84,17 @@
               <p>관광지 사진으로 지역을 맞혀보세요</p>
               <div class="mode-stats">
                 <span class="active-players">
-                  <i class="fas fa-user"></i> 195명 플레이 중
+                  <i class="fas fa-user"></i> 곧 오픈 예정
                 </span>
                 <span class="difficulty">
                   <i class="fas fa-star"></i>
                   <i class="fas fa-star"></i>
                 </span>
               </div>
+            </div>
+            <div class="mode-overlay">
+              <i class="fas fa-lock"></i>
+              <span>준비 중</span>
             </div>
           </div>
 

@@ -23,7 +23,7 @@
       <!-- 슬롯으로 추가 버튼 제공 -->
       <slot name="buttons"></slot>
 
-      <!-- Spot 버튼 (휴대폰 프레임 내부) -->
+      <!-- Spot 버튼 (휴대폰 프레임 내부) - 일반 모드용 -->
       <button
         v-if="!disabled && !isTeamMode"
         class="phone-spot-button"
@@ -32,9 +32,9 @@
         <i class="fas fa-crosshairs"></i> Spot!
       </button>
 
-      <!-- Team 전용 Spot 버튼 (휴대폰 프레임 내부) -->
+      <!-- Team 전용 Vote 버튼 (휴대폰 프레임 내부) - 팀 모드용 -->
       <button
-        v-if="!disabled && isTeamMode"
+        v-if="!disabled && isTeamMode && gameMode === 'team'"
         class="phone-spot-button team-vote-button"
         @click="voteSpotAnswer"
       >
@@ -118,6 +118,12 @@ export default {
     },
 
     voteSpotAnswer() {
+      // 팀 모드가 아니면 실행하지 않음
+      if (this.gameMode !== 'team') {
+        console.warn('voteSpotAnswer는 team 모드에서만 사용할 수 있습니다.');
+        return;
+      }
+
       if (!this.$refs.phoneMapGame) {
         this.$emit("error", "지도가 준비되지 않았습니다. 다시 시도해주세요.");
         return;
