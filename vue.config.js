@@ -8,19 +8,35 @@ const fs = require('fs')
 // submodule에서 환경변수 로드 함수
 function loadSubmoduleEnv() {
   const submodulePath = path.resolve(__dirname, 'KoSpot-frontend-private')
-  const envPath = path.resolve(submodulePath, '.env')
+  const env = process.env.NODE_ENV || 'development'
+  
+  // 환경별 파일명 (development.env, production.env 형식)
+  const envPath = path.resolve(submodulePath, `${env}.env`)
   
   if (fs.existsSync(envPath)) {
     const envContent = fs.readFileSync(envPath, 'utf8')
     envContent.split('\n').forEach(line => {
-      const [key, value] = line.split('=')
-      if (key && value && key.startsWith('VUE_APP_')) {
-        process.env[key] = value.replace(/^["'](.*)["']$/, '$1') // 따옴표 제거
+      line = line.trim()
+      // 주석이나 빈 줄 무시
+      if (!line || line.startsWith('#')) return
+      
+      const equalIndex = line.indexOf('=')
+      if (equalIndex > 0) {
+        const key = line.substring(0, equalIndex).trim()
+        let value = line.substring(equalIndex + 1).trim()
+        
+        // 따옴표 제거
+        value = value.replace(/^["'](.*)["']$/, '$1')
+        
+        if (key.startsWith('VUE_APP_')) {
+          process.env[key] = value
+        }
       }
     })
-    console.log('✅ Loaded environment variables from submodule')
+    console.log(`✅ Loaded environment variables from: ${env}.env`)
   } else {
-    console.warn('⚠️  Submodule environment file not found. Using default values.')
+    console.warn(`⚠️  Submodule environment file not found: ${envPath}`)
+    console.warn('⚠️  Using default values.')
   }
 }
 
@@ -29,7 +45,8 @@ loadSubmoduleEnv()
 
 module.exports = defineConfig({
   transpileDependencies: true,
-  publicPath: process.env.NODE_ENV === 'production' ? '/app/' : '/',
+  // publicPath: process.env.NODE_ENV === 'production' ? '/app/' : '/',
+  publicPath: process.env.NODE_ENV === 'production' ? '/' : '/',
   devServer: {
     hot: true,
     port: 3000,

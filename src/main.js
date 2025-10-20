@@ -15,9 +15,6 @@ import environmentConfig from '@/core/config/environment.js'
 // API 기본 URL 설정
 axios.defaults.baseURL = environmentConfig.get('apiBaseUrl', 'http://localhost:8080/api');
 
-// 전역 환경설정 등록
-app.config.globalProperties.$env = environmentConfig;
-
 import "@fortawesome/fontawesome-free/css/all.css";
 import "@fortawesome/fontawesome-free/js/all.js";
 
@@ -29,6 +26,9 @@ import CountUp from 'vue-countup-v3';
 
 // 앱 인스턴스 생성
 const app = createApp(App);
+
+// 전역 환경설정 등록
+app.config.globalProperties.$env = environmentConfig;
 
 app.component('CountUp', CountUp);
 
