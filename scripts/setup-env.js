@@ -57,9 +57,14 @@ function setupEnvironment() {
   
   // 경로 설정
   const submodulePath = path.resolve(__dirname, '..', 'KoSpot-frontend-private')
-  const configPath = path.resolve(__dirname, '..', 'config', 'environments', `${environment}.env`)
+  const configPath = path.resolve(__dirname, '..', 'KoSpot-frontend-private',`${environment}.env`) //환경변수
   const targetPath = path.resolve(submodulePath, '.env')
   const targetEnvPath = path.resolve(submodulePath, `.env.${environment}`)
+
+  // 루트에도 복사
+  const rootPath = path.resolve(__dirname, '..')
+  const targetRootEnv = path.resolve(rootPath, '.env')
+  const targetRootEnvSpecific = path.resolve(rootPath, `.env.${environment}`)
   
   // submodule 디렉토리 확인
   if (!fs.existsSync(submodulePath)) {
@@ -91,6 +96,10 @@ function setupEnvironment() {
     
     logSuccess(`Environment setup completed for: ${environment}`)
     logInfo('Please update the API keys in the submodule files with actual values')
+    // 루트에도 복사
+    fs.writeFileSync(targetRootEnv, envContent)
+    fs.writeFileSync(targetRootEnvSpecific, envContent)
+    logSuccess(`Created .env and .env.${environment} in project root`)
     
   } catch (error) {
     logError(`Failed to setup environment: ${error.message}`)
