@@ -51,7 +51,10 @@ jobs:
     
     - name: Lint code
       run: npm run lint
-    
+      
+    - name: Clean dist folder
+      run: rm -rf dist
+      
     - name: Build application
       run: |
         if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
