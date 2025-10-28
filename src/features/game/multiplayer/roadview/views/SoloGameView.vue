@@ -88,14 +88,12 @@
 <script>
 import BaseMultiRoadViewGame from "./BaseGameView.vue";
 import ChatWindow from 'src/features/game/multiplayer/chat/components/Lobby/ChatWindow.vue'
-
-//results
 import RoundResults from 'src/features/game/multiplayer/roadview/components/results/RoundResults.vue'
 import FinalResults from 'src/features/game/multiplayer/roadview/components/results/FinalResults.vue'
-
+import PlayerList from 'src/features/game/multiplayer/roadview/components/playerlist/SoloPlayerList.vue'
 
 import gameStore from 'src/store/gameStore.js'
-import PlayerList from 'src/features/game/multiplayer/roadview/components/playerlist/SoloPlayerList.vue'
+import { useSoloGameFlow } from '@/features/game/multiplayer/roadview/composables/useSoloGameFlow'
 
 export default {
   name: "SoloRoadViewGame",
@@ -108,92 +106,174 @@ export default {
     PlayerList,
   },
 
+  setup() {
+    // Solo 게임 플로우 composable 사용
+    const soloGameFlow = useSoloGameFlow(gameStore)
+    
+    return {
+      soloGameFlow
+    }
+  },
+
   data() {
     return {
-      gameStore, // 게임 스토어 참조
-      // 게임 설정 데이터
+      gameStore,
       gameMode: "solo",
-      roomId: "solo-room-1", // 테스트용 방 ID
-
-      // 개인 게임 특화 데이터
-      allPlayersSubmitted: false,
-      toastTimeout: null, // 토스트 메시지 타이머
-      serverStartTime: 0,
-      roundStartDelay: 1000, // 라운드 시작 전 지연 시간(ms)
-      simulationTriggered: false, // 시뮬레이션 중복 호출 방지를 위한 플래그
-
-      //현재 유저 랭크
-      currentUserRank: 1,
+      roomId: "solo-room-1",
       
-      // 게임 시간 추적
+      // 더미 모드 관련
+      allPlayersSubmitted: false,
+      simulationTriggered: false,
+      
+      // 게임 시간
+      currentUserRank: 1,
       gameStartTime: null,
       totalGameTime: 0,
       
-      // 채팅 말풍선 관리
-      playerChatMessages: {}, // { playerId: { message: string, timestamp: number, timer: number } }
+      // UI 관련
+      toastTimeout: null,
+      playerChatMessages: {},
+      
+      // 서버 모드 플래그
+      isServerMode: false
     };
   },
 
   created() {
-    // 테스트 데이터 로드 및 게임 초기화
+    // 테스트 데이터 로드 (더미 모드용)
     this.gameStore.loadTestData(false);
-    this.initGame();
+    
+    // 더미 모드에서만 초기화
+    if (this.$route.query.test === 'true') {
+      this.initGame();
+    }
   },
 
-  mounted() {
-    // 게임 스토어의 상태 변화 감시
-    this.$watch(
-      () => this.simulationTriggered,
-      () => {
-        setTimeout(() => {
-          this.simulateOtherPlayersGuesses();
-        }, 10); 
-      }
-    );
-
-    // 더미 모드 여부 확인 (WebSocket 연결 실패 시 또는 테스트 모드)
-    const isDummyMode = this.$route.query.test === 'true' || !this.$refs.baseGame?.isWebSocketConnected;
+  async mounted() {
+    // 모드 결정: URL 쿼리 파라미터 또는 라우트 메타로 판단
+    const isDummyMode = this.$route.query.test === 'true'
+    this.isServerMode = !isDummyMode
     
     if (isDummyMode) {
-      console.log('더미 모드로 게임 시작');
-      this.startDummyGameFlow();
+      console.log('[Solo Game] 더미 모드로 게임 시작')
+      this.startDummyMode()
     } else {
-      // 실제 서버 연결 모드
-      console.log('서버 연결 모드로 대기 중');
-      this.startRealGameFlow();
+      console.log('[Solo Game] 서버 모드로 게임 시작')
+      await this.startServerMode()
     }
   },
 
   beforeUnmount() {
-    // 타이머 정리 (BaseGameView의 타이머)
-    this.clearTimer();
-    // 토스트 메시지 타이머 정리
-    clearTimeout(this.toastTimeout);
+    // 타이머 정리
+    this.clearTimer()
+    if (this.toastTimeout) {
+      clearTimeout(this.toastTimeout)
+    }
     
-    // 채팅 말풍선 타이머 정리
+    // 채팅 말풍선 정리
     Object.values(this.playerChatMessages).forEach(chatData => {
       if (chatData.timer) {
-        clearTimeout(chatData.timer);
+        clearTimeout(chatData.timer)
       }
-    });
+    })
     
-    // 시뮬레이션 상태 초기화
-    this.simulationTriggered = false;
-    this.allPlayersSubmitted = false;
+    // 서버 모드 정리
+    if (this.isServerMode) {
+      this.soloGameFlow.cleanup()
+    }
     
-    console.log('SoloGameView 컴포넌트 정리 완료');
+    console.log('[Solo Game] 컴포넌트 정리 완료')
   },
 
   methods: {
-    // IntroOverlay 완료 처리 - 첫 라운드 시작 시에만 호출
+    // ==================== 서버 모드 메서드 ====================
+    
+    /**
+     * 서버 모드 게임 시작
+     */
+    async startServerMode() {
+      try {
+        // WebSocket 연결
+        await this.soloGameFlow.connectWebSocket()
+        
+        // 게임방 ID 가져오기 (라우트에서)
+        this.roomId = this.$route.params.roomId || 'test-room'
+        
+        // 게임 시작 (방장이 시작 버튼을 누르면 호출되어야 함)
+        // 지금은 자동으로 시작 (테스트용)
+        await this.startServerGame()
+      } catch (error) {
+        console.error('[Solo Game] 서버 모드 시작 오류:', error)
+        // 오류 시 더미 모드로 전환
+        console.log('[Solo Game] 더미 모드로 전환')
+        this.isServerMode = false
+        this.startDummyMode()
+      }
+    },
+
+    /**
+     * 서버에 게임 시작 요청
+     */
+    async startServerGame() {
+      try {
+        console.log('[Solo Game] 게임 시작 API 호출')
+        
+        const result = await this.soloGameFlow.startGame(this.roomId, {
+          totalRounds: 5,
+          timeLimit: 60000
+        })
+        
+        console.log('[Solo Game] 게임 시작 성공:', result)
+        
+        // 게임 시작 시간 기록
+        this.gameStartTime = Date.now()
+        
+        // 인트로 오버레이 표시
+        if (this.$refs.baseGame) {
+          this.$refs.baseGame.showIntroOverlay = true
+        }
+      } catch (error) {
+        console.error('[Solo Game] 게임 시작 오류:', error)
+        throw error
+      }
+    },
+
+    /**
+     * 서버 모드 정답 제출
+     */
+    async submitServerAnswer(position) {
+      if (!this.isServerMode) {
+        return this.handleGuessSubmission(position)
+      }
+
+      try {
+        console.log('[Solo Game] 서버에 정답 제출:', position)
+        
+        await this.soloGameFlow.submitAnswer(position)
+        
+        // UI 업데이트
+        this.gameStore.state.hasSubmittedGuess = true
+        this.gameStore.state.userGuess = { position }
+        
+        console.log('[Solo Game] 정답 제출 완료')
+      } catch (error) {
+        console.error('[Solo Game] 정답 제출 오류:', error)
+        alert('정답 제출에 실패했습니다. 다시 시도해주세요.')
+      }
+    },
+
+    // ==================== 공통 이벤트 핸들러 ====================
+    
+    /**
+     * IntroOverlay 완료 처리
+     */
     handleEndOverlay() {
-      console.log('인트로 오버레이 완료');
+      console.log('[Solo Game] 인트로 오버레이 완료')
       
-      // 더미 모드에서 첫 라운드 시뮬레이션 트리거
-      const isDummyMode = this.$route.query.test === 'true' || !this.$refs.baseGame?.isWebSocketConnected;
-      if (isDummyMode) {
-        console.log('더미 모드: 첫 라운드 시뮬레이션 시작');
-        this.simulationTriggered = true;
+      if (!this.isServerMode) {
+        // 더미 모드: 시뮬레이션 시작
+        console.log('[Solo Game] 더미 모드 시뮬레이션 시작')
+        this.simulationTriggered = true
       }
     },
 
@@ -411,33 +491,47 @@ export default {
       // 게임 종료 처리 로직
     },
 
+    /**
+     * 정답 제출 처리 (서버/더미 모드 분기)
+     */
     handleGuessSubmission(position) {
-      console.log("개인 게임에서 위치 제출:", position);
+      console.log('[Solo Game] 위치 제출:', position)
 
       // 이미 제출했거나 라운드가 종료된 경우 무시
       if (this.gameStore.state.hasSubmittedGuess || this.gameStore.state.roundEnded) {
-        console.warn('이미 제출했거나 라운드가 종료되어 제출할 수 없습니다.');
-        return;
+        console.warn('[Solo Game] 이미 제출했거나 라운드가 종료됨')
+        return
       }
 
-      // 현재 플레이어의 추측 저장
-      const currentPlayer = this.gameStore.state.currentUser;
+      // 서버 모드와 더미 모드 분기
+      if (this.isServerMode) {
+        this.submitServerAnswer(position)
+      } else {
+        this.submitDummyAnswer(position)
+      }
+    },
+
+    /**
+     * 더미 모드 정답 제출
+     */
+    submitDummyAnswer(position) {
+      const currentPlayer = this.gameStore.state.currentUser
 
       // 게임 스토어 상태 업데이트
-      this.gameStore.state.userGuess = { position: position };
-      this.gameStore.state.hasSubmittedGuess = true;
+      this.gameStore.state.userGuess = { position }
+      this.gameStore.state.hasSubmittedGuess = true
 
       // 현재 플레이어의 제출 상태 업데이트
       const playerIndex = this.gameStore.state.players.findIndex(
         (p) => p.id === currentPlayer.id
-      );
+      )
       if (playerIndex !== -1) {
-        this.gameStore.state.players[playerIndex].hasSubmitted = true;
+        this.gameStore.state.players[playerIndex].hasSubmitted = true
       }
 
       // 현재 사용자의 추측을 playerGuesses에 추가
       if (!this.gameStore.state.playerGuesses) {
-        this.gameStore.state.playerGuesses = [];
+        this.gameStore.state.playerGuesses = []
       }
 
       const guessInfo = {
@@ -445,24 +539,14 @@ export default {
         playerName: currentPlayer.nickname,
         position: position,
         color: this.getRandomColor(currentPlayer.id),
-      };
-
-      this.gameStore.state.playerGuesses.push(guessInfo);
-
-      // BaseGameView를 통해 서버에 제출 정보 전송
-      if (this.$refs.baseGame) {
-        this.$refs.baseGame.sendGuessToServer({
-        position: position,
-          playerId: currentPlayer.id
-        });
       }
 
-      console.log(`플레이어 ${currentPlayer.nickname} 제출 완료`);
+      this.gameStore.state.playerGuesses.push(guessInfo)
 
-      // 더미 모드에서만 모든 플레이어 제출 확인
-      if (!this.$refs.baseGame?.isWebSocketConnected) {
-      this.checkAllPlayersSubmitted();
-      }
+      console.log(`[Solo Game] 플레이어 ${currentPlayer.nickname} 제출 완료`)
+
+      // 더미 모드: 모든 플레이어 제출 확인
+      this.checkAllPlayersSubmitted()
     },
 
     sendChatMessage(message) {
@@ -668,63 +752,62 @@ export default {
       });
     },
 
-    // 실제 서버 연결 모드 게임 플로우 시작
-    startRealGameFlow() {
-      console.log('실제 서버 연결 모드 게임 플로우 시작');
+    // ==================== 더미 모드 메서드 ====================
+    
+    /**
+     * 더미 모드 게임 시작
+     */
+    startDummyMode() {
+      console.log('[Solo Game] 더미 모드 게임 플로우 시작')
       
       // 게임 시작 시간 기록
-      this.gameStartTime = Date.now();
+      this.gameStartTime = Date.now()
       
-      // 서버 연결 상태 확인
-      if (this.$refs.baseGame?.isWebSocketConnected) {
-        console.log('WebSocket 연결됨 - 서버와 통신 준비');
-        // 서버에서 게임 시작 신호를 기다림
-      } else {
-        console.log('WebSocket 연결 실패 - 더미 모드로 전환');
-        this.startDummyGameFlow();
-      }
-    },
-
-    // 더미 모드 게임 플로우 시작
-    startDummyGameFlow() {
-      console.log('더미 모드 게임 플로우 시작');
+      // 더미 모드 시뮬레이션 감시
+      this.$watch(
+        () => this.simulationTriggered,
+        () => {
+          setTimeout(() => {
+            this.simulateOtherPlayersGuesses()
+          }, 10)
+        }
+      )
       
-      // 게임 시작 시간 기록
-      this.gameStartTime = Date.now();
-      
-      // 3초 후 게임 시작 신호 시뮬레이션
+      // 3초 후 게임 시작 시뮬레이션
       setTimeout(() => {
-        this.simulateGameStart();
-      }, 3000);
+        this.simulateGameStart()
+      }, 3000)
     },
 
-    // 더미 게임 시작 시뮬레이션
+    /**
+     * 더미 게임 시작 시뮬레이션
+     */
     simulateGameStart() {
-      console.log('더미 게임 시작 시뮬레이션');
+      console.log('[Solo Game] 더미 게임 시작 시뮬레이션')
       
-      // 게임 시작 메시지 시뮬레이션
       const gameStartMessage = {
         roomId: this.roomId,
         totalRounds: this.gameStore.state.totalRounds,
         serverStartTime: Date.now()
-      };
+      }
       
       // BaseGameView의 게임 시작 핸들러 호출
       if (this.$refs.baseGame) {
-        this.$refs.baseGame.handleGameStart(gameStartMessage);
+        this.$refs.baseGame.handleGameStart(gameStartMessage)
       }
       
       // 1초 후 첫 라운드 데이터 시뮬레이션
       setTimeout(() => {
-        this.simulateRoundData();
-      }, 1000);
+        this.simulateRoundData()
+      }, 1000)
     },
 
-    // 더미 라운드 데이터 시뮬레이션
+    /**
+     * 더미 라운드 데이터 시뮬레이션
+     */
     simulateRoundData() {
-      console.log(`더미 라운드 ${this.gameStore.state.currentRound} 데이터 시뮬레이션`);
+      console.log(`[Solo Game] 더미 라운드 ${this.gameStore.state.currentRound} 데이터 시뮬레이션`)
       
-      // 라운드 데이터 메시지 시뮬레이션
       const roundDataMessage = {
         roundNumber: this.gameStore.state.currentRound,
         location: this.gameStore.state.currentLocation || {
@@ -733,79 +816,57 @@ export default {
         },
         locationInfo: this.gameStore.state.locationInfo,
         roundTime: 120
-      };
+      }
       
       // BaseGameView의 라운드 데이터 핸들러 호출
       if (this.$refs.baseGame) {
-        this.$refs.baseGame.handleRoundData(roundDataMessage);
+        this.$refs.baseGame.handleRoundData(roundDataMessage)
       }
       
-      // 라운드 데이터 가져오기 (타이머는 BaseGameView에서 시작됨)
-      this.fetchRoundData();
+      // 라운드 데이터 가져오기
+      this.fetchRoundData()
       
-      // 더미 모드에서 시뮬레이션 트리거 설정
-      console.log('더미 모드: 시뮬레이션 트리거 설정');
-      this.simulationTriggered = true;
+      // 시뮬레이션 트리거 설정
+      this.simulationTriggered = true
     },
 
-    // 더미 라운드 종료 시뮬레이션 (모든 플레이어 제출 완료 시 호출)
+    /**
+     * 더미 라운드 종료 시뮬레이션
+     */
     simulateRoundEnd() {
-      // 이미 라운드가 종료되었으면 중복 실행 방지
       if (this.gameStore.state.roundEnded) {
-        console.log("더미 모드: 라운드가 이미 종료되어 시뮬레이션 중단");
-        return;
+        console.log('[Solo Game] 라운드가 이미 종료됨')
+        return
       }
       
-      console.log(`더미 라운드 ${this.gameStore.state.currentRound} 종료 시뮬레이션`);
+      console.log(`[Solo Game] 더미 라운드 ${this.gameStore.state.currentRound} 종료 시뮬레이션`)
       
-      // 일반 라운드 종료 로직 호출
-      this.endRound();
+      // 라운드 종료 처리
+      this.endRound()
       
-      // 라운드 종료 메시지 시뮬레이션
-      const roundEndMessage = {
-        results: {
-          playerResults: this.gameStore.state.players.map(player => ({
-            playerId: player.id,
-            totalScore: player.score || 0,
-            roundScore: player.lastRoundScore || 0,
-            distance: player.distanceToTarget || 0
-          })),
-          allGuesses: this.gameStore.state.playerGuesses,
-          topPlayer: this.gameStore.state.topPlayer
-        }
-      };
-      
-      // BaseGameView의 라운드 종료 핸들러 호출
-      if (this.$refs.baseGame) {
-        this.$refs.baseGame.handleRoundEnd(roundEndMessage);
-      }
-      
-      // 마지막 라운드인지 확인하여 다음 라운드 또는 게임 종료 처리
+      // 마지막 라운드 확인
       if (this.gameStore.state.currentRound >= this.gameStore.state.totalRounds) {
-        console.log("마지막 라운드 완료 - 게임 종료 처리");
+        console.log('[Solo Game] 마지막 라운드 완료 - 게임 종료')
         setTimeout(() => {
-          this.simulateGameEnd();
-        }, 2000);
-      } else {
-        console.log("다음 라운드로 진행 - RoundResults 자동 카운트다운 대기");
-        // RoundResults의 10초 자동 카운트다운이 requestNextRound를 호출하도록 함
+          this.simulateGameEnd()
+        }, 2000)
       }
     },
 
-    // 더미 게임 종료 시뮬레이션
+    /**
+     * 더미 게임 종료 시뮬레이션
+     */
     simulateGameEnd() {
-      console.log('더미 게임 종료 시뮬레이션');
+      console.log('[Solo Game] 더미 게임 종료 시뮬레이션')
       
-      // 게임 종료 메시지 시뮬레이션
       const gameEndMessage = {
         finalResults: {
           rankings: this.gameStore.state.players.sort((a, b) => (b.score || 0) - (a.score || 0))
         }
-      };
+      }
       
-      // BaseGameView의 게임 종료 핸들러 호출
       if (this.$refs.baseGame) {
-        this.$refs.baseGame.handleGameEnd(gameEndMessage);
+        this.$refs.baseGame.handleGameEnd(gameEndMessage)
       }
     },
 
@@ -899,99 +960,64 @@ export default {
       return currentUserIndex !== -1 ? currentUserIndex + 1 : 1;
     },
 
-    // 더미 데이터로 다른 플레이어들의 정답 제출 시뮬레이션
+    /**
+     * 더미 모드: 다른 플레이어 정답 제출 시뮬레이션
+     */
     simulateOtherPlayersGuesses() {
-      console.log("다른 플레이어 추측 시뮬레이션 시작");
+      console.log('[Solo Game] 다른 플레이어 추측 시뮬레이션 시작')
 
-      // 라운드가 이미 끝났거나 제출이 완료된 경우 중단
-      if (
-        this.gameStore.state.roundEnded ||
-        this.allPlayersSubmitted
-      ) {
-        console.log("시뮬레이션 중단: 라운드 종료됨 또는 모든 플레이어 제출 완료");
-        return;
+      // 라운드 종료 또는 모든 플레이어 제출 완료 시 중단
+      if (this.gameStore.state.roundEnded || this.allPlayersSubmitted) {
+        console.log('[Solo Game] 시뮬레이션 중단')
+        return
       }
 
-      // 실제 위치가 없으면 시뮬레이션 중단
-      if (
-        !this.gameStore.state.actualLocation ||
-        !this.gameStore.state.actualLocation.lat
-      ) {
-        console.error("실제 위치가 없어 시뮤레이션을 실행할 수 없습니다.");
-        return;
+      // 실제 위치 확인
+      if (!this.gameStore.state.actualLocation?.lat) {
+        console.error('[Solo Game] 실제 위치가 없어 시뮬레이션 불가')
+        return
       }
 
       // 현재 플레이어를 제외한 다른 플레이어들
       const otherPlayers = this.gameStore.state.players.filter(
         (player) => player.id !== this.gameStore.state.currentUser.id
-      );
+      )
 
-      console.log("다른 플레이어 수:", otherPlayers.length);
+      console.log(`[Solo Game] 시뮬레이션 대상: ${otherPlayers.length}명`)
 
-      // 자기 자신의 추측은 이미 handleGuessSubmission에서 추가됨
-
-      // 각 플레이어마다 랜덤한 위치 생성
-      otherPlayers.forEach((player, index) => {
-        // 실제 위치 주변에 랜덤한 위치 생성 (최대 20km 반경 내)
+      // 각 플레이어마다 랜덤 위치 생성 및 제출
+      otherPlayers.forEach((player) => {
         setTimeout(() => {
-          const randomOffset = () => (Math.random() - 0.5) * 0.4; // 약 ±20km 범위
+          // 실제 위치 주변 랜덤 위치 생성 (±20km)
+          const randomOffset = () => (Math.random() - 0.5) * 0.4
           const randomPosition = {
             lat: this.gameStore.state.actualLocation.lat + randomOffset(),
             lng: this.gameStore.state.actualLocation.lng + randomOffset(),
-          };
+          }
 
-          console.log(
-            `플레이어 ${player.nickname || index} 추측 생성:`,
-            randomPosition
-          );
-
-          // 플레이어 색상 랜덤 생성
-          const colors = [
-            "#FF4081",
-            "#E040FB",
-            "#7C4DFF",
-            "#536DFE",
-            "#448AFF",
-            "#40C4FF",
-            "#18FFFF",
-            "#64FFDA",
-            "#69F0AE",
-            "#B2FF59",
-            "#EEFF41",
-            "#FFFF00",
-            "#FFD740",
-            "#FFAB40",
-            "#FF6E40",
-          ];
-          const color = colors[Math.floor(Math.random() * colors.length)];
+          const color = this.getRandomColor(player.id)
 
           // 플레이어 추측 추가
-          this.addPlayerGuessToStore(player.id, randomPosition, color);
+          this.addPlayerGuessToStore(player.id, randomPosition, color)
 
-          // 플레이어 제출 상태 업데이트
-          player.hasSubmitted = true;
+          // 제출 상태 업데이트
+          player.hasSubmitted = true
 
-          console.log(
-            "현재 추측 수:",
-            this.gameStore.state.playerGuesses.length
-          );
-
-          // 모든 플레이어가 제출했는지 확인
-          this.checkAllPlayersSubmitted();
-        }, 500 + Math.random() * 2000); // 시간 단축: 0.5~2.5초 사이에 랜덤하게 제출
-      });
+          // 모든 플레이어 제출 확인
+          this.checkAllPlayersSubmitted()
+        }, 500 + Math.random() * 2000) // 0.5~2.5초 랜덤
+      })
     },
 
-    // 플레이어 추측을 스토어에 추가하는 헬퍼 메서드
+    /**
+     * 플레이어 추측을 스토어에 추가
+     */
     addPlayerGuessToStore(playerId, position, color) {
-      const player = this.gameStore.state.players.find(
-        (p) => p.id === playerId
-      );
-      if (!player) return;
+      const player = this.gameStore.state.players.find((p) => p.id === playerId)
+      if (!player) return
 
-      // 스토어에 직접 추가
       if (!this.gameStore.state.playerGuesses) {
-        this.gameStore.state.playerGuesses = [];
+        this.gameStore.state.playerGuesses = []
       }
 
       this.gameStore.state.playerGuesses.push({
@@ -999,11 +1025,7 @@ export default {
         playerName: player.nickname,
         position: position,
         color: color,
-      });
-      console.log(
-        "player Guesses in store!",
-        this.gameStore.state.playerGuesses
-      );
+      })
     },
   },
 };
