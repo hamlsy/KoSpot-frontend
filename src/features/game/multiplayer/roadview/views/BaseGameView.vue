@@ -198,6 +198,11 @@ export default {
     isTeamMode: {
       type: Boolean,
       default: false
+    },
+    // Solo 게임에서 useSoloGameFlow를 사용하는 경우
+    useCustomWebSocket: {
+      type: Boolean,
+      default: false
     }
   },
 
@@ -291,7 +296,10 @@ export default {
 
   created() {
     // 게임 중에도 WebSocket 연결 상태 확인 및 구독 설정
-    this.initializeWebSocketConnection();
+    // Solo 게임에서 useSoloGameFlow를 사용하는 경우 건너뜀
+    if (!this.useCustomWebSocket) {
+      this.initializeWebSocketConnection();
+    }
   },
 
   mounted() {

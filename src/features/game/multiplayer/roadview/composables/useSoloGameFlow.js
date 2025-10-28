@@ -13,7 +13,7 @@ import soloGameApi from '../services/soloGameApi'
 import soloGameWebSocket from '../services/soloGameWebSocket'
 import webSocketManager from '@/features/game/multiplayer/shared/services/websocket/composables'
 
-export function useSoloGameFlow(gameStore) {
+export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
   // 게임 상태
   const gameId = ref(null)
   const roundId = ref(null)
@@ -24,6 +24,15 @@ export function useSoloGameFlow(gameStore) {
 
   // WebSocket 연결 상태
   const isConnected = computed(() => webSocketManager.isConnected.value)
+  
+  // UI 콜백 (SoloGameView에서 전달받음)
+  const callbacks = {
+    onIntroShow: null,
+    onRoundResultShow: null,
+    onNextRoundShow: null,
+    onGameFinish: null,
+    ...uiCallbacks
+  }
 
   /**
    * WebSocket 연결
@@ -96,6 +105,11 @@ export function useSoloGameFlow(gameStore) {
       setupWebSocketSubscriptions(roomIdParam, result.gameId)
 
       console.log('[Solo Flow] 게임 시작 완료:', result)
+      
+      // UI 콜백: 인트로 오버레이 표시
+      if (callbacks.onIntroShow) {
+        callbacks.onIntroShow()
+      }
 
       return result
     } catch (error) {
@@ -212,6 +226,11 @@ export function useSoloGameFlow(gameStore) {
     // 라운드 종료 상태 설정
     gameStore.state.roundEnded = true
     gameStore.endGameRound()
+    
+    // UI 콜백: 라운드 결과 표시
+    if (callbacks.onRoundResultShow) {
+      callbacks.onRoundResultShow()
+    }
   }
 
   /**
@@ -279,6 +298,11 @@ export function useSoloGameFlow(gameStore) {
 
     // 라운드 시작 시간 초기화
     roundStartTime.value = null
+    
+    // UI 콜백: 다음 라운드 오버레이 표시
+    if (callbacks.onNextRoundShow) {
+      callbacks.onNextRoundShow()
+    }
   }
 
   /**
@@ -295,6 +319,11 @@ export function useSoloGameFlow(gameStore) {
 
     // 최종 결과 표시
     gameStore.state.showGameResults = true
+    
+    // UI 콜백: 게임 종료 화면 표시
+    if (callbacks.onGameFinish) {
+      callbacks.onGameFinish()
+    }
   }
 
   /**

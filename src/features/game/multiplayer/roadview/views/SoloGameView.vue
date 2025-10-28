@@ -4,6 +4,7 @@
     :game-mode="gameMode"
     :is-team-mode="false"
     :current-user-rank="currentUserRank"
+    :use-custom-websocket="isServerMode"
     @guess-submitted="handleGuessSubmission"
     @round-ended="handleRoundEnded"
     @game-finished="handleGameFinished"
@@ -108,6 +109,7 @@ export default {
 
   setup() {
     // Solo 게임 플로우 composable 사용
+    // UI 콜백은 나중에 methods에서 this로 접근하기 위해 여기서는 전달하지 않음
     const soloGameFlow = useSoloGameFlow(gameStore)
     
     return {
@@ -193,6 +195,9 @@ export default {
      */
     async startServerMode() {
       try {
+        // UI 콜백 재설정 (setup 이후 this 접근 가능)
+        this.setupUICallbacks()
+        
         // WebSocket 연결
         await this.soloGameFlow.connectWebSocket()
         
@@ -210,6 +215,48 @@ export default {
         this.startDummyMode()
       }
     },
+    
+    /**
+     * useSoloGameFlow의 UI 콜백 설정
+     */
+    setupUICallbacks() {
+      // useSoloGameFlow에서 호출할 UI 업데이트 콜백 설정
+      this.soloGameFlow.callbacks = {
+        onIntroShow: () => {
+          console.log('[Solo Game] 인트로 오버레이 표시')
+          if (this.$refs.baseGame) {
+            this.$refs.baseGame.showIntroOverlay = true
+          }
+        },
+        onRoundResultShow: () => {
+          console.log('[Solo Game] 라운드 결과 표시')
+          // 라운드 결과는 gameStore.state.roundEnded가 true가 되면 자동으로 표시됨
+        },
+        onNextRoundShow: () => {
+          console.log('[Solo Game] 다음 라운드 오버레이 표시')
+          // 현재 사용자 등수 계산
+          this.currentUserRank = this.calculateUserRank()
+          const totalPlayers = this.gameStore.state.players.length
+          
+          // NextRoundOverlay 표시
+          if (this.$refs.baseGame) {
+            this.$refs.baseGame.startNextRound(this.currentUserRank, totalPlayers)
+          }
+        },
+        onGameFinish: () => {
+          console.log('[Solo Game] 게임 종료')
+          // 총 게임 시간 계산
+          if (this.gameStartTime) {
+            this.totalGameTime = Math.floor((Date.now() - this.gameStartTime) / 1000)
+          }
+          
+          // 플레이어들의 평균 거리 계산
+          this.calculatePlayerAverageDistances()
+          
+          // 최종 결과는 gameStore.state.showGameResults가 true가 되면 자동으로 표시됨
+        }
+      }
+    },
 
     /**
      * 서버에 게임 시작 요청
@@ -219,6 +266,7 @@ export default {
         console.log('[Solo Game] 게임 시작 API 호출')
         
         const result = await this.soloGameFlow.startGame(this.roomId, {
+          gameRoomId: parseInt(this.roomId),  // ✅ 추가됨
           totalRounds: 5,
           timeLimit: 60000
         })
@@ -277,9 +325,14 @@ export default {
       }
     },
 
-    // 게임 시작 이벤트 처리
+    // ==================== 더미 모드 전용 이벤트 핸들러 ====================
+    // (서버 모드에서는 useSoloGameFlow가 처리)
+    
+    // 게임 시작 이벤트 처리 (더미 모드 전용)
     handleGameStarted(message) {
-      console.log('개인전 게임 시작 이벤트 처리:', message);
+      if (this.isServerMode) return; // 서버 모드에서는 무시
+      
+      console.log('[Dummy Mode] 개인전 게임 시작 이벤트 처리:', message);
       
       // 게임 시작 시간 기록
       this.gameStartTime = Date.now();
@@ -302,12 +355,14 @@ export default {
         this.$refs.baseGame.showIntroOverlay = true;
       }
       
-      console.log('개인전 게임 준비 완료 - 인트로 오버레이 표시');
+      console.log('[Dummy Mode] 개인전 게임 준비 완료 - 인트로 오버레이 표시');
     },
 
-    // 라운드 데이터 수신 이벤트 처리
+    // 라운드 데이터 수신 이벤트 처리 (더미 모드 전용)
     handleRoundDataReceived(message) {
-      console.log('개인전 라운드 데이터 수신:', message);
+      if (this.isServerMode) return; // 서버 모드에서는 무시
+      
+      console.log('[Dummy Mode] 개인전 라운드 데이터 수신:', message);
       
       // 라운드 상태 초기화
       this.simulationTriggered = false;
@@ -335,9 +390,11 @@ export default {
       console.log(`라운드 ${this.gameStore.state.currentRound} 데이터 준비 완료`);
     },
 
-    // 플레이어 제출 이벤트 처리
+    // 플레이어 제출 이벤트 처리 (더미 모드 전용)
     handlePlayerSubmitted(message) {
-      console.log('플레이어 제출 이벤트 처리:', message);
+      if (this.isServerMode) return; // 서버 모드에서는 무시
+      
+      console.log('[Dummy Mode] 플레이어 제출 이벤트 처리:', message);
       
       // 모든 플레이어가 제출했는지 확인
       this.checkAllPlayersSubmitted();
@@ -346,9 +403,11 @@ export default {
       console.log(`현재 제출 완료: ${submittedCount}/${this.gameStore.state.players.length}`);
     },
 
-    // 게임 종료 이벤트 처리
+    // 게임 종료 이벤트 처리 (더미 모드 전용)
     handleGameEnded(message) {
-      console.log('개인전 게임 종료 이벤트 처리:', message);
+      if (this.isServerMode) return; // 서버 모드에서는 무시
+      
+      console.log('[Dummy Mode] 개인전 게임 종료 이벤트 처리:', message);
       
       // 총 게임 시간 계산
       if (this.gameStartTime) {
