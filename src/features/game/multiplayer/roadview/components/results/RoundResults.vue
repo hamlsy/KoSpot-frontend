@@ -241,11 +241,20 @@ export default {
       type: Boolean,
       default: false,
     },
+    serverCountdownSeconds: {
+      type: Number,
+      default: null,
+    },
   },
 
   computed: {
     sortedPlayers() {
       return [...this.players].sort((a, b) => b.score - a.score);
+    },
+    
+    // 카운트다운 초 (서버 값 우선 사용)
+    countdownSeconds() {
+      return this.serverCountdownSeconds !== null ? this.serverCountdownSeconds : this.localCountdownSeconds;
     },
     
     // 진행바 퍼센테이지 계산
@@ -379,7 +388,7 @@ export default {
       showLocationInfoModal: false,
       currentLocationInfo: {},
       // 자동 진행 타이머 관련
-      countdownSeconds: 10,
+      localCountdownSeconds: 10,
       totalCountdownTime: 10,
       countdownTimer: null,
     };
@@ -394,8 +403,8 @@ export default {
       }, 300);
     });
     
-    // 마지막 라운드가 아닌 경우 자동 진행 타이머 시작
-    if (!this.isLastRound) {
+    // 마지막 라운드가 아니고, 서버 카운트다운 값이 없을 때만 로컬 타이머 시작
+    if (!this.isLastRound && this.serverCountdownSeconds === null) {
       this.startCountdown();
     }
   },
@@ -413,12 +422,12 @@ export default {
       this.$emit("close");
     },
     
-    // 카운트다운 시작
+    // 카운트다운 시작 (로컬 타이머용)
     startCountdown() {
       this.countdownTimer = setInterval(() => {
-        this.countdownSeconds--;
+        this.localCountdownSeconds--;
         
-        if (this.countdownSeconds <= 0) {
+        if (this.localCountdownSeconds <= 0) {
           clearInterval(this.countdownTimer);
           this.countdownTimer = null;
           

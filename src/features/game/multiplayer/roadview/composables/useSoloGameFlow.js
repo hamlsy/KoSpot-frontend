@@ -21,6 +21,7 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
   const roundStartTime = ref(null)
   const timerInterval = ref(null)
   const transitionInterval = ref(null)
+  const transitionCountdown = ref(10) // 라운드 전환 카운트다운 (초)
 
   // WebSocket 연결 상태
   const isConnected = computed(() => webSocketManager.isConnected.value)
@@ -248,7 +249,8 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
       const remaining = Math.max(0, message.nextStartTime - now)
       const seconds = Math.ceil(remaining / 1000)
 
-      // UI 업데이트 (다음 라운드까지 남은 시간)
+      // 카운트다운 값 업데이트 (RoundResults 로딩바 연동)
+      transitionCountdown.value = seconds
       console.log(`다음 라운드까지: ${seconds}초`)
 
       if (remaining <= 0) {
@@ -428,6 +430,7 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     roundId,
     roomId,
     isConnected,
+    transitionCountdown,
 
     // 메서드
     connectWebSocket,

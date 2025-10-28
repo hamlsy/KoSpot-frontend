@@ -62,6 +62,7 @@
         :vote-time-remaining="15000"
         :current-user-has-voted="false"
         :is-mobile="$refs.baseGame ? $refs.baseGame.isMobile : false"
+        :server-countdown-seconds="soloGameFlow.transitionCountdown.value"
         @close="closeRoundResults"
         @request-next-round="requestNextRound"
         @finish-game="finishGame"
