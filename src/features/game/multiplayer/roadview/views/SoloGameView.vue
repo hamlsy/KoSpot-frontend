@@ -75,11 +75,11 @@
     <template #results>
       <final-results
         v-if="gameStore.state.showGameResults"
-        :players="gameStore.state.players"
+        :player-results="gameStore.state.finalGameResult?.playerResults || []"
         :current-user-id="gameStore.state.currentUser.id"
         :total-rounds="gameStore.state.totalRounds"
         :total-game-time="totalGameTime"
-        :room-data="gameStore.state.roomData"
+        :game-message="gameStore.state.finalGameResult?.message"
         @play-again="restartGame"
         @exit-to-lobby="exitToLobby"
       />

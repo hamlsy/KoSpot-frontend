@@ -16,53 +16,52 @@
       <div class="rankings-container">
         <div class="rankings-header">
           <h3>최종 순위</h3>
-          <div class="total-players">{{ players.length }}명 참가</div>
+          <div class="total-players">{{ playerResults.length }}명 참가</div>
         </div>
         
         <div class="rankings-list">
           <div
-            v-for="(player, index) in sortedPlayers"
-            :key="player.id"
+            v-for="player in sortedPlayers"
+            :key="player.playerId"
             class="ranking-item"
             :class="{
-              'rank-1': index === 0,
-              'rank-2': index === 1,
-              'rank-3': index === 2,
-              'current-user': player.id === currentUserId
+              'rank-1': player.finalRank === 1,
+              'rank-2': player.finalRank === 2,
+              'rank-3': player.finalRank === 3,
+              'current-user': player.playerId === currentUserId
             }"
           >
             <!-- 순위 배지 -->
-            <div class="rank-badge" :class="`rank-${index + 1}`">
-              <span v-if="index < 3" class="rank-icon">
-                <i v-if="index === 0" class="fas fa-crown"></i>
-                <i v-else-if="index === 1" class="fas fa-medal"></i>
-                <i v-else-if="index === 2" class="fas fa-award"></i>
+            <div class="rank-badge" :class="`rank-${player.finalRank}`">
+              <span v-if="player.finalRank <= 3" class="rank-icon">
+                <i v-if="player.finalRank === 1" class="fas fa-crown"></i>
+                <i v-else-if="player.finalRank === 2" class="fas fa-medal"></i>
+                <i v-else-if="player.finalRank === 3" class="fas fa-award"></i>
               </span>
-              <span v-else class="rank-number">{{ index + 1 }}</span>
+              <span v-else class="rank-number">{{ player.finalRank }}</span>
             </div>
 
             <!-- 플레이어 정보 -->
             <div class="player-info">
               <div class="player-avatar">
                 <img
-                  :src="player.equippedMarker || '/assets/default-marker.png'"
+                  :src="player.markerImageUrl || '/assets/default-marker.png'"
                   :alt="player.nickname"
                 />
               </div>
               <div class="player-details">
                 <div class="player-name">
                   {{ player.nickname }}
-                  <i v-if="player.isHost" class="fas fa-crown host-icon" title="방장"></i>
                 </div>
                 <div class="player-stats">
-                  <span class="total-score">{{ formatScore(player.score || 0) }}점</span>
-                  <span class="average-distance">평균 {{ formatDistance(player.averageDistance || 0) }}km</span>
+                  <span class="total-score">{{ formatScore(player.totalScore || 0) }}점</span>
+                  <span class="earned-points">+{{ player.earnedPoint }}P</span>
                 </div>
               </div>
             </div>
 
             <!-- 특별 효과 (1등일 때) -->
-            <div v-if="index === 0" class="winner-effect">
+            <div v-if="player.finalRank === 1" class="winner-effect">
               <div class="sparkle sparkle-1"></div>
               <div class="sparkle sparkle-2"></div>
               <div class="sparkle sparkle-3"></div>
@@ -82,7 +81,7 @@
           <div class="stat-label">게임 시간</div>
         </div>
         <div class="stat-item">
-          <div class="stat-value">{{ players.length }}</div>
+          <div class="stat-value">{{ playerResults.length }}</div>
           <div class="stat-label">참가자</div>
         </div>
       </div>
@@ -107,7 +106,7 @@ export default {
   name: "FinalResults",
 
   props: {
-    players: {
+    playerResults: {
       type: Array,
       required: true,
       default: () => []
@@ -124,15 +123,18 @@ export default {
       type: Number,
       default: 0 // 초 단위
     },
-    roomData: {
-      type: Object,
-      default: () => ({})
+    gameMessage: {
+      type: String,
+      default: ''
     }
   },
 
   computed: {
     sortedPlayers() {
-      return [...this.players].sort((a, b) => (b.score || 0) - (a.score || 0));
+      return [...this.playerResults].sort((a, b) => {
+        // finalRank 기준으로 정렬 (순위가 낮을수록 앞으로)
+        return (a.finalRank || 999) - (b.finalRank || 999);
+      });
     }
   },
 
@@ -398,6 +400,11 @@ export default {
 .average-distance {
   color: #6b7684;
   font-weight: 500;
+}
+
+.earned-points {
+  color: #10b981;
+  font-weight: 600;
 }
 
 /* 우승자 효과 제거 (심플하게) */

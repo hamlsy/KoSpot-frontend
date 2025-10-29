@@ -319,6 +319,16 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     clearTimerInterval()
     clearTransitionInterval()
 
+    // 백엔드에서 받은 최종 결과 데이터 저장
+    if (message.playerResults) {
+      gameStore.state.finalGameResult = {
+        gameId: message.gameId,
+        message: message.message,
+        timestamp: message.timestamp,
+        playerResults: message.playerResults
+      }
+    }
+
     // 최종 결과 표시
     gameStore.state.showGameResults = true
     
