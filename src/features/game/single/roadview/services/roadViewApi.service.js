@@ -38,6 +38,7 @@ const ROADVIEW_ENDPOINTS = {
  * @property {string} result.targetLat - 목표 위도
  * @property {string} result.targetLng - 목표 경도
  * @property {string} result.markerImageUrl - 마커 이미지 URL
+ * @property {string} result.poiName - 정답 위치의 POI 이름
  */
 
 /**
@@ -56,9 +57,14 @@ const ROADVIEW_ENDPOINTS = {
  * @property {number} code - 응답 코드
  * @property {string} message - 응답 메시지
  * @property {Object} result - 결과 데이터
- * @property {number} result.currentRatingPoint - 현재 랭킹 포인트
- * @property {number} result.ratingScoreChange - 랭킹 점수 변화
  * @property {number} result.score - 게임 점수
+ * @property {number} result.previousRatingScore - 게임 전 랭크 점수
+ * @property {number} result.currentRatingScore - 게임 후 랭크 점수
+ * @property {number} result.ratingScoreChange - 랭킹 점수 변화 (양수: 상승, 음수: 하락)
+ * @property {string} result.previousRankTier - 게임 전 티어 (BRONZE, SILVER, GOLD, PLATINUM, DIAMOND, MASTER)
+ * @property {string} result.previousRankLevel - 게임 전 레벨 (ONE, TWO, THREE, FOUR, FIVE)
+ * @property {string} result.currentRankTier - 게임 후 티어
+ * @property {string} result.currentRankLevel - 게임 후 레벨
  */
 
 /**

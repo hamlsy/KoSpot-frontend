@@ -176,8 +176,8 @@ export default {
 
 .result-map-container {
   width: 100%;
-  height: 220px;
-  border-radius: 16px;
+  height: 280px;
+  border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   position: relative;
@@ -216,38 +216,40 @@ export default {
 
 .actual-location,
 .guessed-location {
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 2px solid #e2e8f0;
+  background: white;
 }
 
-/* 호버 효과 제거 */
-
 .location-header {
-  padding: 15px;
+  padding: 12px 15px;
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
 .actual-location .location-header {
-  background: #43cea2;
-  color: white;
+  background: #f8fafc;
+  color: #0f172a;
+  border-bottom: 2px solid #e2e8f0;
 }
 
 .guessed-location .location-header {
-  background: #3949AB;
-  color: white;
+  background: #f8fafc;
+  color: #0f172a;
+  border-bottom: 2px solid #e2e8f0;
 }
 
 .location-header h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
 }
 
 .location-icon {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
+  color: #3b82f6;
 }
 
 .location-content {
@@ -256,9 +258,9 @@ export default {
 }
 
 .address {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   margin: 0 0 8px 0;
-  color: #333;
+  color: #0f172a;
   font-weight: 500;
 }
 
@@ -266,19 +268,19 @@ export default {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.8rem;
-  color: #666;
+  font-size: 0.75rem;
+  color: #64748b;
   margin-bottom: 8px;
 }
 
 .location-description {
   margin-top: 10px;
   font-style: italic;
-  color: #555;
-  font-size: 0.85rem;
+  color: #64748b;
+  font-size: 0.8rem;
   line-height: 1.5;
   padding-top: 10px;
-  border-top: 1px dashed #eee;
+  border-top: 1px solid #e2e8f0;
 }
 
 @media (max-width: 480px) {
