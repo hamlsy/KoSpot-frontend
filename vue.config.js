@@ -43,6 +43,10 @@ function loadSubmoduleEnv() {
 // 환경변수 로드
 loadSubmoduleEnv()
 
+// 백엔드 API URL 설정
+const API_TARGET = process.env.VUE_APP_API_TARGET || 'http://localhost:8080'
+const WS_TARGET = process.env.VUE_APP_WS_TARGET || 'ws://localhost:8080'
+
 module.exports = defineConfig({
   transpileDependencies: true,
   // publicPath: process.env.NODE_ENV === 'production' ? '/app/' : '/',
@@ -53,12 +57,12 @@ module.exports = defineConfig({
     webSocketServer: false,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: API_TARGET,
         changeOrigin: true,
-        pathRewrite: { '^/api': '' }
+        pathRewrite: { '^/api': '/api' }
       },
       '/ws': {
-        target: 'http://localhost:8080',
+        target: WS_TARGET.replace('ws://', 'http://').replace('wss://', 'https://'),
         changeOrigin: true,
         ws: true,
         secure: false,
@@ -66,7 +70,7 @@ module.exports = defineConfig({
       }
     },
     client: {
-      webSocketURL: 'ws://localhost:8080/ws'
+      webSocketURL: WS_TARGET + '/ws'
     }
   },
   configureWebpack: {

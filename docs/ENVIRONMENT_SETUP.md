@@ -48,19 +48,57 @@ node scripts/setup-env.js staging setup
 node scripts/setup-env.js production setup
 ```
 
-### 3. API 키 설정
+### 3. API 키 및 백엔드 URL 설정
 
-submodule 디렉토리에서 실제 API 키를 설정합니다:
+submodule 디렉토리에서 실제 API 키와 백엔드 서버 주소를 설정합니다:
 
 ```bash
 # submodule 디렉토리로 이동
 cd KoSpot-frontend-private
 
-# 환경변수 파일 편집
-# .env 파일에서 실제 API 키로 교체
+# development.env 파일 편집 (개발 환경)
+VUE_APP_API_BASE_URL=/api
+VUE_APP_API_TARGET=http://localhost:8080
+VUE_APP_WS_TARGET=ws://localhost:8080
+VUE_APP_WS_URL=ws://localhost:8080/ws
 VUE_APP_KAKAO_MAP_API_KEY=your_actual_kakao_map_api_key
 VUE_APP_KAKAO_CLIENT_ID=your_actual_kakao_client_id
 VUE_APP_GOOGLE_CLIENT_ID=your_actual_google_client_id
+
+# production.env 파일 편집 (프로덕션 환경)
+VUE_APP_API_BASE_URL=https://api.kospot.com/api
+VUE_APP_WS_URL=wss://api.kospot.com/ws
+# 프로덕션에서는 API_TARGET, WS_TARGET 불필요 (devServer 미실행)
+VUE_APP_KAKAO_MAP_API_KEY=your_production_kakao_map_api_key
+VUE_APP_KAKAO_CLIENT_ID=your_production_kakao_client_id
+VUE_APP_GOOGLE_CLIENT_ID=your_production_google_client_id
+```
+
+### 4. API 설정 이해하기
+
+#### 개발 환경 (Development)
+- **VUE_APP_API_TARGET**: Vue devServer의 proxy가 요청을 전달할 실제 백엔드 서버 주소
+- **VUE_APP_API_BASE_URL**: axios 클라이언트의 baseURL (보통 `/api`)
+- 모든 API 요청은 `/api` prefix로 시작하며, proxy가 `API_TARGET`으로 전달
+
+**동작 방식:**
+```
+axios 요청: GET /api/users
+↓
+Vue DevServer Proxy
+↓
+실제 전송: GET http://localhost:8080/api/users
+```
+
+#### 프로덕션 환경 (Production)
+- **VUE_APP_API_BASE_URL**: 실제 백엔드 API의 전체 URL
+- proxy가 없으므로 직접 백엔드 서버로 요청 전송
+
+**동작 방식:**
+```
+axios 요청: GET /api/users
+↓
+실제 전송: GET https://api.kospot.com/api/users
 ```
 
 ## 환경변수 목록
@@ -69,8 +107,10 @@ VUE_APP_GOOGLE_CLIENT_ID=your_actual_google_client_id
 
 | 변수명 | 설명 | 예시 |
 |--------|------|------|
-| `VUE_APP_API_BASE_URL` | API 기본 URL | `http://localhost:8080/api` |
+| `VUE_APP_API_BASE_URL` | API 기본 URL | 개발: `/api`, 프로덕션: `https://api.kospot.com/api` |
 | `VUE_APP_WS_URL` | WebSocket URL | `ws://localhost:8080/ws` |
+| `VUE_APP_API_TARGET` | 백엔드 서버 주소 (개발환경 전용) | `http://localhost:8080` |
+| `VUE_APP_WS_TARGET` | WebSocket 서버 주소 (개발환경 전용) | `ws://localhost:8080` |
 | `VUE_APP_KAKAO_MAP_API_KEY` | 카카오 맵 API 키 | `your_kakao_map_api_key` |
 
 ### OAuth 설정

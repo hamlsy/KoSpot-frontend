@@ -2,8 +2,10 @@
 import axios from 'axios'
 
 // API 클라이언트 인스턴스 생성
+// 개발환경: /api prefix를 사용하여 proxy로 요청
+// 프로덕션: VUE_APP_API_BASE_URL 환경변수 사용 (예: https://api.kospot.com/api)
 export const apiClient = axios.create({
-  baseURL: process.env.VUE_APP_API_BASE_URL || 'http://localhost:8080',
+  baseURL: process.env.VUE_APP_API_BASE_URL || '/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
