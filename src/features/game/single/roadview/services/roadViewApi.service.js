@@ -43,10 +43,10 @@ const ROADVIEW_ENDPOINTS = {
 /**
  * 랭크 게임 종료 요청 데이터 인터페이스
  * @typedef {Object} RankEndRequest
- * @property {string} gameId - 게임 ID
- * @property {string} targetLat - 사용자가 선택한 위도
- * @property {string} targetLng - 사용자가 선택한 경도
- * @property {string} markerImageUrl - 마커 이미지 URL
+ * @property {number} gameId - 게임 ID (Long)
+ * @property {number} submittedLat - 사용자가 선택한 위도
+ * @property {number} submittedLng - 사용자가 선택한 경도
+ * @property {number} answerTime - 답변 소요 시간 (초)
  */
 
 /**
@@ -83,10 +83,10 @@ const ROADVIEW_ENDPOINTS = {
 /**
  * 연습 게임 종료 요청 데이터 인터페이스
  * @typedef {Object} PracticeEndRequest
- * @property {string} gameId - 게임 ID
- * @property {string} targetLat - 사용자가 선택한 위도
- * @property {string} targetLng - 사용자가 선택한 경도
- * @property {string} markerImageUrl - 마커 이미지 URL
+ * @property {number} gameId - 게임 ID (Long)
+ * @property {number} submittedLat - 사용자가 선택한 위도
+ * @property {number} submittedLng - 사용자가 선택한 경도
+ * @property {number} answerTime - 답변 소요 시간 (초)
  */
 
 /**
@@ -253,6 +253,18 @@ class RoadViewApiService {
    */
   convertCoordinateToNumber(coordinate) {
     return typeof coordinate === 'string' ? parseFloat(coordinate) : coordinate;
+  }
+
+  /**
+   * gameId를 숫자로 변환
+   * @param {string|number} gameId - 게임 ID
+   * @returns {number} 숫자 게임 ID
+   */
+  convertGameIdToNumber(gameId) {
+    if (typeof gameId === 'string') {
+      return parseInt(gameId, 10);
+    }
+    return gameId;
   }
 }
 

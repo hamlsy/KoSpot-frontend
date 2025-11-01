@@ -149,13 +149,14 @@ export default {
       maxErrorRetry: 3, // 최대 재시도 횟수
       
       // API 관련
-      gameId: null, // 백엔드에서 받은 게임 ID
+      gameId: null, // 백엔드에서 받은 게임 ID (Number)
       markerImageUrl: null, // 마커 이미지 URL
+      gameStartTime: null, // 게임 시작 시간 (타임스탬프)
 
       // 게임 점수 관련
       distance: null,
       score: 0,
-      elapsedTime: 0,
+      elapsedTime: 0, // 게임 경과 시간 (초)
 
       // 지도 관련
       mapInitialized: false,
@@ -229,6 +230,7 @@ export default {
       // API 관련 상태 초기화
       this.gameId = null;
       this.markerImageUrl = null;
+      this.gameStartTime = null;
       
       this.showCountdown = true;
 
@@ -321,15 +323,16 @@ export default {
           const { gameId, targetLat, targetLng, markerImageUrl } = response.result;
           
           // API 응답 데이터를 컴포넌트 상태에 저장
-          this.gameId = gameId;
+          // gameId를 숫자로 변환하여 저장 (백엔드 Long 타입)
+          this.gameId = roadViewApiService.convertGameIdToNumber(gameId);
           this.markerImageUrl = markerImageUrl;
           this.currentLocation = {
             lat: roadViewApiService.convertCoordinateToNumber(targetLat),
             lng: roadViewApiService.convertCoordinateToNumber(targetLng)
           };
           
-          console.log("백엔드에서 받은 게임 데이터:", {
-            gameId,
+          console.log("백엔드에서 받은 랭크 게임 데이터:", {
+            gameId: this.gameId,
             location: this.currentLocation,
             markerImageUrl
           });
@@ -368,8 +371,8 @@ export default {
       const randomIndex = Math.floor(Math.random() * knownLocations.length);
       this.currentLocation = knownLocations[randomIndex];
       
-      // 더미 게임 ID 생성
-      this.gameId = `dummy_${Date.now()}`;
+      // 더미 게임 ID 생성 (Number 타입)
+      this.gameId = Date.now();
       this.markerImageUrl = null;
       
       console.log("더미 데이터로 선택된 위치:", this.currentLocation);
@@ -536,12 +539,19 @@ export default {
       }
 
       try {
+        // 답변 소요 시간 계산 (초 단위)
+        const answerTime = this.gameStartTime 
+          ? (Date.now() - this.gameStartTime) / 1000 
+          : this.elapsedTime;
+
         const endData = {
-          gameId: this.gameId,
-          targetLat: roadViewApiService.convertCoordinateToString(position.lat),
-          targetLng: roadViewApiService.convertCoordinateToString(position.lng),
-          markerImageUrl: this.markerImageUrl || ""
+          gameId: this.gameId, // Number 타입
+          submittedLat: position.lat, // Number 타입
+          submittedLng: position.lng, // Number 타입
+          answerTime: answerTime // Number 타입 (초)
         };
+
+        console.log("게임 종료 요청 데이터:", endData);
 
         const response = await roadViewApiService.endRankGame(endData);
         
@@ -553,10 +563,11 @@ export default {
           this.currentRankPoints = currentRatingPoint;
           this.rankPointChange = ratingScoreChange;
           
-          console.log("백엔드에서 받은 게임 결과:", {
+          console.log("백엔드에서 받은 랭크 게임 결과:", {
             score,
             currentRatingPoint,
-            ratingScoreChange
+            ratingScoreChange,
+            answerTime
           });
         } else {
           throw new Error(response.message || '게임 결과 처리에 실패했습니다.');
@@ -649,6 +660,10 @@ export default {
       this.gameStarted = true;
       this.isGameStarted = true;
       this.remainingTime = 180; // 3분
+      
+      // 게임 시작 시간 기록 (답변 시간 계산용)
+      this.gameStartTime = Date.now();
+      
       this.startTimer();
     },
   },
