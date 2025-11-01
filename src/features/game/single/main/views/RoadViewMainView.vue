@@ -54,7 +54,17 @@
 
       <!-- Recent Records Section -->
       <section class="records-section">
-        <h2 class="section-title">최근 기록</h2>
+        <div class="section-header">
+          <h2 class="section-title">최근 기록</h2>
+          <button 
+            class="view-all-button" 
+            @click="showHistoryModal = true"
+            v-if="recentRecords.length > 0"
+          >
+            전체 기록 보기
+            <i class="fas fa-arrow-right"></i>
+          </button>
+        </div>
         <div class="records-list">
           <div
             v-for="(record, index) in recentRecords"
@@ -78,10 +88,15 @@
               >
                 {{ record.mode }}
               </div>
-              <span class="record-region">{{ record.region }}</span>
-              <p class="record-score">{{ formatNumber(record.score) }}점</p>
+              <span class="record-poi">{{ record.poiName }}</span>
+              <span v-if="record.region" class="record-region">{{ record.region }}</span>
+              <p class="record-score">{{ formatNumber(Math.round(record.score)) }}점</p>
             </div>
             <span class="record-date">{{ record.date }}</span>
+          </div>
+          
+          <div v-if="recentRecords.length === 0" class="no-records">
+            <p>아직 플레이 기록이 없습니다.</p>
           </div>
         </div>
       </section>
@@ -155,6 +170,12 @@
       />
     </transition>
 
+    <!-- History Modal -->
+    <history-modal
+      :show="showHistoryModal"
+      @close="showHistoryModal = false"
+    />
+
     <!-- Loading Overlay -->
     <div v-if="isLoading" class="loading-overlay">
       <div class="loading-spinner">
@@ -171,6 +192,8 @@ import { useRouter } from 'vue-router';
 import AppLogo from "@/core/components/AppLogo.vue";
 import ThemeModePopup from 'src/features/game/single/main/components/Theme/ThemeModePopup.vue'
 import GameModeCard from "@/features/game/shared/components/Common/GameModeCard.vue";
+import HistoryModal from "@/features/game/single/main/components/HistoryModal.vue";
+import roadViewMainService from "@/features/game/single/main/services/roadViewMain.service";
 
 // 라우터 설정
 const router = useRouter();
@@ -185,6 +208,12 @@ const hoverMode = ref(null);
 const hoverStat = ref(null);
 const hoverRecord = ref(null);
 const showThemeModePopup = ref(false);
+const showHistoryModal = ref(false);
+
+// API 데이터 상태
+const rankInfo = ref(null);
+const statisticInfo = ref(null);
+const recentGamesData = ref([]);
 
 // 게임 모드 데이터
 const gameModes = [
@@ -236,53 +265,82 @@ const regions = {
   제주: "JEJU",
 };
 
-// 통계 데이터
-const stats = [
-  { icon: "fas fa-trophy", label: "내 랭크", value: "Bronze 3" },
-  { icon: "fas fa-trophy", label: "내 레이팅 점수", value: "3200" },
-  { icon: "fas fa-clock", label: "총 플레이 수", value: "500 판" },
-  { icon: "fas fa-medal", label: "최고 점수", value: "4,850점" },
-  { icon: "fas fa-users", label: "전체 랭킹", value: "상위 15%" },
-];
+// 지역 코드를 한글로 변환하는 맵
+const regionMap = {
+  SEOUL: '서울',
+  BUSAN: '부산',
+  DAEGU: '대구',
+  INCHEON: '인천',
+  GWANGJU: '광주',
+  DAEJEON: '대전',
+  ULSAN: '울산',
+  SEJONG: '세종',
+  GYEONGGI: '경기',
+  GANGWON: '강원',
+  CHUNGBUK: '충북',
+  CHUNGNAM: '충남',
+  JEONBUK: '전북',
+  JEONNAM: '전남',
+  GYEONGBUK: '경북',
+  GYEONGNAM: '경남',
+  JEJU: '제주'
+};
 
-// 최근 기록 데이터
-const recentRecords = [
-  {
-    id: 1,
-    mode: "랭크",
-    score: 4850,
-    date: "2024.12.29",
-    region: "",
-  },
-  {
-    id: 2,
-    mode: "연습",
-    score: 4200,
-    date: "2024.12.29",
-    region: "부산",
-  },
-  {
-    id: 3,
-    mode: "랭크",
-    score: 4600,
-    date: "2024.12.28",
-    region: "",
-  },
-  {
-    id: 4,
-    mode: "랭크",
-    score: 4350,
-    date: "2024.12.28",
-    region: "",
-  },
-  {
-    id: 5,
-    mode: "랭크",
-    score: 4100,
-    date: "2024.12.27",
-    region: "",
-  },
-];
+// 티어를 한글로 변환하는 맵
+const tierMap = {
+  BRONZE: 'Bronze',
+  SILVER: 'Silver',
+  GOLD: 'Gold',
+  PLATINUM: 'Platinum',
+  DIAMOND: 'Diamond',
+  MASTER: 'Master'
+};
+
+// 레벨을 숫자로 변환하는 맵
+const levelMap = {
+  ONE: '1',
+  TWO: '2',
+  THREE: '3',
+  FOUR: '4',
+  FIVE: '5'
+};
+
+// 통계 데이터 (computed)
+const stats = computed(() => {
+  if (!rankInfo.value || !statisticInfo.value) {
+    return [
+      { icon: "fas fa-trophy", label: "내 랭크", value: "-" },
+      { icon: "fas fa-trophy", label: "내 레이팅 점수", value: "-" },
+      { icon: "fas fa-clock", label: "총 플레이 수", value: "-" },
+      { icon: "fas fa-medal", label: "최고 점수", value: "-" },
+      { icon: "fas fa-users", label: "전체 랭킹", value: "-" },
+    ];
+  }
+
+  const tier = tierMap[rankInfo.value.rankTier] || rankInfo.value.rankTier;
+  const level = levelMap[rankInfo.value.rankLevel] || rankInfo.value.rankLevel;
+  const rankDisplay = `${tier} ${level}`;
+
+  return [
+    { icon: "fas fa-trophy", label: "내 랭크", value: rankDisplay },
+    { icon: "fas fa-trophy", label: "내 레이팅 점수", value: rankInfo.value.ratingScore.toLocaleString() },
+    { icon: "fas fa-clock", label: "총 플레이 수", value: `${statisticInfo.value.totalPlayCount} 판` },
+    { icon: "fas fa-medal", label: "최고 점수", value: `${formatNumber(Math.round(statisticInfo.value.bestScore))}점` },
+    { icon: "fas fa-users", label: "전체 랭킹", value: `상위 ${rankInfo.value.rankPercentage}%` },
+  ];
+});
+
+// 최근 기록 데이터 (computed)
+const recentRecords = computed(() => {
+  return recentGamesData.value.map(game => ({
+    id: game.gameId,
+    mode: game.gameType === 'RANK' ? '랭크' : game.gameType === 'PRACTICE' ? '연습' : '테마',
+    score: game.score,
+    date: formatDateShort(game.playedAt),
+    region: game.practiceSido ? regionMap[game.practiceSido] || game.practiceSido : '',
+    poiName: game.poiName
+  }));
+});
 
 // computed 속성
 const isGameStartReady = computed(() => {
@@ -294,7 +352,7 @@ const isGameStartReady = computed(() => {
 
 // 컴포넌트 마운트 시 실행
 onMounted(() => {
-  fetchUserStats();
+  fetchMainPageData();
 });
 
 // 지역 선택 함수
@@ -344,6 +402,15 @@ function formatNumber(number) {
   return number.toLocaleString();
 }
 
+// 날짜 포맷팅 함수 (짧은 형식)
+function formatDateShort(dateString) {
+  const date = new Date(dateString);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}.${month}.${day}`;
+}
+
 // 프로필 메뉴 토글 함수
 function toggleProfileMenu() {
   showProfileMenu.value = !showProfileMenu.value;
@@ -358,17 +425,43 @@ function getRankIcon(rank) {
   return "fas fa-trophy";
 }
 
-// 사용자 통계 가져오기 함수
-async function fetchUserStats() {
+// 메인 페이지 데이터 가져오기 함수
+async function fetchMainPageData() {
+  isLoading.value = true;
+  
   try {
-    // 실제 구현에서는 API 호출로 대체
-    // const response = await axios.get('/api/user/stats');
-    // stats.value = response.data.stats;
-    // userRank.value = response.data.userRank;
-    // recentRecords.value = response.data.recentRecords;
-    // 테스트 데이터는 이미 설정되어 있음
+    const response = await roadViewMainService.getMainPageData();
+    
+    if (response.data.isSuccess) {
+      const result = response.data.result;
+      
+      // 랭크 정보 저장
+      rankInfo.value = result.rankInfo;
+      
+      // 통계 정보 저장
+      statisticInfo.value = result.statisticInfo;
+      
+      // 최근 게임 기록 저장
+      recentGamesData.value = result.recentGames;
+      
+      // userRank도 업데이트 (랭크 모드 팝업에서 사용)
+      const tier = tierMap[result.rankInfo.rankTier] || result.rankInfo.rankTier;
+      const level = levelMap[result.rankInfo.rankLevel] || result.rankInfo.rankLevel;
+      userRank.value = `${tier} ${level}`;
+      
+      console.log("메인 페이지 데이터 로드 완료:", result);
+    } else {
+      console.error("메인 페이지 데이터 조회 실패:", response.data.message);
+    }
   } catch (error) {
-    console.error("사용자 통계 조회 중 오류 발생:", error);
+    console.error("메인 페이지 데이터 조회 중 오류 발생:", error);
+    
+    // 에러 발생 시 기본값 설정
+    rankInfo.value = null;
+    statisticInfo.value = null;
+    recentGamesData.value = [];
+  } finally {
+    isLoading.value = false;
   }
 }
 
