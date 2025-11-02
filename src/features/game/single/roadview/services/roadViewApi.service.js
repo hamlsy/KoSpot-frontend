@@ -38,15 +38,16 @@ const ROADVIEW_ENDPOINTS = {
  * @property {string} result.targetLat - 목표 위도
  * @property {string} result.targetLng - 목표 경도
  * @property {string} result.markerImageUrl - 마커 이미지 URL
+ * @property {string} result.poiName - 정답 위치의 POI 이름
  */
 
 /**
  * 랭크 게임 종료 요청 데이터 인터페이스
  * @typedef {Object} RankEndRequest
- * @property {string} gameId - 게임 ID
- * @property {string} targetLat - 사용자가 선택한 위도
- * @property {string} targetLng - 사용자가 선택한 경도
- * @property {string} markerImageUrl - 마커 이미지 URL
+ * @property {number} gameId - 게임 ID (Long)
+ * @property {number} submittedLat - 사용자가 선택한 위도
+ * @property {number} submittedLng - 사용자가 선택한 경도
+ * @property {number} answerTime - 답변 소요 시간 (초)
  */
 
 /**
@@ -56,9 +57,14 @@ const ROADVIEW_ENDPOINTS = {
  * @property {number} code - 응답 코드
  * @property {string} message - 응답 메시지
  * @property {Object} result - 결과 데이터
- * @property {number} result.currentRatingPoint - 현재 랭킹 포인트
- * @property {number} result.ratingScoreChange - 랭킹 점수 변화
  * @property {number} result.score - 게임 점수
+ * @property {number} result.previousRatingScore - 게임 전 랭크 점수
+ * @property {number} result.currentRatingScore - 게임 후 랭크 점수
+ * @property {number} result.ratingScoreChange - 랭킹 점수 변화 (양수: 상승, 음수: 하락)
+ * @property {string} result.previousRankTier - 게임 전 티어 (BRONZE, SILVER, GOLD, PLATINUM, DIAMOND, MASTER)
+ * @property {string} result.previousRankLevel - 게임 전 레벨 (ONE, TWO, THREE, FOUR, FIVE)
+ * @property {string} result.currentRankTier - 게임 후 티어
+ * @property {string} result.currentRankLevel - 게임 후 레벨
  */
 
 /**
@@ -83,10 +89,10 @@ const ROADVIEW_ENDPOINTS = {
 /**
  * 연습 게임 종료 요청 데이터 인터페이스
  * @typedef {Object} PracticeEndRequest
- * @property {string} gameId - 게임 ID
- * @property {string} targetLat - 사용자가 선택한 위도
- * @property {string} targetLng - 사용자가 선택한 경도
- * @property {string} markerImageUrl - 마커 이미지 URL
+ * @property {number} gameId - 게임 ID (Long)
+ * @property {number} submittedLat - 사용자가 선택한 위도
+ * @property {number} submittedLng - 사용자가 선택한 경도
+ * @property {number} answerTime - 답변 소요 시간 (초)
  */
 
 /**
@@ -253,6 +259,18 @@ class RoadViewApiService {
    */
   convertCoordinateToNumber(coordinate) {
     return typeof coordinate === 'string' ? parseFloat(coordinate) : coordinate;
+  }
+
+  /**
+   * gameId를 숫자로 변환
+   * @param {string|number} gameId - 게임 ID
+   * @returns {number} 숫자 게임 ID
+   */
+  convertGameIdToNumber(gameId) {
+    if (typeof gameId === 'string') {
+      return parseInt(gameId, 10);
+    }
+    return gameId;
   }
 }
 
