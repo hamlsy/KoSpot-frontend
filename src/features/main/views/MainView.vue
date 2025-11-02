@@ -319,9 +319,9 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
-import NavigationBar from 'src/core/components/NavigationBar.vue'
-import UserLoginCard from 'src/features/main/components/UserLoginCard.vue'
-import { mainService } from 'src/features/main/services/main.service.js'
+import NavigationBar from '@/core/components/NavigationBar.vue'
+import UserLoginCard from '@/features/main/components/UserLoginCard.vue'
+import { mainService } from '@/features/main/services/main.service.js'
 
 // 라우터 설정
 const router = useRouter();
@@ -555,6 +555,7 @@ function showErrorToast(message) {
   min-height: 100vh;
   width: 100%;
   background-color: #f5f7fa;
+  overflow-x: hidden;
 }
 
 .main-content {
@@ -781,7 +782,7 @@ function showErrorToast(message) {
   right: 0;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
-  z-index: 1001;
+  z-index: 9998;
 }
 
 /* 수정: 프로필 메뉴 스타일 추가 */
@@ -792,8 +793,8 @@ function showErrorToast(message) {
   bottom: 0;
   width: 300px;
   background: white;
-  z-index: 1002;
-  /* box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1); */
+  z-index: 9999;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
   padding: 24px;
   overflow-y: auto;
 }

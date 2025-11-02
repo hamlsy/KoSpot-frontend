@@ -3,8 +3,8 @@
  * 메인 페이지 데이터 조회를 위한 백엔드 API 연동 서비스
  * 관리자 여부, 게임 모드 상태, 최근 공지사항, 배너 정보를 제공합니다.
  */
-import { apiClient } from 'src/core/api/apiClient.js';
-import { API_ENDPOINTS } from 'src/core/api/endPoint.js';
+import { apiClient } from '@/core/api/apiClient.js';
+import { API_ENDPOINTS } from '@/core/api/endPoint.js';
 
 /**
  * 메인 페이지 응답 데이터 인터페이스
