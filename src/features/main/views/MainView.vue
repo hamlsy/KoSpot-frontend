@@ -6,16 +6,18 @@
     <!-- Main Content -->
     <main class="main-content">
       <!-- Featured Challenge Banner Carousel -->
-      <div class="banner-carousel">
+      <div v-if="banners && banners.length > 0" class="banner-carousel">
         <div
           class="banner-container"
           :style="{ transform: `translateX(-${currentBanner * 100}%)` }"
         >
           <div
             v-for="(banner, index) in banners"
-            :key="index"
+            :key="banner.id || index"
             class="main-banner"
             :style="{ backgroundImage: `url(${banner.image})` }"
+            @click="onBannerClick(banner)"
+            :class="{ 'clickable': banner.link }"
           >
             <div class="main-banner-content">
               <div class="main-banner-badge">{{ banner.badge }}</div>
@@ -29,7 +31,7 @@
         <div class="banner-dots">
           <button
             v-for="(banner, index) in banners"
-            :key="index"
+            :key="banner.id || index"
             class="banner-dot"
             :class="{ active: currentBanner === index }"
             @click="setCurrentBanner(index)"
@@ -50,9 +52,11 @@
             />
           </div>
 
+          <!-- 로드뷰 모드 -->
           <div
             class="mode-card roadview"
-            @click="navigateTo('roadView/main')"
+            :class="{ locked: !gameModeStatus.roadviewEnabled }"
+            @click="gameModeStatus.roadviewEnabled ? navigateTo('roadView/main') : showLockedMessage()"
           >
             <div class="mode-background"></div>
             <div class="mode-icon">
@@ -63,7 +67,8 @@
               <p>실제 거리를 둘러보며 위치를 맞춰보세요</p>
               <div class="mode-stats">
                 <span class="active-players">
-                  <i class="fas fa-user"></i> 328명 플레이 중
+                  <i class="fas fa-user"></i> 
+                  {{ gameModeStatus.roadviewEnabled ? '328명 플레이 중' : '준비 중' }}
                 </span>
                 <span class="difficulty">
                   <i class="fas fa-star"></i>
@@ -72,9 +77,18 @@
                 </span>
               </div>
             </div>
+            <div v-if="!gameModeStatus.roadviewEnabled" class="mode-overlay">
+              <i class="fas fa-lock"></i>
+              <span>준비 중</span>
+            </div>
           </div>
 
-          <div class="mode-card photo locked" @click="showLockedMessage">
+          <!-- 포토 모드 -->
+          <div 
+            class="mode-card photo"
+            :class="{ locked: !gameModeStatus.photoEnabled }"
+            @click="gameModeStatus.photoEnabled ? navigateTo('photo/main') : showLockedMessage()"
+          >
             <div class="mode-background"></div>
             <div class="mode-icon">
               <i class="fas fa-camera"></i>
@@ -84,7 +98,8 @@
               <p>관광지 사진으로 지역을 맞혀보세요</p>
               <div class="mode-stats">
                 <span class="active-players">
-                  <i class="fas fa-user"></i> 곧 오픈 예정
+                  <i class="fas fa-user"></i> 
+                  {{ gameModeStatus.photoEnabled ? '156명 플레이 중' : '곧 오픈 예정' }}
                 </span>
                 <span class="difficulty">
                   <i class="fas fa-star"></i>
@@ -92,15 +107,17 @@
                 </span>
               </div>
             </div>
-            <div class="mode-overlay">
+            <div v-if="!gameModeStatus.photoEnabled" class="mode-overlay">
               <i class="fas fa-lock"></i>
               <span>준비 중</span>
             </div>
           </div>
 
+          <!-- 멀티플레이어 모드 -->
           <div
             class="mode-card multiplayer"
-            @click="navigateTo('lobby')"
+            :class="{ locked: !gameModeStatus.multiplayEnabled }"
+            @click="gameModeStatus.multiplayEnabled ? navigateTo('lobby') : showLockedMessage()"
           >
             <div class="mode-background"></div>
             <div class="mode-icon">
@@ -111,7 +128,8 @@
               <p>다른 플레이어들과 함께 게임하세요</p>
               <div class="mode-stats">
                 <span class="active-players">
-                  <i class="fas fa-user"></i> 124명 플레이 중
+                  <i class="fas fa-user"></i> 
+                  {{ gameModeStatus.multiplayEnabled ? '124명 플레이 중' : '준비 중' }}
                 </span>
                 <span class="difficulty">
                   <i class="fas fa-star"></i>
@@ -119,6 +137,10 @@
                   <i class="fas fa-star"></i>
                 </span>
               </div>
+            </div>
+            <div v-if="!gameModeStatus.multiplayEnabled" class="mode-overlay">
+              <i class="fas fa-lock"></i>
+              <span>준비 중</span>
             </div>
           </div>
         </div>
@@ -297,19 +319,12 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
-// 스토어 경로 수정 (임시로 주석 처리)
-// import store from '@/store';
 import NavigationBar from 'src/core/components/NavigationBar.vue'
 import UserLoginCard from 'src/features/main/components/UserLoginCard.vue'
-import { noticeService } from 'src/features/notice/services/notice.service.js'
-// import useAuth from 'src/core/composables/useAuth.js'
+import { mainService } from 'src/features/main/services/main.service.js'
 
 // 라우터 설정
 const router = useRouter();
-
-// 스토어 설정
-// const gameStore = useGameStore();
-// const mainStore = useMainStore();
 
 // 반응형 상태 정의
 const isLoggedIn = ref(false);
@@ -319,6 +334,7 @@ const currentBanner = ref(0);
 const bannerInterval = ref(null);
 const showToast = ref(false);
 const toastMessage = ref("");
+const isLoading = ref(true);
 
 // 사용자 프로필 정보
 const userProfile = ref({
@@ -328,71 +344,110 @@ const userProfile = ref({
   isAdmin: false
 });
 
+// 게임 모드 상태
+const gameModeStatus = ref({
+  roadviewEnabled: true,
+  photoEnabled: false,
+  multiplayEnabled: true
+});
+
 // 배너 데이터
-const banners = [
-  // {
-  //   badge: "이벤트",
-  //   title: "여름 특별 이벤트: 제주도 여행 퀴즈",
-  //   description: "제주도의 아름다운 명소들을 맞추고 경품을 받아가세요!",
-  //   image: "https://via.placeholder.com/1200x400/4a6cf7/ffffff?text=제주도+여행+퀴즈"
-  // },
-  {
-    badge: "신규",
-    title: "신규 테마: 유명 영화 촬영지",
-    description: "전국 유명 영화 촬영지를 맞추는 새로운 테마가 추가되었습니다.",
-    image: "https://myseoulbox.com/cdn/shop/articles/Kdramas.jpg?v=1686882570"
-  },
-  {
-    badge: "업데이트",
-    title: "멀티플레이어 모드 업데이트",
-    description: "친구들과 함께 즐길 수 있는 새로운 기능이 추가되었습니다.",
-    image: "https://via.placeholder.com/1200x400/8b5cf6/ffffff?text=멀티플레이어+모드"
-  }
-];
+const banners = ref([]);
 
 // 공지사항 데이터
 const recentNotices = ref([]);
 const noticesLoading = ref(false);
 
-// 공지사항 로드 함수
-async function loadRecentNotices() {
+// 메인 페이지 데이터 로드 함수
+async function loadMainPageData() {
   try {
+    isLoading.value = true;
     noticesLoading.value = true;
-    const response = await noticeService.getAllNotices(0);
     
-    if (response.isSuccess) {
-      // 최근 3개의 공지사항만 표시
-      recentNotices.value = response.result.slice(0, 3).map(notice => ({
-        id: notice.noticeId,
-        category: noticeService.getNoticeCategory(notice.title),
-        title: notice.title,
-        date: noticeService.formatDate(notice.createdDate)
-      }));
+    const response = await mainService.getMainPageData();
+    
+    if (response.isSuccess && response.result) {
+      const data = response.result;
       
-      console.log('메인 페이지 공지사항 로드 완료:', recentNotices.value);
+      // 관리자 여부 업데이트
+      userProfile.value.isAdmin = data.isAdmin || false;
+      
+      // 게임 모드 상태 업데이트
+      if (data.gameModeStatus) {
+        gameModeStatus.value = {
+          roadviewEnabled: data.gameModeStatus.roadviewEnabled ?? true,
+          photoEnabled: data.gameModeStatus.photoEnabled ?? false,
+          multiplayEnabled: data.gameModeStatus.multiplayEnabled ?? true
+        };
+      }
+      
+      // 배너 데이터 변환 및 업데이트
+      if (data.banners && Array.isArray(data.banners) && data.banners.length > 0) {
+        banners.value = mainService.transformBannersForUI(data.banners);
+      } else {
+        // 배너가 없으면 기본 배너 사용
+        banners.value = getDefaultBanners();
+      }
+      
+      // 공지사항 데이터 변환 및 업데이트
+      if (data.recentNotices && Array.isArray(data.recentNotices)) {
+        recentNotices.value = mainService.transformNoticesForUI(data.recentNotices);
+      } else {
+        recentNotices.value = [];
+      }
+      
+      console.log('✅ 메인 페이지 데이터 로드 완료:', {
+        isAdmin: userProfile.value.isAdmin,
+        gameModeStatus: gameModeStatus.value,
+        banners: banners.value.length,
+        notices: recentNotices.value.length
+      });
     } else {
-      throw new Error(response.message || '공지사항 조회 실패');
+      throw new Error(response.message || '메인 페이지 데이터 조회 실패');
     }
   } catch (error) {
-    console.error('공지사항 로드 실패:', error);
-    // 에러 시 더미 데이터 사용
-    recentNotices.value = [
-      {
-        id: 1,
-        category: "공지",
-        title: "공지사항을 불러올 수 없습니다",
-        date: "2025.01.01"
-      }
-    ];
+    console.error('❌ 메인 페이지 데이터 로드 실패:', error);
+    
+    // 에러 시 폴백 데이터 사용
+    const fallbackData = mainService.getFallbackData();
+    gameModeStatus.value = fallbackData.gameModeStatus;
+    recentNotices.value = mainService.transformNoticesForUI(fallbackData.recentNotices);
+    banners.value = getDefaultBanners();
+    
+    // 사용자에게 에러 알림
+    showErrorToast('데이터를 불러오는데 실패했습니다. 기본 데이터를 표시합니다.');
   } finally {
+    isLoading.value = false;
     noticesLoading.value = false;
   }
 }
 
+// 기본 배너 데이터 반환
+function getDefaultBanners() {
+  return [
+    {
+      id: 1,
+      badge: "신규",
+      title: "신규 테마: 유명 영화 촬영지",
+      description: "전국 유명 영화 촬영지를 맞추는 새로운 테마가 추가되었습니다.",
+      image: "https://myseoulbox.com/cdn/shop/articles/Kdramas.jpg?v=1686882570",
+      link: ""
+    },
+    {
+      id: 2,
+      badge: "업데이트",
+      title: "멀티플레이어 모드 업데이트",
+      description: "친구들과 함께 즐길 수 있는 새로운 기능이 추가되었습니다.",
+      image: "https://via.placeholder.com/1200x400/8b5cf6/ffffff?text=멀티플레이어+모드",
+      link: ""
+    }
+  ];
+}
+
 // 컴포넌트 마운트 시 실행
 onMounted(() => {
+  loadMainPageData();
   startBannerRotation();
-  loadRecentNotices();
 });
 
 // 컴포넌트 언마운트 전 실행
@@ -434,8 +489,13 @@ function goToNoticeDetail(noticeId) {
 
 // 배너 회전 시작 함수
 function startBannerRotation() {
+  // 배너가 없으면 회전하지 않음
+  if (!banners.value || banners.value.length === 0) {
+    return;
+  }
+  
   bannerInterval.value = setInterval(() => {
-    currentBanner.value = (currentBanner.value + 1) % banners.length;
+    currentBanner.value = (currentBanner.value + 1) % banners.value.length;
   }, 5000);
 }
 
@@ -452,12 +512,35 @@ function setCurrentBanner(index) {
   startBannerRotation();
 }
 
+// 배너 클릭 핸들러
+function onBannerClick(banner) {
+  if (banner.link && banner.link.trim() !== '') {
+    // 외부 링크인 경우 새 탭에서 열기
+    if (banner.link.startsWith('http://') || banner.link.startsWith('https://')) {
+      window.open(banner.link, '_blank');
+    } else {
+      // 내부 링크인 경우 라우터로 이동
+      router.push(banner.link);
+    }
+  }
+}
+
 // 잠긴 모드 메시지 표시 함수
 function showLockedMessage() {
   toastMessage.value = "포토 모드는 곧 오픈 예정입니다! 기대해주세요.";
   showToast.value = true;
 
   // 토스트 메시지 3초 후 사라짐
+  setTimeout(() => {
+    showToast.value = false;
+  }, 3000);
+}
+
+// 에러 토스트 표시 함수
+function showErrorToast(message) {
+  toastMessage.value = message;
+  showToast.value = true;
+
   setTimeout(() => {
     showToast.value = false;
   }, 3000);
@@ -480,6 +563,17 @@ function showLockedMessage() {
   margin: 0 auto;
   padding-left: 1rem;
   padding-right: 1rem;
+}
+
+/* 배너 클릭 가능 스타일 */
+.main-banner.clickable {
+  cursor: pointer;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.main-banner.clickable:hover {
+  transform: scale(1.02);
+  opacity: 0.95;
 }
 
 .stats-container {
@@ -597,8 +691,12 @@ function showLockedMessage() {
 
 .mode-card.locked {
   position: relative;
-  cursor: default;
+  cursor: not-allowed;
   opacity: 0.9;
+}
+
+.mode-card.locked:hover {
+  transform: none;
 }
 
 .mode-overlay {
@@ -985,5 +1083,35 @@ function showLockedMessage() {
 .loading-spinner i {
   font-size: 1.5rem;
   color: #667eea;
+}
+
+/* 토스트 알림 */
+.toast-notification {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #334155;
+  color: white;
+  padding: 16px 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  animation: slideUp 0.3s ease-out;
+  font-size: 14px;
+  font-weight: 500;
+  max-width: 90%;
+  text-align: center;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 </style>
