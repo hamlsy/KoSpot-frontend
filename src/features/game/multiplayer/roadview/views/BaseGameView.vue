@@ -198,6 +198,11 @@ export default {
     isTeamMode: {
       type: Boolean,
       default: false
+    },
+    // Solo 게임에서 useSoloGameFlow를 사용하는 경우
+    useCustomWebSocket: {
+      type: Boolean,
+      default: false
     }
   },
 
@@ -233,7 +238,7 @@ export default {
       isResponsiveMode: false,
       showToastFlag: false,
       // UI 상태 관리
-      isPlayerListOpen: true, // 플레이어 리스트 표시 여부 (기본값: 열림)
+      isPlayerListOpen: window.innerWidth > 992, // 플레이어 리스트 표시 여부 (반응형에서는 기본 닫힘)
       isMobile: false, // 모바일 화면 여부 (768px 이하)
       // Next Round Voting State
       playersReadyForNextRound: new Set(),
@@ -291,7 +296,10 @@ export default {
 
   created() {
     // 게임 중에도 WebSocket 연결 상태 확인 및 구독 설정
-    this.initializeWebSocketConnection();
+    // Solo 게임에서 useSoloGameFlow를 사용하는 경우 건너뜀
+    if (!this.useCustomWebSocket) {
+      this.initializeWebSocketConnection();
+    }
   },
 
   mounted() {
@@ -1183,12 +1191,18 @@ export default {
 
 .round-info {
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 100px;
 }
 
 .round-number {
   font-size: 0.875rem;
   font-weight: 500;
   margin-bottom: 0.25rem;
+  white-space: nowrap;
 }
 
 .round-progress {
@@ -1380,30 +1394,59 @@ export default {
     position: relative;
   }
 
+  /* 플레이어 리스트 중앙 창 스타일 */
+  .left-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    width: 360px;
+    height: 680px;
+    max-width: 90vw;
+    max-height: 85vh;
+    background: white;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 15000;
+    overflow-y: auto;
+    border-radius: 30px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  /* 플레이어 리스트가 열린 상태 - 열릴 때 즉시 나타남 */
+  .left-panel:not(.hidden) {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+    pointer-events: auto;
+    transition: none;
+  }
+
   /* 채팅 패널을 position: absolute로 플렉스에서 제거 */
   .right-panel {
     display: block; /* 명시적으로 표시 */
     position: fixed;
-    top: 0;
-    right: 0;
-    width: 100%;
-    max-width: 400px;
-    height: 100vh; /* 전체 화면 높이 사용 */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    width: 360px;
+    height: 680px;
+    max-width: 90vw;
+    max-height: 85vh;
     background: white;
-    box-shadow: -2px 0 20px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     z-index: 15000; /* RoundResults보다 높은 z-index로 다른 요소들 위에 표시 */
-    overflow-y: auto;
-    border-radius: 0 0 0 12px; /* 왼쪽 하단 모서리만 둥글게 */
+    overflow: hidden;
+    border-radius: 30px;
     
     /* 부드러운 애니메이션 설정 */
-    transform: translateX(100%); /* 기본적으로 화면 밖으로 숨김 */
     opacity: 0;
     transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     pointer-events: none; /* 숨겨진 상태에서는 클릭 방지 */
   }
 
   .right-panel.chat-open {
-    transform: translateX(0); /* 화면으로 슬라이드 인 */
+    transform: translate(-50%, -50%) scale(1);
     opacity: 1;
     pointer-events: auto; /* 표시된 상태에서는 클릭 허용 */
   }
@@ -1411,7 +1454,7 @@ export default {
   /* 채팅창 내부 스타일 조정 */
   .right-panel .chat-window {
     height: 100%;
-    border-radius: 0; /* 채팅창 내부 둥근 모서리 제거 */
+    border-radius: 30px;
   }
 
   .main-panel {
@@ -1462,9 +1505,26 @@ export default {
 
   .header-center {
     flex: 1;
-    margin: 0 0.3rem;
-    max-width: 30%;
+    margin: 0 0.5rem;
+    min-width: 0;
     text-align: center;
+  }
+  
+  .round-info {
+    min-width: auto;
+    width: 100%;
+  }
+  
+  .round-number {
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .round-progress {
+    width: 100%;
+    min-width: 60px;
   }
 
   .header-right {
@@ -1483,15 +1543,13 @@ export default {
     font-size: 0.75rem;
   }
 
-  .round-number {
-    font-size: 0.8rem;
-  }
-
   /* 모바일에서 채팅 패널 최적화 */
   .right-panel {
     display: block; /* 명시적으로 표시 */
-    max-width: 100%; /* 모바일에서는 전체 너비 */
-    height: 100vh; /* 모바일에서도 전체 화면 높이 사용 */
+    width: 340px;
+    height: 640px;
+    max-width: 90vw;
+    max-height: 80vh;
   }
 
   /* 모바일에서 채팅 토글 버튼 표시 */
@@ -1528,8 +1586,18 @@ export default {
   }
 
   .header-center {
-    max-width: 25%;
-    margin: 0 0.2rem;
+    margin: 0 0.3rem;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+  
+  .round-number {
+    font-size: 0.7rem;
+  }
+  
+  .round-progress {
+    height: 6px;
+    min-width: 50px;
   }
 
   .header-right {
@@ -1544,10 +1612,6 @@ export default {
     font-size: 0.7rem;
   }
 
-  .round-number {
-    font-size: 0.75rem;
-  }
-
   .player-list-toggle-btn {
     padding: 0.25rem 0.5rem;
     font-size: 0.7rem;
@@ -1558,10 +1622,13 @@ export default {
     font-size: 0.65rem;
   }
 
-  /* 더 작은 화면에서 채팅 패널 높이 조정 */
+  /* 더 작은 화면에서 채팅 패널 크기 조정 */
   .right-panel {
     display: block; /* 명시적으로 표시 */
-    height: 100vh; /* 더 작은 화면에서도 전체 화면 높이 사용 */
+    width: 300px;
+    height: 600px;
+    max-width: 90vw;
+    max-height: 75vh;
   }
 }
 
@@ -1765,35 +1832,40 @@ export default {
   white-space: nowrap;
 }
 
-/* 모바일 사이즈 (768px 이하) - 플레이어 리스트 오버레이 스타일 */
+/* 모바일 사이즈 (768px 이하) - 플레이어 리스트 중앙 창 스타일 */
 @media (max-width: 768px) {
   /* 게임 헤더 높이 계산용 변수 */
   .game-header {
     height: 80px; /* 헤더 고정 높이 설정 */
   }
   
-  /* 모바일에서 플레이어 리스트가 열린 상태일 때 오버레이로 표시 */
-  .left-panel.mobile-open {
+  /* 모바일에서 플레이어 리스트 기본 스타일 */
+  .left-panel {
     position: fixed;
-    top: 80px; /* 헤더 높이만큼 아래에서 시작 */
-    left: 0;
-    width: 100%;
-    max-width: 320px;
-    height: calc(100vh - 80px); /* 헤더 높이를 제외한 나머지 영역 */
-    z-index: 500; /* 헤더보다 낮게 설정 */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    width: 340px;
+    height: 640px;
+    max-width: 90vw;
+    max-height: 80vh;
+    z-index: 15000;
     background: white;
-    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.3);
-    transform: translateX(0);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    overflow-y: auto;
+    padding: 0;
+    border-radius: 30px;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  
+  /* 모바일에서 플레이어 리스트가 열린 상태 - 열릴 때 즉시 나타남 */
+  .left-panel.mobile-open {
+    transform: translate(-50%, -50%) scale(1);
     opacity: 1;
     pointer-events: auto;
-    overflow-y: auto;
-    padding: 0; /* 상단 패딩 제거 */
-    /* 개별 속성별 애니메이션으로 부드러운 전환 */
-    transition: 
-      transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-      opacity 0.25s ease-out,
-      box-shadow 0.2s ease-out;
-    border-top: 1px solid #dee2e6;
+    transition: none;
   }
   
   /* 게임 화면 최적화 */
@@ -1816,9 +1888,19 @@ export default {
 
 /* 더 작은 화면에서 추가 최적화 */
 @media (max-width: 480px) {
+  .left-panel {
+    width: 300px;
+    height: 600px;
+    max-width: 90vw;
+    max-height: 75vh;
+  }
+  
   .left-panel.mobile-open {
-    width: 100vw; /* 전체 화면 너비 사용 */
-    max-width: none;
+    width: 300px;
+    height: 600px;
+    max-width: 90vw;
+    max-height: 75vh;
+    transition: none;
   }
   
   .mobile-header {

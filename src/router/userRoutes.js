@@ -21,6 +21,11 @@ const userRoutes = [
         component: Profile
     },
     {
+        path: '/myProfile',
+        name: "MyProfile",
+        component: Profile
+    },
+    {
         path: '/friendsList',
         name: "FriendsList",
         component: FriendsList

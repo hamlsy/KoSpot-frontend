@@ -3,7 +3,7 @@
  * 공지사항 CRUD 기능을 위한 백엔드 API 연동 서비스
  * 공지사항 조회, 생성, 수정, 삭제 등의 기능을 제공합니다.
  */
-import { apiClient } from 'src/core/api/apiClient.js';
+import { apiClient } from '@/core/api/apiClient.js';
 
 /**
  * 공지사항 관련 API 엔드포인트

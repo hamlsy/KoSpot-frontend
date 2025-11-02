@@ -1,5 +1,30 @@
 <template>
   <div class="road-view-practice">
+    <!-- 디버그 패널 (테스트용) -->
+    <div v-if="debugMode" class="debug-panel">
+      <h4>🧪 티어 변화 테스트</h4>
+      <div class="debug-controls">
+        <button @click="testRankChange('BRONZE', 'THREE', 'BRONZE', 'TWO')" class="debug-btn">
+          브론즈 3 → 브론즈 2
+        </button>
+        <button @click="testRankChange('SILVER', 'FIVE', 'GOLD', 'FIVE')" class="debug-btn">
+          실버 5 → 골드 5 🎉
+        </button>
+        <button @click="testRankChange('GOLD', 'TWO', 'PLATINUM', 'ONE')" class="debug-btn">
+          골드 2 → 플래티넘 1 🎉
+        </button>
+        <button @click="testRankChange('DIAMOND', 'THREE', 'DIAMOND', 'THREE')" class="debug-btn">
+          다이아 3 → 다이아 3 (변화없음)
+        </button>
+        <button @click="toggleDebugMode" class="debug-btn close">닫기</button>
+      </div>
+    </div>
+
+    <!-- 디버그 버튼 -->
+    <button v-if="!showResult && !debugMode" @click="toggleDebugMode" class="debug-toggle">
+      🧪
+    </button>
+
     <!-- 타이머 표시 -->
     <div v-if="isGameStarted && !showResult" class="timer-container">
       <div class="timer" :class="{ 'timer-warning': remainingTime <= 30 }">
@@ -72,9 +97,18 @@
         :distance="distance"
         :currentRankPoints="currentRankPoints"
         :rankPointChange="rankPointChange"
+        :previousRatingScore="previousRatingScore"
+        :currentRatingScore="currentRatingScore"
+        :previousRankTier="previousRankTier"
+        :previousRankLevel="previousRankLevel"
+        :currentRankTier="currentRankTier"
+        :currentRankLevel="currentRankLevel"
         :currentLocation="currentLocation"
         :guessedLocation="guessedLocation"
         :locationDescription="getLocationDescription()"
+        :poiName="poiName"
+        :markerImageUrl="markerImageUrl"
+        :userNickname="'플레이어'"
         @restart="resetGame"
         @exit="exitGame"
       />
@@ -149,13 +183,15 @@ export default {
       maxErrorRetry: 3, // 최대 재시도 횟수
       
       // API 관련
-      gameId: null, // 백엔드에서 받은 게임 ID
+      gameId: null, // 백엔드에서 받은 게임 ID (Number)
       markerImageUrl: null, // 마커 이미지 URL
+      gameStartTime: null, // 게임 시작 시간 (타임스탬프)
+      poiName: null, // 정답 위치의 POI 이름 (백엔드에서 받음)
 
       // 게임 점수 관련
       distance: null,
       score: 0,
-      elapsedTime: 0,
+      elapsedTime: 0, // 게임 경과 시간 (초)
 
       // 지도 관련
       mapInitialized: false,
@@ -180,10 +216,22 @@ export default {
       timerInterval: null,
       currentRankPoints: 1000, // 예시 값
       rankPointChange: 0,
+      
+      // 랭크 티어/레벨 관련 (API 응답)
+      previousRatingScore: 0,
+      currentRatingScore: 0,
+      previousRankTier: null,
+      previousRankLevel: null,
+      currentRankTier: null,
+      currentRankLevel: null,
 
       // 타이머 관련
       isGameStarted: false,
       remainingTime: 180, // 3분 (초 단위)
+      
+      // 디버그 모드 (티어 변화 테스트용)
+      debugMode: false,
+      
       locationDescriptions: {
         서울: "대한민국의 수도이자 최대 도시로, 현대적인 건물과 고궁이 공존하는 곳입니다.",
         부산: "대한민국 제2의 도시이자 최대 항구도시로, 해운대와 광안리 해변으로 유명합니다.",
@@ -229,6 +277,17 @@ export default {
       // API 관련 상태 초기화
       this.gameId = null;
       this.markerImageUrl = null;
+      this.gameStartTime = null;
+      this.poiName = null;
+      
+      // 랭크 티어/레벨 정보 초기화
+      this.previousRatingScore = 0;
+      this.currentRatingScore = 0;
+      this.rankPointChange = 0;
+      this.previousRankTier = null;
+      this.previousRankLevel = null;
+      this.currentRankTier = null;
+      this.currentRankLevel = null;
       
       this.showCountdown = true;
 
@@ -318,20 +377,23 @@ export default {
         const response = await roadViewApiService.startRankGame();
         
         if (response.isSuccess && response.result) {
-          const { gameId, targetLat, targetLng, markerImageUrl } = response.result;
+          const { gameId, targetLat, targetLng, markerImageUrl, poiName } = response.result;
           
           // API 응답 데이터를 컴포넌트 상태에 저장
-          this.gameId = gameId;
+          // gameId를 숫자로 변환하여 저장 (백엔드 Long 타입)
+          this.gameId = roadViewApiService.convertGameIdToNumber(gameId);
           this.markerImageUrl = markerImageUrl;
+          this.poiName = poiName || null; // POI 이름 저장
           this.currentLocation = {
             lat: roadViewApiService.convertCoordinateToNumber(targetLat),
             lng: roadViewApiService.convertCoordinateToNumber(targetLng)
           };
           
-          console.log("백엔드에서 받은 게임 데이터:", {
-            gameId,
+          console.log("백엔드에서 받은 랭크 게임 데이터:", {
+            gameId: this.gameId,
             location: this.currentLocation,
-            markerImageUrl
+            markerImageUrl,
+            poiName: this.poiName
           });
         } else {
           throw new Error(response.message || '게임 시작에 실패했습니다.');
@@ -368,8 +430,8 @@ export default {
       const randomIndex = Math.floor(Math.random() * knownLocations.length);
       this.currentLocation = knownLocations[randomIndex];
       
-      // 더미 게임 ID 생성
-      this.gameId = `dummy_${Date.now()}`;
+      // 더미 게임 ID 생성 (Number 타입)
+      this.gameId = Date.now();
       this.markerImageUrl = null;
       
       console.log("더미 데이터로 선택된 위치:", this.currentLocation);
@@ -536,27 +598,55 @@ export default {
       }
 
       try {
+        // 답변 소요 시간 계산 (초 단위)
+        const answerTime = this.gameStartTime 
+          ? (Date.now() - this.gameStartTime) / 1000 
+          : this.elapsedTime;
+
         const endData = {
-          gameId: this.gameId,
-          targetLat: roadViewApiService.convertCoordinateToString(position.lat),
-          targetLng: roadViewApiService.convertCoordinateToString(position.lng),
-          markerImageUrl: this.markerImageUrl || ""
+          gameId: this.gameId, // Number 타입
+          submittedLat: position.lat, // Number 타입
+          submittedLng: position.lng, // Number 타입
+          answerTime: answerTime // Number 타입 (초)
         };
+
+        console.log("게임 종료 요청 데이터:", endData);
 
         const response = await roadViewApiService.endRankGame(endData);
         
         if (response.isSuccess && response.result) {
-          const { currentRatingPoint, ratingScoreChange, score } = response.result;
+          const { 
+            score,
+            previousRatingScore,
+            currentRatingScore,
+            ratingScoreChange,
+            previousRankTier,
+            previousRankLevel,
+            currentRankTier,
+            currentRankLevel
+          } = response.result;
           
           // 백엔드에서 계산된 점수와 랭킹 정보로 업데이트
           this.score = score;
-          this.currentRankPoints = currentRatingPoint;
+          this.previousRatingScore = previousRatingScore;
+          this.currentRatingScore = currentRatingScore;
           this.rankPointChange = ratingScoreChange;
+          this.currentRankPoints = currentRatingScore; // 현재 레이팅 점수 표시
           
-          console.log("백엔드에서 받은 게임 결과:", {
+          // 티어/레벨 정보 저장
+          this.previousRankTier = previousRankTier;
+          this.previousRankLevel = previousRankLevel;
+          this.currentRankTier = currentRankTier;
+          this.currentRankLevel = currentRankLevel;
+          
+          console.log("백엔드에서 받은 랭크 게임 결과:", {
             score,
-            currentRatingPoint,
-            ratingScoreChange
+            previousRatingScore,
+            currentRatingScore,
+            ratingScoreChange,
+            previousRank: `${previousRankTier} ${previousRankLevel}`,
+            currentRank: `${currentRankTier} ${currentRankLevel}`,
+            answerTime
           });
         } else {
           throw new Error(response.message || '게임 결과 처리에 실패했습니다.');
@@ -649,7 +739,60 @@ export default {
       this.gameStarted = true;
       this.isGameStarted = true;
       this.remainingTime = 180; // 3분
+      
+      // 게임 시작 시간 기록 (답변 시간 계산용)
+      this.gameStartTime = Date.now();
+      
       this.startTimer();
+    },
+
+    // 디버그 모드 토글
+    toggleDebugMode() {
+      this.debugMode = !this.debugMode;
+    },
+
+    // 티어 변화 테스트
+    testRankChange(prevTier, prevLevel, currTier, currLevel) {
+      // 더미 데이터로 게임 결과 시뮬레이션
+      this.score = Math.floor(Math.random() * 1000);
+      this.distance = Math.random() * 50;
+      this.currentLocation = { lat: 37.5665, lng: 126.978 };
+      this.guessedLocation = { 
+        lat: 37.5665 + (Math.random() - 0.5) * 0.1, 
+        lng: 126.978 + (Math.random() - 0.5) * 0.1 
+      };
+      
+      // 티어 정보 설정
+      this.previousRankTier = prevTier;
+      this.previousRankLevel = prevLevel;
+      this.currentRankTier = currTier;
+      this.currentRankLevel = currLevel;
+      
+      // 레이팅 점수 설정
+      this.previousRatingScore = 1000 + Math.floor(Math.random() * 500);
+      this.currentRatingScore = this.previousRatingScore + Math.floor(Math.random() * 200) - 50;
+      this.rankPointChange = this.currentRatingScore - this.previousRatingScore;
+      this.currentRankPoints = this.currentRatingScore;
+      
+      // POI 이름 설정 (테스트용 더미 데이터)
+      const testPoiNames = ['광화문광장', 'N서울타워', '반포한강공원', '경복궁', '롯데월드타워', '명동성당'];
+      this.poiName = testPoiNames[Math.floor(Math.random() * testPoiNames.length)];
+      
+      // 테스트 마커 이미지 (더미)
+      this.markerImageUrl = null; // 실제 API에서 받아올 예정
+      
+      console.log('🧪 테스트 데이터:', {
+        이전랭크: `${prevTier} ${prevLevel}`,
+        현재랭크: `${currTier} ${currLevel}`,
+        레이팅변화: this.rankPointChange,
+        POI이름: this.poiName
+      });
+      
+      // 디버그 패널 닫기
+      this.debugMode = false;
+      
+      // 결과 화면 표시
+      this.showResultScreen(this.guessedLocation);
     },
   },
 };
@@ -938,6 +1081,128 @@ export default {
   }
   100% {
     opacity: 1;
+  }
+}
+
+/* 디버그 패널 */
+.debug-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border-radius: 16px;
+  padding: 25px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  max-width: 500px;
+  width: 90%;
+  animation: debugFadeIn 0.3s ease;
+}
+
+@keyframes debugFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.debug-panel h4 {
+  margin: 0 0 20px 0;
+  font-size: 1.3rem;
+  color: #2c3e50;
+  text-align: center;
+}
+
+.debug-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.debug-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.debug-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(102, 126, 234, 0.4);
+}
+
+.debug-btn:active {
+  transform: translateY(0);
+}
+
+.debug-btn.close {
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+.debug-btn.close:hover {
+  box-shadow: 0 6px 18px rgba(231, 76, 60, 0.4);
+}
+
+.debug-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  z-index: 50;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.debug-toggle:hover {
+  transform: scale(1.1) rotate(15deg);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.debug-toggle:active {
+  transform: scale(1.05) rotate(15deg);
+}
+
+@media (max-width: 480px) {
+  .debug-panel {
+    padding: 20px;
+  }
+
+  .debug-panel h4 {
+    font-size: 1.1rem;
+  }
+
+  .debug-btn {
+    padding: 10px 15px;
+    font-size: 0.9rem;
+  }
+
+  .debug-toggle {
+    top: 15px;
+    right: 15px;
+    width: 45px;
+    height: 45px;
+    font-size: 1.3rem;
   }
 }
 </style>
