@@ -107,6 +107,8 @@
         :guessedLocation="guessedLocation"
         :locationDescription="getLocationDescription()"
         :poiName="poiName"
+        :markerImageUrl="markerImageUrl"
+        :userNickname="'플레이어'"
         @restart="resetGame"
         @exit="exitGame"
       />
@@ -775,6 +777,9 @@ export default {
       // POI 이름 설정 (테스트용 더미 데이터)
       const testPoiNames = ['광화문광장', 'N서울타워', '반포한강공원', '경복궁', '롯데월드타워', '명동성당'];
       this.poiName = testPoiNames[Math.floor(Math.random() * testPoiNames.length)];
+      
+      // 테스트 마커 이미지 (더미)
+      this.markerImageUrl = null; // 실제 API에서 받아올 예정
       
       console.log('🧪 테스트 데이터:', {
         이전랭크: `${prevTier} ${prevLevel}`,

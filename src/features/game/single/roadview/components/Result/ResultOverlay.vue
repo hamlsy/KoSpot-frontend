@@ -7,11 +7,29 @@
 
       <div class="result-content">
         <div class="content-grid">
-          <!-- 좌측: 점수 및 통계 -->
+          <!-- 좌측: 플레이어 정보 및 통계 -->
           <div class="left-section">
-            <!-- 티어 변화 섹션 (티어가 변경된 경우에만 표시) -->
-            <transition name="rank-change-fade">
-              <div v-if="hasRankChange" class="rank-change-section compact">
+            <!-- 플레이어 정보 -->
+            <div class="player-info-section">
+              <div class="player-avatar">
+                <img 
+                  v-if="markerImageUrl" 
+                  :src="markerImageUrl" 
+                  alt="마커"
+                  @error="handleImageError"
+                />
+                <div v-else class="default-avatar">
+                  <i class="fas fa-user"></i>
+                </div>
+              </div>
+              <div class="player-details">
+                <div class="player-label">플레이어</div>
+                <div class="player-name">{{ userNickname }}</div>
+              </div>
+            </div>
+
+            <!-- 티어 변화 섹션 -->
+            <div class="rank-change-section compact">
                 <div class="rank-change-header">
                   <i class="fas fa-medal"></i>
                   <span>랭크 변화</span>
@@ -41,45 +59,44 @@
                     </div>
                   </div>
                 </div>
-              </div>
-            </transition>
+            </div>
 
             <div class="result-score-section compact">
-          <div class="score-display">
-            <div class="score-icon">
-              <i class="fas fa-star"></i>
-            </div>
-            <div class="score-label">점수</div>
+              <div class="score-display">
+                <div class="score-icon">
+                  <i class="fas fa-star"></i>
+                </div>
+                <div class="score-label">점수</div>
                 <div class="score-value">{{ score.toFixed(1) }}</div>
-          </div>
+              </div>
 
-          <div class="distance-display">
-            <div class="distance-icon">
-              <i class="fas fa-ruler"></i>
-            </div>
-            <div class="distance-label">거리</div>
+              <div class="distance-display">
+                <div class="distance-icon">
+                  <i class="fas fa-ruler"></i>
+                </div>
+                <div class="distance-label">거리</div>
                 <div class="distance-value">{{ formattedDistance }}</div>
-          </div>
+              </div>
 
-          <div class="rank-points-display">
-            <div class="rank-icon">
-              <i class="fas fa-trophy"></i>
-            </div>
+              <div class="rank-points-display">
+                <div class="rank-icon">
+                  <i class="fas fa-trophy"></i>
+                </div>
                 <div class="rank-points-label">레이팅 점수</div>
-            <div
-              class="rank-points-value"
-              :class="{
-                'points-increase': rankPointChange > 0,
-                'points-decrease': rankPointChange < 0,
-              }"
-            >
-              <span class="current-points">{{ currentRankPoints }}</span>
-              <span v-if="rankPointChange !== 0" class="points-change">
-                {{ rankPointChange > 0 ? "+" : "" }}{{ rankPointChange }}
-              </span>
+                <div
+                  class="rank-points-value"
+                  :class="{
+                    'points-increase': rankPointChange > 0,
+                    'points-decrease': rankPointChange < 0,
+                  }"
+                >
+                  <span class="current-points">{{ currentRankPoints }}</span>
+                  <span v-if="rankPointChange !== 0" class="points-change">
+                    {{ rankPointChange > 0 ? "+" : "" }}{{ rankPointChange }}
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
           </div>
 
           <!-- 우측: 지도 및 위치 정보 -->
@@ -92,14 +109,14 @@
               <div class="poi-text">
                 <div class="poi-label">정답 위치</div>
                 <div class="poi-name">{{ poiName }}</div>
-          </div>
-        </div>
+              </div>
+            </div>
 
-        <ResultMapSection
-          :currentLocation="currentLocation"
-          :guessedLocation="guessedLocation"
-          :locationDescription="locationDescription"
-        />
+            <ResultMapSection
+              :currentLocation="currentLocation"
+              :guessedLocation="guessedLocation"
+              :locationDescription="locationDescription"
+            />
           </div>
         </div>
       </div>
@@ -185,6 +202,14 @@ export default {
       type: String,
       default: null,
     },
+    markerImageUrl: {
+      type: String,
+      default: null,
+    },
+    userNickname: {
+      type: String,
+      default: "플레이어",
+    },
   },
   data() {
     return {
@@ -240,6 +265,10 @@ export default {
     },
     onExit() {
       this.$emit("exit");
+    },
+    // 이미지 로드 에러 처리
+    handleImageError(event) {
+      event.target.style.display = 'none';
     },
     // 티어 이름 포맷팅 (영어 -> 한글)
     formatTier(tier) {
@@ -378,28 +407,116 @@ export default {
   min-height: 0;
 }
 
-/* POI 이름 섹션 */
-.poi-name-section {
-  background: #f8fafc;
+/* 플레이어 정보 섹션 */
+.player-info-section {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border: 2px solid #e2e8f0;
-  padding: 16px 20px;
+  padding: 12px 15px;
   border-radius: 12px;
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
+  animation: slideInFromTop 0.5s ease-out;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.player-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 2px solid #cbd5e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease;
+}
+
+.player-avatar:hover {
+  transform: scale(1.05);
+}
+
+.player-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.default-avatar {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #cbd5e1;
+  color: #64748b;
+  font-size: 1.3rem;
+}
+
+.player-details {
+  flex: 1;
+}
+
+.player-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.player-name {
+  font-size: 1.1rem;
+  color: #0f172a;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+/* POI 이름 섹션 */
+.poi-name-section {
+  background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+  border: 2px solid #93c5fd;
+  padding: 14px 18px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: slideInFromRight 0.6s ease-out;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  transition: all 0.3s ease;
+}
+
+.poi-name-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.2);
 }
 
 .poi-icon {
-  width: 45px;
-  height: 45px;
-  background: #3b82f6;
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   color: white;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+  animation: subtlePulse 2s ease-in-out infinite;
+}
+
+@keyframes subtlePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
 }
 
 .poi-text {
@@ -407,38 +524,46 @@ export default {
 }
 
 .poi-label {
-  font-size: 0.8rem;
-  color: #64748b;
-  margin-bottom: 4px;
-  font-weight: 500;
+  font-size: 0.75rem;
+  color: #1e40af;
+  margin-bottom: 2px;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .poi-name {
-  font-size: 1.4rem;
-  color: #0f172a;
+  font-size: 1.2rem;
+  color: #1e3a8a;
   font-weight: 700;
   letter-spacing: -0.3px;
 }
 
 /* 티어 변화 섹션 */
 .rank-change-section {
-  background: #f8fafc;
-  border: 2px solid #e2e8f0;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #fbbf24;
   border-radius: 12px;
   padding: 15px;
+  animation: slideInFromLeft 0.6s ease-out 0.1s both;
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.15);
+  transition: all 0.3s ease;
 }
 
 .rank-change-section.compact {
   padding: 12px 15px;
 }
 
+.rank-change-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(251, 191, 36, 0.2);
+}
+
 .rank-change-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #0f172a;
+  color: #92400e;
   font-size: 0.9rem;
   font-weight: 600;
   margin-bottom: 12px;
@@ -449,7 +574,20 @@ export default {
 
 .rank-change-header i {
   font-size: 1rem;
-  color: #3b82f6;
+  color: #f59e0b;
+  animation: subtleRotate 3s ease-in-out infinite;
+}
+
+@keyframes subtleRotate {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-10deg);
+  }
+  75% {
+    transform: rotate(10deg);
+  }
 }
 
 .rank-change-content {
@@ -469,16 +607,28 @@ export default {
   gap: 12px;
   min-width: 130px;
   transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .rank-badge.previous {
   opacity: 0.7;
   border-color: #cbd5e1;
+  transform: scale(0.95);
 }
 
 .rank-badge.current {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #fbbf24;
+  box-shadow: 0 4px 16px rgba(251, 191, 36, 0.25);
+  animation: emphasize 0.6s ease-out 0.8s;
+}
+
+@keyframes emphasize {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
 }
 
 .rank-tier-icon {
@@ -576,6 +726,40 @@ export default {
   }
 }
 
+/* 슬라이드 인 애니메이션들 */
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 .result-score-section {
   display: flex;
   flex-direction: column;
@@ -589,7 +773,7 @@ export default {
 .score-display,
 .distance-display,
 .rank-points-display {
-  background-color: #f8fafc;
+  background-color: white;
   border: 2px solid #e2e8f0;
   border-radius: 12px;
   padding: 12px 15px;
@@ -599,6 +783,26 @@ export default {
   display: flex;
   align-items: center;
   gap: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.score-display {
+  animation: slideInFromLeft 0.5s ease-out 0.2s both;
+}
+
+.distance-display {
+  animation: slideInFromLeft 0.5s ease-out 0.3s both;
+}
+
+.rank-points-display {
+  animation: slideInFromLeft 0.5s ease-out 0.4s both;
+}
+
+.score-display:hover,
+.distance-display:hover,
+.rank-points-display:hover {
+  transform: translateX(3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .result-score-section.compact .score-display,
@@ -619,18 +823,28 @@ export default {
   font-size: 1rem;
   color: white;
   flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.score-display:hover .score-icon,
+.distance-display:hover .distance-icon,
+.rank-points-display:hover .rank-icon {
+  transform: rotate(5deg) scale(1.1);
 }
 
 .score-icon {
-  background: #3b82f6;
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
 }
 
 .distance-icon {
-  background: #10b981;
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
 }
 
 .rank-icon {
-  background: #8b5cf6;
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+  box-shadow: 0 4px 10px rgba(139, 92, 246, 0.3);
 }
 
 .score-label,
@@ -650,6 +864,10 @@ export default {
   font-weight: 700;
   color: #0f172a;
   margin-left: auto;
+  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .distance-value {
@@ -657,6 +875,10 @@ export default {
   font-weight: 700;
   color: #0f172a;
   margin-left: auto;
+  background: linear-gradient(135deg, #10b981 0%, #065f46 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .rank-points-value {
@@ -667,6 +889,13 @@ export default {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.current-points {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .points-increase {
@@ -712,41 +941,80 @@ export default {
   justify-content: center;
   align-items: center;
   gap: 8px;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   border: 2px solid transparent;
   font-size: 0.95rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-restart::before,
+.btn-exit::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s ease, height 0.6s ease;
+}
+
+.btn-restart:hover::before,
+.btn-exit:hover::before {
+  width: 300px;
+  height: 300px;
 }
 
 .btn-restart {
-  background: #3b82f6;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
   border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .btn-restart:hover {
-  background: #2563eb;
-  border-color: #2563eb;
-  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  transform: translateY(-2px);
 }
 
 .btn-restart:active {
   transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.btn-restart i,
+.btn-exit i {
+  position: relative;
+  z-index: 1;
+}
+
+.btn-restart span,
+.btn-exit span {
+  position: relative;
+  z-index: 1;
 }
 
 .btn-exit {
   background: white;
   color: #64748b;
   border-color: #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .btn-exit:hover {
   background: #f8fafc;
   color: #0f172a;
   border-color: #cbd5e1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .btn-exit:active {
   transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 @media (max-width: 768px) {
@@ -794,6 +1062,19 @@ export default {
     font-size: 0.9rem;
   }
 
+  .player-info-section {
+    padding: 10px 12px;
+  }
+
+  .player-avatar {
+    width: 45px;
+    height: 45px;
+  }
+
+  .player-name {
+    font-size: 1rem;
+  }
+
   .rank-change-section {
     padding: 12px;
   }
@@ -818,17 +1099,17 @@ export default {
   }
 
   .poi-name-section {
-    padding: 12px 15px;
+    padding: 10px 14px;
   }
 
   .poi-icon {
-    width: 40px;
-    height: 40px;
-    font-size: 1.1rem;
+    width: 38px;
+    height: 38px;
+    font-size: 1rem;
   }
 
   .poi-name {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
   }
 
   .score-icon,
@@ -836,7 +1117,7 @@ export default {
   .rank-icon {
     width: 35px;
     height: 35px;
-    font-size: 1rem;
+    font-size: 0.95rem;
   }
 
   .score-value,
