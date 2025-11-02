@@ -13,6 +13,9 @@ export const API_ENDPOINTS = {
     //   RESET_PASSWORD: '/auth/reset-password'
     // },
     
+    // 메인 페이지
+    MAIN: '/main',
+    
     // 사용자 관리
     MEMBER: {
       PROFILE: '/member/profile',

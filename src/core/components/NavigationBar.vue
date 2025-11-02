@@ -1,38 +1,40 @@
 <template>
-  <header class="header">
-    <div class="header-content">
-      <div class="header-left">
-        <app-logo class="home-link" to="/main" />
-      </div>
+  <div>
+    <header class="header">
+      <div class="header-content">
+        <div class="header-left">
+          <app-logo class="home-link" to="/main" />
+        </div>
 
-      <!-- 네비게이션 추가 - 웹 전용 -->
-      <div class="main-nav desktop-only">
-        <router-link :to="{ name: 'NoticeListView' }" class="nav-link">공지사항</router-link>
-        <router-link :to="{ name: 'NoticeListView', query: { category: '이벤트' } }" class="nav-link">이벤트</router-link>
-        <router-link to="/tempPage" class="nav-link">통계</router-link>
-        <router-link to="/shopMain" class="nav-link">상점</router-link>
-        <router-link to="/myProfile" class="nav-link">마이페이지</router-link>
-        <router-link v-if="userProfile.isAdmin" to="/admin" class="nav-link admin-link">관리자</router-link>
-        <router-link to="/temp-login" class="nav-link temp-login-link">🧪 임시로그인</router-link>
-      </div>
+        <!-- 네비게이션 추가 - 웹 전용 -->
+        <div class="main-nav desktop-only">
+          <router-link :to="{ name: 'NoticeListView' }" class="nav-link">공지사항</router-link>
+          <router-link :to="{ name: 'NoticeListView', query: { category: '이벤트' } }" class="nav-link">이벤트</router-link>
+          <router-link to="/tempPage" class="nav-link">통계</router-link>
+          <router-link to="/shopMain" class="nav-link">상점</router-link>
+          <router-link to="/myProfile" class="nav-link">마이페이지</router-link>
+          <router-link v-if="userProfile.isAdmin" to="/admin" class="nav-link admin-link">관리자</router-link>
+          <router-link to="/temp-login" class="nav-link temp-login-link">🧪 임시로그인</router-link>
+        </div>
 
-      <div class="header-right">
-        <button class="icon-button" @click="openNotifications">
-          <i class="fas fa-bell"></i>
-          <span class="notification-badge" v-if="unreadNotifications">{{ unreadNotifications }}</span>
-        </button>
-        <div class="user-profile" @click="toggleProfileMenu">
-          <div class="user-avatar">
-            <img
-              :src="userProfile.avatar || '/default-avatar.png'"
-              alt="프로필"
-            />
+        <div class="header-right">
+          <button class="icon-button" @click="openNotifications">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge" v-if="unreadNotifications">{{ unreadNotifications }}</span>
+          </button>
+          <div class="user-profile" @click="toggleProfileMenu">
+            <div class="user-avatar">
+              <img
+                :src="userProfile.avatar || '/default-avatar.png'"
+                alt="프로필"
+              />
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </header>
     
-    <!-- 프로필 메뉴 오버레이 -->
+    <!-- 프로필 메뉴 오버레이 - header 밖으로 이동 -->
     <transition name="fade">
       <div
         v-if="showProfileMenu"
@@ -41,7 +43,7 @@
       ></div>
     </transition>
 
-    <!-- Profile Menu -->
+    <!-- Profile Menu - header 밖으로 이동 -->
     <transition name="slide-menu">
       <div v-if="showProfileMenu" class="profile-menu">
         <div class="profile-header">
@@ -100,7 +102,7 @@
         </nav>
       </div>
     </transition>
-  </header>
+  </div>
 </template>
 
 
@@ -283,7 +285,7 @@ export default {
   right: 0;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
-  z-index: 1001;
+  z-index: 9998;
 }
 
 /* 프로필 메뉴 스타일 */
@@ -294,9 +296,10 @@ export default {
   bottom: 0;
   width: 300px;
   background: white;
-  z-index: 1002;
+  z-index: 9999;
   padding: 24px;
   overflow-y: auto;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
 }
 
 .profile-header {
