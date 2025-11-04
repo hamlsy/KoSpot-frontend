@@ -10,6 +10,7 @@ import { API_ENDPOINTS } from '@/core/api/endPoint.js';
  * 메인 페이지 응답 데이터 인터페이스
  * @typedef {Object} MainPageResponse
  * @property {boolean} isAdmin - 현재 사용자가 관리자인지 여부
+ * @property {boolean} isFirstVisitor - 첫 방문자 여부 (백엔드에서 제공)
  * @property {GameModeStatus} gameModeStatus - 게임 모드별 활성화 상태
  * @property {NoticeItem[]} recentNotices - 최근 공지사항 3개
  * @property {BannerItem[]} banners - 활성화된 배너 목록

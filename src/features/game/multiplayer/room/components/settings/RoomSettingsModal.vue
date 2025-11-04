@@ -47,12 +47,13 @@
               
               <button 
                 type="button"
-                class="mode-button"
+                class="mode-button disabled"
                 :class="{ 'active': formData.gameMode === 'photo' }"
-                @click="formData.gameMode = 'photo'"
+                disabled
               >
                 <i class="fas fa-camera"></i>
                 <span>포토 모드</span>
+                <span class="badge-disabled">준비 중</span>
               </button>
             </div>
           </div>
@@ -60,18 +61,20 @@
           <!-- 팀 모드 설정 -->
           <div class="form-group">
             <label>팀 모드</label>
-            <div class="toggle-switch">
+            <div class="toggle-switch disabled-toggle">
               <input 
                 type="checkbox" 
                 id="teamMode" 
                 v-model="formData.isTeamMode"
                 class="toggle-input"
+                disabled
               />
               <label for="teamMode" class="toggle-label">
                 <span class="toggle-inner"></span>
                 <span class="toggle-switch-handle"></span>
               </label>
               <span class="toggle-text">{{ formData.isTeamMode ? '팀전' : '개인전' }}</span>
+              <span class="badge-disabled-inline">준비 중</span>
             </div>
           </div>
           
@@ -411,6 +414,34 @@ label {
   color: black;
 }
 
+/* 비활성화된 모드 버튼 스타일 */
+.mode-button.disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  position: relative;
+}
+
+.mode-button.disabled i {
+  color: #9ca3af;
+}
+
+.mode-button.disabled span {
+  color: #9ca3af;
+}
+
+.badge-disabled {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  font-size: 0.65rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
+}
+
 /* Toggle switch styling */
 .toggle-switch {
   display: flex;
@@ -465,6 +496,27 @@ label {
 .toggle-text {
   font-weight: 500;
   color: black;
+}
+
+/* 비활성화된 토글 스위치 스타일 */
+.toggle-switch.disabled-toggle {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.toggle-switch.disabled-toggle .toggle-label {
+  cursor: not-allowed;
+}
+
+.badge-disabled-inline {
+  margin-left: auto;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  font-size: 0.65rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
 }
 
 /* Slider styling */

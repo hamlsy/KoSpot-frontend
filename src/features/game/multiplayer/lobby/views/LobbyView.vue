@@ -304,6 +304,14 @@ const createRoom = async (roomData) => {
       );
       
       console.log('✅ 방 생성 및 입장 완료');
+      
+      // 생성된 방으로 리다이렉션
+      // newRoom에는 gameRoomId 또는 id 속성이 있을 것으로 예상
+      const roomId = newRoom.gameRoomId || newRoom.id;
+      if (roomId) {
+        console.log('🚀 게임방으로 리다이렉션:', roomId);
+        await router.push({ name: 'MultiplayerRoom', params: { roomId: roomId } });
+      }
     }
   } catch (error) {
     console.error('❌ 방 생성 처리 중 오류:', error);

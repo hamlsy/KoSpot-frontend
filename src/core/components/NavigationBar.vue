@@ -18,6 +18,10 @@
         </div>
 
         <div class="header-right">
+          <button class="tutorial-button" @click="openTutorial" title="게임 소개">
+            <i class="fas fa-question-circle"></i>
+            <span class="tutorial-text">게임 소개</span>
+          </button>
           <button v-if="userProfile.isAdmin" class="icon-button" @click="openNotifications">
             <i class="fas fa-bell"></i>
             <span class="notification-badge" v-if="unreadNotifications">{{ unreadNotifications }}</span>
@@ -182,6 +186,9 @@ export default {
     openNotifications() {
       // 알림 메뉴 열기 로직
     },
+    openTutorial() {
+      this.$emit('open-tutorial');
+    },
     goToLogin() {
       this.closeProfileMenu();
       this.$router.push('/login');
@@ -285,6 +292,36 @@ export default {
 .icon-button:hover {
   background: #f0f2f5;
 }
+
+.tutorial-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.tutorial-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.tutorial-button i {
+  font-size: 1rem;
+}
+
+.tutorial-text {
+  font-size: 0.9rem;
+}
+
 .notification-badge {
   position: absolute;
   top: 0;
@@ -545,6 +582,14 @@ export default {
   
   .header-content {
     padding: 0.8rem 1rem;
+  }
+  
+  .tutorial-button {
+    padding: 8px 12px;
+  }
+  
+  .tutorial-text {
+    display: none;
   }
 }
 </style> 

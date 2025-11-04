@@ -36,16 +36,18 @@
                 <span>로드뷰 모드</span>
               </div>
             </label>
-            <label class="radio-option">
+            <label class="radio-option disabled">
               <input
                 type="radio"
                 name="gameMode"
                 value="포토"
                 v-model="gameMode"
+                disabled
               />
               <div class="radio-content">
                 <i class="fas fa-camera"></i>
                 <span>포토 모드</span>
+                <span class="badge-disabled">준비 중</span>
               </div>
             </label>
           </div>
@@ -66,16 +68,18 @@
                 <span>개인전</span>
               </div>
             </label>
-            <label class="radio-option">
+            <label class="radio-option disabled">
               <input
                 type="radio"
                 name="gameType"
                 value="cooperative"
                 v-model="gameType"
+                disabled
               />
               <div class="radio-content">
                 <i class="fas fa-users"></i>
                 <span>협동전</span>
+                <span class="badge-disabled">준비 중</span>
               </div>
             </label>
           </div>
@@ -421,6 +425,39 @@ export default {
 .radio-option input:checked + .radio-content i {
   color: #3b82f6;
   transform: scale(1.1);
+}
+
+/* 비활성화된 옵션 스타일 */
+.radio-option.disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.radio-option.disabled .radio-content {
+  background-color: #f1f5f9;
+  border-color: #e2e8f0;
+  position: relative;
+}
+
+.radio-option.disabled .radio-content i {
+  color: #94a3b8;
+}
+
+.radio-option.disabled .radio-content span {
+  color: #94a3b8;
+}
+
+.badge-disabled {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  font-size: 0.65rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
 }
 
 .select-container {
