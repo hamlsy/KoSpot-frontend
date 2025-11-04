@@ -151,7 +151,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import apiClient from '@/core/api/apiClient.js'
+import { bannerAdminService } from '@/features/admin/services/bannerAdmin.service.js'
 
 const loading = ref(false)
 const showAddModal = ref(false)
@@ -190,7 +190,7 @@ const bannerForm = reactive({
   title: '',
   description: '',
   linkUrl: '',
-  openInNewTab: false,
+  displayOrder: 0,
   imageFile: null,
   imagePreview: ''
 })
@@ -237,7 +237,7 @@ const editBanner = (banner) => {
     title: banner.title,
     description: banner.description,
     linkUrl: banner.linkUrl || '',
-    openInNewTab: banner.openInNewTab,
+    displayOrder: banner.displayOrder || 0,
     imagePreview: banner.imageUrl
   })
   showAddModal.value = true
@@ -248,14 +248,14 @@ const toggleBanner = async (banner) => {
   try {
     loading.value = true
     
-    const response = await apiClient.post(`/admin/banners/${banner.id}/toggle`, {
-      isActive: !banner.isActive
-    })
-    
-    if (response.data.isSuccess) {
-      banner.isActive = !banner.isActive
-      console.log(`배너 "${banner.title}"이(가) ${banner.isActive ? '활성화' : '비활성화'}되었습니다.`)
+    if (banner.isActive) {
+      await bannerAdminService.deactivateBanner(banner.id)
+    } else {
+      await bannerAdminService.activateBanner(banner.id)
     }
+    
+    banner.isActive = !banner.isActive
+    console.log(`배너 "${banner.title}"이(가) ${banner.isActive ? '활성화' : '비활성화'}되었습니다.`)
   } catch (error) {
     console.error('배너 토글 실패:', error)
   } finally {
@@ -270,15 +270,13 @@ const deleteBanner = async (id) => {
   try {
     loading.value = true
     
-    const response = await apiClient.delete(`/admin/banners/${id}`)
+    await bannerAdminService.deleteBanner(id)
     
-    if (response.data.isSuccess) {
-      const index = banners.value.findIndex(b => b.id === id)
-      if (index !== -1) {
-        banners.value.splice(index, 1)
-      }
-      console.log('배너가 삭제되었습니다.')
+    const index = banners.value.findIndex(b => b.id === id)
+    if (index !== -1) {
+      banners.value.splice(index, 1)
     }
+    console.log('배너가 삭제되었습니다.')
   } catch (error) {
     console.error('배너 삭제 실패:', error)
   } finally {
@@ -294,29 +292,22 @@ const saveBanner = async () => {
     const formData = new FormData()
     formData.append('title', bannerForm.title)
     formData.append('description', bannerForm.description)
-    formData.append('linkUrl', bannerForm.linkUrl)
-    formData.append('openInNewTab', bannerForm.openInNewTab)
+    formData.append('linkUrl', bannerForm.linkUrl || '')
+    formData.append('displayOrder', bannerForm.displayOrder || 0)
     
     if (bannerForm.imageFile) {
       formData.append('image', bannerForm.imageFile)
     }
     
-    let response
     if (editingBanner.value) {
-      response = await apiClient.put(`/admin/banners/${editingBanner.value.id}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      })
+      await bannerAdminService.updateBanner(editingBanner.value.id, formData)
     } else {
-      response = await apiClient.post('/admin/banners', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      })
+      await bannerAdminService.createBanner(formData)
     }
     
-    if (response.data.isSuccess) {
-      console.log(`배너가 성공적으로 ${editingBanner.value ? '수정' : '추가'}되었습니다.`)
-      closeModal()
-      loadBanners()
-    }
+    console.log(`배너가 성공적으로 ${editingBanner.value ? '수정' : '추가'}되었습니다.`)
+    closeModal()
+    loadBanners()
   } catch (error) {
     console.error('배너 저장 실패:', error)
   } finally {
@@ -340,7 +331,7 @@ const resetForm = () => {
     title: '',
     description: '',
     linkUrl: '',
-    openInNewTab: false,
+    displayOrder: 0,
     imageFile: null,
     imagePreview: ''
   })
@@ -349,11 +340,7 @@ const resetForm = () => {
 // 배너 목록 로드
 const loadBanners = async () => {
   try {
-    const response = await apiClient.get('/admin/banners')
-    
-    if (response.data.isSuccess) {
-      banners.value = response.data.result
-    }
+    banners.value = await bannerAdminService.getBanners()
   } catch (error) {
     console.error('배너 목록 로드 실패:', error)
   }

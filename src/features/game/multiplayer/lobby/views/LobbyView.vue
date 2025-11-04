@@ -11,9 +11,9 @@
         </div>
         <div class="header-right">
           <h3>멀티플레이어 로비</h3>
-          <!-- 개발 모드 토글 버튼 (개발 환경에서만 표시) -->
+          <!-- 개발 모드 토글 버튼 (관리자에게만 표시) -->
           <button 
-            v-if="isDevelopment"
+            v-if="isAdmin && isDevelopment"
             class="dev-mode-toggle"
             @click="toggleDevMode"
             :class="{ 'active': useDummyData }"
@@ -50,7 +50,7 @@
           :class="{ 'chat-open': isChatVisible && isMobile }"
         />
 
-        <!-- 오른쪽 패널: 채팅 및 방 생성 -->
+        <!-- 오른쪽 패널: 채팅 -->
         <div 
           class="right-panel" 
           :class="{ 'mobile-visible': isChatVisible, 'mobile-hidden': !isChatVisible }"
@@ -62,12 +62,13 @@
             :show-mobile-close="isMobile"
             @close="isChatVisible = false"
           />
-          
-          <button class="create-room-button" @click="showCreateRoomModal = true">
-            <i class="fas fa-plus"></i> 새 게임방 만들기
-          </button>
         </div>
       </div>
+      
+      <!-- 새 게임방 만들기 버튼 - 독립적으로 배치 -->
+      <button class="create-room-button fixed-button" @click="showCreateRoomModal = true">
+        <i class="fas fa-plus"></i> 새 게임방 만들기
+      </button>
     </main>
 
     <!-- 방 생성 모달 -->
@@ -127,6 +128,15 @@ const isDevelopment = true;
 
 // Vue Router
 const router = useRouter();
+
+// 관리자 여부 확인
+const isAdmin = ref(false);
+
+// 로컬 스토리지에서 관리자 여부 확인
+const checkAdminStatus = () => {
+  const adminStatus = localStorage.getItem('isAdmin');
+  isAdmin.value = adminStatus === 'true';
+};
 
 // WebSocket 로비 서비스 초기화
 const lobbyService = useGlobalLobbyWebSocketService();
@@ -294,6 +304,14 @@ const createRoom = async (roomData) => {
       );
       
       console.log('✅ 방 생성 및 입장 완료');
+      
+      // 생성된 방으로 리다이렉션
+      // newRoom에는 gameRoomId 또는 id 속성이 있을 것으로 예상
+      const roomId = newRoom.gameRoomId || newRoom.id;
+      if (roomId) {
+        console.log('🚀 게임방으로 리다이렉션:', roomId);
+        await router.push({ name: 'MultiplayerRoom', params: { roomId: roomId } });
+      }
     }
   } catch (error) {
     console.error('❌ 방 생성 처리 중 오류:', error);
@@ -332,6 +350,7 @@ const toggleDevMode = async () => {
 
 // 라이프사이클 훅
 onMounted(() => {
+  checkAdminStatus();
   initializeData();
   checkMobileView();
   window.addEventListener('resize', checkMobileView);
@@ -505,7 +524,6 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  margin-top: 1rem;
   background: linear-gradient(135deg, #60a5fa 0%, #8b5cf6 100%);
   color: white;
   border: none;
@@ -518,6 +536,17 @@ onBeforeUnmount(() => {
   position: relative;
   overflow: hidden;
   z-index: 1;
+}
+
+.create-room-button.fixed-button {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  padding: 1rem 1.5rem;
+  border-radius: 30px;
+  box-shadow: 0 6px 20px rgba(96, 165, 250, 0.4);
+  z-index: 45;
+  width: auto;
 }
 
 .create-room-button::before {
@@ -844,6 +873,15 @@ onBeforeUnmount(() => {
     right: 15px;
     padding: 10px 16px;
     font-size: 0.85rem;
+  }
+  
+  .create-room-button.fixed-button {
+    bottom: 80px;
+    right: 15px;
+    left: 15px;
+    width: calc(100% - 30px);
+    font-size: 0.9rem;
+    padding: 0.9rem 1.2rem;
   }
   
   .error-toast {

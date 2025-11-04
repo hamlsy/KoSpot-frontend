@@ -360,12 +360,20 @@
               </button>
             </div>
 
-            <div class="inventory-grid">
+            <!-- 로딩 중 -->
+            <div v-if="isLoadingInventory" class="inventory-loading">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>인벤토리를 불러오는 중...</span>
+            </div>
+
+            <!-- 인벤토리 그리드 -->
+            <div v-else class="inventory-grid">
               <div 
                 v-for="item in filteredInventoryItems" 
                 :key="item.id"
                 class="inventory-item"
-                :class="{ equipped: item.equipped }"
+                :class="{ equipped: item.equipped, clickable: !item.equipped }"
+                @click="!item.equipped && equipInventoryItem(item)"
               >
                 <div class="item-image">
                   {{ item.icon }}
@@ -392,7 +400,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import NavigationBar from '@/core/components/NavigationBar.vue';
 import { userService } from '@/features/user/services/user.service.js';
 
@@ -449,26 +457,18 @@ const modeTabs = [
   { id: 'multiplayer', label: '멀티플레이', icon: 'fas fa-users' }
 ];
 
-// 인벤토리 탭 정의
+// 인벤토리 탭 정의 (API 타입과 매핑)
 const inventoryTabs = [
-  { id: 'all', label: '전체', icon: 'fas fa-th' },
-  { id: 'marker', label: '마커', icon: 'fas fa-map-marker-alt' },
-  { id: 'marker_animation', label: '마커 애니메이션', icon: 'fas fa-magic' }
+  { id: 'all', label: '전체', icon: 'fas fa-th', apiType: null },
+  { id: 'marker', label: '마커', icon: 'fas fa-map-marker-alt', apiType: 'MARKER' },
+  { id: 'profile', label: '프로필', icon: 'fas fa-user-circle', apiType: 'PROFILE' },
+  { id: 'effect', label: '이펙트', icon: 'fas fa-magic', apiType: 'EFFECT' },
+  { id: 'theme', label: '테마', icon: 'fas fa-palette', apiType: 'THEME' }
 ];
 
-// 더미 인벤토리 데이터
-const inventoryItems = ref([
-  { id: 1, name: '기본 마커', category: '마커', type: 'marker', icon: '📍', equipped: true },
-  { id: 2, name: '골드 마커', category: '마커', type: 'marker', icon: '🏅', equipped: false },
-  { id: 3, name: '다이아몬드 마커', category: '마커', type: 'marker', icon: '💎', equipped: false },
-  { id: 4, name: '하트 마커', category: '마커', type: 'marker', icon: '❤️', equipped: false },
-  { id: 5, name: '별 마커', category: '마커', type: 'marker', icon: '⭐', equipped: false },
-  { id: 6, name: '펄스 애니메이션', category: '마커 애니메이션', type: 'marker_animation', icon: '〰️', equipped: true },
-  { id: 7, name: '바운스 애니메이션', category: '마커 애니메이션', type: 'marker_animation', icon: '⬆️', equipped: false },
-  { id: 8, name: '반짝임 애니메이션', category: '마커 애니메이션', type: 'marker_animation', icon: '✨', equipped: false },
-  { id: 9, name: '회전 애니메이션', category: '마커 애니메이션', type: 'marker_animation', icon: '🔄', equipped: false },
-  { id: 10, name: '파동 애니메이션', category: '마커 애니메이션', type: 'marker_animation', icon: '🌊', equipped: false }
-]);
+// 인벤토리 아이템 데이터 (API에서 가져옴)
+const inventoryItems = ref([]);
+const isLoadingInventory = ref(false);
 
 // Computed: 랭크 정보
 const rankInfo = computed(() => {
@@ -606,9 +606,116 @@ function getCurrentTabLabel() {
   return tab ? tab.label : '아이템';
 }
 
+// 인벤토리 로드 함수
+async function loadInventory() {
+  try {
+    isLoadingInventory.value = true;
+    
+    const response = await userService.getInventory();
+    
+    if (response.isSuccess && response.data) {
+      // API 응답을 프론트엔드 형식으로 변환
+      inventoryItems.value = response.data.map(item => {
+        const itemType = item.itemType || 'MARKER'; // 기본값 설정
+        return {
+          id: item.memberItemId,
+          name: item.name,
+          category: getItemCategoryLabel(itemType),
+          type: getItemTypeId(itemType),
+          icon: getItemIcon(itemType, item.name),
+          equipped: item.isEquipped || false,
+          acquiredDate: item.purchaseTime,
+          description: item.description || ''
+        };
+      });
+      
+      console.log('✅ 인벤토리 로드 완료:', inventoryItems.value.length, '개');
+    } else {
+      throw new Error(response.message || '인벤토리 조회 실패');
+    }
+  } catch (error) {
+    console.error('❌ 인벤토리 로드 실패:', error);
+    showErrorToast('인벤토리를 불러오는데 실패했습니다.');
+    inventoryItems.value = [];
+  } finally {
+    isLoadingInventory.value = false;
+  }
+}
+
+// API 아이템 타입을 프론트엔드 타입 ID로 변환
+function getItemTypeId(apiType) {
+  const typeMap = {
+    'MARKER': 'marker',
+    'PROFILE': 'profile',
+    'EFFECT': 'effect',
+    'THEME': 'theme'
+  };
+  return typeMap[apiType] || 'marker';
+}
+
+// 아이템 타입에 따른 카테고리 라벨
+function getItemCategoryLabel(apiType) {
+  const labelMap = {
+    'MARKER': '마커',
+    'PROFILE': '프로필',
+    'EFFECT': '이펙트',
+    'THEME': '테마'
+  };
+  return labelMap[apiType] || '아이템';
+}
+
+// 아이템 타입과 이름에 따른 아이콘 (간단한 예시)
+function getItemIcon(apiType, name) {
+  // 실제로는 서버에서 imageUrl을 제공받아야 하지만, 
+  // 현재는 타입별로 기본 아이콘 설정
+  const iconMap = {
+    'MARKER': '📍',
+    'PROFILE': '👤',
+    'EFFECT': '✨',
+    'THEME': '🎨'
+  };
+  return iconMap[apiType] || '📦';
+}
+
+// 아이템 장착 (API 연동)
+async function equipInventoryItem(item) {
+  try {
+    const response = await userService.equipItem(item.id);
+    
+    if (response.isSuccess) {
+      // 같은 타입의 다른 아이템 장착 해제
+      inventoryItems.value.forEach(i => {
+        if (i.type === item.type && i.id !== item.id) {
+          i.equipped = false;
+        }
+      });
+      
+      // 선택한 아이템 장착
+      const itemIndex = inventoryItems.value.findIndex(i => i.id === item.id);
+      if (itemIndex !== -1) {
+        inventoryItems.value[itemIndex].equipped = true;
+      }
+      
+      showErrorToast(`${item.name}을(를) 장착했습니다.`);
+    } else {
+      throw new Error(response.message || '아이템 장착 실패');
+    }
+  } catch (error) {
+    console.error('❌ 아이템 장착 실패:', error);
+    showErrorToast('아이템 장착에 실패했습니다.');
+  }
+}
+
 // 컴포넌트 마운트 시 프로필 로드
 onMounted(() => {
   loadProfile();
+});
+
+// 인벤토리 모달이 열릴 때 인벤토리 로드
+watch(showInventoryModal, (newValue) => {
+  if (newValue && inventoryItems.value.length === 0) {
+    loadInventory();
+  }
 });
 </script>
 
@@ -1326,10 +1433,31 @@ onMounted(() => {
   font-size: 0.875rem;
 }
 
+.inventory-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  color: #6b7280;
+  gap: 1rem;
+}
+
+.inventory-loading i {
+  font-size: 2rem;
+  color: #3b82f6;
+}
+
+.inventory-loading span {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
 .inventory-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 1rem;
+  min-height: 200px;
 }
 
 .inventory-item {
@@ -1344,10 +1472,13 @@ onMounted(() => {
   gap: 0.75rem;
   position: relative;
   transition: all 0.2s ease;
+}
+
+.inventory-item.clickable {
   cursor: pointer;
 }
 
-.inventory-item:hover {
+.inventory-item.clickable:hover {
   border-color: #3b82f6;
   background: white;
   transform: translateY(-2px);
@@ -1356,6 +1487,7 @@ onMounted(() => {
 .inventory-item.equipped {
   border-color: #3b82f6;
   background: #eff6ff;
+  cursor: default;
 }
 
 .item-image {
