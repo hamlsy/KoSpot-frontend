@@ -1,10 +1,10 @@
 import { ref, onMounted, onBeforeUnmount, readonly } from 'vue';
 import { useAuth } from '@/core/composables/useAuth.js';
 import webSocketManager from '../../shared/services/websocket/composables/index.js';
+import { publish } from '../../shared/services/websocket/composables/core.js';
 import { 
     lobbyChatMessages, 
     sendChatMessage, 
-    sendLobbyJoinMessage, 
     createSystemMessage, 
     setupChatSubscriptions
 } from '../../shared/services/websocket/composables/chat.js';
@@ -96,6 +96,7 @@ export function useGlobalLobbyWebSocketService() {
     
     /**
      * 글로벌 로비 채팅 채널을 구독합니다.
+     * API 명세서: 구독 경로 /topic/lobby
      */
     const subscribeToGlobalLobbyChat = () => {
         // WebSocket이 연결되지 않은 경우 구독 불가
@@ -107,9 +108,8 @@ export function useGlobalLobbyWebSocketService() {
         try {
             console.log('🔍 현재 WebSocket 연결 상태:', webSocketManager.isConnected.value);
             
-            // Spring WebSocketChannelConstants에 따른 정확한 로비 채팅 토픽
-            // PREFIX_CHAT + GLOBAL_LOBBY_CHANNEL = "/topic/chat/" + "lobby"
-            const topic = '/topic/chat/lobby';
+            // API 명세서에 따른 로비 채팅 구독 경로: /topic/lobby
+            const topic = '/topic/lobby';
             
             // 이미 구독 중인지 확인
             if (globalLobbySubscriptions.value.has(topic)) {
@@ -157,6 +157,7 @@ export function useGlobalLobbyWebSocketService() {
     
     /**
      * 글로벌 로비에 입장합니다.
+     * API 명세서: /app/chat.join.lobby로 빈 객체 전송
      */
     const joinGlobalLobby = () => {
         if (!webSocketManager.isConnected.value) {
@@ -165,10 +166,20 @@ export function useGlobalLobbyWebSocketService() {
         }
         
         try {
-            console.log('🔵 로비 입장 시도');
+            console.log('🔵 로비 입장 시도 - /app/chat.join.lobby');
             
-            // 통합 채팅 모듈 사용
-            return sendLobbyJoinMessage();
+            // API 명세서에 따라 빈 객체 전송
+            const success = publish('/app/chat.join.lobby', {});
+            
+            if (success) {
+                console.log('✅ 로비 입장 메시지 전송 성공');
+                // 로컬에만 표시되는 시스템 메시지
+                createSystemMessage('로비에 입장했습니다.', 'lobby');
+            } else {
+                console.error('❌ 로비 입장 메시지 전송 실패');
+            }
+            
+            return success;
         } catch (error) {
             console.error('글로벌 로비 입장 중 오류:', error);
             return false;
@@ -177,6 +188,7 @@ export function useGlobalLobbyWebSocketService() {
     
     /**
      * 글로벌 로비에서 퇴장합니다.
+     * API 명세서: /app/chat.leave.lobby로 빈 객체 전송
      * 주의: 이 함수는 브라우저 창 닫기 시에만 호출되어야 합니다.
      */
     const leaveGlobalLobby = () => {
@@ -186,9 +198,18 @@ export function useGlobalLobbyWebSocketService() {
         }
         
         try {
-            console.log('🚪 글로벌 로비 퇴장 (퇴장 메시지 없음)');
-            // 퇴장 메시지는 더 이상 전송하지 않음
-            return true;
+            console.log('🚪 글로벌 로비 퇴장 - /app/chat.leave.lobby');
+            
+            // API 명세서에 따라 빈 객체 전송
+            const success = publish('/app/chat.leave.lobby', {});
+            
+            if (success) {
+                console.log('✅ 로비 퇴장 메시지 전송 성공');
+            } else {
+                console.error('❌ 로비 퇴장 메시지 전송 실패');
+            }
+            
+            return success;
         } catch (error) {
             console.error('글로벌 로비 퇴장 중 오류:', error);
             return false;

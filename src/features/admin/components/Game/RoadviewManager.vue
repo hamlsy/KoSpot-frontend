@@ -63,20 +63,20 @@
           <div class="form-group">
             <label>장소명 (POI Name)</label>
             <input 
-              v-model="newLocation.poi_name" 
+              v-model="newLocation.poiName" 
               type="text" 
               placeholder="예: 경복궁"
             />
           </div>
           <div class="form-group">
             <label>위치 타입</label>
-            <select v-model="newLocation.location_type">
+            <select v-model="newLocation.locationType">
               <option value="">타입 선택</option>
-              <option value="tourist">관광지</option>
-              <option value="landmark">랜드마크</option>
-              <option value="nature">자연경관</option>
-              <option value="cultural">문화시설</option>
-              <option value="commercial">상업지역</option>
+              <option value="TOURIST">관광지</option>
+              <option value="LANDMARK">랜드마크</option>
+              <option value="NATURE">자연경관</option>
+              <option value="CULTURAL">문화시설</option>
+              <option value="COMMERCIAL">상업지역</option>
             </select>
           </div>
         </div>
@@ -85,7 +85,7 @@
           <div class="form-group">
             <label>상세주소</label>
             <input 
-              v-model="newLocation.detail_address" 
+              v-model="newLocation.detailAddress" 
               type="text" 
               placeholder="카카오맵 API에서 자동 입력됩니다"
               readonly
@@ -95,11 +95,11 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label>시도</label>
+            <label>시도 키</label>
             <input 
-              v-model="newLocation.sido" 
+              v-model="newLocation.sidoKey" 
               type="text" 
-              placeholder="자동 입력됩니다"
+              placeholder="예: SEOUL (자동 입력됩니다)"
               readonly
             />
           </div>
@@ -150,11 +150,11 @@
           <div class="column-info">
             <span class="column">lat</span>
             <span class="column">lng</span>
-            <span class="column">detail_address</span>
-            <span class="column">poi_name</span>
+            <span class="column">poiName</span>
+            <span class="column">sidoKey</span>
             <span class="column">sigungu</span>
-            <span class="column">location_type</span>
-            <span class="column">sido</span>
+            <span class="column">detailAddress</span>
+            <span class="column">locationType</span>
           </div>
         </div>
 
@@ -200,11 +200,11 @@
         />
         <select v-model="filterType" class="filter-select">
           <option value="">모든 타입</option>
-          <option value="tourist">관광지</option>
-          <option value="landmark">랜드마크</option>
-          <option value="nature">자연경관</option>
-          <option value="cultural">문화시설</option>
-          <option value="commercial">상업지역</option>
+          <option value="TOURIST">관광지</option>
+          <option value="LANDMARK">랜드마크</option>
+          <option value="NATURE">자연경관</option>
+          <option value="CULTURAL">문화시설</option>
+          <option value="COMMERCIAL">상업지역</option>
         </select>
       </div>
 
@@ -222,11 +222,11 @@
             :key="location.id"
             class="table-row"
           >
-            <div class="col-name">{{ location.poi_name }}</div>
-            <div class="col-address">{{ location.detail_address }}</div>
+            <div class="col-name">{{ location.poiName }}</div>
+            <div class="col-address">{{ location.detailAddress }}</div>
             <div class="col-type">
-              <span class="type-badge" :class="location.location_type">
-                {{ getTypeLabel(location.location_type) }}
+              <span class="type-badge" :class="location.locationType.toLowerCase()">
+                {{ getTypeLabel(location.locationType) }}
               </span>
             </div>
             <div class="col-coords">
@@ -275,7 +275,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
-import apiClient from '@/core/api/apiClient.js'
+import { coordinateAdminService } from '@/features/admin/services/coordinateAdmin.service.js'
 
 const activeTab = ref('add')
 const loading = ref(false)
@@ -286,11 +286,11 @@ const uploadedFile = ref(null)
 const newLocation = reactive({
   lat: '',
   lng: '',
-  detail_address: '',
-  poi_name: '',
+  detailAddress: '',
+  poiName: '',
   sigungu: '',
-  location_type: '',
-  sido: ''
+  locationType: '',
+  sidoKey: ''
 })
 
 // 좌표 목록 관련
@@ -304,8 +304,8 @@ const itemsPerPage = 10
 const canAddLocation = computed(() => {
   return newLocation.lat && 
          newLocation.lng && 
-         newLocation.poi_name && 
-         newLocation.location_type
+         newLocation.poiName && 
+         newLocation.locationType
 })
 
 // 필터링된 좌표 목록
@@ -314,13 +314,13 @@ const filteredLocations = computed(() => {
 
   if (searchQuery.value) {
     filtered = filtered.filter(loc => 
-      loc.poi_name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      loc.detail_address.toLowerCase().includes(searchQuery.value.toLowerCase())
+      loc.poiName.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      loc.detailAddress.toLowerCase().includes(searchQuery.value.toLowerCase())
     )
   }
 
   if (filterType.value) {
-    filtered = filtered.filter(loc => loc.location_type === filterType.value)
+    filtered = filtered.filter(loc => loc.locationType === filterType.value)
   }
 
   const start = (currentPage.value - 1) * itemsPerPage
@@ -332,6 +332,30 @@ const totalPages = computed(() => {
   const total = locations.value.length
   return Math.ceil(total / itemsPerPage)
 })
+
+// 시도명을 시도 키로 변환하는 헬퍼 함수
+const convertSidoNameToKey = (sidoName) => {
+  const sidoMap = {
+    '서울특별시': 'SEOUL',
+    '부산광역시': 'BUSAN',
+    '대구광역시': 'DAEGU',
+    '인천광역시': 'INCHEON',
+    '광주광역시': 'GWANGJU',
+    '대전광역시': 'DAEJEON',
+    '울산광역시': 'ULSAN',
+    '세종특별자치시': 'SEJONG',
+    '경기도': 'GYEONGGI',
+    '강원도': 'GANGWON',
+    '충청북도': 'CHUNGBUK',
+    '충청남도': 'CHUNGNAM',
+    '전라북도': 'JEONBUK',
+    '전라남도': 'JEONNAM',
+    '경상북도': 'GYEONGBUK',
+    '경상남도': 'GYEONGNAM',
+    '제주특별자치도': 'JEJU'
+  }
+  return sidoMap[sidoName] || 'SEOUL'
+}
 
 // 카카오맵 API로 주소 정보 가져오기
 const fetchAddressFromCoords = async () => {
@@ -352,8 +376,10 @@ const fetchAddressFromCoords = async () => {
     
     if (data.documents && data.documents.length > 0) {
       const address = data.documents[0].address
-      newLocation.detail_address = address.address_name
-      newLocation.sido = address.region_1depth_name
+      newLocation.detailAddress = address.address_name
+      // 시도명을 시도 키로 변환 (예: 서울특별시 -> SEOUL)
+      const sidoName = address.region_1depth_name
+      newLocation.sidoKey = convertSidoNameToKey(sidoName)
       newLocation.sigungu = address.region_2depth_name
     }
   } catch (error) {
@@ -391,13 +417,11 @@ const addLocation = async () => {
   try {
     loading.value = true
     
-    const response = await apiClient.post('/admin/roadview/locations', newLocation)
+    await coordinateAdminService.createCoordinate(newLocation)
     
-    if (response.data.isSuccess) {
-      console.log('좌표가 성공적으로 추가되었습니다.')
-      resetForm()
-      loadLocations()
-    }
+    console.log('좌표가 성공적으로 추가되었습니다.')
+    resetForm()
+    loadLocations()
   } catch (error) {
     console.error('좌표 추가 실패:', error)
   } finally {
@@ -410,11 +434,11 @@ const resetForm = () => {
   Object.assign(newLocation, {
     lat: '',
     lng: '',
-    detail_address: '',
-    poi_name: '',
+    detailAddress: '',
+    poiName: '',
     sigungu: '',
-    location_type: '',
-    sido: ''
+    locationType: '',
+    sidoKey: ''
   })
   roadviewAvailable.value = false
 }
@@ -440,20 +464,11 @@ const uploadExcel = async () => {
   try {
     loading.value = true
     
-    const formData = new FormData()
-    formData.append('file', uploadedFile.value)
+    await coordinateAdminService.importExcel(uploadedFile.value)
     
-    const response = await apiClient.post('/admin/roadview/locations/bulk', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
-    
-    if (response.data.isSuccess) {
-      console.log('엑셀 파일이 성공적으로 업로드되었습니다.')
-      uploadedFile.value = null
-      loadLocations()
-    }
+    console.log('엑셀 파일이 성공적으로 업로드되었습니다.')
+    uploadedFile.value = null
+    loadLocations()
   } catch (error) {
     console.error('엑셀 업로드 실패:', error)
   } finally {
@@ -464,11 +479,8 @@ const uploadExcel = async () => {
 // 좌표 목록 로드
 const loadLocations = async () => {
   try {
-    const response = await apiClient.get('/admin/roadview/locations')
-    
-    if (response.data.isSuccess) {
-      locations.value = response.data.result
-    }
+    const pageData = await coordinateAdminService.getCoordinates({ page: 0, size: 1000 })
+    locations.value = pageData.content
   } catch (error) {
     console.error('좌표 목록 로드 실패:', error)
   }
@@ -487,12 +499,10 @@ const deleteLocation = async (id) => {
   try {
     loading.value = true
     
-    const response = await apiClient.delete(`/admin/roadview/locations/${id}`)
+    await coordinateAdminService.deleteCoordinate(id)
     
-    if (response.data.isSuccess) {
-      console.log('좌표가 삭제되었습니다.')
-      loadLocations()
-    }
+    console.log('좌표가 삭제되었습니다.')
+    loadLocations()
   } catch (error) {
     console.error('좌표 삭제 실패:', error)
   } finally {
@@ -503,11 +513,11 @@ const deleteLocation = async (id) => {
 // 타입 라벨 가져오기
 const getTypeLabel = (type) => {
   const labels = {
-    tourist: '관광지',
-    landmark: '랜드마크',
-    nature: '자연경관',
-    cultural: '문화시설',
-    commercial: '상업지역'
+    TOURIST: '관광지',
+    LANDMARK: '랜드마크',
+    NATURE: '자연경관',
+    CULTURAL: '문화시설',
+    COMMERCIAL: '상업지역'
   }
   return labels[type] || type
 }

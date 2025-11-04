@@ -1,18 +1,32 @@
 <template>
   <div class="app-container">
+    <!-- 인트로 튜토리얼 모달 -->
+    <IntroTutorialModal 
+      :show="showTutorial"
+      @close="showTutorial = false"
+      @complete="handleTutorialComplete"
+    />
+
     <!-- 공통 네비게이션바 사용 -->
-    <NavigationBar />
+    <NavigationBar 
+      :is-logged-in="isLoggedIn"
+      :user-info="userProfile"
+      @open-tutorial="showTutorial = true"
+    />
 
     <!-- Main Content -->
     <main class="main-content">
+      <!-- 히어로 섹션 -->
+      <HeroSection @open-tutorial="showTutorial = true" />
+
       <!-- Featured Challenge Banner Carousel -->
-      <div v-if="banners && banners.length > 0" class="banner-carousel">
+      <div v-if="displayBanners && displayBanners.length > 0" class="banner-carousel">
         <div
           class="banner-container"
           :style="{ transform: `translateX(-${currentBanner * 100}%)` }"
         >
           <div
-            v-for="(banner, index) in banners"
+            v-for="(banner, index) in displayBanners"
             :key="banner.id || index"
             class="main-banner"
             :style="{ backgroundImage: `url(${banner.image})` }"
@@ -30,7 +44,7 @@
         <!-- Banner Navigation Dots -->
         <div class="banner-dots">
           <button
-            v-for="(banner, index) in banners"
+            v-for="(banner, index) in displayBanners"
             :key="banner.id || index"
             class="banner-dot"
             :class="{ active: currentBanner === index }"
@@ -56,7 +70,7 @@
           <div
             class="mode-card roadview"
             :class="{ locked: !gameModeStatus.roadviewEnabled }"
-            @click="gameModeStatus.roadviewEnabled ? navigateTo('roadView/main') : showLockedMessage()"
+            @click="handleModeClick('roadView/main', gameModeStatus.roadviewEnabled)"
           >
             <div class="mode-background"></div>
             <div class="mode-icon">
@@ -87,7 +101,7 @@
           <div 
             class="mode-card photo"
             :class="{ locked: !gameModeStatus.photoEnabled }"
-            @click="gameModeStatus.photoEnabled ? navigateTo('photo/main') : showLockedMessage()"
+            @click="handleModeClick('photo/main', gameModeStatus.photoEnabled)"
           >
             <div class="mode-background"></div>
             <div class="mode-icon">
@@ -117,7 +131,7 @@
           <div
             class="mode-card multiplayer"
             :class="{ locked: !gameModeStatus.multiplayEnabled }"
-            @click="gameModeStatus.multiplayEnabled ? navigateTo('lobby') : showLockedMessage()"
+            @click="handleModeClick('lobby', gameModeStatus.multiplayEnabled)"
           >
             <div class="mode-background"></div>
             <div class="mode-icon">
@@ -145,7 +159,9 @@
           </div>
         </div>
       </section>
-      <!-- Stats Overview -->
+      
+      <!-- Stats Overview - 베타 버전에서는 숨김 -->
+      <!-- 
       <div class="stats-container">
         <router-link to="/noticeList">
           <div class="stat-card">
@@ -184,6 +200,7 @@
           </div>
         </router-link>
       </div>
+      -->
 
       <!-- 공지사항 섹션 -->
       <section class="notices-section">
@@ -222,9 +239,9 @@
         </div>
       </section>
 
-      <!-- 테스트 링크 - 개발 중에만 표시 -->
-      <div class="test-links">
-        <h3>테스트 링크</h3>
+      <!-- 테스트 링크 - 관리자에게만 표시 -->
+      <div v-if="userProfile.isAdmin" class="test-links">
+        <h3>테스트 링크 (관리자 전용)</h3>
         <div class="test-links-grid">
           <router-link to="/testTeamGame" class="test-link team-test">
             <i class="fas fa-users"></i>
@@ -317,10 +334,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import NavigationBar from '@/core/components/NavigationBar.vue'
 import UserLoginCard from '@/features/main/components/UserLoginCard.vue'
+import IntroTutorialModal from '@/features/intro/components/IntroTutorialModal.vue'
+import HeroSection from '@/features/intro/components/HeroSection.vue'
 import { mainService } from '@/features/main/services/main.service.js'
 
 // 라우터 설정
@@ -336,12 +355,17 @@ const showToast = ref(false);
 const toastMessage = ref("");
 const isLoading = ref(true);
 
+// 튜토리얼 관련 상태
+const showTutorial = ref(false);
+const isFirstVisit = ref(false);
+
 // 사용자 프로필 정보
 const userProfile = ref({
   name: "사용자",
   email: "user@example.com",
   avatar: "/default-avatar.png",
-  isAdmin: false
+  isAdmin: false,
+  isFirstVisit: false
 });
 
 // 게임 모드 상태
@@ -353,6 +377,21 @@ const gameModeStatus = ref({
 
 // 배너 데이터
 const banners = ref([]);
+
+// 기본 배너 데이터
+const defaultBanner = {
+  id: 'default-kospot',
+  badge: '소개',
+  title: 'KoSpot에 오신 것을 환영합니다!',
+  description: '대한민국 곳곳을 탐험하는 지리 게임을 즐겨보세요',
+  image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=1200&h=400&fit=crop',
+  link: ''
+};
+
+// 표시할 배너 (배너가 없으면 기본 배너 사용)
+const displayBanners = computed(() => {
+  return banners.value && banners.value.length > 0 ? banners.value : [defaultBanner];
+});
 
 // 공지사항 데이터
 const recentNotices = ref([]);
@@ -372,6 +411,13 @@ async function loadMainPageData() {
       // 관리자 여부 업데이트
       userProfile.value.isAdmin = data.isAdmin || false;
       
+      // 첫 방문자 여부 확인 (백엔드에서 제공)
+      if (data.isFirstVisit === true) {
+        isFirstVisit.value = true;
+        showTutorial.value = true;
+        console.log('🎉 첫 방문자입니다! 튜토리얼을 표시합니다.');
+      }
+      
       // 게임 모드 상태 업데이트
       if (data.gameModeStatus) {
         gameModeStatus.value = {
@@ -385,8 +431,8 @@ async function loadMainPageData() {
       if (data.banners && Array.isArray(data.banners) && data.banners.length > 0) {
         banners.value = mainService.transformBannersForUI(data.banners);
       } else {
-        // 배너가 없으면 기본 배너 사용
-        banners.value = getDefaultBanners();
+        // 배너가 없으면 빈 배열
+        banners.value = [];
       }
       
       // 공지사항 데이터 변환 및 업데이트
@@ -398,6 +444,7 @@ async function loadMainPageData() {
       
       console.log('✅ 메인 페이지 데이터 로드 완료:', {
         isAdmin: userProfile.value.isAdmin,
+        isFirstVisit: isFirstVisit.value,
         gameModeStatus: gameModeStatus.value,
         banners: banners.value.length,
         notices: recentNotices.value.length
@@ -412,7 +459,7 @@ async function loadMainPageData() {
     const fallbackData = mainService.getFallbackData();
     gameModeStatus.value = fallbackData.gameModeStatus;
     recentNotices.value = mainService.transformNoticesForUI(fallbackData.recentNotices);
-    banners.value = getDefaultBanners();
+    banners.value = []; // 배너 데이터 없음
     
     // 사용자에게 에러 알림
     showErrorToast('데이터를 불러오는데 실패했습니다. 기본 데이터를 표시합니다.');
@@ -420,28 +467,6 @@ async function loadMainPageData() {
     isLoading.value = false;
     noticesLoading.value = false;
   }
-}
-
-// 기본 배너 데이터 반환
-function getDefaultBanners() {
-  return [
-    {
-      id: 1,
-      badge: "신규",
-      title: "신규 테마: 유명 영화 촬영지",
-      description: "전국 유명 영화 촬영지를 맞추는 새로운 테마가 추가되었습니다.",
-      image: "https://myseoulbox.com/cdn/shop/articles/Kdramas.jpg?v=1686882570",
-      link: ""
-    },
-    {
-      id: 2,
-      badge: "업데이트",
-      title: "멀티플레이어 모드 업데이트",
-      description: "친구들과 함께 즐길 수 있는 새로운 기능이 추가되었습니다.",
-      image: "https://via.placeholder.com/1200x400/8b5cf6/ffffff?text=멀티플레이어+모드",
-      link: ""
-    }
-  ];
 }
 
 // 컴포넌트 마운트 시 실행
@@ -479,7 +504,41 @@ function openNotifications() {
 
 // 페이지 이동 함수
 function navigateTo(route) {
+  // 로그인 페이지로 이동하는 경우
+  if (route === 'loginPage') {
+    router.push('/loginPage');
+    return;
+  }
+  
   router.push(`/${route}`);
+}
+
+// 게임 모드 클릭 핸들러
+function handleModeClick(route, isEnabled) {
+  // 모드가 비활성화되어 있으면
+  if (!isEnabled) {
+    showLockedMessage();
+    return;
+  }
+  
+  // 로그인하지 않았으면 로그인 필요 메시지 표시
+  if (!isLoggedIn.value) {
+    showLoginRequiredMessage();
+    return;
+  }
+  
+  // 로그인되어 있고 모드가 활성화되어 있으면 이동
+  navigateTo(route);
+}
+
+// 로그인 필요 메시지 표시
+function showLoginRequiredMessage() {
+  toastMessage.value = "로그인이 필요한 서비스입니다. 로그인 후 이용해주세요.";
+  showToast.value = true;
+
+  setTimeout(() => {
+    showToast.value = false;
+  }, 3000);
 }
 
 // 공지사항 상세 페이지로 이동
@@ -489,13 +548,13 @@ function goToNoticeDetail(noticeId) {
 
 // 배너 회전 시작 함수
 function startBannerRotation() {
-  // 배너가 없으면 회전하지 않음
-  if (!banners.value || banners.value.length === 0) {
+  // 배너가 1개 이하면 회전하지 않음
+  if (!displayBanners.value || displayBanners.value.length <= 1) {
     return;
   }
   
   bannerInterval.value = setInterval(() => {
-    currentBanner.value = (currentBanner.value + 1) % banners.value.length;
+    currentBanner.value = (currentBanner.value + 1) % displayBanners.value.length;
   }, 5000);
 }
 
@@ -534,6 +593,13 @@ function showLockedMessage() {
   setTimeout(() => {
     showToast.value = false;
   }, 3000);
+}
+
+// 튜토리얼 완료 핸들러
+function handleTutorialComplete() {
+  console.log('✅ 튜토리얼 완료!');
+  // 필요 시 백엔드에 튜토리얼 완료 상태 전송 가능
+  // await mainService.markTutorialComplete();
 }
 
 // 에러 토스트 표시 함수

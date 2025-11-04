@@ -14,14 +14,14 @@
     </header>
 
     <main class="main-content">
-      <!-- Ad Space -->
-      <section class="ad-space">
-        <div class="ad-container">
-          <div class="ad-content">
-            <p>광고 영역</p>
+      <!-- Google Ads Space - 일시적으로 숨김 -->
+      <!-- <section class="google-ads-space">
+        <div class="ads-container">
+          <div class="ads-placeholder">
+            <p>Google Ads 영역</p>
           </div>
         </div>
-      </section>
+      </section> -->
 
       <!-- Game Modes Section -->
       <section class="game-modes">
@@ -176,13 +176,6 @@
       @close="showHistoryModal = false"
     />
 
-    <!-- Loading Overlay -->
-    <div v-if="isLoading" class="loading-overlay">
-      <div class="loading-spinner">
-        <i class="fas fa-spinner fa-spin"></i>
-        <p>로딩 중...</p>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -203,7 +196,6 @@ const selectedGameMode = ref(null);
 const selectedRegion = ref(null);
 const userRank = ref("Gold III");
 const showProfileMenu = ref(false);
-const isLoading = ref(false);
 const hoverMode = ref(null);
 const hoverStat = ref(null);
 const hoverRecord = ref(null);
@@ -364,8 +356,6 @@ function selectRegion(region) {
 async function startGame() {
   if (!isGameStartReady.value) return;
 
-  isLoading.value = true;
-
   try {
     if (selectedGameMode.value.id === "practice") {
       // 연습 모드: sido key와 함께 라우팅
@@ -392,8 +382,6 @@ async function startGame() {
     
   } catch (error) {
     console.error("게임 시작 중 오류 발생:", error);
-  } finally {
-    isLoading.value = false;
   }
 }
 
@@ -427,8 +415,6 @@ function getRankIcon(rank) {
 
 // 메인 페이지 데이터 가져오기 함수
 async function fetchMainPageData() {
-  isLoading.value = true;
-  
   try {
     const response = await roadViewMainService.getMainPageData();
     
@@ -460,8 +446,6 @@ async function fetchMainPageData() {
     rankInfo.value = null;
     statisticInfo.value = null;
     recentGamesData.value = [];
-  } finally {
-    isLoading.value = false;
   }
 }
 
@@ -488,26 +472,17 @@ function closeGameModePopup() {
 
 // 테마 게임 시작 함수
 function startThemeGame(gameData) {
-  isLoading.value = true;
   console.log("Starting theme game with:", gameData);
 
   try {
-    // 실제 구현에서는 API 호출로 대체
-    // const response = await axios.post('/api/game/start', gameData);
-
-    // 테스트를 위한 타임아웃
-    setTimeout(() => {
-      isLoading.value = false;
-      showThemeModePopup.value = false;
-      // 게임 화면으로 라우팅하는 로직이 구현되어야 함
-      // router.push({
-      //   name: 'themePlay',
-      //   params: { themeId: gameData.themeId }
-      // });
-    }, 1500);
+    showThemeModePopup.value = false;
+    // 게임 화면으로 라우팅하는 로직이 구현되어야 함
+    // router.push({
+    //   name: 'themePlay',
+    //   params: { themeId: gameData.themeId }
+    // });
   } catch (error) {
     console.error("테마 게임 시작 중 오류 발생:", error);
-    isLoading.value = false;
   }
 }
 </script>
@@ -517,4 +492,49 @@ function startThemeGame(gameData) {
 @import url("@/shared/assets/styles/common/footer.css");
 @import url("@/shared/assets/styles/common/slide-menu/slide-menu.css");
 @import url("@/shared/assets/styles/game/roadView/roadview-main.css");
+
+/* Google Ads 공간 스타일 */
+.google-ads-space {
+  margin: 20px 0;
+  padding: 0 20px;
+}
+
+.ads-container {
+  width: 100%;
+  min-height: 120px;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 2px dashed #dee2e6;
+}
+
+.ads-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.ads-placeholder p {
+  color: #6c757d;
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .google-ads-space {
+    padding: 0 15px;
+  }
+  
+  .ads-container {
+    min-height: 100px;
+  }
+}
 </style>
