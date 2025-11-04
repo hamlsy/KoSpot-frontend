@@ -357,14 +357,15 @@ const isLoading = ref(true);
 
 // 튜토리얼 관련 상태
 const showTutorial = ref(false);
-const isFirstVisitor = ref(false);
+const isFirstVisit = ref(false);
 
 // 사용자 프로필 정보
 const userProfile = ref({
   name: "사용자",
   email: "user@example.com",
   avatar: "/default-avatar.png",
-  isAdmin: false
+  isAdmin: false,
+  isFirstVisit: false
 });
 
 // 게임 모드 상태
@@ -411,8 +412,8 @@ async function loadMainPageData() {
       userProfile.value.isAdmin = data.isAdmin || false;
       
       // 첫 방문자 여부 확인 (백엔드에서 제공)
-      if (data.isFirstVisitor === true) {
-        isFirstVisitor.value = true;
+      if (data.isFirstVisit === true) {
+        isFirstVisit.value = true;
         showTutorial.value = true;
         console.log('🎉 첫 방문자입니다! 튜토리얼을 표시합니다.');
       }
@@ -443,7 +444,7 @@ async function loadMainPageData() {
       
       console.log('✅ 메인 페이지 데이터 로드 완료:', {
         isAdmin: userProfile.value.isAdmin,
-        isFirstVisitor: isFirstVisitor.value,
+        isFirstVisit: isFirstVisit.value,
         gameModeStatus: gameModeStatus.value,
         banners: banners.value.length,
         notices: recentNotices.value.length
