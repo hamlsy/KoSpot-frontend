@@ -59,9 +59,8 @@ const getChatDestination = (chatType, teamId = null) => {
  */
 const buildChatMessage = (message, chatType, teamId = null) => {
     if (chatType === 'lobby') {
+        // API 명세서에 따른 로비 채팅 메시지 형식
         return {
-            messageType: 'CHAT',
-            channelType: 'LOBBY',
             content: message
         };
     }
@@ -197,22 +196,23 @@ const setupChatSubscriptions = (chatTypes = ['game']) => {
     chatTypes.forEach(chatType => {
         switch (chatType) {
             case 'lobby': {
-                const topic = '/topic/chat/lobby';
+                // API 명세서에 따른 구독 경로: /topic/lobby
+                const topic = '/topic/lobby';
                 
                 subscribe(topic, (message) => {
                     try {
                         const data = typeof message === 'string' ? JSON.parse(message) : message;
                         
+                        // API 명세서에 따른 수신 메시지 형식
                         const processedMessage = {
                             id: data.messageId,
                             playerName: data.nickname,
                             content: data.content,
                             timestamp: data.timestamp,
                             messageType: data.messageType,
-                            channelType: data.channelType,
                             senderId: data.senderId,
                             chatType: 'lobby',
-                            isSystem: false
+                            isSystem: data.messageType === 'SYSTEM_CHAT' || data.messageType === 'NOTICE_CHAT'
                         };
                         
                         handleChatMessage(processedMessage);

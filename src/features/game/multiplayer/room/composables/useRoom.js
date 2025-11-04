@@ -125,6 +125,11 @@ export function useRoom(props, emit, options = {}) {
             }
             break;
             
+          case 'PLAYER_LIST_UPDATED':
+            // API 명세서: 10초마다 주기적으로 발생하므로 토스트 알림은 표시하지 않음
+            console.log('🔄 플레이어 목록 자동 동기화 (토스트 알림 없음)');
+            break;
+            
           case 'TEAM_CHANGED':
             if (playerInfo?.memberId?.toString() === props.currentUserId) {
               // 자신의 팀 변경

@@ -124,6 +124,7 @@ class RoomWebSocketService {
     }
 
     // 채팅 채널 구독
+    // API 명세서: /topic/room/{roomId}/chat
     if (eventHandlers.onChatMessage) {
       const chatChannel = getGameRoomChatChannel(roomId);
       subscriptions.push(
@@ -131,7 +132,19 @@ class RoomWebSocketService {
           try {
             const chatEvent = JSON.parse(message.body);
             console.log('📥 채팅 메시지 수신:', chatEvent);
-            eventHandlers.onChatMessage(chatEvent);
+            
+            // API 명세서 형식 처리: { senderId, messageId, nickname, content, messageType, teamId, timestamp }
+            const processedChatEvent = {
+              senderId: chatEvent.senderId,
+              messageId: chatEvent.messageId,
+              nickname: chatEvent.nickname,
+              content: chatEvent.content,
+              messageType: chatEvent.messageType,
+              teamId: chatEvent.teamId || null,
+              timestamp: chatEvent.timestamp
+            };
+            
+            eventHandlers.onChatMessage(processedChatEvent);
           } catch (error) {
             console.error('❌ 채팅 메시지 파싱 실패:', error);
           }
@@ -220,6 +233,19 @@ class RoomWebSocketService {
             playerInfo,
             players,
             message: `${playerInfo?.nickname}님이 강퇴되었습니다.`,
+            timestamp
+          });
+        }
+        break;
+
+      case GAME_ROOM_NOTIFICATION_TYPES.PLAYER_LIST_UPDATED:
+        console.log('🔄 플레이어 목록 전체 갱신 알림');
+        if (eventHandlers.onGameRoomNotification) {
+          eventHandlers.onGameRoomNotification({
+            type: 'PLAYER_LIST_UPDATED',
+            playerInfo: null,
+            players,
+            message: null, // 10초마다 발생하므로 메시지는 표시하지 않음
             timestamp
           });
         }
@@ -347,8 +373,9 @@ class RoomWebSocketService {
 
   /**
    * 팀 변경 이벤트 발행
+   * API 명세서: /app/room.{roomId}.switchTeam
    * @param {string} roomId - 게임 방 ID
-   * @param {number} teamId - 변경할 팀 ID
+   * @param {string} teamId - 변경할 팀 ID ("TEAM_A" 또는 "TEAM_B")
    * @param {string} userId - 변경하는 사용자 ID
    * @returns {boolean} 발행 성공 여부
    */
@@ -359,17 +386,16 @@ class RoomWebSocketService {
         return false;
       }
 
+      // API 명세서에 따른 메시지 형식: { team: "TEAM_A" 또는 "TEAM_B" }
       const teamChangeData = {
-        roomId,
-        memberId: userId,
-        teamId,
-        timestamp: new Date().toISOString()
+        team: teamId
       };
 
-      const success = this.webSocketManager.publish(`/app/room/${roomId}/joinTeam`, teamChangeData);
+      // API 명세서에 따른 전송 경로: /app/room.{roomId}.switchTeam
+      const success = this.webSocketManager.publish(`/app/room.${roomId}.switchTeam`, teamChangeData);
       
       if (success) {
-        console.log('✅ 팀 변경 이벤트 발행 성공:', teamChangeData);
+        console.log('✅ 팀 변경 이벤트 발행 성공:', { roomId, ...teamChangeData });
       } else {
         console.error('❌ 팀 변경 이벤트 발행 실패');
       }
@@ -383,29 +409,35 @@ class RoomWebSocketService {
 
   /**
    * 채팅 메시지 발행
+   * API 명세서: /app/room.{roomId}.chat
    * @param {string} roomId - 게임 방 ID
    * @param {string} message - 메시지 내용
-   * @param {string} userId - 발송자 사용자 ID
+   * @param {string} userId - 발송자 사용자 ID (실제로는 서버에서 세션으로 식별)
+   * @param {string} teamId - 팀 ID (선택적, 팀전인 경우)
    * @returns {boolean} 발행 성공 여부
    */
-  publishChatMessage(roomId, message, userId) {
+  publishChatMessage(roomId, message, userId, teamId = null) {
     try {
       if (!this.isConnected) {
         console.warn('⚠️ WebSocket이 연결되지 않아 채팅 메시지를 발행할 수 없습니다.');
         return false;
       }
 
+      // API 명세서에 따른 메시지 형식: { content: "메시지", team: "TEAM_A" (선택적) }
       const chatData = {
-        roomId,
-        senderId: userId,
-        content: message,
-        timestamp: new Date().toISOString()
+        content: message
       };
 
-      const success = this.webSocketManager.publish(`/app/room/${roomId}/chat`, chatData);
+      // 팀 ID가 있으면 추가 (팀전인 경우)
+      if (teamId) {
+        chatData.team = teamId;
+      }
+
+      // API 명세서에 따른 전송 경로: /app/room.{roomId}.chat
+      const success = this.webSocketManager.publish(`/app/room.${roomId}.chat`, chatData);
       
       if (success) {
-        console.log('✅ 채팅 메시지 발행 성공');
+        console.log('✅ 채팅 메시지 발행 성공:', { roomId, ...chatData });
       } else {
         console.error('❌ 채팅 메시지 발행 실패');
       }
