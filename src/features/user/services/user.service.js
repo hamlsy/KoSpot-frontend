@@ -79,6 +79,68 @@ class UserService {
   }
 
   /**
+   * 전체 인벤토리 조회
+   * API: GET /memberItem/inventory
+   * @returns {Promise<ApiResponse>} API 응답
+   */
+  async getInventory() {
+    try {
+      console.log('📤 인벤토리 조회 요청');
+      
+      const response = await apiClient.get('/memberItem/inventory');
+      
+      console.log('✅ 인벤토리 조회 성공:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ 인벤토리 조회 실패:', error);
+      this._handleApiError(error, '인벤토리 조회에 실패했습니다.');
+      throw error;
+    }
+  }
+
+  /**
+   * 타입별 아이템 조회
+   * API: GET /memberItem/{itemType}
+   * @param {string} itemType - 아이템 타입 (MARKER, PROFILE, EFFECT, THEME)
+   * @returns {Promise<ApiResponse>} API 응답
+   */
+  async getItemsByType(itemType) {
+    try {
+      console.log('📤 타입별 아이템 조회 요청:', itemType);
+      
+      const response = await apiClient.get(`/memberItem/${itemType}`);
+      
+      console.log('✅ 타입별 아이템 조회 성공:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ 타입별 아이템 조회 실패:', error);
+      this._handleApiError(error, '아이템 조회에 실패했습니다.');
+      throw error;
+    }
+  }
+
+  /**
+   * 아이템 장착
+   * API: GET /memberItem/{memberItemId}
+   * @param {number} memberItemId - 보유 아이템 ID
+   * @returns {Promise<ApiResponse>} API 응답
+   */
+  async equipItem(memberItemId) {
+    try {
+      console.log('📤 아이템 장착 요청:', memberItemId);
+      
+      const response = await apiClient.get(`/memberItem/${memberItemId}`);
+      
+      console.log('✅ 아이템 장착 성공:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ 아이템 장착 실패:', error);
+      this._handleApiError(error, '아이템 장착에 실패했습니다.');
+      throw error;
+    }
+  }
+
+  /**
    * 랭크 티어 정보 가져오기
    * @param {string} rankTier - 랭크 티어 (BRONZE, SILVER, GOLD, PLATINUM, DIAMOND, MASTER)
    * @returns {Object} 랭크 티어 정보 (이름, 색상, 아이콘)
