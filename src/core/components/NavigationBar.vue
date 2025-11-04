@@ -9,25 +9,27 @@
         <!-- 네비게이션 추가 - 웹 전용 -->
         <div class="main-nav desktop-only">
           <router-link :to="{ name: 'NoticeListView' }" class="nav-link">공지사항</router-link>
-          <router-link :to="{ name: 'NoticeListView', query: { category: '이벤트' } }" class="nav-link">이벤트</router-link>
-          <router-link to="/tempPage" class="nav-link">통계</router-link>
-          <router-link to="/shopMain" class="nav-link">상점</router-link>
+          <router-link v-if="userProfile.isAdmin" :to="{ name: 'NoticeListView', query: { category: '이벤트' } }" class="nav-link">이벤트</router-link>
+          <router-link v-if="userProfile.isAdmin" to="/tempPage" class="nav-link">통계</router-link>
+          <router-link v-if="userProfile.isAdmin" to="/shopMain" class="nav-link">상점</router-link>
           <router-link to="/myProfile" class="nav-link">마이페이지</router-link>
           <router-link v-if="userProfile.isAdmin" to="/admin" class="nav-link admin-link">관리자</router-link>
           <router-link to="/temp-login" class="nav-link temp-login-link">🧪 임시로그인</router-link>
         </div>
 
         <div class="header-right">
-          <button class="icon-button" @click="openNotifications">
+          <button v-if="userProfile.isAdmin" class="icon-button" @click="openNotifications">
             <i class="fas fa-bell"></i>
             <span class="notification-badge" v-if="unreadNotifications">{{ unreadNotifications }}</span>
           </button>
           <div class="user-profile" @click="toggleProfileMenu">
-            <div class="user-avatar">
+            <div class="user-avatar" :class="{ 'guest-avatar': !isLoggedIn }">
               <img
+                v-if="isLoggedIn"
                 :src="userProfile.avatar || '/default-avatar.png'"
                 alt="프로필"
               />
+              <span v-else class="guest-text">Guest</span>
             </div>
           </div>
         </div>
@@ -47,6 +49,26 @@
     <transition name="slide-menu">
       <div v-if="showProfileMenu" class="profile-menu">
         <div class="profile-header">
+          <button @click="closeProfileMenu" class="close-menu">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <!-- 로그인하지 않았을 때 로그인 안내 -->
+        <div v-if="!isLoggedIn" class="login-prompt">
+          <div class="login-icon">
+            <i class="fas fa-user-circle"></i>
+          </div>
+          <h3>로그인이 필요합니다</h3>
+          <p>다양한 기능을 이용하려면<br/>로그인해주세요</p>
+          <button @click="goToLogin" class="login-prompt-button">
+            <i class="fas fa-sign-in-alt"></i>
+            로그인하러 가기
+          </button>
+        </div>
+
+        <!-- 로그인했을 때 프로필 정보 -->
+        <div v-else class="profile-info-section">
           <div class="profile-info">
             <img
               :src="userProfile.avatar || '/default-avatar.png'"
@@ -57,26 +79,23 @@
               <p>{{ userProfile.email }}</p>
             </div>
           </div>
-          <button @click="closeProfileMenu" class="close-menu">
-            <i class="fas fa-times"></i>
-          </button>
         </div>
 
         <!-- 모바일용 내비게이션 메뉴 추가 -->
-        <nav class="mobile-nav">
+        <nav class="mobile-nav" v-if="isLoggedIn">
           <router-link :to="{ name: 'NoticeListView' }" class="menu-item">
             <i class="fas fa-bullhorn"></i>
             공지사항
           </router-link>
-          <router-link :to="{ name: 'NoticeListView', query: { category: '이벤트' } }" class="menu-item">
+          <router-link v-if="userProfile.isAdmin" :to="{ name: 'NoticeListView', query: { category: '이벤트' } }" class="menu-item">
             <i class="fas fa-calendar-alt"></i>
             이벤트
           </router-link>
-          <router-link to="/tempPage" class="menu-item">
+          <router-link v-if="userProfile.isAdmin" to="/tempPage" class="menu-item">
             <i class="fas fa-chart-bar"></i>
             통계
           </router-link>
-          <router-link to="/shopMain" class="menu-item">
+          <router-link v-if="userProfile.isAdmin" to="/shopMain" class="menu-item">
             <i class="fas fa-shopping-cart"></i>
             상점
           </router-link>
@@ -114,6 +133,16 @@ export default {
   components: {
     AppLogo
   },
+  props: {
+    isLoggedIn: {
+      type: Boolean,
+      default: false
+    },
+    userInfo: {
+      type: Object,
+      default: () => ({})
+    }
+  },
   data() {
     return {
       showProfileMenu: false,
@@ -125,6 +154,17 @@ export default {
         isAdmin: true
       }
     };
+  },
+  watch: {
+    userInfo: {
+      handler(newValue) {
+        if (newValue && Object.keys(newValue).length > 0) {
+          this.userProfile = { ...this.userProfile, ...newValue };
+        }
+      },
+      immediate: true,
+      deep: true
+    }
   },
   methods: {
     toggleProfileMenu() {
@@ -141,6 +181,10 @@ export default {
     },
     openNotifications() {
       // 알림 메뉴 열기 로직
+    },
+    goToLogin() {
+      this.closeProfileMenu();
+      this.$router.push('/login');
     }
   }
 };
@@ -277,6 +321,19 @@ export default {
   object-fit: cover;
 }
 
+.guest-avatar {
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.guest-text {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #4f46e5;
+}
+
 /* 오버레이 스타일 */
 .overlay {
   position: fixed;
@@ -304,8 +361,12 @@ export default {
 
 .profile-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: start;
+  margin-bottom: 24px;
+}
+
+.profile-info-section {
   margin-bottom: 24px;
 }
 
@@ -397,6 +458,67 @@ export default {
 
 .temp-login-menu-item i {
   color: #f59e0b;
+}
+
+/* 로그인 안내 스타일 */
+.login-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem 1rem;
+  gap: 1rem;
+}
+
+.login-icon {
+  font-size: 4rem;
+  color: #e0e7ff;
+  margin-bottom: 0.5rem;
+}
+
+.login-icon i {
+  color: #6366f1;
+}
+
+.login-prompt h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.login-prompt p {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.login-prompt-button {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  justify-content: center;
+}
+
+.login-prompt-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+}
+
+.login-prompt-button i {
+  font-size: 1.1rem;
 }
 
 /* 트랜지션 애니메이션 */

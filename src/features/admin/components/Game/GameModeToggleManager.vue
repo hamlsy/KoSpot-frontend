@@ -84,71 +84,90 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
-import apiClient from '@/core/api/apiClient.js'
+import { ref, onMounted } from 'vue'
+import { gameConfigAdminService } from '@/features/admin/services/gameConfigAdmin.service.js'
 
 const emit = defineEmits(['toggle-mode'])
 
 const loading = ref(false)
 
 // 게임 모드 데이터
-const gameModes = reactive([
-  {
-    id: 'roadview',
-    name: '로드뷰 모드',
-    description: '실제 거리를 둘러보며 위치를 맞추는 게임',
-    icon: 'fa-street-view',
-    isActive: true,
-    stats: {
-      dailyPlayers: 1247,
-      averageScore: 752
-    }
-  },
-  {
-    id: 'photo',
-    name: '포토 모드',
-    description: '관광지 사진으로 지역을 맞히는 게임',
-    icon: 'fa-camera',
-    isActive: true,
-    stats: {
-      dailyPlayers: 892,
-      averageScore: 845
-    }
-  },
-  {
-    id: 'multiplayer',
-    name: '멀티플레이어 모드',
-    description: '다른 플레이어들과 함께 즐기는 게임',
-    icon: 'fa-users',
-    isActive: true,
-    stats: {
-      dailyPlayers: 634,
-      averageScore: 698
-    }
+const gameModes = ref([])
+
+// 게임 설정 목록 로드
+const loadGameConfigs = async () => {
+  try {
+    const configs = await gameConfigAdminService.getConfigs()
+    
+    // 백엔드 데이터를 프론트엔드 형식으로 변환
+    gameModes.value = configs.map(config => ({
+      id: config.id,
+      name: getModeDisplayName(config),
+      description: config.description || getModeDescription(config),
+      icon: getModeIcon(config.gameMode),
+      isActive: config.isActive,
+      gameMode: config.gameMode,
+      stats: {
+        dailyPlayers: 0,
+        averageScore: 0
+      }
+    }))
+  } catch (error) {
+    console.error('게임 설정 로드 실패:', error)
   }
-])
+}
+
+// 모드 표시 이름 생성
+const getModeDisplayName = (config) => {
+  const modeNames = {
+    ROADVIEW: '로드뷰',
+    PHOTO: '포토'
+  }
+  const modeName = modeNames[config.gameMode] || config.gameMode
+  
+  if (config.isSingleMode) {
+    return `싱글 ${modeName}`
+  } else {
+    const matchType = config.playerMatchType === 'SOLO' ? '개인전' : '팀전'
+    return `멀티 ${modeName} - ${matchType}`
+  }
+}
+
+// 모드 설명 생성
+const getModeDescription = (config) => {
+  const desc = {
+    ROADVIEW: '실제 거리를 둘러보며 위치를 맞추는 게임',
+    PHOTO: '관광지 사진으로 지역을 맞히는 게임'
+  }
+  return desc[config.gameMode] || ''
+}
+
+// 모드 아이콘 가져오기
+const getModeIcon = (gameMode) => {
+  const icons = {
+    ROADVIEW: 'fa-street-view',
+    PHOTO: 'fa-camera'
+  }
+  return icons[gameMode] || 'fa-gamepad'
+}
 
 // 모드 토글
 const toggleMode = async (mode) => {
   try {
     loading.value = true
     
-    // API 호출
-    const response = await apiClient.post('/admin/game-modes/toggle', {
-      modeId: mode.id,
-      isActive: !mode.isActive
-    })
-
-    if (response.data.isSuccess) {
-      mode.isActive = !mode.isActive
-      emit('toggle-mode', mode)
-      
-      // 성공 알림
-      console.log(`${mode.name}이(가) ${mode.isActive ? '활성화' : '비활성화'}되었습니다.`)
+    if (mode.isActive) {
+      await gameConfigAdminService.deactivateConfig(mode.id)
+    } else {
+      await gameConfigAdminService.activateConfig(mode.id)
     }
+    
+    mode.isActive = !mode.isActive
+    emit('toggle-mode', mode)
+    
+    console.log(`${mode.name}이(가) ${mode.isActive ? '활성화' : '비활성화'}되었습니다.`)
   } catch (error) {
     console.error('모드 토글 실패:', error)
-    // 에러 처리
   } finally {
     loading.value = false
   }
@@ -159,14 +178,14 @@ const enableAllModes = async () => {
   try {
     loading.value = true
     
-    const response = await apiClient.post('/admin/game-modes/bulk-enable')
-    
-    if (response.data.isSuccess) {
-      gameModes.forEach(mode => {
+    for (const mode of gameModes.value) {
+      if (!mode.isActive) {
+        await gameConfigAdminService.activateConfig(mode.id)
         mode.isActive = true
-      })
-      console.log('모든 게임 모드가 활성화되었습니다.')
+      }
     }
+    
+    console.log('모든 게임 모드가 활성화되었습니다.')
   } catch (error) {
     console.error('일괄 활성화 실패:', error)
   } finally {
@@ -179,14 +198,14 @@ const disableAllModes = async () => {
   try {
     loading.value = true
     
-    const response = await apiClient.post('/admin/game-modes/bulk-disable')
-    
-    if (response.data.isSuccess) {
-      gameModes.forEach(mode => {
+    for (const mode of gameModes.value) {
+      if (mode.isActive) {
+        await gameConfigAdminService.deactivateConfig(mode.id)
         mode.isActive = false
-      })
-      console.log('모든 게임 모드가 비활성화되었습니다.')
+      }
     }
+    
+    console.log('모든 게임 모드가 비활성화되었습니다.')
   } catch (error) {
     console.error('일괄 비활성화 실패:', error)
   } finally {
@@ -196,13 +215,19 @@ const disableAllModes = async () => {
 
 // 아이콘 클래스 가져오기
 const getIconClass = (modeId) => {
+  const mode = gameModes.value.find(m => m.id === modeId)
+  if (!mode) return 'bg-gray-100 text-gray-600'
+  
   const classes = {
-    roadview: 'bg-blue-100 text-blue-600',
-    photo: 'bg-green-100 text-green-600',
-    multiplayer: 'bg-amber-100 text-amber-600'
+    ROADVIEW: 'bg-blue-100 text-blue-600',
+    PHOTO: 'bg-green-100 text-green-600'
   }
-  return classes[modeId] || 'bg-gray-100 text-gray-600'
+  return classes[mode.gameMode] || 'bg-gray-100 text-gray-600'
 }
+
+onMounted(() => {
+  loadGameConfigs()
+})
 </script>
 
 <style scoped>

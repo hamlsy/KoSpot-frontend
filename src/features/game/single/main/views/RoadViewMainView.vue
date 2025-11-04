@@ -14,11 +14,11 @@
     </header>
 
     <main class="main-content">
-      <!-- Ad Space -->
-      <section class="ad-space">
-        <div class="ad-container">
-          <div class="ad-content">
-            <p>광고 영역</p>
+      <!-- Google Ads Space -->
+      <section class="google-ads-space">
+        <div class="ads-container">
+          <div class="ads-placeholder">
+            <p>Google Ads 영역</p>
           </div>
         </div>
       </section>
@@ -517,4 +517,49 @@ function startThemeGame(gameData) {
 @import url("@/shared/assets/styles/common/footer.css");
 @import url("@/shared/assets/styles/common/slide-menu/slide-menu.css");
 @import url("@/shared/assets/styles/game/roadView/roadview-main.css");
+
+/* Google Ads 공간 스타일 */
+.google-ads-space {
+  margin: 20px 0;
+  padding: 0 20px;
+}
+
+.ads-container {
+  width: 100%;
+  min-height: 120px;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 2px dashed #dee2e6;
+}
+
+.ads-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.ads-placeholder p {
+  color: #6c757d;
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .google-ads-space {
+    padding: 0 15px;
+  }
+  
+  .ads-container {
+    min-height: 100px;
+  }
+}
 </style>
