@@ -429,6 +429,17 @@ async function loadMainPageData() {
       // 관리자 여부 업데이트
       userProfile.value.isAdmin = data.isAdmin || false;
       
+      // 사용자 프로필 정보 업데이트 (nickname, email, equippedMarkerImageUrl)
+      if (data.nickname) {
+        userProfile.value.name = data.nickname;
+      }
+      if (data.email) {
+        userProfile.value.email = data.email;
+      }
+      if (data.equippedMarkerImageUrl) {
+        userProfile.value.avatar = data.equippedMarkerImageUrl;
+      }
+      
       // 첫 방문자 여부 확인 (백엔드에서 제공)
       if (data.isFirstVisited === true) {
         isFirstVisited.value = true;
