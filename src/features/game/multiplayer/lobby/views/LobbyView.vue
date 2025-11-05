@@ -40,15 +40,21 @@
 
       <div class="lobby-layout">
         <!-- 왼쪽 패널: 게임 방 목록 -->
-        <GameRoomList 
-          :rooms="rooms" 
-          :loading="isLoading"
-          @join-room="joinRoom"
-          @refresh-rooms="refreshRooms"
-          @load-more="loadMoreRooms"
-          class="game-room-list"
-          :class="{ 'chat-open': isChatVisible && isMobile }"
-        />
+        <div class="left-panel">
+          <GameRoomList 
+            :rooms="rooms" 
+            :loading="isLoading"
+            @join-room="joinRoom"
+            @refresh-rooms="refreshRooms"
+            @load-more="loadMoreRooms"
+            class="game-room-list"
+            :class="{ 'chat-open': isChatVisible && isMobile }"
+          />
+          <!-- 새 게임방 만들기 버튼 - 게임방 목록 아래에 배치 -->
+          <button class="create-room-button" @click="showCreateRoomModal = true">
+            <i class="fas fa-plus"></i> 새 게임방 만들기
+          </button>
+        </div>
 
         <!-- 오른쪽 패널: 채팅 -->
         <div 
@@ -64,11 +70,6 @@
           />
         </div>
       </div>
-      
-      <!-- 새 게임방 만들기 버튼 - 독립적으로 배치 -->
-      <button class="create-room-button fixed-button" @click="showCreateRoomModal = true">
-        <i class="fas fa-plus"></i> 새 게임방 만들기
-      </button>
     </main>
 
     <!-- 방 생성 모달 -->
@@ -170,7 +171,9 @@ const refreshInterval = ref(null);
 // 계산된 속성
 const formattedChatMessages = computed(() => {
   // WebSocket 서비스에서 받은 채팅 메시지를 UI 컴포넌트 형식에 맞게 변환
-  return lobbyService.globalLobbyChatMessages.value.map(msg => ({
+  const rawMessages = lobbyService.globalLobbyChatMessages.value;
+  
+  return rawMessages.map(msg => ({
     id: msg.messageId || msg.id || `msg-${msg.timestamp}`,
     sender: msg.nickname || msg.playerName || msg.sender || '익명',
     senderId: msg.senderId || msg.playerId || msg.memberId, // 백엔드에서 제공하는 senderId
@@ -222,31 +225,16 @@ const initializeData = async () => {
 
 const connectToChat = async () => {
   try {
-    console.log('🔗 WebSocket 서비스 연결 시도 중...');
-    
     // WebSocket 서비스 연결
     lobbyService.connectWebSocket();
-    
-    // 연결 상태 모니터링
-    const checkConnection = () => {
-      console.log('📊 연결 상태:', {
-        isConnected: lobbyService.isConnected.value
-      });
-    };
-    
-    // 1초 후 연결 상태 확인
-    setTimeout(checkConnection, 1000);
-    
-    console.log('✅ 채팅 서비스 연결 요청 완료');
   } catch (error) {
-    console.error('❌ 채팅 서비스 연결 실패:', error);
+    console.error('채팅 서비스 연결 실패:', error);
   }
 };
 
 const disconnectFromChat = () => {
   try {
     lobbyService.disconnectWebSocket();
-    console.log('채팅 연결 해제 완료');
   } catch (error) {
     console.error('채팅 연결 해제 중 오류:', error);
   }
@@ -438,7 +426,7 @@ onBeforeUnmount(() => {
   left: 0;
   width: 40%;
   height: 3px;
-  background: linear-gradient(90deg, #60a5fa, #8b5cf6);
+  background: linear-gradient(90deg, #60a5fa, #3b82f6);
   border-radius: 2px;
 }
 
@@ -507,6 +495,13 @@ onBeforeUnmount(() => {
   animation: fadeIn 0.5s ease-out;
 }
 
+.left-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -523,8 +518,8 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
-  background: linear-gradient(135deg, #60a5fa 0%, #8b5cf6 100%);
+  padding: 1rem 1.5rem;
+  background: #3b82f6;
   color: white;
   border: none;
   border-radius: 12px;
@@ -532,34 +527,9 @@ onBeforeUnmount(() => {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(96, 165, 250, 0.25);
-  position: relative;
-  overflow: hidden;
-  z-index: 1;
-}
-
-.create-room-button.fixed-button {
-  position: fixed;
-  bottom: 80px;
-  right: 20px;
-  padding: 1rem 1.5rem;
-  border-radius: 30px;
-  box-shadow: 0 6px 20px rgba(96, 165, 250, 0.4);
-  z-index: 45;
-  width: auto;
-}
-
-.create-room-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
   width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, #8b5cf6 0%, #60a5fa 100%);
-  opacity: 0;
-  z-index: -1;
-  transition: opacity 0.3s ease;
+  margin-top: auto;
 }
 
 .create-room-button i {
@@ -568,17 +538,15 @@ onBeforeUnmount(() => {
 }
 
 .create-room-button:hover {
+  background: #2563eb;
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(96, 165, 250, 0.35);
-}
-
-.create-room-button:hover::before {
-  opacity: 1;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .create-room-button:active {
+  background: #1d4ed8;
   transform: translateY(0);
-  box-shadow: 0 4px 10px rgba(96, 165, 250, 0.2);
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
 }
 
 /* 로딩 오버레이 */
@@ -604,7 +572,7 @@ onBeforeUnmount(() => {
 
 .loading-spinner i {
   font-size: 3rem;
-  color: #667eea;
+  color: #3b82f6;
   margin-bottom: 1rem;
   animation: pulse 1.5s infinite;
 }
@@ -638,7 +606,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #3b82f6;
   color: white;
   border: none;
   border-radius: 30px;
@@ -647,7 +615,7 @@ onBeforeUnmount(() => {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
   z-index: 50;
 }
 
@@ -656,12 +624,13 @@ onBeforeUnmount(() => {
 }
 
 .chat-toggle-button:hover {
+  background: #2563eb;
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .chat-toggle-button.active {
-  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
+  background: #1d4ed8;
 }
 
 /* 에러 토스트 */
@@ -875,11 +844,7 @@ onBeforeUnmount(() => {
     font-size: 0.85rem;
   }
   
-  .create-room-button.fixed-button {
-    bottom: 80px;
-    right: 15px;
-    left: 15px;
-    width: calc(100% - 30px);
+  .create-room-button {
     font-size: 0.9rem;
     padding: 0.9rem 1.2rem;
   }

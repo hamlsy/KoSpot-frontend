@@ -29,15 +29,15 @@
         </button>
         
         <!-- Naver Login Button -->
-        <button @click="socialLogin('naver')" class="social-button naver">
+        <!-- <button @click="socialLogin('naver')" class="social-button naver">
           <div class="social-icon-wrapper naver">
             <span class="naver-icon">N</span>
           </div>
           <span class="social-text naver">네이버 로그인</span>
-        </button>
+        </button> -->
         
         <!-- Google Login Button -->
-        <button @click="handleGoogleSignIn" class="google-btn">
+        <!-- <button @click="handleGoogleSignIn" class="google-btn">
           <div class="google-icon-wrapper">
             <svg class="google-icon" width="18" height="18" viewBox="0 0 48 48">
               <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
@@ -48,7 +48,7 @@
             </svg>
           </div>
           <span class="google-btn-text">Google로 로그인</span>
-        </button>
+        </button> -->
       </div>
     </div>
   </div>
@@ -67,7 +67,8 @@ const getBaseURL = () => {
 // 소셜 로그인 리다이렉트
 const socialLogin = (platform) => {
   const baseURL = getBaseURL();
-  const oauthUrl = `${baseURL}/login/oauth2/authorization/${platform}`;
+  const oauthUrl = `${baseURL}/login/oauth2/code/${platform}`;
+  // const oauthUrl = `http://localhost:8080/login/oauth2/code/${platform}`;
   window.location.href = oauthUrl;
 };
 

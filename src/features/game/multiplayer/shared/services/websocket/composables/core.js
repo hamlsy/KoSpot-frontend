@@ -51,10 +51,19 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
     // 개발 환경에서는 현재 호스트를 사용하여 프록시 통해 연결
     const wsUrl =
       process.env.NODE_ENV === "development"
-        ? `${window.location.protocol}//${window.location.host}${endpoint}`
+        ? `${window.location.protocol}//localhost:8080${endpoint}`
         : `${
             process.env.VUE_APP_WS_BASE_URL || "http://localhost:8080"
           }${endpoint}`;
+
+    console.log("🔵 WebSocket 연결 초기화:", {
+      endpoint: endpoint,
+      wsUrl: wsUrl,
+      nodeEnv: process.env.NODE_ENV,
+      protocol: window.location.protocol,
+      host: window.location.host,
+      timestamp: new Date().toISOString()
+    });
 
     // SockJS 설정 옵션
     const sockjsOptions = {
@@ -62,12 +71,46 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
       transports: ["websocket", "xhr-polling", "jsonp-polling"],
     };
 
+    console.log("📋 SockJS 옵션:", {
+      timeout: sockjsOptions.timeout,
+      transports: sockjsOptions.transports,
+      timestamp: new Date().toISOString()
+    });
+
     const socket = new SockJS(wsUrl, undefined, sockjsOptions);
+    
+    console.log("🔵 SockJS 인스턴스 생성 완료:", {
+      wsUrl: wsUrl,
+      readyState: socket.readyState,
+      protocol: socket.protocol,
+      timestamp: new Date().toISOString()
+    });
 
     // SockJS 이벤트 리스너 추가
     socket.onclose = function (event) {
+      console.log("🔴 SockJS onclose 이벤트 발생:", {
+        code: event.code,
+        reason: event.reason,
+        wasClean: event.wasClean,
+        target: event.target,
+        type: event.type,
+        currentURL: event.target?.url || wsUrl,
+        readyState: event.target?.readyState,
+        isConnected: isConnected.value,
+        timestamp: new Date().toISOString()
+      });
+      
       // SockJS 연결 실패 시 즉시 더미 모드로 전환
       if (!isConnected.value) {
+        console.warn("⚠️ SockJS 연결이 완료되지 않은 상태에서 종료됨");
+        console.log("📊 연결 상태 상세:", {
+          isConnected: isConnected.value,
+          hasStompClient: !!stompClient.value,
+          endpoint: endpoint,
+          wsUrl: wsUrl,
+          connectionCallbacksCount: connectionCallbacks.value.size
+        });
+        
         stompClient.value = null;
 
         // 등록된 콜백들을 더미 모드로 실행
@@ -82,9 +125,30 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
     };
 
     socket.onerror = function (error) {
-      console.error("🔴 SockJS 오류:", error);
+      console.error("🔴 SockJS onerror 이벤트 발생:", {
+        error: error,
+        errorType: error?.type,
+        errorTarget: error?.target,
+        errorMessage: error?.message,
+        currentURL: error?.target?.url || wsUrl,
+        readyState: error?.target?.readyState,
+        isConnected: isConnected.value,
+        timestamp: new Date().toISOString()
+      });
+      
+      // 추가 에러 정보 수집
+      if (error?.target) {
+        console.error("📋 SockJS 에러 타겟 상세:", {
+          url: error.target.url,
+          readyState: error.target.readyState,
+          protocol: error.target.protocol,
+          extensions: error.target.extensions
+        });
+      }
+      
       // SockJS 오류 시 즉시 더미 모드로 전환
       if (!isConnected.value) {
+        console.warn("⚠️ SockJS 연결 오류로 인해 더미 모드로 전환");
         stompClient.value = null;
 
         // 등록된 콜백들을 더미 모드로 실행
@@ -96,6 +160,26 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
           }
         });
       }
+    };
+    
+    // SockJS 연결 상태 변화 추적
+    socket.onopen = function (event) {
+      console.log("🟢 SockJS onopen 이벤트 발생:", {
+        type: event.type,
+        target: event.target,
+        currentURL: event.target?.url || wsUrl,
+        readyState: event.target?.readyState,
+        timestamp: new Date().toISOString()
+      });
+    };
+    
+    // SockJS 메시지 이벤트 (디버깅용)
+    socket.onmessage = function (event) {
+      console.log("📨 SockJS 메시지 수신:", {
+        data: event.data,
+        type: event.type,
+        timestamp: new Date().toISOString()
+      });
     };
 
     stompClient.value = Stomp.over(socket);
@@ -156,40 +240,108 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
       window.webSocketBeforeUnloadRegistered = true;
     }
 
+    console.log("🔵 STOMP 연결 시도 시작:", {
+      wsUrl: wsUrl,
+      endpoint: endpoint,
+      hasHeaders: !!headers && Object.keys(headers).length > 0,
+      headersKeys: headers ? Object.keys(headers) : [],
+      hasToken: !!headers?.Authorization,
+      tokenPrefix: headers?.Authorization?.substring(0, 20) || 'none',
+      timestamp: new Date().toISOString()
+    });
+    
     stompClient.value.connect(
       headers, // 헤더 (인증 정보 등이 필요하면 여기에 추가)
       // 연결 성공 콜백
       (frame) => {
-        console.log("✅ WebSocket 연결 성공:", wsUrl);
+        console.log("✅ STOMP 연결 성공:", {
+          wsUrl: wsUrl,
+          frame: frame,
+          command: frame?.command,
+          headers: frame?.headers,
+          body: frame?.body,
+          timestamp: new Date().toISOString()
+        });
         
         isConnected.value = true;
         
+        console.log("📊 연결 성공 후 상태:", {
+          isConnected: isConnected.value,
+          hasStompClient: !!stompClient.value,
+          connectionCallbacksCount: connectionCallbacks.value.size,
+          activeSubscriptionsCount: activeSubscriptions.value.size
+        });
+        
         // 등록된 콜백들 실행
-        connectionCallbacks.value.forEach((callback) => {
+        connectionCallbacks.value.forEach((callback, index) => {
           try {
+            console.log(`🔄 연결 콜백 실행 중 (${index + 1}/${connectionCallbacks.value.size})`);
             callback();
           } catch (error) {
-            console.error("연결 콜백 실행 중 오류:", error);
+            console.error(`❌ 연결 콜백 실행 중 오류 (${index + 1}):`, error);
           }
         });
       },
       // 연결 실패 콜백
       (error) => {
-        console.error("❌ WebSocket 연결 오류:", error);
-        console.error("연결 시도 URL:", wsUrl);
-        console.error("오류 상세:", error);
-        console.error("오류 메시지:", error.message);
+        console.error("❌ STOMP 연결 실패:", {
+          error: error,
+          errorType: typeof error,
+          errorConstructor: error?.constructor?.name,
+          errorMessage: error?.message,
+          errorStack: error?.stack,
+          wsUrl: wsUrl,
+          endpoint: endpoint,
+          hasHeaders: !!headers && Object.keys(headers).length > 0,
+          headersKeys: headers ? Object.keys(headers) : [],
+          hasToken: !!headers?.Authorization,
+          tokenExists: !!token,
+          tokenLength: token?.length || 0,
+          isConnected: isConnected.value,
+          hasStompClient: !!stompClient.value,
+          timestamp: new Date().toISOString()
+        });
+        
+        // 에러 객체의 모든 속성 출력
+        if (error && typeof error === 'object') {
+          console.error("📋 에러 객체 상세:", {
+            keys: Object.keys(error),
+            values: Object.entries(error).reduce((acc, [key, value]) => {
+              acc[key] = typeof value === 'string' ? value.substring(0, 100) : value;
+              return acc;
+            }, {})
+          });
+        }
         
         // 인증 오류 체크
-        if (error.message && error.message.includes('401')) {
-          console.error("🔐 인증 오류 - 토큰이 유효하지 않거나 만료됨");
+        const errorStr = String(error?.message || JSON.stringify(error) || '');
+        if (errorStr.includes('401') || errorStr.includes('Unauthorized')) {
+          console.error("🔐 인증 오류 감지 - 토큰이 유효하지 않거나 만료됨");
+          console.log("🔍 토큰 정보:", {
+            hasToken: !!token,
+            tokenLength: token?.length || 0,
+            tokenPrefix: token?.substring(0, 20) || 'none',
+            tokenSuffix: token?.substring(token?.length - 20) || 'none'
+          });
+        }
+        
+        // 네트워크 오류 체크
+        if (errorStr.includes('Network') || errorStr.includes('network') || errorStr.includes('ECONNREFUSED')) {
+          console.error("🌐 네트워크 오류 감지 - 서버에 연결할 수 없음");
+          console.log("🔍 네트워크 상태:", {
+            wsUrl: wsUrl,
+            endpoint: endpoint,
+            protocol: window.location.protocol,
+            host: window.location.host,
+            isDev: process.env.NODE_ENV === 'development'
+          });
         }
 
         isConnected.value = false;
         stompClient.value = null; // STOMP 클라이언트 초기화
 
         // 재연결 시도하지 않음 (수동으로만 연결)
-        console.log("WebSocket 연결 실패: 수동으로만 재연결 가능");
+        console.log("⚠️ WebSocket 연결 실패: 수동으로만 재연결 가능");
       }
     );
   } catch (error) {
@@ -223,33 +375,63 @@ const disconnect = () => {
  * @returns {String} 구독 ID (구독 취소 시 사용)
  */
 const subscribe = (topic, callback) => {
+  console.log('🔵 subscribe 함수 호출:', {
+    topic: topic,
+    isConnected: isConnected.value,
+    hasStompClient: !!stompClient.value,
+    alreadySubscribed: activeSubscriptions.value.has(topic),
+    timestamp: new Date().toISOString()
+  });
+  
   // 이미 구독 중인 경우 기존 구독 ID 반환
   if (activeSubscriptions.value.has(topic)) {
+    console.log(`⚠️ 이미 ${topic}에 구독 중입니다.`);
     return topic;
   }
+  
   // 실제 구독 처리
   if (isConnected.value && stompClient.value) {
     try {
+      console.log(`📡 STOMP 구독 시도: ${topic}`);
+      
       const subscription = stompClient.value.subscribe(topic, (message) => {
+        console.log(`📨 STOMP 메시지 수신 (${topic}):`, {
+          topic: topic,
+          message: message,
+          messageBody: message.body,
+          messageHeaders: message.headers,
+          timestamp: new Date().toISOString()
+        });
+        
         try {
           // 메시지 본문 파싱 및 콜백 호출
           const body = message.body ? JSON.parse(message.body) : {};
+          console.log(`✅ 메시지 파싱 완료 (${topic}):`, body);
           callback(body);
         } catch (error) {
-          console.error(`메시지 처리 중 오류 (${topic}):`, error);
+          console.error(`❌ 메시지 처리 중 오류 (${topic}):`, error, message);
           callback(message);
         }
       });
 
       // 활성 구독 목록에 추가
       activeSubscriptions.value.set(topic, subscription);
+      console.log(`✅ 구독 성공 (${topic}):`, {
+        subscriptionId: subscription.id,
+        totalSubscriptions: activeSubscriptions.value.size,
+        activeTopics: Array.from(activeSubscriptions.value.keys())
+      });
+      
       return subscription.id;
     } catch (error) {
-      console.error(`구독 오류 (${topic}):`, error);
+      console.error(`❌ 구독 오류 (${topic}):`, error);
       return null;
     }
   } else {
-    console.warn("WebSocket이 연결되지 않아 구독할 수 없습니다.");
+    console.warn(`⚠️ WebSocket이 연결되지 않아 ${topic}를 구독할 수 없습니다.`, {
+      isConnected: isConnected.value,
+      hasStompClient: !!stompClient.value
+    });
     return null;
   }
 };

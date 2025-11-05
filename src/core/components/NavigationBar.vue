@@ -11,9 +11,9 @@
           <router-link :to="{ name: 'NoticeListView' }" class="nav-link">공지사항</router-link>
           <!-- 메인 페이지만 통계/상점/이벤트 표시 -->
           <template v-if="isMainPage">
-            <router-link v-if="actualIsAdmin" :to="{ name: 'NoticeListView', query: { category: '이벤트' } }" class="nav-link">이벤트</router-link>
+            <!-- <router-link v-if="actualIsAdmin" :to="{ name: 'NoticeListView', query: { category: '이벤트' } }" class="nav-link">이벤트</router-link>
             <router-link v-if="actualIsAdmin" to="/tempPage" class="nav-link">통계</router-link>
-            <router-link v-if="actualIsAdmin" to="/shopMain" class="nav-link">상점</router-link>
+            <router-link v-if="actualIsAdmin" to="/shopMain" class="nav-link">상점</router-link> -->
           </template>
           <!-- 로그인한 경우에만 마이페이지 표시 -->
           <router-link v-if="actualIsLoggedIn" to="/myProfile" class="nav-link">마이페이지</router-link>
@@ -98,7 +98,7 @@
             공지사항
           </router-link>
           <!-- 메인 페이지만 통계/상점/이벤트 표시 -->
-          <template v-if="isMainPage">
+          <!-- <template v-if="isMainPage">
             <router-link v-if="actualIsAdmin" :to="{ name: 'NoticeListView', query: { category: '이벤트' } }" class="menu-item">
               <i class="fas fa-calendar-alt"></i>
               이벤트
@@ -111,7 +111,7 @@
               <i class="fas fa-shopping-cart"></i>
               상점
             </router-link>
-          </template>
+          </template> -->
           <router-link to="/myProfile" class="menu-item">
             <i class="fas fa-user-circle"></i>
             마이페이지
@@ -167,7 +167,7 @@ export default {
         avatar: null,
         isAdmin: false
       },
-      isDevMode: false
+      isDevMode: true
     };
   },
   computed: {

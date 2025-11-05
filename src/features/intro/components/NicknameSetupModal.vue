@@ -17,13 +17,13 @@
                 type="text"
                 placeholder="닉네임을 입력하세요"
                 :disabled="loading"
-                maxlength="20"
+                maxlength="15"
                 autocomplete="off"
                 @input="validateNickname"
               />
               <div class="input-hint">
                 <span :class="{ error: hasError }">{{ nicknameHint }}</span>
-                <span class="char-count">{{ nickname.length }}/20</span>
+                <span class="char-count">{{ nickname.length }}/15</span>
               </div>
             </div>
 
@@ -59,12 +59,12 @@ const emit = defineEmits(['close', 'complete']);
 const nickname = ref('');
 const loading = ref(false);
 const hasError = ref(false);
-const nicknameHint = ref('2-20자 이내로 입력해주세요');
+const nicknameHint = ref('2-15자 이내로 입력해주세요');
 
 // 닉네임 유효성 검사
 const isValid = computed(() => {
   const trimmed = nickname.value.trim();
-  return trimmed.length >= 2 && trimmed.length <= 20 && !hasError.value;
+  return trimmed.length >= 2 && trimmed.length <= 15 && !hasError.value;
 });
 
 // 닉네임 입력 검증
@@ -73,7 +73,7 @@ function validateNickname() {
   
   if (trimmed.length === 0) {
     hasError.value = false;
-    nicknameHint.value = '2-20자 이내로 입력해주세요';
+    nicknameHint.value = '2-15자 이내로 입력해주세요';
     return;
   }
 
@@ -83,9 +83,9 @@ function validateNickname() {
     return;
   }
 
-  if (trimmed.length > 20) {
+  if (trimmed.length > 15) {
     hasError.value = true;
-    nicknameHint.value = '닉네임은 최대 20자까지 입력 가능합니다';
+    nicknameHint.value = '닉네임은 최대 15자까지 입력 가능합니다';
     return;
   }
 
@@ -159,7 +159,7 @@ watch(() => props.show, (newValue) => {
   if (newValue) {
     nickname.value = '';
     hasError.value = false;
-    nicknameHint.value = '2-20자 이내로 입력해주세요';
+    nicknameHint.value = '2-15자 이내로 입력해주세요';
     loading.value = false;
   }
 });

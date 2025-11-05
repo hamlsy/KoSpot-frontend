@@ -38,28 +38,15 @@ export function useGlobalLobbyWebSocketService() {
      * 
      * @param {String} [endpoint='/ws'] - WebSocket 서버의 엔드포인트 URL
      */
-    const connectWebSocket = (endpoint = '/ws') => {
-        console.log('🔵 useGlobalLobbyWebSocketService.connectWebSocket() 호출됨');
-        console.log('현재 연결 상태:', {
-            isConnected: webSocketManager.isConnected.value
-        });
-        
-        // 로비 채팅은 서버 세션으로 사용자 식별하므로 별도 초기화 불필요
-        
+    const connectWebSocket = (endpoint = '/api/ws') => {
         // 이미 연결된 경우에는 글로벌 로비 채널만 구독
         if (webSocketManager.isConnected.value) {
-            console.log('이미 연결되어 있음, 구독만 진행');
             subscribeToGlobalLobbyChat();
             return;
         }
         
         // 연결 성공 시 호출될 콜백 함수
         const onConnectCallback = () => {
-            console.log('🟢 onConnectCallback 실행됨!');
-            console.log('콜백 실행 시점 상태:', {
-                isConnected: webSocketManager.isConnected.value
-            });
-            
             // 로비 전용 구독 설정 (게임 채팅, 플레이어 상태, 게임 상태 구독 제외)
             webSocketManager.setupLobbySubscriptions();
             
@@ -69,10 +56,8 @@ export function useGlobalLobbyWebSocketService() {
             createSystemMessage('채팅 서버에 연결되었습니다.', 'lobby');
         };
         
-        console.log('🔵 webSocketManager.connect() 호출 시작');
         // WebSocketManager를 통해 연결
         webSocketManager.connect(endpoint, onConnectCallback);
-        console.log('🔵 webSocketManager.connect() 호출 완료');
     };
     
     /**
@@ -91,12 +76,11 @@ export function useGlobalLobbyWebSocketService() {
         
         // 구독 목록 초기화
         globalLobbySubscriptions.value.clear();
-        console.log('글로벌 로비 구독이 모두 해제되었습니다.');
     };
     
     /**
      * 글로벌 로비 채팅 채널을 구독합니다.
-     * API 명세서: 구독 경로 /topic/lobby
+     * API 명세서: 구독 경로 /topic/chat/lobby
      */
     const subscribeToGlobalLobbyChat = () => {
         // WebSocket이 연결되지 않은 경우 구독 불가
@@ -106,14 +90,12 @@ export function useGlobalLobbyWebSocketService() {
         }
         
         try {
-            console.log('🔍 현재 WebSocket 연결 상태:', webSocketManager.isConnected.value);
             
             // API 명세서에 따른 로비 채팅 구독 경로: /topic/lobby
-            const topic = '/topic/lobby';
+            const topic = '/topic/chat/lobby';
             
             // 이미 구독 중인지 확인
             if (globalLobbySubscriptions.value.has(topic)) {
-                console.log(`이미 ${topic}에 구독 중입니다.`);
                 return;
             }
             
@@ -122,10 +104,7 @@ export function useGlobalLobbyWebSocketService() {
             
             // 구독 정보 저장
             globalLobbySubscriptions.value.set(topic, 'lobby-subscription');
-            console.log(`✅ 글로벌 로비 채팅 채널 구독 성공: ${topic}`);
             
-            // 구독 후 테스트 메시지 (개발용)
-            console.log('🔍 구독 후 로비 채팅 메시지 상태:', lobbyChatMessages.value.length);
             
         } catch (error) {
             console.error('❌ 글로벌 로비 채팅 구독 중 오류:', error);
@@ -139,8 +118,6 @@ export function useGlobalLobbyWebSocketService() {
      * @returns {Boolean} 전송 성공 여부
      */
     const sendGlobalLobbyChat = (message) => {
-        console.log('🔵 로비 채팅 메시지 전송 시도:', message);
-        console.log('🔍 현재 WebSocket 연결 상태:', webSocketManager.isConnected.value);
         // 로비 채팅은 서버 세션으로 사용자 식별
         
         if (!webSocketManager.isConnected.value) {
@@ -149,10 +126,7 @@ export function useGlobalLobbyWebSocketService() {
         }
         
         // 통합 채팅 모듈 사용
-        const success = sendChatMessage(message, 'lobby');
-        console.log('📤 로비 채팅 메시지 전송 결과:', success);
-        
-        return success;
+        return sendChatMessage(message, 'lobby');
     };
     
     /**
@@ -166,17 +140,12 @@ export function useGlobalLobbyWebSocketService() {
         }
         
         try {
-            console.log('🔵 로비 입장 시도 - /app/chat.join.lobby');
-            
             // API 명세서에 따라 빈 객체 전송
             const success = publish('/app/chat.join.lobby', {});
             
             if (success) {
-                console.log('✅ 로비 입장 메시지 전송 성공');
                 // 로컬에만 표시되는 시스템 메시지
                 createSystemMessage('로비에 입장했습니다.', 'lobby');
-            } else {
-                console.error('❌ 로비 입장 메시지 전송 실패');
             }
             
             return success;
@@ -198,18 +167,8 @@ export function useGlobalLobbyWebSocketService() {
         }
         
         try {
-            console.log('🚪 글로벌 로비 퇴장 - /app/chat.leave.lobby');
-            
             // API 명세서에 따라 빈 객체 전송
-            const success = publish('/app/chat.leave.lobby', {});
-            
-            if (success) {
-                console.log('✅ 로비 퇴장 메시지 전송 성공');
-            } else {
-                console.error('❌ 로비 퇴장 메시지 전송 실패');
-            }
-            
-            return success;
+            return publish('/app/chat.leave.lobby', {});
         } catch (error) {
             console.error('글로벌 로비 퇴장 중 오류:', error);
             return false;
@@ -236,7 +195,6 @@ export function useGlobalLobbyWebSocketService() {
      * @param {Object} userInfo - 업데이트할 사용자 정보
      */
     const setCurrentUser = (userInfo) => {
-        console.log('🔵 로비 사용자 정보 업데이트:', userInfo);
         // 로비 채팅은 서버 세션으로 사용자 식별하므로 별도 처리 불필요
     };
     
@@ -245,22 +203,17 @@ export function useGlobalLobbyWebSocketService() {
      * 브라우저 창 닫기 시에만 로비 퇴장 메시지 전송
      */
     const handleBeforeUnload = () => {
-        console.log('🔵 beforeunload 이벤트 - 로비 퇴장 시도');
         leaveGlobalLobby();
     };
     
     // 컴포넌트 마운트 시 이벤트 리스너 등록
     onMounted(() => {
-        console.log('🔵 GlobalLobbyWebSocketService mounted');
-        
         // 브라우저 창 닫기 시에만 leave 요청 전송
         window.addEventListener('beforeunload', handleBeforeUnload);
     });
     
     // 컴포넌트 언마운트 시 정리 작업
     onBeforeUnmount(() => {
-        console.log('🔵 GlobalLobbyWebSocketService unmounting');
-        
         // 이벤트 리스너 제거
         window.removeEventListener('beforeunload', handleBeforeUnload);
         

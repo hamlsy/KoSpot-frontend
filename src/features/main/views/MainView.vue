@@ -19,6 +19,7 @@
       :is-logged-in="isLoggedIn"
       :user-info="userProfile"
       @open-tutorial="showTutorial = true"
+      @logout="handleLogout"
     />
 
     <!-- Main Content -->
@@ -298,7 +299,7 @@
             <i class="fas fa-bullhorn"></i>
             공지사항
           </router-link>
-          <router-link to="/tempPage" class="menu-item">
+          <!-- <router-link to="/tempPage" class="menu-item">
             <i class="fas fa-calendar-alt"></i>
             이벤트
           </router-link>
@@ -309,13 +310,13 @@
           <router-link to="/shopMain" class="menu-item">
             <i class="fas fa-shopping-cart"></i>
             상점
-          </router-link>
+          </router-link> -->
           <router-link to="/myProfile" class="menu-item">
             <i class="fas fa-user-circle"></i>
             마이페이지
           </router-link>
           <div class="menu-divider"></div>
-          <a href="#" class="menu-item">
+          <a href="#" class="menu-item" @click.prevent="handleLogout">
             <i class="fas fa-sign-out-alt"></i>
             로그아웃
           </a>
@@ -343,6 +344,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useAuth } from '@/core/composables/useAuth.js';
 import NavigationBar from '@/core/components/NavigationBar.vue'
 import UserLoginCard from '@/features/main/components/UserLoginCard.vue'
 import IntroTutorialModal from '@/features/intro/components/IntroTutorialModal.vue'
@@ -352,6 +354,9 @@ import { mainService } from '@/features/main/services/main.service.js'
 
 // 라우터 설정
 const router = useRouter();
+
+// 인증 컴포저블
+const { logout: logoutAuth } = useAuth();
 
 // 반응형 상태 정의
 // JWT 토큰 확인
@@ -369,7 +374,7 @@ const showNicknameModal = ref(false);
 
 // 튜토리얼 관련 상태
 const showTutorial = ref(false);
-const isFirstVisit = ref(false);
+const isFirstVisited = ref(false);
 
 // 사용자 프로필 정보
 const userProfile = ref({
@@ -377,7 +382,7 @@ const userProfile = ref({
   email: "user@example.com",
   avatar: "/default-avatar.png",
   isAdmin: false,
-  isFirstVisit: false
+  isFirstVisited: false
 });
 
 // 게임 모드 상태
@@ -424,8 +429,8 @@ async function loadMainPageData() {
       userProfile.value.isAdmin = data.isAdmin || false;
       
       // 첫 방문자 여부 확인 (백엔드에서 제공)
-      if (data.isFirstVisit === true) {
-        isFirstVisit.value = true;
+      if (data.isFirstVisited === true) {
+        isFirstVisited.value = true;
         // 닉네임 설정 모달 먼저 표시
         showNicknameModal.value = true;
         console.log('🎉 첫 방문자입니다! 닉네임 설정을 진행합니다.');
@@ -457,7 +462,7 @@ async function loadMainPageData() {
       
       console.log('✅ 메인 페이지 데이터 로드 완료:', {
         isAdmin: userProfile.value.isAdmin,
-        isFirstVisit: isFirstVisit.value,
+        isFirstVisited: isFirstVisited.value,
         gameModeStatus: gameModeStatus.value,
         banners: banners.value.length,
         notices: recentNotices.value.length
@@ -619,6 +624,10 @@ function handleNicknameComplete(nickname) {
   console.log('✅ 닉네임 설정 완료:', nickname);
   showNicknameModal.value = false;
   
+  // isFirstVisited를 false로 변경
+  isFirstVisited.value = false;
+  userProfile.value.isFirstVisited = false;
+  
   // 닉네임 설정 완료 후 튜토리얼 표시
   showTutorial.value = true;
 }
@@ -638,6 +647,27 @@ function showErrorToast(message) {
   setTimeout(() => {
     showToast.value = false;
   }, 3000);
+}
+
+// 로그아웃 처리 함수
+async function handleLogout() {
+  try {
+    // 프로필 메뉴 닫기
+    closeProfileMenu();
+    
+    // 로그아웃 API 호출
+    await logoutAuth();
+    
+    // 메인 페이지 새로고침
+    window.location.reload();
+  } catch (error) {
+    console.error('❌ 로그아웃 처리 중 오류:', error);
+    // 에러가 발생해도 로컬 상태 정리 후 새로고침
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('memberId');
+    window.location.reload();
+  }
 }
 </script>
 
