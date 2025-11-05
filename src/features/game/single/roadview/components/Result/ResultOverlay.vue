@@ -66,7 +66,7 @@
                 <div class="score-icon">
                   <i class="fas fa-star"></i>
                 </div>
-                <div class="score-label">점수</div>
+                <div class="score-label"> 점수</div>
                 <div class="score-value">{{ score.toFixed(1) }}</div>
               </div>
 
@@ -74,7 +74,7 @@
                 <div class="distance-icon">
                   <i class="fas fa-ruler"></i>
                 </div>
-                <div class="distance-label">거리</div>
+                <div class="distance-label"> 거리</div>
                 <div class="distance-value">{{ formattedDistance }}</div>
               </div>
 
@@ -82,7 +82,7 @@
                 <div class="rank-icon">
                   <i class="fas fa-trophy"></i>
                 </div>
-                <div class="rank-points-label">레이팅 점수</div>
+                <div class="rank-points-label"> 레이팅 점수</div>
                 <div
                   class="rank-points-value"
                   :class="{
@@ -107,7 +107,7 @@
                 <i class="fas fa-map-marker-alt"></i>
               </div>
               <div class="poi-text">
-                <div class="poi-label">정답 위치</div>
+                <div class="poi-label"> 정답 위치</div>
                 <div class="poi-name">{{ poiName }}</div>
               </div>
             </div>
@@ -948,41 +948,24 @@ export default {
   overflow: hidden;
 }
 
-.btn-restart::before,
-.btn-exit::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  transform: translate(-50%, -50%);
-  transition: width 0.6s ease, height 0.6s ease;
-}
-
-.btn-restart:hover::before,
-.btn-exit:hover::before {
-  width: 300px;
-  height: 300px;
-}
 
 .btn-restart {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
-  border-color: #3b82f6;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  background: white;
+  color: #111827;
+  border-color: #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .btn-restart:hover {
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-  transform: translateY(-2px);
+  background: #f9fafb;
+  border-color: #d1d5db;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .btn-restart:active {
   transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .btn-restart i,
@@ -999,22 +982,21 @@ export default {
 
 .btn-exit {
   background: white;
-  color: #64748b;
-  border-color: #e2e8f0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  color: #111827;
+  border-color: #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .btn-exit:hover {
-  background: #f8fafc;
-  color: #0f172a;
-  border-color: #cbd5e1;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background: #f9fafb;
+  border-color: #d1d5db;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .btn-exit:active {
   transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 @media (max-width: 768px) {

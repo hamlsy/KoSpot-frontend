@@ -2,8 +2,8 @@
   <div class="temp-login-container">
     <div class="temp-login-card">
       <div class="card-header">
-        <h2>🧪 테스트용 임시 로그인</h2>
-        <p>개발 및 테스트 목적으로만 사용하세요</p>
+        <h2>임시 로그인</h2>
+        <p>테스트용</p>
       </div>
 
       <!-- 로그인 폼 -->
@@ -29,44 +29,34 @@
       <!-- 로그인 후 관리 섹션 -->
       <div v-else class="management-section">
         <div class="user-info">
-          <h3>✅ 로그인 성공</h3>
-          <p><strong>사용자:</strong> {{ currentUser?.username || username }}</p>
-          <p><strong>토큰:</strong> {{ accessToken ? '발급됨' : '없음' }}</p>
+          <h3>로그인 성공</h3>
+          <p>사용자: {{ currentUser?.username || username }}</p>
+          <p>토큰: {{ accessToken ? '발급됨' : '없음' }}</p>
         </div>
 
         <div class="action-buttons">
           <button @click="handleReissueToken" :disabled="loading" class="reissue-btn">
-            {{ loading ? '재발급 중...' : '🔄 토큰 재발급' }}
+            {{ loading ? '재발급 중...' : '토큰 재발급' }}
           </button>
           <button @click="handleLogout" :disabled="loading" class="logout-btn">
-            {{ loading ? '로그아웃 중...' : '🚪 로그아웃' }}
+            {{ loading ? '로그아웃 중...' : '로그아웃' }}
           </button>
         </div>
       </div>
 
       <!-- 에러 메시지 -->
       <div v-if="error" class="error-message">
-        ⚠️ {{ error }}
+        {{ error }}
       </div>
 
       <!-- 성공 메시지 -->
       <div v-if="successMessage" class="success-message">
-        ✅ {{ successMessage }}
-      </div>
-
-      <!-- 개발자 정보 -->
-      <div class="dev-info">
-        <h4>🛠️ API 엔드포인트</h4>
-        <ul>
-          <li><code>GET /auth/tempLogin/{username}</code> - 임시 로그인</li>
-          <li><code>POST /auth/logout</code> - 로그아웃</li>
-          <li><code>POST /auth/reIssue</code> - 토큰 재발급</li>
-        </ul>
+        {{ successMessage }}
       </div>
 
       <!-- 메인페이지로 돌아가기 -->
       <div class="navigation">
-        <router-link to="/main" class="main-link">🏠 메인페이지로 돌아가기</router-link>
+        <router-link to="/main" class="main-link">메인페이지로 돌아가기</router-link>
       </div>
     </div>
   </div>
@@ -224,7 +214,7 @@ onMounted(() => {
 <style scoped>
 .temp-login-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #f5f7fa;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -233,11 +223,12 @@ onMounted(() => {
 
 .temp-login-card {
   background: white;
-  border-radius: 16px;
+  border-radius: 8px;
   padding: 2rem;
-  max-width: 500px;
+  max-width: 400px;
   width: 100%;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .card-header {
@@ -246,14 +237,15 @@ onMounted(() => {
 }
 
 .card-header h2 {
-  color: #333;
+  color: #111827;
   margin-bottom: 0.5rem;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
 }
 
 .card-header p {
-  color: #666;
-  font-size: 0.9rem;
+  color: #6b7280;
+  font-size: 0.875rem;
 }
 
 .login-section, .management-section {
@@ -274,15 +266,15 @@ onMounted(() => {
 .form-group input {
   width: 100%;
   padding: 0.75rem;
-  border: 2px solid #e1e5e9;
-  border-radius: 8px;
-  font-size: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
   transition: border-color 0.2s ease;
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #3b82f6;
 }
 
 .form-group input:disabled {
@@ -294,48 +286,44 @@ onMounted(() => {
   width: 100%;
   padding: 0.75rem;
   border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   margin-bottom: 0.5rem;
 }
 
 .login-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #3b82f6;
   color: white;
 }
 
 .login-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  background: #2563eb;
 }
 
 .login-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  transform: none;
 }
 
 .reissue-btn {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: #6b7280;
   color: white;
 }
 
 .reissue-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(240, 147, 251, 0.3);
+  background: #4b5563;
 }
 
 .logout-btn {
-  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-  color: #333;
+  background: #ef4444;
+  color: white;
 }
 
 .logout-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(252, 182, 159, 0.3);
+  background: #dc2626;
 }
 
 .user-info {
@@ -346,13 +334,16 @@ onMounted(() => {
 }
 
 .user-info h3 {
-  color: #28a745;
+  color: #111827;
   margin-bottom: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .user-info p {
   margin: 0.25rem 0;
-  color: #333;
+  color: #6b7280;
+  font-size: 0.875rem;
 }
 
 .action-buttons {
@@ -378,35 +369,6 @@ onMounted(() => {
   border: 1px solid #c3e6cb;
 }
 
-.dev-info {
-  background: #e2e3e5;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-}
-
-.dev-info h4 {
-  margin-bottom: 0.5rem;
-  color: #333;
-  font-size: 1rem;
-}
-
-.dev-info ul {
-  margin: 0;
-  padding-left: 1.5rem;
-}
-
-.dev-info li {
-  margin-bottom: 0.25rem;
-  font-size: 0.9rem;
-}
-
-.dev-info code {
-  background: #f8f9fa;
-  padding: 0.2rem 0.4rem;
-  border-radius: 4px;
-  font-family: 'Courier New', monospace;
-}
 
 .navigation {
   text-align: center;
@@ -415,16 +377,17 @@ onMounted(() => {
 .main-link {
   display: inline-block;
   padding: 0.5rem 1rem;
-  background: #6c757d;
-  color: white;
+  background: #f3f4f6;
+  color: #374151;
   text-decoration: none;
   border-radius: 6px;
   font-weight: 500;
+  font-size: 0.875rem;
   transition: background-color 0.2s ease;
 }
 
 .main-link:hover {
-  background: #5a6268;
+  background: #e5e7eb;
 }
 
 @media (max-width: 768px) {

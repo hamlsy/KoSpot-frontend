@@ -9,12 +9,18 @@
         <!-- 네비게이션 추가 - 웹 전용 -->
         <div class="main-nav desktop-only">
           <router-link :to="{ name: 'NoticeListView' }" class="nav-link">공지사항</router-link>
-          <router-link v-if="userProfile.isAdmin" :to="{ name: 'NoticeListView', query: { category: '이벤트' } }" class="nav-link">이벤트</router-link>
-          <router-link v-if="userProfile.isAdmin" to="/tempPage" class="nav-link">통계</router-link>
-          <router-link v-if="userProfile.isAdmin" to="/shopMain" class="nav-link">상점</router-link>
-          <router-link to="/myProfile" class="nav-link">마이페이지</router-link>
-          <router-link v-if="userProfile.isAdmin" to="/admin" class="nav-link admin-link">관리자</router-link>
-          <router-link to="/temp-login" class="nav-link temp-login-link">🧪 임시로그인</router-link>
+          <!-- 메인 페이지만 통계/상점/이벤트 표시 -->
+          <template v-if="isMainPage">
+            <router-link v-if="actualIsAdmin" :to="{ name: 'NoticeListView', query: { category: '이벤트' } }" class="nav-link">이벤트</router-link>
+            <router-link v-if="actualIsAdmin" to="/tempPage" class="nav-link">통계</router-link>
+            <router-link v-if="actualIsAdmin" to="/shopMain" class="nav-link">상점</router-link>
+          </template>
+          <!-- 로그인한 경우에만 마이페이지 표시 -->
+          <router-link v-if="actualIsLoggedIn" to="/myProfile" class="nav-link">마이페이지</router-link>
+          <!-- 관리자 버튼 -->
+          <router-link v-if="actualIsAdmin" to="/admin" class="nav-link admin-link">관리자</router-link>
+          <!-- 개발 모드일 때만 개발자 페이지 표시 -->
+          <router-link v-if="isDevMode" to="/dev/test" class="nav-link temp-login-link">🧪 개발자 페이지</router-link>
         </div>
 
         <div class="header-right">
@@ -22,14 +28,14 @@
             <i class="fas fa-question-circle"></i>
             <span class="tutorial-text">게임 소개</span>
           </button>
-          <button v-if="userProfile.isAdmin" class="icon-button" @click="openNotifications">
+          <button v-if="actualIsAdmin" class="icon-button" @click="openNotifications">
             <i class="fas fa-bell"></i>
             <span class="notification-badge" v-if="unreadNotifications">{{ unreadNotifications }}</span>
           </button>
           <div class="user-profile" @click="toggleProfileMenu">
-            <div class="user-avatar" :class="{ 'guest-avatar': !isLoggedIn }">
+            <div class="user-avatar" :class="{ 'guest-avatar': !actualIsLoggedIn }">
               <img
-                v-if="isLoggedIn"
+                v-if="actualIsLoggedIn"
                 :src="userProfile.avatar || '/default-avatar.png'"
                 alt="프로필"
               />
@@ -59,7 +65,7 @@
         </div>
 
         <!-- 로그인하지 않았을 때 로그인 안내 -->
-        <div v-if="!isLoggedIn" class="login-prompt">
+        <div v-if="!actualIsLoggedIn" class="login-prompt">
           <div class="login-icon">
             <i class="fas fa-user-circle"></i>
           </div>
@@ -86,39 +92,43 @@
         </div>
 
         <!-- 모바일용 내비게이션 메뉴 추가 -->
-        <nav class="mobile-nav" v-if="isLoggedIn">
+        <nav class="mobile-nav" v-if="actualIsLoggedIn">
           <router-link :to="{ name: 'NoticeListView' }" class="menu-item">
             <i class="fas fa-bullhorn"></i>
             공지사항
           </router-link>
-          <router-link v-if="userProfile.isAdmin" :to="{ name: 'NoticeListView', query: { category: '이벤트' } }" class="menu-item">
-            <i class="fas fa-calendar-alt"></i>
-            이벤트
-          </router-link>
-          <router-link v-if="userProfile.isAdmin" to="/tempPage" class="menu-item">
-            <i class="fas fa-chart-bar"></i>
-            통계
-          </router-link>
-          <router-link v-if="userProfile.isAdmin" to="/shopMain" class="menu-item">
-            <i class="fas fa-shopping-cart"></i>
-            상점
-          </router-link>
+          <!-- 메인 페이지만 통계/상점/이벤트 표시 -->
+          <template v-if="isMainPage">
+            <router-link v-if="actualIsAdmin" :to="{ name: 'NoticeListView', query: { category: '이벤트' } }" class="menu-item">
+              <i class="fas fa-calendar-alt"></i>
+              이벤트
+            </router-link>
+            <router-link v-if="actualIsAdmin" to="/tempPage" class="menu-item">
+              <i class="fas fa-chart-bar"></i>
+              통계
+            </router-link>
+            <router-link v-if="actualIsAdmin" to="/shopMain" class="menu-item">
+              <i class="fas fa-shopping-cart"></i>
+              상점
+            </router-link>
+          </template>
           <router-link to="/myProfile" class="menu-item">
             <i class="fas fa-user-circle"></i>
             마이페이지
           </router-link>
           <div class="menu-divider"></div>
-          <router-link to="/temp-login" class="menu-item temp-login-menu-item">
+          <!-- 개발 모드일 때만 개발자 페이지 표시 -->
+          <router-link v-if="isDevMode" to="/dev/test" class="menu-item temp-login-menu-item">
             <i class="fas fa-flask"></i>
-            임시로그인
+            개발자 페이지
           </router-link>
-          <a href="#" class="menu-item">
+          <a href="#" class="menu-item" @click.prevent="handleLogout">
             <i class="fas fa-sign-out-alt"></i>
             로그아웃
           </a>
           
           <!-- 관리자 페이지 링크 추가 -->
-          <router-link v-if="userProfile.isAdmin" to="/admin" class="menu-item admin-menu-item">
+          <router-link v-if="actualIsAdmin" to="/admin" class="menu-item admin-menu-item">
             <i class="fas fa-user-shield"></i>
             관리자 페이지
           </router-link>
@@ -155,9 +165,41 @@ export default {
         name: "김코스팟",
         email: "user@kospot.com",
         avatar: null,
-        isAdmin: true
-      }
+        isAdmin: false
+      },
+      isDevMode: false
     };
+  },
+  computed: {
+    // JWT 토큰 확인
+    hasToken() {
+      return !!localStorage.getItem('accessToken');
+    },
+    // 실제 로그인 상태 (props 또는 토큰 확인)
+    actualIsLoggedIn() {
+      return this.isLoggedIn || this.hasToken;
+    },
+    // 메인 페이지인지 확인
+    isMainPage() {
+      const path = this.$route?.path || '';
+      const routeName = this.$route?.name || '';
+      
+      // 공지사항 관련 페이지에서는 항상 false 반환
+      if (path.startsWith('/notice') || routeName === 'NoticeListView' || routeName === 'NoticeDetailView' || routeName === 'NoticeWriteView') {
+        return false;
+      }
+      
+      // 메인 페이지인 경우만 true 반환
+      return path === '/main' || path === '/';
+    },
+    // 공지사항 페이지인지 확인
+    isNoticePage() {
+      return this.$route.path.startsWith('/notice');
+    },
+    // 관리자 여부 (props에서 받거나 하드코딩된 값)
+    actualIsAdmin() {
+      return this.userProfile?.isAdmin === true;
+    }
   },
   watch: {
     userInfo: {
@@ -168,6 +210,17 @@ export default {
       },
       immediate: true,
       deep: true
+    },
+    '$route'() {
+      // 라우트 변경 시 개발 모드 확인
+      this.checkDevMode();
+    }
+  },
+  mounted() {
+    this.checkDevMode();
+    // 토큰이 있으면 사용자 정보 업데이트
+    if (this.hasToken && !this.actualIsLoggedIn) {
+      this.checkAuthStatus();
     }
   },
   methods: {
@@ -191,7 +244,73 @@ export default {
     },
     goToLogin() {
       this.closeProfileMenu();
-      this.$router.push('/login');
+      this.$router.push('/loginPage');
+    },
+    // 개발 모드 확인 (API 연결 실패 시)
+    async checkDevMode() {
+      // 개발 모드 감지는 초기 로드 시 한 번만 수행
+      if (this.$route.matched.length === 0) {
+        return;
+      }
+      
+      try {
+        // API 연결 테스트 (타임아웃 2초)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+          controller.abort();
+        }, 2000);
+        
+        const testResponse = await fetch('/api/main', { 
+          method: 'GET',
+          signal: controller.signal,
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (testResponse.ok) {
+          this.isDevMode = false;
+        } else {
+          // API 응답이 실패하면 개발 모드로 간주
+          this.isDevMode = true;
+          console.log('🔧 개발 모드 감지: API 응답 실패');
+        }
+      } catch (error) {
+        // 네트워크 에러, 타임아웃, 또는 CORS 에러 시 개발 모드로 간주
+        this.isDevMode = true;
+        console.log('🔧 개발 모드 감지: API 연결 실패', error.name || error.message);
+      }
+    },
+    // 인증 상태 확인
+    async checkAuthStatus() {
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        // 토큰이 있으면 사용자 정보 조회 시도
+        try {
+          // API 호출은 필요 시 구현
+          // 현재는 props로 전달받은 userInfo 사용
+        } catch (error) {
+          console.error('인증 상태 확인 실패:', error);
+        }
+      }
+    },
+    // 로그아웃 처리
+    handleLogout() {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('memberId');
+      this.userProfile = {
+        name: "",
+        email: "",
+        avatar: null,
+        isAdmin: false
+      };
+      this.closeProfileMenu();
+      this.$router.push('/main');
+      // 부모 컴포넌트에 로그아웃 이벤트 전달
+      this.$emit('logout');
     }
   }
 };
@@ -298,20 +417,21 @@ export default {
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
   color: white;
   border: none;
   border-radius: 20px;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  will-change: transform;
 }
 
 .tutorial-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  transform: translate3d(0, -2px, 0);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
 .tutorial-button i {

@@ -79,6 +79,29 @@ class UserService {
   }
 
   /**
+   * 닉네임 설정
+   * @param {string} nickname - 닉네임
+   * @returns {Promise<ApiResponse>} API 응답
+   */
+  async setNickname(nickname) {
+    try {
+      console.log('📤 닉네임 설정 요청:', nickname);
+      
+      // RequestParam으로 전달하기 위해 params 사용
+      const response = await apiClient.post('/member/set-nickname', null, {
+        params: { nickname }
+      });
+      
+      console.log('✅ 닉네임 설정 성공:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ 닉네임 설정 실패:', error);
+      this._handleApiError(error, '닉네임 설정에 실패했습니다.');
+      throw error;
+    }
+  }
+
+  /**
    * 전체 인벤토리 조회
    * API: GET /memberItem/inventory
    * @returns {Promise<ApiResponse>} API 응답
