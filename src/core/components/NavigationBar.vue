@@ -3,7 +3,10 @@
     <header class="header">
       <div class="header-content">
         <div class="header-left">
-          <app-logo class="home-link" to="/main" />
+          <div class="home-link" @click="goToMain">
+            <h1 class="logo">KoSpot</h1>
+            <span class="badge">Beta</span>
+          </div>
         </div>
 
         <!-- 네비게이션 추가 - 웹 전용 -->
@@ -11,9 +14,9 @@
           <router-link :to="{ name: 'NoticeListView' }" class="nav-link">공지사항</router-link>
           <!-- 메인 페이지만 통계/상점/이벤트 표시 -->
           <template v-if="isMainPage">
-            <router-link v-if="actualIsAdmin" :to="{ name: 'NoticeListView', query: { category: '이벤트' } }" class="nav-link">이벤트</router-link>
+            <!-- <router-link v-if="actualIsAdmin" :to="{ name: 'NoticeListView', query: { category: '이벤트' } }" class="nav-link">이벤트</router-link>
             <router-link v-if="actualIsAdmin" to="/tempPage" class="nav-link">통계</router-link>
-            <router-link v-if="actualIsAdmin" to="/shopMain" class="nav-link">상점</router-link>
+            <router-link v-if="actualIsAdmin" to="/shopMain" class="nav-link">상점</router-link> -->
           </template>
           <!-- 로그인한 경우에만 마이페이지 표시 -->
           <router-link v-if="actualIsLoggedIn" to="/myProfile" class="nav-link">마이페이지</router-link>
@@ -98,7 +101,7 @@
             공지사항
           </router-link>
           <!-- 메인 페이지만 통계/상점/이벤트 표시 -->
-          <template v-if="isMainPage">
+          <!-- <template v-if="isMainPage">
             <router-link v-if="actualIsAdmin" :to="{ name: 'NoticeListView', query: { category: '이벤트' } }" class="menu-item">
               <i class="fas fa-calendar-alt"></i>
               이벤트
@@ -111,7 +114,7 @@
               <i class="fas fa-shopping-cart"></i>
               상점
             </router-link>
-          </template>
+          </template> -->
           <router-link to="/myProfile" class="menu-item">
             <i class="fas fa-user-circle"></i>
             마이페이지
@@ -140,13 +143,8 @@
 
 
 <script>
-import AppLogo from '@/core/components/AppLogo.vue'; 
-
 export default {
   name: 'NavigationBar',
-  components: {
-    AppLogo
-  },
   props: {
     isLoggedIn: {
       type: Boolean,
@@ -167,7 +165,7 @@ export default {
         avatar: null,
         isAdmin: false
       },
-      isDevMode: false
+      isDevMode: true
     };
   },
   computed: {
@@ -245,6 +243,10 @@ export default {
     goToLogin() {
       this.closeProfileMenu();
       this.$router.push('/loginPage');
+    },
+    goToMain() {
+      // 메인 페이지로 새로고침 이동
+      window.location.href = '/main';
     },
     // 개발 모드 확인 (API 연결 실패 시)
     async checkDevMode() {
@@ -345,21 +347,30 @@ export default {
   display: flex;
   align-items: center;
   text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.home-link:hover {
+  opacity: 0.8;
 }
 
 .logo {
   font-size: 20px;
   font-weight: 700;
   color: #2563eb;
+  margin: 0;
 }
 
 .badge {
-  background: #e74c3c;
+  background: #f59e0b;
   color: white;
-  padding: 0.1rem 0.4rem;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  margin-left: 0.5rem;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 6px;
+  text-transform: uppercase;
 }
 
 .main-nav {

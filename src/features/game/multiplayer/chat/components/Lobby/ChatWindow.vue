@@ -2,10 +2,10 @@
   <div class="chat-window">
     <div class="chat-header">
       <h3 class="chat-title">로비 채팅</h3>
-      <div class="online-users">
+      <!-- <div class="online-users">
         <span class="online-indicator"></span>
         <span>{{ onlineUsers }}명 접속중</span>
-      </div>
+      </div> -->
     </div>
     
     <div class="chat-messages" ref="messageContainer">
@@ -441,7 +441,7 @@ export default {
 
 /* 내 말풍선 */
 .my-bubble {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #3b82f6;
   color: white;
   border-bottom-right-radius: 4px;
   border: none;
@@ -456,7 +456,7 @@ export default {
   height: 0;
   border-style: solid;
   border-width: 4px 0 0 4px;
-  border-color: #764ba2 transparent transparent transparent;
+  border-color: #3b82f6 transparent transparent transparent;
 }
 
 /* 채팅 입력 영역 */
@@ -482,9 +482,9 @@ export default {
 }
 
 .input-wrapper:focus-within {
-  border-color: #667eea;
+  border-color: #3b82f6;
   background: white;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.08);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
 }
 
 .chat-input input {
@@ -504,7 +504,7 @@ export default {
 }
 
 .send-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #3b82f6;
   color: white;
   border: none;
   width: 36px;
@@ -515,18 +515,20 @@ export default {
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
   transform: translateY(0);
 }
 
 .send-button:hover:not(:disabled) {
+  background: #2563eb;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
 }
 
 .send-button:active:not(:disabled) {
+  background: #1d4ed8;
   transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.25);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
 }
 
 .send-button:disabled {

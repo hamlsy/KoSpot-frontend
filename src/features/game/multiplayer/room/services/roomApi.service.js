@@ -13,9 +13,9 @@ const ROOM_ENDPOINTS = {
   CREATE_ROOM: '/rooms',                                  // 게임 방 생성
   GET_ROOM_DETAIL: (roomId) => `/rooms/${roomId}`,       // 방 상세 정보
   UPDATE_ROOM: (roomId) => `/rooms/${roomId}`,           // 게임 방 수정
-  JOIN_ROOM: (roomId) => `/rooms/${roomId}/players`,     // 게임 방 참여
-  LEAVE_ROOM: (roomId) => `/rooms/${roomId}/players`,    // 게임 방 퇴장
-  KICK_PLAYER: (roomId) => `/rooms/${roomId}/players/kick`, // 플레이어 강퇴
+  JOIN_ROOM: (roomId) => `/rooms/${roomId}/join`,     // 게임 방 참여
+  LEAVE_ROOM: (roomId) => `/rooms/${roomId}/leave`,    // 게임 방 퇴장
+  KICK_PLAYER: (roomId) => `/rooms/${roomId}/kick`, // 플레이어 강퇴
 };
 
 /**
