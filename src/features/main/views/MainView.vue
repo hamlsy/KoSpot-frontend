@@ -71,6 +71,7 @@
               :is-logged-in="isLoggedIn"
               :user-profile="userProfile"
               @navigate="navigateTo"
+              @logout="handleLogout"
             />
           </div>
 
@@ -89,14 +90,14 @@
               <p>실제 거리를 둘러보며 위치를 맞춰보세요</p>
               <div class="mode-stats">
                 <span class="active-players">
-                  <i class="fas fa-user"></i> 
-                  {{ gameModeStatus.roadviewEnabled ? '328명 플레이 중' : '준비 중' }}
+                  <!-- <i class="fas fa-user"></i> 
+                  {{ gameModeStatus.roadviewEnabled ? '328명 플레이 중' : '준비 중' }} -->
                 </span>
-                <span class="difficulty">
+                <!-- <span class="difficulty">
                   <i class="fas fa-star"></i>
                   <i class="fas fa-star"></i>
                   <i class="fas fa-star-half"></i>
-                </span>
+                </span> -->
               </div>
             </div>
             <div v-if="!gameModeStatus.roadviewEnabled" class="mode-overlay">
@@ -120,13 +121,13 @@
               <p>관광지 사진으로 지역을 맞혀보세요</p>
               <div class="mode-stats">
                 <span class="active-players">
-                  <i class="fas fa-user"></i> 
-                  {{ gameModeStatus.photoEnabled ? '156명 플레이 중' : '곧 오픈 예정' }}
+                  <!-- <i class="fas fa-user"></i> 
+                  {{ gameModeStatus.photoEnabled ? '156명 플레이 중' : '곧 오픈 예정' }} -->
                 </span>
-                <span class="difficulty">
+                <!-- <span class="difficulty">
                   <i class="fas fa-star"></i>
                   <i class="fas fa-star"></i>
-                </span>
+                </span> -->
               </div>
             </div>
             <div v-if="!gameModeStatus.photoEnabled" class="mode-overlay">
@@ -150,14 +151,14 @@
               <p>다른 플레이어들과 함께 게임하세요</p>
               <div class="mode-stats">
                 <span class="active-players">
-                  <i class="fas fa-user"></i> 
-                  {{ gameModeStatus.multiplayEnabled ? '124명 플레이 중' : '준비 중' }}
+                  <!-- <i class="fas fa-user"></i> 
+                  {{ gameModeStatus.multiplayEnabled ? '124명 플레이 중' : '준비 중' }} -->
                 </span>
-                <span class="difficulty">
+                <!-- <span class="difficulty">
                   <i class="fas fa-star"></i>
                   <i class="fas fa-star"></i>
                   <i class="fas fa-star"></i>
-                </span>
+                </span> -->
               </div>
             </div>
             <div v-if="!gameModeStatus.multiplayEnabled" class="mode-overlay">
