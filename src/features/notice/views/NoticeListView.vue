@@ -12,7 +12,7 @@
         <div class="notice-header">
           <div class="header-content">
             <h1 class="page-title">📢 공지사항</h1>
-            <p class="page-description">KoSpot의 새로운 소식과 업데이트를 확인하세요</p>
+            <!-- <p class="page-description">KoSpot의 새로운 소식과 업데이트를 확인하세요</p> -->
           </div>
           
           <!-- 관리자만 보이는 작성 버튼 -->

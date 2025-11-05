@@ -120,9 +120,27 @@ const sendChatMessage = (message, chatType = 'game', options = {}) => {
 const handleChatMessage = (message) => {
     const chatType = message.chatType || 'game';
     
+    console.log('🔄 handleChatMessage 호출:', {
+        chatType: chatType,
+        message: message,
+        hasContent: !!message.content,
+        content: message.content
+    });
+    
     switch (chatType) {
         case 'lobby':
+            console.log('📝 로비 채팅 메시지 추가:', {
+                beforeCount: lobbyChatMessages.value.length,
+                message: message
+            });
+            
             lobbyChatMessages.value.push(message);
+            
+            console.log('📝 로비 채팅 메시지 추가 완료:', {
+                afterCount: lobbyChatMessages.value.length,
+                latestMessage: lobbyChatMessages.value[lobbyChatMessages.value.length - 1]
+            });
+            
             if (lobbyChatMessages.value.length > 100) {
                 lobbyChatMessages.value = lobbyChatMessages.value.slice(-100);
             }
@@ -197,11 +215,20 @@ const setupChatSubscriptions = (chatTypes = ['game']) => {
         switch (chatType) {
             case 'lobby': {
                 // API 명세서에 따른 구독 경로: /topic/lobby
-                const topic = '/topic/lobby';
+                const topic = '/topic/chat/lobby';
                 
                 subscribe(topic, (message) => {
+                    console.log('📨 로비 채팅 메시지 수신:', {
+                        topic: topic,
+                        rawMessage: message,
+                        messageType: typeof message,
+                        timestamp: new Date().toISOString()
+                    });
+                    
                     try {
                         const data = typeof message === 'string' ? JSON.parse(message) : message;
+                        
+                
                         
                         // API 명세서에 따른 수신 메시지 형식
                         const processedMessage = {
@@ -215,7 +242,11 @@ const setupChatSubscriptions = (chatTypes = ['game']) => {
                             isSystem: data.messageType === 'SYSTEM_CHAT' || data.messageType === 'NOTICE_CHAT'
                         };
                         
+                    
+                        
                         handleChatMessage(processedMessage);
+                        
+                
                     } catch (error) {
                         console.error(`❌ 로비 채팅 메시지 처리 오류 (${topic}):`, error, message);
                     }
