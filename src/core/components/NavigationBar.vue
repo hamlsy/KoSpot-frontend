@@ -3,7 +3,10 @@
     <header class="header">
       <div class="header-content">
         <div class="header-left">
-          <app-logo class="home-link" to="/main" />
+          <div class="home-link" @click="goToMain">
+            <h1 class="logo">KoSpot</h1>
+            <span class="badge">Beta</span>
+          </div>
         </div>
 
         <!-- 네비게이션 추가 - 웹 전용 -->
@@ -140,13 +143,8 @@
 
 
 <script>
-import AppLogo from '@/core/components/AppLogo.vue'; 
-
 export default {
   name: 'NavigationBar',
-  components: {
-    AppLogo
-  },
   props: {
     isLoggedIn: {
       type: Boolean,
@@ -245,6 +243,10 @@ export default {
     goToLogin() {
       this.closeProfileMenu();
       this.$router.push('/loginPage');
+    },
+    goToMain() {
+      // 메인 페이지로 새로고침 이동
+      window.location.href = '/main';
     },
     // 개발 모드 확인 (API 연결 실패 시)
     async checkDevMode() {
@@ -345,21 +347,30 @@ export default {
   display: flex;
   align-items: center;
   text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.home-link:hover {
+  opacity: 0.8;
 }
 
 .logo {
   font-size: 20px;
   font-weight: 700;
   color: #2563eb;
+  margin: 0;
 }
 
 .badge {
-  background: #e74c3c;
+  background: #f59e0b;
   color: white;
-  padding: 0.1rem 0.4rem;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  margin-left: 0.5rem;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 6px;
+  text-transform: uppercase;
 }
 
 .main-nav {

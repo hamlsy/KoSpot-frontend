@@ -12,13 +12,58 @@
 
 <script setup>
 import { onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+
+const route = useRoute();
+
+// JWT 토큰에서 memberId 추출 (간단한 디코딩)
+const decodeJWT = (token) => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error('JWT 디코딩 실패:', error);
+    return null;
+  }
+};
 
 onMounted(() => {
-  // 로그인 성공 후 메인 페이지로 리다이렉트 (새로고침)
-  // 백엔드에서 이미 토큰을 설정했으므로 바로 리다이렉트
-  setTimeout(() => {
-    window.location.href = '/main';
-  }, 1000); // 1초 후 리다이렉트 (로딩 애니메이션을 보여주기 위해)
+  try {
+    // 쿼리 파라미터에서 토큰 추출
+    const accessToken = route.query.accessToken;
+    const refreshToken = route.query.refreshToken;
+    const provider = route.query.provider;
+
+    // 토큰이 없으면 에러
+    if (!accessToken || !refreshToken) {
+      console.error('토큰이 없습니다.');
+      window.location.href = '/loginPage';
+      return;
+    }
+
+    // 토큰 저장 (기존 로직 활용)
+    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+
+    // JWT 토큰에서 memberId 추출하여 저장
+    const decodedToken = decodeJWT(accessToken);
+    if (decodedToken && decodedToken.memberId) {
+      const memberIdString = String(decodedToken.memberId);
+      localStorage.setItem('memberId', memberIdString);
+    }
+
+    // 로그인 성공 후 메인 페이지로 리다이렉트 (새로고침)
+    setTimeout(() => {
+      window.location.href = '/main';
+    }, 1000); // 1초 후 리다이렉트 (로딩 애니메이션을 보여주기 위해)
+  } catch (error) {
+    console.error('로그인 처리 중 오류:', error);
+    window.location.href = '/loginPage';
+  }
 });
 </script>
 

@@ -18,10 +18,9 @@ const mainRoutes = [
         component: LoginView
     },
     {
-        path: '/login/oauth2/code/:provider',
+        path: '/login/oauth2/callback',
         name: "OAuthCallback",
-        component: OAuthCallbackView,
-        props: true
+        component: OAuthCallbackView
     }
 ];
 

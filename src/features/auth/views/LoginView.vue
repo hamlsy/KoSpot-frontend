@@ -67,7 +67,7 @@ const getBaseURL = () => {
 // 소셜 로그인 리다이렉트
 const socialLogin = (platform) => {
   const baseURL = getBaseURL();
-  const oauthUrl = `${baseURL}/api/oauth2/authorization/${platform}`;
+  const oauthUrl = `${baseURL}/oauth2/authorization/${platform}`;
   // const oauthUrl = `http://localhost:8080/login/oauth2/code/${platform}`;
   window.location.href = oauthUrl;
 };

@@ -28,7 +28,7 @@
               <input
                 type="radio"
                 name="gameMode"
-                value="로드뷰"
+                value="roadview"
                 v-model="gameMode"
               />
               <div class="radio-content">
@@ -40,7 +40,7 @@
               <input
                 type="radio"
                 name="gameMode"
-                value="포토"
+                value="photo"
                 v-model="gameMode"
                 disabled
               />
@@ -72,7 +72,7 @@
               <input
                 type="radio"
                 name="gameType"
-                value="cooperative"
+                value="team"
                 v-model="gameType"
                 disabled
               />
@@ -111,7 +111,7 @@
           <div class="settings-group">
             <label class="checkbox-option">
               <input type="checkbox" v-model="gameSettings.isPrivate" />
-              <span>비공개 방 (비밀번호로 입장 가능)</span>
+              <span> 비공개 방 (비밀번호로 입장 가능)</span>
             </label>
             <!-- <label class="checkbox-option">
               <input type="checkbox" v-model="gameSettings.allowSpectators" />
@@ -175,15 +175,16 @@ export default {
     createRoom() {
       if (!this.roomName.trim()) return;
 
+      // gameType을 백엔드 형식으로 변환 (solo, team)
+      const playerMatchTypeKey = this.gameType;
+
       const roomData = {
-        name: this.roomName,
-        gameMode: this.gameMode,
-        region: this.region,
+        title: this.roomName,
+        password: this.password || null,
+        gameModeKey: this.gameMode,
+        playerMatchTypeKey: playerMatchTypeKey,
         maxPlayers: this.maxPlayers,
-        gameType: this.gameType,
-        settings: { ...this.gameSettings },
-        privacy: this.gameSettings.isPrivate ? "private" : "public",
-        password: this.password,
+        privateRoom: this.gameSettings.isPrivate,
       };
 
       this.$emit("create-room", roomData);

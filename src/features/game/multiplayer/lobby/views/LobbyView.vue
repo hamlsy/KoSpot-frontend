@@ -273,12 +273,11 @@ const joinRoom = async (roomParam, password = null) => {
     
 const createRoom = async (roomData) => {
   try {
-    console.log('🏗️ 새 방 생성 요청:', roomData);
-    
     // 모달 닫기
     showCreateRoomModal.value = false;
     
-    // API를 통해 방 생성 (자동으로 해당 방에 입장됨)
+    // API를 통해 방 생성 (자동으로 해당 방에 입장 및 라우팅 처리됨)
+    // createRoomAPI 내부에서 joinRoom을 호출하고, joinRoom이 router.push를 수행함
     const newRoom = await createRoomAPI(roomData);
     
     if (newRoom) {
@@ -288,18 +287,8 @@ const createRoom = async (roomData) => {
       
       // 시스템 메시지 추가 (WebSocket 서비스를 통해)
       lobbyService.createGlobalSystemMessage(
-        `${userNickname}님이 '${roomData.name}' 방을 생성했습니다.`
+        `${userNickname}님이 '${roomData.title}' 방을 생성했습니다.`
       );
-      
-      console.log('✅ 방 생성 및 입장 완료');
-      
-      // 생성된 방으로 리다이렉션
-      // newRoom에는 gameRoomId 또는 id 속성이 있을 것으로 예상
-      const roomId = newRoom.gameRoomId || newRoom.id;
-      if (roomId) {
-        console.log('🚀 게임방으로 리다이렉션:', roomId);
-        await router.push({ name: 'MultiplayerRoom', params: { roomId: roomId } });
-      }
     }
   } catch (error) {
     console.error('❌ 방 생성 처리 중 오류:', error);

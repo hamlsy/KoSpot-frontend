@@ -217,8 +217,6 @@ export function useLobbyRoom() {
     error.value = null;
     
     try {
-      console.log('🏗️ 방 생성 시도:', roomData);
-      
       const response = await apiClient.post(API_ENDPOINTS.GAME_ROOM.CREATE, roomData);
       
       if (response.data && response.data.isSuccess) {
