@@ -29,12 +29,12 @@
         </button>
         
         <!-- Naver Login Button -->
-        <!-- <button @click="socialLogin('naver')" class="social-button naver">
+        <button @click="socialLogin('naver')" class="social-button naver">
           <div class="social-icon-wrapper naver">
             <span class="naver-icon">N</span>
           </div>
           <span class="social-text naver">네이버 로그인</span>
-        </button> -->
+        </button>
         
         <!-- Google Login Button -->
         <!-- <button @click="handleGoogleSignIn" class="google-btn">
@@ -61,13 +61,13 @@ const isLoggedIn = ref(false);
 
 // API Base URL 가져오기 (apiClient.js와 동일한 방식)
 const getBaseURL = () => {
-  return process.env.VUE_APP_API_BASE_URL || '/api';
+  return process.env.VUE_APP_API_BASE_URL || 'http:localhost:8080/api';
 };
 
 // 소셜 로그인 리다이렉트
 const socialLogin = (platform) => {
   const baseURL = getBaseURL();
-  const oauthUrl = `${baseURL}/login/oauth2/code/${platform}`;
+  const oauthUrl = `${baseURL}/api/oauth2/authorization/${platform}`;
   // const oauthUrl = `http://localhost:8080/login/oauth2/code/${platform}`;
   window.location.href = oauthUrl;
 };
