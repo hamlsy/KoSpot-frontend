@@ -295,9 +295,10 @@ const startGame = (mode) => {
 }
 
 .dot.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
   width: 32px;
   border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
 }
 
 .dot:hover {
@@ -349,14 +350,32 @@ const startGame = (mode) => {
   width: 100px;
   height: 100px;
   margin: 0 auto 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 3rem;
   color: white;
-  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+  will-change: transform;
+  animation: float 4s ease-in-out infinite;
+  position: relative;
+}
+
+.slide-icon::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+  opacity: 0.3;
+  will-change: transform, opacity;
+  animation: pulse 3s ease-in-out infinite;
+  z-index: -1;
 }
 
 .welcome-icon {
@@ -366,8 +385,8 @@ const startGame = (mode) => {
 }
 
 .start-icon {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-  box-shadow: 0 10px 30px rgba(34, 197, 94, 0.3);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
 }
 
 .slide-title {
@@ -379,10 +398,12 @@ const startGame = (mode) => {
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+  background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  animation: gradientShift 3s ease infinite;
 }
 
 .slide-description {
@@ -410,17 +431,27 @@ const startGame = (mode) => {
   transition: all 0.3s ease;
 }
 
+.feature-card {
+  will-change: transform;
+}
+
 .feature-card:hover {
-  transform: translateY(-5px);
-  border-color: #667eea;
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+  transform: translate3d(0, -5px, 0);
+  border-color: #3b82f6;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
 }
 
 .feature-card i {
   font-size: 2rem;
-  color: #667eea;
+  color: #3b82f6;
   margin-bottom: 12px;
   display: block;
+  transition: transform 0.2s ease-out;
+  will-change: transform;
+}
+
+.feature-card:hover i {
+  transform: scale3d(1.1, 1.1, 1);
 }
 
 .feature-card span {
@@ -483,7 +514,7 @@ const startGame = (mode) => {
 }
 
 .info-tag i {
-  color: #667eea;
+  color: #3b82f6;
 }
 
 /* Gameplay Steps */
@@ -505,16 +536,20 @@ const startGame = (mode) => {
   transition: all 0.3s ease;
 }
 
+.step {
+  will-change: transform;
+}
+
 .step:hover {
-  border-color: #667eea;
-  transform: translateY(-3px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+  border-color: #3b82f6;
+  transform: translate3d(0, -3px, 0);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
 }
 
 .step-number {
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -523,6 +558,7 @@ const startGame = (mode) => {
   font-weight: 700;
   font-size: 1.2rem;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
 .step-content h3 {
@@ -554,16 +590,26 @@ const startGame = (mode) => {
   transition: all 0.3s ease;
 }
 
+.mp-feature {
+  will-change: transform;
+}
+
 .mp-feature:hover {
-  transform: translateY(-5px);
-  border-color: #667eea;
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+  transform: translate3d(0, -5px, 0);
+  border-color: #3b82f6;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
 }
 
 .mp-feature i {
   font-size: 2.5rem;
-  color: #667eea;
+  color: #3b82f6;
   margin-bottom: 16px;
+  transition: transform 0.2s ease-out;
+  will-change: transform;
+}
+
+.mp-feature:hover i {
+  transform: scale3d(1.1, 1.1, 1);
 }
 
 .mp-feature h3 {
@@ -597,32 +643,67 @@ const startGame = (mode) => {
   font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  will-change: transform;
+  position: relative;
+  overflow: hidden;
 }
 
 .start-button.primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
   color: white;
+}
+
+.start-button.primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  will-change: transform;
+  transition: transform 0.6s ease-out;
 }
 
 .start-button.primary:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+  transform: translate3d(0, -3px, 0);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+}
+
+.start-button.primary:hover::before {
+  transform: translateX(200%);
 }
 
 .start-button.secondary {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
 }
 
+.start-button.secondary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  will-change: transform;
+  transition: transform 0.6s ease-out;
+}
+
 .start-button.secondary:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(34, 197, 94, 0.3);
+  transform: translate3d(0, -3px, 0);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+}
+
+.start-button.secondary:hover::before {
+  transform: translateX(200%);
 }
 
 .text-button {
@@ -654,23 +735,42 @@ const startGame = (mode) => {
 
 .nav-button {
   padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
   color: white;
   border: none;
   border-radius: 12px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  position: relative;
+  overflow: hidden;
+  will-change: transform;
+}
+
+.nav-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  will-change: transform;
+  transition: transform 0.6s ease-out;
 }
 
 .nav-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+  transform: translate3d(0, -2px, 0);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+.nav-button:hover::before {
+  transform: translateX(200%);
 }
 
 .nav-button.prev {
@@ -681,7 +781,51 @@ const startGame = (mode) => {
   margin-left: auto;
 }
 
-/* 애니메이션 제거 - 즉각 반응 */
+/* GPU 가속 최적화 애니메이션 */
+@keyframes float {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -8px, 0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale3d(1, 1, 1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale3d(1.08, 1.08, 1);
+    opacity: 0.5;
+  }
+}
+
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.slide-content {
+  will-change: transform, opacity;
+  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translate3d(15px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
 
 /* 반응형 */
 @media (max-width: 768px) {

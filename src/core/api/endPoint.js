@@ -20,6 +20,7 @@ export const API_ENDPOINTS = {
     MEMBER: {
       PROFILE: '/member/profile',
       UPDATE_PROFILE: '/member/profile',
+      SET_NICKNAME: '/member/set-nickname',
       CHANGE_PASSWORD: '/member/change-password',
       DELETE_ACCOUNT: '/member/delete',
       FRIENDS: '/member/friends',

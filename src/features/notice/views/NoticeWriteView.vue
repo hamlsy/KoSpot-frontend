@@ -1,6 +1,9 @@
 <template>
   <div class="notice-write-page">
-    <NavigationBar />
+    <NavigationBar 
+      :is-logged-in="hasToken"
+      :user-info="userProfile"
+    />
     
     <main class="main-content">
       <div class="notice-container">
@@ -176,6 +179,7 @@ import { ref, computed, onMounted, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import NavigationBar from 'src/core/components/NavigationBar.vue'
 import { noticeService } from '@/features/notice/services/notice.service.js'
+import { mainService } from '@/features/main/services/main.service.js'
 
 // 라우터 설정
 const router = useRouter()
@@ -185,6 +189,28 @@ const route = useRoute()
 const loading = ref(false)
 const saving = ref(false)
 const imageUrlInput = ref('')
+
+// 사용자 프로필 및 인증 상태
+const hasToken = computed(() => !!localStorage.getItem('accessToken'))
+const userProfile = ref({
+  name: "",
+  email: "",
+  avatar: null,
+  isAdmin: false
+})
+
+// 메인 페이지 데이터 로드하여 관리자 여부 확인
+const loadUserProfileFromMain = async () => {
+  try {
+    const response = await mainService.getMainPageData()
+    
+    if (response.isSuccess && response.result) {
+      userProfile.value.isAdmin = response.result.isAdmin || false
+    }
+  } catch (error) {
+    console.error('사용자 정보 로드 실패:', error)
+  }
+}
 
 // 폼 데이터
 const formData = reactive({
@@ -363,6 +389,9 @@ const getPreviewContent = () => {
 onMounted(() => {
   if (isEditMode.value) {
     loadNoticeForEdit()
+  }
+  if (hasToken.value) {
+    loadUserProfileFromMain()
   }
 })
 
