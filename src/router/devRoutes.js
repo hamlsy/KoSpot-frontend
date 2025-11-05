@@ -5,8 +5,17 @@ import EncryptTest from 'src/dummy/EncryptTest.vue'
 import ComponentTest from 'src/dummy/ComponentTest.vue'
 import TempLoginView from '@/features/auth/views/TempLoginView.vue'
 import SoloGameView from '@/features/game/multiplayer/roadview/views/SoloGameView.vue'
+import DevTestPage from '@/dummy/DevTestPage.vue'
 
 const devRoutes = [
+    {
+        path: '/dev/test',
+        name: "DevTestPage",
+        component: DevTestPage,
+        meta: {
+            title: '개발자 테스트 페이지'
+        }
+    },
     {
         path: '/tempPage',
         name: "TempPage",

@@ -1,5 +1,12 @@
 <template>
   <div class="app-container">
+    <!-- 닉네임 설정 모달 -->
+    <NicknameSetupModal 
+      :show="showNicknameModal"
+      @close="handleNicknameModalClose"
+      @complete="handleNicknameComplete"
+    />
+
     <!-- 인트로 튜토리얼 모달 -->
     <IntroTutorialModal 
       :show="showTutorial"
@@ -334,11 +341,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import NavigationBar from '@/core/components/NavigationBar.vue'
 import UserLoginCard from '@/features/main/components/UserLoginCard.vue'
 import IntroTutorialModal from '@/features/intro/components/IntroTutorialModal.vue'
+import NicknameSetupModal from '@/features/intro/components/NicknameSetupModal.vue'
 import HeroSection from '@/features/intro/components/HeroSection.vue'
 import { mainService } from '@/features/main/services/main.service.js'
 
@@ -346,7 +354,8 @@ import { mainService } from '@/features/main/services/main.service.js'
 const router = useRouter();
 
 // 반응형 상태 정의
-const isLoggedIn = ref(false);
+// JWT 토큰 확인
+const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'));
 const showProfileMenu = ref(false);
 const unreadNotifications = ref(3);
 const currentBanner = ref(0);
@@ -354,6 +363,9 @@ const bannerInterval = ref(null);
 const showToast = ref(false);
 const toastMessage = ref("");
 const isLoading = ref(true);
+
+// 닉네임 설정 모달 관련 상태
+const showNicknameModal = ref(false);
 
 // 튜토리얼 관련 상태
 const showTutorial = ref(false);
@@ -414,8 +426,9 @@ async function loadMainPageData() {
       // 첫 방문자 여부 확인 (백엔드에서 제공)
       if (data.isFirstVisit === true) {
         isFirstVisit.value = true;
-        showTutorial.value = true;
-        console.log('🎉 첫 방문자입니다! 튜토리얼을 표시합니다.');
+        // 닉네임 설정 모달 먼저 표시
+        showNicknameModal.value = true;
+        console.log('🎉 첫 방문자입니다! 닉네임 설정을 진행합니다.');
       }
       
       // 게임 모드 상태 업데이트
@@ -593,6 +606,21 @@ function showLockedMessage() {
   setTimeout(() => {
     showToast.value = false;
   }, 3000);
+}
+
+// 닉네임 설정 모달 닫기 핸들러
+function handleNicknameModalClose() {
+  // 닉네임 설정은 필수이므로 닫을 수 없도록 처리
+  // 필요시 다시 표시
+}
+
+// 닉네임 설정 완료 핸들러
+function handleNicknameComplete(nickname) {
+  console.log('✅ 닉네임 설정 완료:', nickname);
+  showNicknameModal.value = false;
+  
+  // 닉네임 설정 완료 후 튜토리얼 표시
+  showTutorial.value = true;
 }
 
 // 튜토리얼 완료 핸들러

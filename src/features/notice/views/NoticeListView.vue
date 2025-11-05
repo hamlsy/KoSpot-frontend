@@ -1,6 +1,10 @@
 <template>
   <div class="notice-list-page">
-    <NavigationBar />
+    <NavigationBar 
+      :is-logged-in="hasToken"
+      :user-info="userProfile"
+      @open-tutorial="handleOpenTutorial"
+    />
     
     <main class="main-content">
       <div class="notice-container">
@@ -147,6 +151,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { mainService } from '@/features/main/services/main.service.js'
 import { useRouter, useRoute } from 'vue-router'
 import NavigationBar from 'src/core/components/NavigationBar.vue'
 import { noticeService } from '@/features/notice/services/notice.service.js'
@@ -163,6 +168,30 @@ const totalPages = ref(1)
 const searchQuery = ref('')
 const activeCategory = ref('all')
 const isAdmin = ref(false) // TODO: 실제 권한 체크로 교체
+
+// 사용자 프로필 및 인증 상태
+const hasToken = computed(() => !!localStorage.getItem('accessToken'))
+const userProfile = ref({
+  name: "",
+  email: "",
+  avatar: null,
+  isAdmin: false
+})
+
+// 메인 페이지 데이터 로드하여 관리자 여부 확인
+const loadUserProfileFromMain = async () => {
+  try {
+    const response = await mainService.getMainPageData()
+    
+    if (response.isSuccess && response.result) {
+      userProfile.value.isAdmin = response.result.isAdmin || false
+      isAdmin.value = response.result.isAdmin || false
+    }
+  } catch (error) {
+    console.error('사용자 정보 로드 실패:', error)
+    // 에러 시 기본값 유지
+  }
+}
 
 // 카테고리 필터
 const categories = [
@@ -261,6 +290,14 @@ const goToPage = (page) => {
   }
 }
 
+// 메서드
+const handleOpenTutorial = () => {
+  // 튜토리얼 열기 로직 (필요시 구현)
+  console.log('튜토리얼 열기 요청')
+}
+
+// 사용자 정보 로드 (기존 함수 제거, loadUserProfileFromMain 사용)
+
 // 라이프사이클
 onMounted(() => {
   // 쿼리 파라미터(category)로 초기 활성 카테고리 설정
@@ -272,6 +309,9 @@ onMounted(() => {
     }
   }
   loadNotices()
+  if (hasToken.value) {
+    loadUserProfileFromMain()
+  }
 })
 
 // 라우트 쿼리 변경 시 카테고리 동기화

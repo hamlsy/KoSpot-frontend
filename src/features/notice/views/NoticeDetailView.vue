@@ -1,6 +1,9 @@
 <template>
   <div class="notice-detail-page">
-    <NavigationBar />
+    <NavigationBar 
+      :is-logged-in="hasToken"
+      :user-info="userProfile"
+    />
     
     <main class="main-content">
       <div class="notice-container">
@@ -141,6 +144,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import NavigationBar from 'src/core/components/NavigationBar.vue'
 import { noticeService } from '@/features/notice/services/notice.service.js'
+import { mainService } from '@/features/main/services/main.service.js'
 
 // 라우터 설정
 const router = useRouter()
@@ -153,6 +157,29 @@ const notice = ref(null)
 const showDeleteModal = ref(false)
 const selectedImage = ref(null)
 const isAdmin = ref(false) // TODO: 실제 권한 체크로 교체
+
+// 사용자 프로필 및 인증 상태
+const hasToken = computed(() => !!localStorage.getItem('accessToken'))
+const userProfile = ref({
+  name: "",
+  email: "",
+  avatar: null,
+  isAdmin: false
+})
+
+// 메인 페이지 데이터 로드하여 관리자 여부 확인
+const loadUserProfileFromMain = async () => {
+  try {
+    const response = await mainService.getMainPageData()
+    
+    if (response.isSuccess && response.result) {
+      userProfile.value.isAdmin = response.result.isAdmin || false
+      isAdmin.value = response.result.isAdmin || false
+    }
+  } catch (error) {
+    console.error('사용자 정보 로드 실패:', error)
+  }
+}
 
 // 컴퓨티드 속성
 const formattedContent = computed(() => {
@@ -235,6 +262,9 @@ const openImageModal = (imageUrl) => {
 // 라이프사이클
 onMounted(() => {
   loadNotice()
+  if (hasToken.value) {
+    loadUserProfileFromMain()
+  }
 })
 
 // 템플릿에서 서비스 접근

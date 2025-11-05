@@ -58,14 +58,21 @@
 import { ref, onMounted } from "vue";
 
 const isLoggedIn = ref(false);
+
+// API Base URL 가져오기 (apiClient.js와 동일한 방식)
+const getBaseURL = () => {
+  return process.env.VUE_APP_API_BASE_URL || '/api';
+};
+
+// 소셜 로그인 리다이렉트
 const socialLogin = (platform) => {
-  console.log(`${platform} 로그인 시도`);
-  // Implement social login logic
+  const baseURL = getBaseURL();
+  const oauthUrl = `${baseURL}/login/oauth2/authorization/${platform}`;
+  window.location.href = oauthUrl;
 };
 
 // Google Sign-In handling
 const handleGoogleSignIn = () => {
-  console.log('Google 로그인 시도');
   socialLogin('google');
 };
 
