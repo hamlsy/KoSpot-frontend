@@ -197,6 +197,21 @@ const selectedFile = ref(null)
 const imagePreview = ref(null)
 const fileInput = ref(null)
 
+// 메서드들
+const resetForm = () => {
+  formData.name = ''
+  formData.description = ''
+  formData.price = 0
+  formData.quantity = 0
+  formData.itemTypeKey = ''
+  formData.images = []
+  imageInput.value = ''
+  selectedFile.value = null
+  imagePreview.value = null
+  if (fileInput.value) {
+    fileInput.value.value = ''
+  }
+}
 // 편집 모드일 때 기존 데이터 로드
 watch(() => props.item, (newItem) => {
   if (newItem && props.isEdit) {
@@ -223,21 +238,6 @@ const isFormValid = computed(() => {
          (selectedFile.value || formData.images.length > 0 || props.isEdit) // 수정 모드에서는 이미지 필수 아님
 })
 
-// 메서드들
-const resetForm = () => {
-  formData.name = ''
-  formData.description = ''
-  formData.price = 0
-  formData.quantity = 0
-  formData.itemTypeKey = ''
-  formData.images = []
-  imageInput.value = ''
-  selectedFile.value = null
-  imagePreview.value = null
-  if (fileInput.value) {
-    fileInput.value.value = ''
-  }
-}
 
 const handleFileSelect = (event) => {
   const file = event.target.files[0]

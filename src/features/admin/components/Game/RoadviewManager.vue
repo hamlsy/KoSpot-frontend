@@ -44,7 +44,6 @@
               type="number" 
               step="any"
               placeholder="예: 37.5665"
-              @blur="fetchAddressFromCoords"
             />
           </div>
           <div class="form-group">
@@ -54,7 +53,6 @@
               type="number" 
               step="any"
               placeholder="예: 126.9780"
-              @blur="fetchAddressFromCoords"
             />
           </div>
         </div>
@@ -146,15 +144,46 @@
       <div class="upload-container">
         <div class="upload-info">
           <h3>엑셀 파일 업로드</h3>
-          <p>다음 컬럼을 포함한 엑셀 파일을 업로드하세요:</p>
-          <div class="column-info">
-            <span class="column">lat</span>
-            <span class="column">lng</span>
-            <span class="column">poiName</span>
-            <span class="column">sidoKey</span>
-            <span class="column">sigungu</span>
-            <span class="column">detailAddress</span>
-            <span class="column">locationType</span>
+          <p class="info-description">다음 형식의 엑셀 파일을 업로드하세요:</p>
+          
+          <!-- 엑셀 형식 안내 표 -->
+          <div class="excel-format-table">
+            <h4 class="table-title">
+              <i class="fas fa-table"></i>
+              엑셀 파일 형식
+            </h4>
+            <div class="table-wrapper">
+              <table class="format-table">
+                <thead>
+                  <tr>
+                    <th>CTPR_NM<br><span class="th-desc">시도명</span></th>
+                    <th>SIGNGU_NM<br><span class="th-desc">시군구명</span></th>
+                    <th>EMD_NM<br><span class="th-desc">읍면동명</span></th>
+                    <th>LI_NM<br><span class="th-desc">리명</span></th>
+                    <th>LC_LO<br><span class="th-desc">경도</span></th>
+                    <th>LC_LA<br><span class="th-desc">위도</span></th>
+                    <th>POI_NM<br><span class="th-desc">POI 이름</span></th>
+                    <th>CL_NM<br><span class="th-desc">분류명</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>서울특별시</td>
+                    <td>종로구</td>
+                    <td>삼청동</td>
+                    <td class="empty-cell">-</td>
+                    <td>126.98165850000</td>
+                    <td>37.58775478000</td>
+                    <td>삼청동길</td>
+                    <td>일반관광지</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="table-note">
+              <i class="fas fa-info-circle"></i>
+              <span>LI_NM 컬럼은 선택사항이며 비워둘 수 있습니다.</span>
+            </div>
           </div>
         </div>
 
@@ -274,13 +303,14 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { coordinateAdminService } from '@/features/admin/services/coordinateAdmin.service.js'
 
 const activeTab = ref('add')
 const loading = ref(false)
 const roadviewAvailable = ref(false)
 const uploadedFile = ref(null)
+const roadviewInstance = ref(null) // 로드뷰 인스턴스 저장
 
 // 새 좌표 데이터
 const newLocation = reactive({
@@ -305,7 +335,24 @@ const canAddLocation = computed(() => {
   return newLocation.lat && 
          newLocation.lng && 
          newLocation.poiName && 
-         newLocation.locationType
+         newLocation.locationType &&
+         newLocation.sidoKey &&
+         newLocation.sigungu &&
+         newLocation.detailAddress
+})
+
+// 좌표 변경 감지하여 자동으로 주소 조회 및 로드뷰 미리보기 업데이트
+watch([() => newLocation.lat, () => newLocation.lng], ([newLat, newLng], [oldLat, oldLng]) => {
+  // 좌표가 변경되고 유효한 숫자인 경우에만 실행
+  if (newLat && newLng && 
+      (newLat !== oldLat || newLng !== oldLng) &&
+      !isNaN(parseFloat(newLat)) && !isNaN(parseFloat(newLng))) {
+    // 디바운싱: 500ms 후 실행
+    clearTimeout(window.coordWatchTimeout)
+    window.coordWatchTimeout = setTimeout(() => {
+      fetchAddressFromCoords()
+    }, 500)
+  }
 })
 
 // 필터링된 좌표 목록
@@ -359,52 +406,119 @@ const convertSidoNameToKey = (sidoName) => {
 
 // 카카오맵 API로 주소 정보 가져오기
 const fetchAddressFromCoords = async () => {
-  if (!newLocation.lat || !newLocation.lng) return
+  const lat = parseFloat(newLocation.lat)
+  const lng = parseFloat(newLocation.lng)
+  
+  if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+    return
+  }
 
   try {
     // 카카오맵 좌표→주소 변환 API 호출
+    const apiKey = process.env.VUE_APP_KAKAO_REST_API_KEY || process.env.VUE_APP_KAKAO_MAP_API_KEY
+    if (!apiKey) {
+      console.error('카카오 API 키가 설정되지 않았습니다.')
+      return
+    }
+
     const response = await fetch(
-      `https://dapi.kakao.com/v2/local/geo/coord2address.json?x=${newLocation.lng}&y=${newLocation.lat}`,
+      `https://dapi.kakao.com/v2/local/geo/coord2address.json?x=${lng}&y=${lat}`,
       {
         headers: {
-          'Authorization': `KakaoAK ${process.env.VUE_APP_KAKAO_REST_API_KEY}`
+          'Authorization': `KakaoAK ${apiKey}`
         }
       }
     )
+    
+    if (!response.ok) {
+      throw new Error(`API 요청 실패: ${response.status}`)
+    }
     
     const data = await response.json()
     
     if (data.documents && data.documents.length > 0) {
       const address = data.documents[0].address
-      newLocation.detailAddress = address.address_name
-      // 시도명을 시도 키로 변환 (예: 서울특별시 -> SEOUL)
-      const sidoName = address.region_1depth_name
-      newLocation.sidoKey = convertSidoNameToKey(sidoName)
-      newLocation.sigungu = address.region_2depth_name
+      if (address) {
+        newLocation.detailAddress = address.address_name || ''
+        // 시도명을 시도 키로 변환 (예: 서울특별시 -> SEOUL)
+        const sidoName = address.region_1depth_name
+        if (sidoName) {
+          newLocation.sidoKey = convertSidoNameToKey(sidoName)
+        }
+        newLocation.sigungu = address.region_2depth_name || ''
+      }
+    } else {
+      console.warn('주소 정보를 찾을 수 없습니다.')
+      newLocation.detailAddress = ''
+      newLocation.sidoKey = ''
+      newLocation.sigungu = ''
     }
   } catch (error) {
     console.error('주소 정보 가져오기 실패:', error)
+    newLocation.detailAddress = ''
+    newLocation.sidoKey = ''
+    newLocation.sigungu = ''
   }
 
-  // 로드뷰 가용성 확인
+  // 로드뷰 가용성 확인 및 미리보기 업데이트
   checkRoadviewAvailability()
 }
 
-// 로드뷰 가용성 확인
+// 로드뷰 가용성 확인 및 미리보기 업데이트
 const checkRoadviewAvailability = () => {
-  if (!window.kakao || !window.kakao.maps) return
+  const lat = parseFloat(newLocation.lat)
+  const lng = parseFloat(newLocation.lng)
+  
+  if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+    roadviewAvailable.value = false
+    return
+  }
+
+  if (!window.kakao || !window.kakao.maps) {
+    console.warn('Kakao Maps SDK가 로드되지 않았습니다.')
+    roadviewAvailable.value = false
+    return
+  }
 
   nextTick(() => {
     const container = document.getElementById('roadview-preview')
-    const position = new kakao.maps.LatLng(newLocation.lat, newLocation.lng)
+    if (!container) {
+      console.warn('로드뷰 미리보기 컨테이너를 찾을 수 없습니다.')
+      return
+    }
+
+    const position = new kakao.maps.LatLng(lat, lng)
     
     const roadviewClient = new kakao.maps.RoadviewClient()
     roadviewClient.getNearestPanoId(position, 100, (panoId) => {
       if (panoId) {
         roadviewAvailable.value = true
         
-        const roadview = new kakao.maps.Roadview(container)
-        roadview.setPanoId(panoId, position)
+        // 기존 로드뷰 인스턴스가 있으면 제거
+        if (roadviewInstance.value) {
+          try {
+            // 이벤트 리스너 제거
+            if (roadviewInstance.value._listeners) {
+              kakao.maps.event.removeListener(roadviewInstance.value)
+            }
+          } catch (e) {
+            console.warn('기존 로드뷰 인스턴스 정리 중 오류:', e)
+          }
+        }
+        
+        // 새 로드뷰 인스턴스 생성
+        try {
+          roadviewInstance.value = new kakao.maps.Roadview(container)
+          roadviewInstance.value.setPanoId(panoId, position)
+          
+          // 로드뷰 로드 완료 이벤트
+          kakao.maps.event.addListener(roadviewInstance.value, 'init', () => {
+            console.log('로드뷰 미리보기 로드 완료')
+          })
+        } catch (error) {
+          console.error('로드뷰 미리보기 생성 실패:', error)
+          roadviewAvailable.value = false
+        }
       } else {
         roadviewAvailable.value = false
       }
@@ -414,16 +528,36 @@ const checkRoadviewAvailability = () => {
 
 // 좌표 추가
 const addLocation = async () => {
+  // 필수 필드 검증
+  if (!canAddLocation.value) {
+    alert('모든 필수 필드를 입력해주세요.')
+    return
+  }
+
   try {
     loading.value = true
     
-    await coordinateAdminService.createCoordinate(newLocation)
+    // 숫자 형식으로 변환하여 전송
+    const coordinateData = {
+      lat: parseFloat(newLocation.lat),
+      lng: parseFloat(newLocation.lng),
+      poiName: newLocation.poiName.trim(),
+      sidoKey: newLocation.sidoKey,
+      sigungu: newLocation.sigungu.trim(),
+      detailAddress: newLocation.detailAddress.trim(),
+      locationType: newLocation.locationType
+    }
+    
+    await coordinateAdminService.createCoordinate(coordinateData)
     
     console.log('좌표가 성공적으로 추가되었습니다.')
+    alert('좌표가 성공적으로 추가되었습니다.')
     resetForm()
     loadLocations()
   } catch (error) {
     console.error('좌표 추가 실패:', error)
+    const errorMessage = error.response?.data?.message || '좌표 추가에 실패했습니다.'
+    alert(errorMessage)
   } finally {
     loading.value = false
   }
@@ -440,7 +574,28 @@ const resetForm = () => {
     locationType: '',
     sidoKey: ''
   })
+  
+  // 로드뷰 인스턴스 정리
+  if (roadviewInstance.value) {
+    try {
+      if (window.kakao && window.kakao.maps) {
+        kakao.maps.event.removeListener(roadviewInstance.value)
+      }
+    } catch (e) {
+      console.warn('로드뷰 인스턴스 정리 중 오류:', e)
+    }
+    roadviewInstance.value = null
+  }
+  
   roadviewAvailable.value = false
+  
+  // 미리보기 컨테이너 초기화
+  nextTick(() => {
+    const container = document.getElementById('roadview-preview')
+    if (container) {
+      container.innerHTML = ''
+    }
+  })
 }
 
 // 파일 드롭 처리
@@ -524,6 +679,25 @@ const getTypeLabel = (type) => {
 
 onMounted(() => {
   loadLocations()
+})
+
+onBeforeUnmount(() => {
+  // 컴포넌트 언마운트 시 로드뷰 인스턴스 정리
+  if (roadviewInstance.value) {
+    try {
+      if (window.kakao && window.kakao.maps) {
+        kakao.maps.event.removeListener(roadviewInstance.value)
+      }
+    } catch (e) {
+      console.warn('로드뷰 인스턴스 정리 중 오류:', e)
+    }
+    roadviewInstance.value = null
+  }
+  
+  // 디바운싱 타이머 정리
+  if (window.coordWatchTimeout) {
+    clearTimeout(window.coordWatchTimeout)
+  }
 })
 </script>
 
@@ -709,6 +883,121 @@ onMounted(() => {
   font-weight: 600;
   color: #1f2937;
   margin-bottom: 0.5rem;
+}
+
+.info-description {
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+}
+
+/* 엑셀 형식 표 스타일 */
+.excel-format-table {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.table-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.table-title i {
+  color: #4f46e5;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+
+.format-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.format-table thead {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.format-table th {
+  padding: 1rem 0.75rem;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.format-table th:last-child {
+  border-right: none;
+}
+
+.th-desc {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 400;
+  opacity: 0.9;
+  margin-top: 0.25rem;
+}
+
+.format-table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.2s ease;
+}
+
+.format-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.format-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.format-table td {
+  padding: 0.75rem;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #374151;
+  border-right: 1px solid #e5e7eb;
+}
+
+.format-table td:last-child {
+  border-right: none;
+}
+
+.empty-cell {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.table-note {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  color: #1e40af;
+  font-size: 0.875rem;
+}
+
+.table-note i {
+  color: #3b82f6;
 }
 
 .column-info {
@@ -982,6 +1271,29 @@ onMounted(() => {
   
   .list-controls {
     flex-direction: column;
+  }
+  
+  /* 엑셀 형식 표 모바일 스타일 */
+  .excel-format-table {
+    padding: 1rem;
+  }
+  
+  .format-table th {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.75rem;
+  }
+  
+  .th-desc {
+    font-size: 0.65rem;
+  }
+  
+  .format-table td {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .table-wrapper {
+    -webkit-overflow-scrolling: touch;
   }
 }
 </style> 
