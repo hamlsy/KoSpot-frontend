@@ -118,13 +118,13 @@
             <div class="info-item">
               <div class="info-icon"><i class="fas fa-ruler"></i></div>
               <div class="info-value">{{ distance.toFixed(2) }} km</div>
-              <div class="info-label">떨어진 거리</div>
+              <div class="info-label"> 떨어진 거리</div>
             </div>
 
             <div class="info-item">
               <div class="info-icon"><i class="fas fa-star"></i></div>
               <div class="info-value">{{ score }}</div>
-              <div class="info-label">점수</div>
+              <div class="info-label"> 점수</div>
             </div>
 
             <div class="info-item" v-if="isRankMode">
@@ -132,7 +132,7 @@
               <div class="info-value">
                 {{ formatTime(180 - timeRemaining) }}
               </div>
-              <div class="info-label">소요 시간</div>
+              <div class="info-label"> 소요 시간</div>
             </div>
           </div>
 
@@ -788,15 +788,12 @@ export default {
         imageSrc: "@/assets/currentLocation.png",
       });
 
-      // 실제 위치 마커
-      const imageSrc =
-        "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
-      const imageSize = new kakao.maps.Size(24, 35);
-      const imageOption = { offset: new kakao.maps.Point(12, 35) };
+      // 실제 위치 마커 (location-flag.png 사용)
+      const imageSrc = require('@/shared/assets/images/marker/location-flag.png');
+      const imageSize = new kakao.maps.Size(35, 35);
       const markerImage = new kakao.maps.MarkerImage(
         imageSrc,
-        imageSize,
-        imageOption
+        imageSize
       );
 
       new kakao.maps.Marker({
@@ -1223,6 +1220,7 @@ export default {
 
 .info-item {
   display: flex;
+  gap: 8px; 
   flex-direction: row;
   align-items: center;
 }

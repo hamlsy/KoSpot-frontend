@@ -48,13 +48,20 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
   }
 
   try {
-    // 개발 환경에서는 현재 호스트를 사용하여 프록시 통해 연결
-    const wsUrl =
-      process.env.NODE_ENV === "development"
-        ? `${window.location.protocol}//localhost:8080${endpoint}`
-        : `${
-            process.env.VUE_APP_WS_BASE_URL || "http://localhost:8080"
-          }${endpoint}`;
+    // WebSocket URL 구성
+    let wsUrl;
+    if (process.env.NODE_ENV === "development") {
+      // 개발 환경: localhost:8080 사용
+      wsUrl = `${window.location.protocol}//localhost:8080${endpoint}`;
+    } else {
+      // 프로덕션 환경: 환경 변수 또는 현재 호스트 사용
+      if (process.env.VUE_APP_WS_BASE_URL) {
+        wsUrl = `${process.env.VUE_APP_WS_BASE_URL}${endpoint}`;
+      } else {
+        // 환경 변수가 없으면 현재 페이지의 호스트 사용
+        wsUrl = `${window.location.protocol}//${window.location.host}${endpoint}`;
+      }
+    }
 
     console.log("🔵 WebSocket 연결 초기화:", {
       endpoint: endpoint,
