@@ -9,7 +9,7 @@ import { apiClient } from 'src/core/api/apiClient.js';
  * 게임 방 관련 API 엔드포인트
  */
 const ROOM_ENDPOINTS = {
-  GET_ROOMS: '/rooms',                                    // 게임 방 전체 조회
+  GET_ROOMS: '/rooms/',                                    // 게임 방 전체 조회
   CREATE_ROOM: '/rooms',                                  // 게임 방 생성
   GET_ROOM_DETAIL: (roomId) => `/rooms/${roomId}`,       // 방 상세 정보
   UPDATE_ROOM: (roomId) => `/rooms/${roomId}`,           // 게임 방 수정

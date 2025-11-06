@@ -83,7 +83,36 @@
         </div>
 
         <div class="form-group">
-          <label for="images">이미지 URL</label>
+          <label for="imageFile">이미지 파일 *</label>
+          <div class="file-upload-section">
+            <input
+              id="imageFile"
+              ref="fileInput"
+              type="file"
+              accept="image/*"
+              @change="handleFileSelect"
+              class="file-input"
+            />
+            <label for="imageFile" class="file-input-label">
+              <i class="fas fa-upload"></i>
+              <span>{{ selectedFile ? selectedFile.name : '파일 선택' }}</span>
+            </label>
+            <button
+              v-if="selectedFile"
+              type="button"
+              @click="removeFile"
+              class="remove-file-btn"
+            >
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          
+          <div v-if="imagePreview" class="image-preview-container">
+            <img :src="imagePreview" alt="미리보기" class="image-preview" />
+          </div>
+          
+          <p class="file-hint">또는 이미지 URL을 사용할 수 있습니다</p>
+          
           <div class="image-input-section">
             <input
               v-model="imageInput"
@@ -164,6 +193,9 @@ const formData = reactive({
 
 // 이미지 입력
 const imageInput = ref('')
+const selectedFile = ref(null)
+const imagePreview = ref(null)
+const fileInput = ref(null)
 
 // 편집 모드일 때 기존 데이터 로드
 watch(() => props.item, (newItem) => {
@@ -174,6 +206,8 @@ watch(() => props.item, (newItem) => {
     formData.quantity = newItem.stock || 0
     formData.itemTypeKey = newItem.itemTypeKey || ''
     formData.images = newItem.images ? [...newItem.images] : (newItem.imageUrl ? [newItem.imageUrl] : [])
+    selectedFile.value = null
+    imagePreview.value = newItem.imageUrl || null
   } else {
     // 새 아이템일 때 초기화
     resetForm()
@@ -185,7 +219,8 @@ const isFormValid = computed(() => {
   return formData.name.trim().length > 0 &&
          formData.description.trim().length > 0 &&
          formData.price >= 0 &&
-         formData.itemTypeKey.length > 0
+         formData.itemTypeKey.length > 0 &&
+         (selectedFile.value || formData.images.length > 0 || props.isEdit) // 수정 모드에서는 이미지 필수 아님
 })
 
 // 메서드들
@@ -197,6 +232,45 @@ const resetForm = () => {
   formData.itemTypeKey = ''
   formData.images = []
   imageInput.value = ''
+  selectedFile.value = null
+  imagePreview.value = null
+  if (fileInput.value) {
+    fileInput.value.value = ''
+  }
+}
+
+const handleFileSelect = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    // 파일 크기 제한 (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('파일 크기는 10MB 이하여야 합니다.')
+      return
+    }
+    
+    // 이미지 파일인지 확인
+    if (!file.type.startsWith('image/')) {
+      alert('이미지 파일만 업로드 가능합니다.')
+      return
+    }
+    
+    selectedFile.value = file
+    
+    // 미리보기 생성
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      imagePreview.value = e.target.result
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
+const removeFile = () => {
+  selectedFile.value = null
+  imagePreview.value = null
+  if (fileInput.value) {
+    fileInput.value.value = ''
+  }
 }
 
 const addImage = () => {
@@ -213,7 +287,10 @@ const removeImage = (index) => {
 
 const save = () => {
   if (isFormValid.value) {
-    emit('save', { ...formData })
+    emit('save', { 
+      ...formData,
+      imageFile: selectedFile.value 
+    })
   }
 }
 
@@ -360,10 +437,81 @@ const cancel = () => {
   padding-right: 2.5rem;
 }
 
+.file-upload-section {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.file-input {
+  display: none;
+}
+
+.file-input-label {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  background: #f9fafb;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.file-input-label:hover {
+  border-color: #667eea;
+  background: #f3f4f6;
+  color: #667eea;
+}
+
+.remove-file-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-file-btn:hover {
+  background: #dc2626;
+}
+
+.image-preview-container {
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.image-preview {
+  width: 100%;
+  max-height: 300px;
+  object-fit: contain;
+  display: block;
+}
+
+.file-hint {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
 .image-input-section {
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1rem;
+  margin-top: 0.5rem;
 }
 
 .image-input-section input {
