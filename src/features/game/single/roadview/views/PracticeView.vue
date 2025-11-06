@@ -618,9 +618,11 @@ export default {
           // gameId를 숫자로 변환하여 저장 (백엔드 Long 타입)
           this.gameId = roadViewApiService.convertGameIdToNumber(gameId);
           this.markerImageUrl = markerImageUrl;
+          
+          // 암호화된 좌표를 복호화
           this.currentLocation = {
-            lat: roadViewApiService.convertCoordinateToNumber(targetLat),
-            lng: roadViewApiService.convertCoordinateToNumber(targetLng)
+            lat: roadViewApiService.decryptCoordinate(targetLat),
+            lng: roadViewApiService.decryptCoordinate(targetLng)
           };
           
           console.log("백엔드에서 받은 연습 게임 데이터:", {
@@ -897,9 +899,8 @@ export default {
 
     // 다음 라운드 시작
     nextRound() {
-      this.resetGame();
-      this.showIntro = true; // 인트로 화면 다시 표시
-      this.gameStarted = false; // 게임 상태 초기화
+      // 페이지 새로고침으로 게임을 완전히 초기화
+      window.location.reload();
     },
 
     // 게임 종료

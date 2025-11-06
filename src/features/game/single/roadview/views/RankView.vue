@@ -246,36 +246,8 @@ export default {
 
     // 게임 상태 초기화
     resetGame() {
-      // 타이머 정리
-      this.clearAllTimers();
-
-      // 상태 초기화
-      this.showResult = false;
-      this.isMapOpen = false;
-      this.guessedLocation = null;
-      this.distance = null;
-      this.score = 0;
-      this.elapsedTime = 0;
-      
-      // API 관련 상태 초기화
-      this.gameId = null;
-      this.markerImageUrl = null;
-      this.gameStartTime = null;
-      this.poiName = null;
-      
-      // 랭크 티어/레벨 정보 초기화
-      this.previousRatingScore = 0;
-      this.currentRatingScore = 0;
-      this.rankPointChange = 0;
-      this.previousRankTier = null;
-      this.previousRankLevel = null;
-      this.currentRankTier = null;
-      this.currentRankLevel = null;
-      
-      this.showCountdown = true;
-
-      // 새로운 게임 위치 데이터 요청
-      this.fetchGameLocationData();
+      // 페이지 새로고침으로 게임을 완전히 초기화
+      window.location.reload();
     },
 
     // 모든 타이머 정리
@@ -367,9 +339,11 @@ export default {
           this.gameId = roadViewApiService.convertGameIdToNumber(gameId);
           this.markerImageUrl = markerImageUrl;
           this.poiName = poiName || null; // POI 이름 저장
+          
+          // 암호화된 좌표를 복호화
           this.currentLocation = {
-            lat: roadViewApiService.convertCoordinateToNumber(targetLat),
-            lng: roadViewApiService.convertCoordinateToNumber(targetLng)
+            lat: roadViewApiService.decryptCoordinate(targetLat),
+            lng: roadViewApiService.decryptCoordinate(targetLng)
           };
           
           console.log("백엔드에서 받은 랭크 게임 데이터:", {

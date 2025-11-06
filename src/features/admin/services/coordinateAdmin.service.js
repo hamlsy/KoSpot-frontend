@@ -88,9 +88,13 @@ class CoordinateAdminService {
       const formData = new FormData();
       formData.append('file', file);
       
+      // 백엔드: @PostMapping(value = "/import-excel", consumes = "multipart/form-data")
+      // @RequestParam("file") MultipartFile file
+      // 필드명: file (MultipartFile)
+      // FormData를 사용할 때는 Content-Type을 명시하지 않아야 Axios가 자동으로 boundary를 포함한 Content-Type을 설정합니다
       const response = await apiClient.post(COORDINATE_ENDPOINTS.IMPORT_EXCEL, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
+          'Content-Type': undefined  // FormData 사용 시 기본 Content-Type 제거
         }
       });
       

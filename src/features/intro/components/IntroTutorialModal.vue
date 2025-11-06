@@ -26,8 +26,7 @@
               </div>
               <h1 class="slide-title gradient-text">KoSpot에 오신 것을 환영합니다!</h1>
               <p class="slide-description">
-                대한민국의 아름다운 명소를 찾아 떠나는<br />
-                신나는 지리 탐험 게임
+                대한민국의 관광지 기반 좌표 추리 게임<br />
               </p>
               <div class="feature-cards">
                 <div class="feature-card">
@@ -147,17 +146,27 @@
               <h2 class="slide-title">준비되셨나요?</h2>
               <p class="slide-description">
                 지금 바로 KoSpot과 함께<br />
-                한국의 아름다운 명소를 탐험해보세요!
+                한국의 관광지를 탐험해보세요!
               </p>
               <div class="start-options">
-                <button class="start-button primary" @click="startGame('roadview')">
-                  <i class="fas fa-street-view"></i>
-                  <span>로드뷰 시작하기</span>
-                </button>
-                <button class="start-button secondary" @click="startGame('multiplayer')">
-                  <i class="fas fa-users"></i>
-                  <span>멀티플레이 시작하기</span>
-                </button>
+                <!-- 로그인 중이 아닐 때는 로그인하러가기 버튼 표시 -->
+                <template v-if="!isLoggedIn">
+                  <button class="start-button primary" @click="goToLogin">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>로그인하러 가기</span>
+                  </button>
+                </template>
+                <!-- 로그인 중일 때는 게임 시작 버튼 표시 -->
+                <template v-else>
+                  <button class="start-button primary" @click="startGame('roadview')">
+                    <i class="fas fa-street-view"></i>
+                    <span>로드뷰 시작하기</span>
+                  </button>
+                  <button class="start-button secondary" @click="startGame('multiplayer')">
+                    <i class="fas fa-users"></i>
+                    <span>멀티플레이 시작하기</span>
+                  </button>
+                </template>
               </div>
               <button class="text-button" @click="closeTutorial">
                 메인 화면으로 이동
@@ -189,7 +198,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 
 const props = defineProps({
@@ -204,6 +213,9 @@ const emit = defineEmits(['close', 'complete']);
 const router = useRouter();
 
 const currentSlide = ref(0);
+
+// 로그인 여부 확인
+const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'));
 
 const slides = [
   { id: 'welcome', title: '환영' },
@@ -248,6 +260,12 @@ const startGame = (mode) => {
     router.push('/lobby');
   }
 };
+
+const goToLogin = () => {
+  emit('complete');
+  emit('close');
+  router.push('/loginPage');
+};
 </script>
 
 <style scoped>
@@ -271,10 +289,13 @@ const startGame = (mode) => {
   border-radius: 24px;
   width: 100%;
   max-width: 800px;
+  height: 90vh;
   max-height: 90vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   position: relative;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
 }
 
 /* 진행 표시기 */
@@ -334,33 +355,45 @@ const startGame = (mode) => {
 
 /* 슬라이드 컨텐츠 */
 .slide-content {
-  padding: 40px 60px 80px;
-  min-height: 500px;
+  padding: 40px 60px;
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  min-height: 0;
 }
 
 .slide {
   text-align: center;
   width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px 0;
+  box-sizing: border-box;
 }
 
 .slide-icon {
-  width: 100px;
-  height: 100px;
-  margin: 0 auto 24px;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 16px;
   background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 3rem;
+  font-size: 2.5rem;
   color: white;
   box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
   will-change: transform;
   animation: float 4s ease-in-out infinite;
   position: relative;
+  flex-shrink: 0;
 }
 
 .slide-icon::before {
@@ -379,9 +412,9 @@ const startGame = (mode) => {
 }
 
 .welcome-icon {
-  width: 120px;
-  height: 120px;
-  font-size: 3.5rem;
+  width: 90px;
+  height: 90px;
+  font-size: 3rem;
 }
 
 .start-icon {
@@ -390,10 +423,10 @@ const startGame = (mode) => {
 }
 
 .slide-title {
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 800;
   color: #1e293b;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   line-height: 1.2;
 }
 
@@ -407,10 +440,10 @@ const startGame = (mode) => {
 }
 
 .slide-description {
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: #64748b;
-  line-height: 1.8;
-  margin-bottom: 32px;
+  line-height: 1.6;
+  margin-bottom: 24px;
 }
 
 /* Feature Cards */
@@ -418,7 +451,8 @@ const startGame = (mode) => {
   display: flex;
   justify-content: center;
   gap: 20px;
-  margin-top: 40px;
+  margin-top: 24px;
+  flex-wrap: wrap;
 }
 
 .feature-card {
@@ -462,11 +496,12 @@ const startGame = (mode) => {
 
 /* Demo Image */
 .demo-image {
-  margin: 32px auto;
-  padding: 40px;
+  margin: 24px auto;
+  padding: 30px;
   background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
   border-radius: 16px;
   border: 2px solid #93c5fd;
+  max-width: 100%;
 }
 
 .demo-content {
@@ -521,8 +556,9 @@ const startGame = (mode) => {
 .gameplay-steps {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
-  margin-top: 32px;
+  gap: 16px;
+  margin-top: 24px;
+  max-width: 100%;
 }
 
 .step {
@@ -578,8 +614,9 @@ const startGame = (mode) => {
 .multiplayer-features {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  margin-top: 32px;
+  gap: 16px;
+  margin-top: 24px;
+  max-width: 100%;
 }
 
 .mp-feature {
@@ -629,11 +666,12 @@ const startGame = (mode) => {
 .start-options {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-top: 32px;
+  gap: 12px;
+  margin-top: 24px;
   max-width: 400px;
   margin-left: auto;
   margin-right: auto;
+  width: 100%;
 }
 
 .start-button {
@@ -832,45 +870,100 @@ const startGame = (mode) => {
   .intro-modal-container {
     max-width: 95%;
     border-radius: 16px;
+    height: 85vh;
+    max-height: 85vh;
   }
 
   .slide-content {
-    padding: 30px 24px 60px;
-    min-height: 400px;
+    padding: 20px 24px;
+  }
+
+  .slide {
+    padding: 10px 0;
   }
 
   .slide-title {
-    font-size: 1.8rem;
+    font-size: 1.5rem;
+    margin-bottom: 8px;
   }
 
   .slide-description {
-    font-size: 1rem;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+  }
+
+  .slide-icon {
+    width: 60px;
+    height: 60px;
+    font-size: 2rem;
+    margin-bottom: 12px;
+  }
+
+  .welcome-icon {
+    width: 70px;
+    height: 70px;
+    font-size: 2.5rem;
   }
 
   .feature-cards {
     flex-direction: column;
     gap: 12px;
+    margin-top: 16px;
   }
 
   .feature-card {
     max-width: 100%;
+    padding: 16px 12px;
   }
 
   .gameplay-steps {
     grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .step {
+    padding: 16px;
   }
 
   .multiplayer-features {
     grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .mp-feature {
+    padding: 16px;
+  }
+
+  .start-options {
+    margin-top: 16px;
+    gap: 10px;
+  }
+
+  .start-button {
+    padding: 14px 24px;
+    font-size: 1rem;
   }
 
   .navigation-buttons {
-    padding: 16px 24px 32px;
+    padding: 16px 24px 20px;
   }
 
   .nav-button {
     padding: 10px 20px;
     font-size: 0.9rem;
+  }
+
+  .demo-image {
+    margin: 16px auto;
+    padding: 20px;
+  }
+
+  .info-tags {
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
   }
 }
 </style>

@@ -4,31 +4,22 @@
     <div v-if="isLoggedIn" class="user-profile">
       <div class="profile-header">
         <div class="user-avatar">
-          <img :src="userProfile.marker || '/assets/markers/default-marker.png'" alt="마커 이미지">
+          <img 
+            :src="userProfile.avatar || userProfile.equippedMarkerImageUrl || '/assets/markers/default-marker.png'" 
+            alt="마커 이미지"
+            @error="handleImageError"
+          >
         </div>
         <div class="user-name-level">
-          <h3>{{ userProfile.nickname }}</h3>
-          <p>Lv.{{ userProfile.level }}</p>
+          <h3>{{ userProfile.name || userProfile.nickname || '게스트' }}</h3>
+          <p v-if="userProfile.email" class="user-email">{{ userProfile.email }}</p>
         </div>
         <button class="logout-button" @click.stop="logout">
           <i class="fas fa-sign-out-alt"></i>
           <span>로그아웃</span>
         </button>
       </div>
-      <div class="user-stats">
-        <div class="user-stat">
-          <span class="stat-value">{{ userProfile.photoRating }}</span>
-          <span class="stat-label">포토</span>
-        </div>
-        <div class="user-stat">
-          <span class="stat-value">{{ userProfile.roadRating }}</span>
-          <span class="stat-label">로드뷰</span>
-        </div>
-        <div class="user-stat">
-          <span class="stat-value">{{ userProfile.playCount }}</span>
-          <span class="stat-label">플레이</span>
-        </div>
-      </div>
+      <!-- 통계 정보는 나중에 추가 예정 (첫 가입일, Spot 수 등) -->
     </div>
 
     <!-- 로그인되지 않은 경우 로그인 버튼 표시 -->
@@ -74,6 +65,10 @@ export default {
     },
     logout() {
       this.$emit('logout');
+    },
+    handleImageError(event) {
+      // 이미지 로드 실패 시 기본 이미지로 대체
+      event.target.src = '/assets/markers/default-marker.png';
     }
   }
 };
@@ -148,6 +143,11 @@ export default {
   opacity: 0.7;
 }
 
+.user-email {
+  font-size: 0.75rem !important;
+  opacity: 0.6 !important;
+}
+
 .logout-button {
   background: transparent;
   color: #000;
@@ -174,6 +174,7 @@ export default {
   transform: translateY(-2px);
 }
 
+/* 통계 정보는 나중에 추가 예정 */
 .user-stats {
   display: flex;
   justify-content: space-between;
