@@ -118,13 +118,13 @@
             <div class="info-item">
               <div class="info-icon"><i class="fas fa-ruler"></i></div>
               <div class="info-value">{{ distance.toFixed(2) }} km</div>
-              <div class="info-label">떨어진 거리</div>
+              <div class="info-label"> 떨어진 거리</div>
             </div>
 
             <div class="info-item">
               <div class="info-icon"><i class="fas fa-star"></i></div>
               <div class="info-value">{{ score }}</div>
-              <div class="info-label">점수</div>
+              <div class="info-label"> 점수</div>
             </div>
 
             <div class="info-item" v-if="isRankMode">
@@ -132,7 +132,7 @@
               <div class="info-value">
                 {{ formatTime(180 - timeRemaining) }}
               </div>
-              <div class="info-label">소요 시간</div>
+              <div class="info-label"> 소요 시간</div>
             </div>
           </div>
 
@@ -1220,6 +1220,7 @@ export default {
 
 .info-item {
   display: flex;
+  gap: 8px; 
   flex-direction: row;
   align-items: center;
 }
