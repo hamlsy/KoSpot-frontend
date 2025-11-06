@@ -57,10 +57,10 @@ export default {
         level: 5,
       });
 
-      // 실제 위치 마커 (별 모양 아이콘)
+      // 실제 위치 마커 (location-flag.png 사용)
       const realLocationImage = new window.kakao.maps.MarkerImage(
-        "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
-        new window.kakao.maps.Size(24, 35)
+        require('@/shared/assets/images/marker/location-flag.png'),
+        new window.kakao.maps.Size(35, 35)
       );
       
       const actualMarker = new window.kakao.maps.Marker({

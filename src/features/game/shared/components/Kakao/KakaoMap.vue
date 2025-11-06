@@ -281,10 +281,7 @@ export default {
         // 새 마커 생성 - 정답 마커는 location-flag.png 사용
         const markerImage = new kakao.maps.MarkerImage(
           require('@/shared/assets/images/marker/location-flag.png'),
-          new kakao.maps.Size(35, 35),
-          {
-            offset: new kakao.maps.Point(2, 0) // 오른쪽으로 2픽셀 이동
-          }
+          new kakao.maps.Size(35, 35)
         );
         
         this.actualMarker = new kakao.maps.Marker({

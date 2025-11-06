@@ -788,15 +788,12 @@ export default {
         imageSrc: "@/assets/currentLocation.png",
       });
 
-      // 실제 위치 마커
-      const imageSrc =
-        "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
-      const imageSize = new kakao.maps.Size(24, 35);
-      const imageOption = { offset: new kakao.maps.Point(12, 35) };
+      // 실제 위치 마커 (location-flag.png 사용)
+      const imageSrc = require('@/shared/assets/images/marker/location-flag.png');
+      const imageSize = new kakao.maps.Size(35, 35);
       const markerImage = new kakao.maps.MarkerImage(
         imageSrc,
-        imageSize,
-        imageOption
+        imageSize
       );
 
       new kakao.maps.Marker({
