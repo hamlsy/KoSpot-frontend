@@ -50,9 +50,93 @@
       </div>
     </div>
 
-    <!-- 일괄 제어 -->
+    <!-- 모드별 일괄 제어 -->
+    <div class="mode-group-controls">
+      <h3>모드별 일괄 제어</h3>
+      <div class="mode-groups-grid">
+        <!-- 로드뷰 제어 -->
+        <div class="mode-group-card">
+          <div class="mode-group-header">
+            <i class="fas fa-street-view"></i>
+            <h4>로드뷰</h4>
+          </div>
+          <div class="mode-group-buttons">
+            <button 
+              @click="toggleModeGroup('ROADVIEW', true)" 
+              :disabled="loading || isAllRoadviewActive"
+              class="group-btn enable-btn"
+            >
+              <i class="fas fa-check"></i>
+              활성화
+            </button>
+            <button 
+              @click="toggleModeGroup('ROADVIEW', false)" 
+              :disabled="loading || isAllRoadviewInactive"
+              class="group-btn disable-btn"
+            >
+              <i class="fas fa-times"></i>
+              비활성화
+            </button>
+          </div>
+        </div>
+
+        <!-- 포토 제어 -->
+        <div class="mode-group-card">
+          <div class="mode-group-header">
+            <i class="fas fa-camera"></i>
+            <h4>포토</h4>
+          </div>
+          <div class="mode-group-buttons">
+            <button 
+              @click="toggleModeGroup('PHOTO', true)" 
+              :disabled="loading || isAllPhotoActive"
+              class="group-btn enable-btn"
+            >
+              <i class="fas fa-check"></i>
+              활성화
+            </button>
+            <button 
+              @click="toggleModeGroup('PHOTO', false)" 
+              :disabled="loading || isAllPhotoInactive"
+              class="group-btn disable-btn"
+            >
+              <i class="fas fa-times"></i>
+              비활성화
+            </button>
+          </div>
+        </div>
+
+        <!-- 멀티플레이어 제어 -->
+        <div class="mode-group-card">
+          <div class="mode-group-header">
+            <i class="fas fa-users"></i>
+            <h4>멀티플레이어</h4>
+          </div>
+          <div class="mode-group-buttons">
+            <button 
+              @click="toggleModeGroup('MULTIPLAYER', true)" 
+              :disabled="loading || isAllMultiplayerActive"
+              class="group-btn enable-btn"
+            >
+              <i class="fas fa-check"></i>
+              활성화
+            </button>
+            <button 
+              @click="toggleModeGroup('MULTIPLAYER', false)" 
+              :disabled="loading || isAllMultiplayerInactive"
+              class="group-btn disable-btn"
+            >
+              <i class="fas fa-times"></i>
+              비활성화
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 전체 일괄 제어 -->
     <div class="bulk-controls">
-      <h3>일괄 제어</h3>
+      <h3>전체 일괄 제어</h3>
       <div class="bulk-buttons">
         <button 
           @click="enableAllModes" 
@@ -84,7 +168,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { gameConfigAdminService } from '@/features/admin/services/gameConfigAdmin.service.js'
 
 const emit = defineEmits(['toggle-mode'])
@@ -212,6 +296,76 @@ const disableAllModes = async () => {
     loading.value = false
   }
 }
+
+// 모드 그룹별 활성화/비활성화
+const toggleModeGroup = async (groupType, activate) => {
+  try {
+    loading.value = true
+    
+    let targetModes = []
+    
+    if (groupType === 'ROADVIEW') {
+      // 로드뷰 모드 (싱글 + 멀티 모두)
+      targetModes = gameModes.value.filter(m => m.gameMode === 'ROADVIEW')
+    } else if (groupType === 'PHOTO') {
+      // 포토 모드 (싱글 + 멀티 모두)
+      targetModes = gameModes.value.filter(m => m.gameMode === 'PHOTO')
+    } else if (groupType === 'MULTIPLAYER') {
+      // 멀티플레이어 모드 (모든 멀티 모드)
+      targetModes = gameModes.value.filter(m => !m.isSingleMode)
+    }
+    
+    for (const mode of targetModes) {
+      if (activate && !mode.isActive) {
+        await gameConfigAdminService.activateConfig(mode.id)
+        mode.isActive = true
+      } else if (!activate && mode.isActive) {
+        await gameConfigAdminService.deactivateConfig(mode.id)
+        mode.isActive = false
+      }
+    }
+    
+    const groupName = groupType === 'ROADVIEW' ? '로드뷰' : groupType === 'PHOTO' ? '포토' : '멀티플레이어'
+    console.log(`${groupName} 모드가 ${activate ? '활성화' : '비활성화'}되었습니다.`)
+  } catch (error) {
+    console.error('모드 그룹 토글 실패:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// Computed: 로드뷰 모드 상태
+const isAllRoadviewActive = computed(() => {
+  const roadviewModes = gameModes.value.filter(m => m.gameMode === 'ROADVIEW')
+  return roadviewModes.length > 0 && roadviewModes.every(m => m.isActive)
+})
+
+const isAllRoadviewInactive = computed(() => {
+  const roadviewModes = gameModes.value.filter(m => m.gameMode === 'ROADVIEW')
+  return roadviewModes.length > 0 && roadviewModes.every(m => !m.isActive)
+})
+
+// Computed: 포토 모드 상태
+const isAllPhotoActive = computed(() => {
+  const photoModes = gameModes.value.filter(m => m.gameMode === 'PHOTO')
+  return photoModes.length > 0 && photoModes.every(m => m.isActive)
+})
+
+const isAllPhotoInactive = computed(() => {
+  const photoModes = gameModes.value.filter(m => m.gameMode === 'PHOTO')
+  return photoModes.length > 0 && photoModes.every(m => !m.isActive)
+})
+
+// Computed: 멀티플레이어 모드 상태
+const isAllMultiplayerActive = computed(() => {
+  const multiplayerModes = gameModes.value.filter(m => !m.isSingleMode)
+  return multiplayerModes.length > 0 && multiplayerModes.every(m => m.isActive)
+})
+
+const isAllMultiplayerInactive = computed(() => {
+  const multiplayerModes = gameModes.value.filter(m => !m.isSingleMode)
+  return multiplayerModes.length > 0 && multiplayerModes.every(m => !m.isActive)
+})
 
 // 아이콘 클래스 가져오기
 const getIconClass = (modeId) => {
@@ -400,6 +554,106 @@ input:checked + .slider:before {
   font-size: 1.1rem;
   font-weight: 600;
   color: #1f2937;
+}
+
+.mode-group-controls {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 1.5rem;
+}
+
+.mode-group-controls h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
+
+.mode-groups-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.mode-group-card {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  transition: all 0.2s ease;
+}
+
+.mode-group-card:hover {
+  border-color: #667eea;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+.mode-group-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.mode-group-header i {
+  font-size: 1.2rem;
+  color: #667eea;
+}
+
+.mode-group-header h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.mode-group-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.group-btn {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.group-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.enable-btn {
+  background: #10b981;
+  color: white;
+}
+
+.enable-btn:hover:not(:disabled) {
+  background: #059669;
+}
+
+.disable-btn {
+  background: #f87171;
+  color: white;
+}
+
+.disable-btn:hover:not(:disabled) {
+  background: #ef4444;
+}
+
+.group-btn i {
+  font-size: 0.75rem;
 }
 
 .bulk-controls {

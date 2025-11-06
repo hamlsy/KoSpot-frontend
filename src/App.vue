@@ -3,8 +3,23 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, onBeforeUnmount } from 'vue';
+import { tokenRefreshService } from '@/core/services/tokenRefresh.service.js';
+
 onMounted(() => {
+  // 앱 시작 시 토큰이 있으면 갱신 서비스 시작
+  const accessToken = localStorage.getItem('accessToken');
+  const refreshToken = localStorage.getItem('refreshToken');
+  
+  if (accessToken && refreshToken) {
+    console.log('🚀 앱 시작: 토큰 갱신 서비스 초기화');
+    tokenRefreshService.start();
+  }
+});
+
+onBeforeUnmount(() => {
+  // 앱 종료 시 토큰 갱신 서비스 중지
+  tokenRefreshService.stop();
 });
 </script>
 

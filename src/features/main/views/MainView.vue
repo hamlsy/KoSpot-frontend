@@ -636,6 +636,9 @@ function handleNicknameComplete(nickname) {
   console.log('✅ 닉네임 설정 완료:', nickname);
   showNicknameModal.value = false;
   
+  // 사이드바 닉네임 업데이트
+  userProfile.value.name = nickname;
+  
   // isFirstVisited를 false로 변경
   isFirstVisited.value = false;
   userProfile.value.isFirstVisited = false;

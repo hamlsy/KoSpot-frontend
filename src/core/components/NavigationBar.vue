@@ -31,10 +31,10 @@
             <i class="fas fa-question-circle"></i>
             <span class="tutorial-text">게임 소개</span>
           </button>
-          <button v-if="actualIsAdmin" class="icon-button" @click="openNotifications">
+          <!-- <button v-if="actualIsAdmin" class="icon-button" @click="openNotifications">
             <i class="fas fa-bell"></i>
             <span class="notification-badge" v-if="unreadNotifications">{{ unreadNotifications }}</span>
-          </button>
+          </button> -->
           <div class="user-profile" @click="toggleProfileMenu">
             <div class="user-avatar" :class="{ 'guest-avatar': !actualIsLoggedIn }">
               <img

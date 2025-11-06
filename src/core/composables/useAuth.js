@@ -3,6 +3,7 @@ import { ref, computed, reactive } from 'vue'
 import apiClient from 'src/core/api/apiClient.js'
 import { API_ENDPOINTS } from '@/core/api/endPoint.js'
 import { useRouter } from 'vue-router'
+import { tokenRefreshService } from '@/core/services/tokenRefresh.service.js'
 
 // 전역 상태 관리
 const authState = reactive({
@@ -44,6 +45,9 @@ export function useAuth() {
       }
       authState.isAuthenticated = true
       
+      // 토큰 갱신 서비스 시작 (로그인 후 자동 갱신 시작)
+      tokenRefreshService.restart()
+      
       return { success: true, memberId }
     } catch (error) {
       authState.error = error.response?.data?.message || '로그인에 실패했습니다.'
@@ -56,9 +60,17 @@ export function useAuth() {
   // 로그아웃
   const logout = async () => {
     try {
-      await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT)
+      const refreshToken = localStorage.getItem('refreshToken')
+      
+      // refreshToken이 있으면 서버에 로그아웃 요청
+      if (refreshToken) {
+        await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT, {
+          refreshToken: refreshToken
+        })
+      }
     } catch (error) {
       console.error('로그아웃 API 호출 실패:', error)
+      // API 호출 실패해도 로컬 상태는 정리
     } finally {
       // 로컬 상태 정리
       localStorage.removeItem('accessToken')
@@ -67,7 +79,11 @@ export function useAuth() {
       authState.user = null
       authState.isAuthenticated = false
       
-      router.push('/login')
+      // 토큰 갱신 서비스 중지
+      tokenRefreshService.stop()
+      
+      // 메인 페이지로 리다이렉션
+      router.push('/')
     }
   }
   
