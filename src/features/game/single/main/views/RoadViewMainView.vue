@@ -83,7 +83,7 @@
                 :class="{
                   'rank-mode': record.mode === '랭크',
                   'practice-mode': record.mode === '연습',
-                  'theme-mode': record.mode === '테마',
+                  // 'theme-mode': record.mode === '테마',
                 }"
               >
                 {{ record.mode }}
@@ -120,6 +120,14 @@
           <div class="popup-description">
             <p>{{ selectedGameMode.fullDescription }}</p>
           </div>
+
+          <!-- 연습 게임 튜토리얼 모달 -->
+          <practice-tutorial-modal
+            v-if="selectedGameMode.id === 'practice'"
+            :show="showPracticeTutorial"
+            @close="showPracticeTutorial = false"
+            @complete="handleTutorialComplete"
+          />
 
           <div
             v-if="selectedGameMode.id === 'practice'"
@@ -186,6 +194,7 @@ import AppLogo from "@/core/components/AppLogo.vue";
 import ThemeModePopup from 'src/features/game/single/main/components/Theme/ThemeModePopup.vue'
 import GameModeCard from "@/features/game/shared/components/Common/GameModeCard.vue";
 import HistoryModal from "@/features/game/single/main/components/HistoryModal.vue";
+import PracticeTutorialModal from "@/features/game/single/main/components/PracticeTutorialModal.vue";
 import roadViewMainService from "@/features/game/single/main/services/roadViewMain.service";
 
 // 라우터 설정
@@ -201,6 +210,7 @@ const hoverStat = ref(null);
 const hoverRecord = ref(null);
 const showThemeModePopup = ref(false);
 const showHistoryModal = ref(false);
+const showPracticeTutorial = ref(false);
 
 // API 데이터 상태
 const rankInfo = ref(null);
@@ -218,13 +228,13 @@ const gameModes = [
       "특정 지역을 선택하여 로드뷰 능력을 천천히 향상시킬 수 있는 모드입니다. 편안한 속도로 학습하세요.",
     color: "practice-color",
   },
-  {
-    id: "theme",
-    title: "테마 게임",
-    icon: "fas fa-map-marked-alt",
-    shortDescription: "특별한 테마로 즐기는 게임",
-    color: "theme-color",
-  },
+  // {
+  //   id: "theme",
+  //   title: "테마 게임",
+  //   icon: "fas fa-map-marked-alt",
+  //   shortDescription: "특별한 테마로 즐기는 게임",
+  //   color: "theme-color",
+  // },
   {
     id: "rank",
     title: "랭크 게임",
@@ -456,7 +466,18 @@ function openGameModePopup(mode) {
   } else {
     selectedGameMode.value = mode;
     selectedRegion.value = null;
+    
+    // 연습 게임인 경우 튜토리얼 표시
+    if (mode.id === "practice") {
+      showPracticeTutorial.value = true;
+    }
   }
+}
+
+// 튜토리얼 완료 핸들러
+function handleTutorialComplete() {
+  showPracticeTutorial.value = false;
+  // 튜토리얼 완료 후 지역 선택으로 이동할 수 있도록 처리
 }
 
 // 테마 모드 팝업 닫기 함수
