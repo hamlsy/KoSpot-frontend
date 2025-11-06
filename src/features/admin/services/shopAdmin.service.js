@@ -86,14 +86,40 @@ class ShopAdminService {
 
   /**
    * 새 아이템 생성
-   * @param {CreateItemRequest} itemData - 생성할 아이템 데이터
+   * @param {CreateItemRequest} itemData - 생성할 아이템 데이터 (imageFile 포함)
    * @returns {Promise<ApiResponse>} API 응답 데이터
    */
   async createItem(itemData) {
     try {
       console.log('📤 아이템 생성 요청:', itemData);
       
-      const response = await apiClient.post(SHOP_ADMIN_ENDPOINTS.CREATE_ITEM, itemData);
+      // FormData 생성 (파일 업로드 지원)
+      const formData = new FormData();
+      
+      // ItemRequest.Create 필드들 (@ModelAttribute로 바인딩)
+      // 백엔드의 ItemRequest.Create 클래스 필드명에 맞춰서 설정
+      // 필수 필드: name, description, price, itemTypeKey, quantity
+      formData.append('name', itemData.name || '');
+      formData.append('description', itemData.description || '');
+      formData.append('price', String(itemData.price || 0));
+      formData.append('itemTypeKey', itemData.itemTypeKey || '');
+      formData.append('quantity', String(itemData.quantity || 0));
+      
+      // 파일이 있으면 추가
+      if (itemData.imageFile) {
+        formData.append('file', itemData.imageFile);
+      }
+      
+      // 이미지 URL이 있으면 추가 (기존 방식 호환)
+      if (itemData.images && itemData.images.length > 0) {
+        formData.append('imageUrl', itemData.images[0]);
+      }
+      
+      const response = await apiClient.post(SHOP_ADMIN_ENDPOINTS.CREATE_ITEM, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
       
       console.log('✅ 아이템 생성 성공:', response.data);
       return response.data;

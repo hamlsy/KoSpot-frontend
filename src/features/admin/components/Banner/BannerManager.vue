@@ -70,19 +70,46 @@
           <!-- 배너 이미지 업로드 -->
           <div class="form-section">
             <h4>배너 이미지</h4>
-            <div class="image-upload-area">
+            <div 
+              class="image-upload-area"
+              :class="{ 'drag-over': isDragOver }"
+              @dragover.prevent="handleDragOver"
+              @dragleave.prevent="handleDragLeave"
+              @drop.prevent="handleDrop"
+              @click="!bannerForm.imagePreview && $refs.imageInput.click()"
+            >
               <input ref="imageInput" type="file" accept="image/*" @change="handleImageUpload" style="display: none" />
-              <div v-if="!bannerForm.imagePreview" class="upload-placeholder" @click="$refs.imageInput.click()">
+              <div v-if="!bannerForm.imagePreview" class="upload-placeholder">
                 <i class="fas fa-cloud-upload-alt"></i>
                 <p>배너 이미지를 업로드하세요</p>
+                <p class="drag-hint">또는 이미지를 여기에 끌어다 놓으세요</p>
                 <span class="recommended-size">권장 크기: 1200x400px</span>
               </div>
               <div v-else class="image-preview">
                 <img :src="bannerForm.imagePreview" alt="Preview" />
-                <button @click="removeImage" class="remove-image">
+                <button @click.stop="removeImage" class="remove-image">
                   <i class="fas fa-times"></i>
                 </button>
               </div>
+            </div>
+            
+            <!-- URL로 이미지 가져오기 -->
+            <div class="url-upload-section">
+              <label>또는 이미지 URL로 가져오기</label>
+              <div class="url-input-group">
+                <input 
+                  v-model="imageUrlInput" 
+                  type="url" 
+                  placeholder="https://example.com/image.jpg" 
+                  @keyup.enter="loadImageFromUrl"
+                  @input="clearUrlError"
+                />
+                <button @click="loadImageFromUrl" class="url-load-btn" :disabled="!imageUrlInput.trim()">
+                  <i class="fas fa-link"></i>
+                  가져오기
+                </button>
+              </div>
+              <p v-if="urlError" class="url-error">{{ urlError }}</p>
             </div>
           </div>
 
@@ -156,6 +183,9 @@ import { bannerAdminService } from '@/features/admin/services/bannerAdmin.servic
 const loading = ref(false)
 const showAddModal = ref(false)
 const editingBanner = ref(null)
+const isDragOver = ref(false)
+const imageUrlInput = ref('')
+const urlError = ref('')
 
 // 배너 목록
 const banners = ref([
@@ -204,9 +234,111 @@ const canSaveBanner = computed(() => {
 const handleImageUpload = (e) => {
   const file = e.target.files[0]
   if (file) {
-    bannerForm.imageFile = file
-    bannerForm.imagePreview = URL.createObjectURL(file)
+    processImageFile(file)
   }
+}
+
+// 드래그 오버 처리
+const handleDragOver = (e) => {
+  isDragOver.value = true
+  e.dataTransfer.dropEffect = 'copy'
+}
+
+// 드래그 떠남 처리
+const handleDragLeave = () => {
+  isDragOver.value = false
+}
+
+// 드롭 처리
+const handleDrop = (e) => {
+  isDragOver.value = false
+  const files = e.dataTransfer.files
+  if (files.length > 0) {
+    const file = files[0]
+    if (file.type.startsWith('image/')) {
+      processImageFile(file)
+    } else {
+      alert('이미지 파일만 업로드 가능합니다.')
+    }
+  }
+}
+
+// 이미지 파일 처리
+const processImageFile = (file) => {
+  // 파일 크기 제한 (10MB)
+  if (file.size > 10 * 1024 * 1024) {
+    alert('파일 크기는 10MB 이하여야 합니다.')
+    return
+  }
+  
+  bannerForm.imageFile = file
+  bannerForm.imagePreview = URL.createObjectURL(file)
+  urlError.value = ''
+  imageUrlInput.value = ''
+}
+
+// URL에서 이미지 가져오기
+const loadImageFromUrl = async () => {
+  const url = imageUrlInput.value.trim()
+  if (!url) {
+    urlError.value = 'URL을 입력해주세요.'
+    return
+  }
+  
+  try {
+    urlError.value = ''
+    loading.value = true
+    
+    // 이미지를 Canvas를 통해 Blob으로 변환
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    
+    await new Promise((resolve, reject) => {
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas')
+          canvas.width = img.width
+          canvas.height = img.height
+          const ctx = canvas.getContext('2d')
+          ctx.drawImage(img, 0, 0)
+          
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const file = new File([blob], 'image.jpg', { type: 'image/jpeg' })
+              processImageFile(file)
+              resolve()
+            } else {
+              reject(new Error('이미지 변환 실패'))
+            }
+          }, 'image/jpeg')
+        } catch (error) {
+          reject(error)
+        }
+      }
+      img.onerror = () => {
+        // CORS 문제로 Canvas 사용이 불가능한 경우, URL을 직접 사용
+        bannerForm.imagePreview = url
+        bannerForm.imageFile = null
+        urlError.value = ''
+        resolve()
+      }
+      img.src = url
+    })
+    
+  } catch (error) {
+    console.error('이미지 로드 실패:', error)
+    // 에러 발생 시에도 URL을 직접 사용
+    bannerForm.imagePreview = url
+    bannerForm.imageFile = null
+    urlError.value = 'CORS 문제로 이미지를 직접 변환할 수 없습니다. URL을 직접 사용합니다.'
+  } finally {
+    loading.value = false
+  }
+}
+
+// URL 에러 초기화
+const clearUrlError = () => {
+  urlError.value = ''
 }
 
 // 이미지 제거
@@ -216,6 +348,8 @@ const removeImage = () => {
   }
   bannerForm.imageFile = null
   bannerForm.imagePreview = ''
+  imageUrlInput.value = ''
+  urlError.value = ''
 }
 
 // 미리보기 클릭
@@ -295,8 +429,12 @@ const saveBanner = async () => {
     formData.append('linkUrl', bannerForm.linkUrl || '')
     formData.append('displayOrder', bannerForm.displayOrder || 0)
     
+    // 파일이 있으면 파일 사용, 없으면 URL 사용
     if (bannerForm.imageFile) {
       formData.append('image', bannerForm.imageFile)
+    } else if (bannerForm.imagePreview && !bannerForm.imagePreview.startsWith('blob:')) {
+      // URL인 경우 이미지 URL 필드에 추가
+      formData.append('imageUrl', bannerForm.imagePreview)
     }
     
     if (editingBanner.value) {
@@ -335,6 +473,9 @@ const resetForm = () => {
     imageFile: null,
     imagePreview: ''
   })
+  imageUrlInput.value = ''
+  urlError.value = ''
+  isDragOver.value = false
 }
 
 // 배너 목록 로드
@@ -612,6 +753,12 @@ onMounted(() => {
   background-color: #f8fafc;
 }
 
+.image-upload-area.drag-over {
+  border-color: #667eea;
+  background-color: #eff6ff;
+  border-style: solid;
+}
+
 .upload-placeholder {
   text-align: center;
   color: #6b7280;
@@ -628,9 +775,79 @@ onMounted(() => {
   margin-bottom: 0.5rem;
 }
 
+.drag-hint {
+  font-size: 0.9rem;
+  color: #9ca3af;
+  margin-top: 0.5rem;
+}
+
 .recommended-size {
   font-size: 0.85rem;
   color: #9ca3af;
+}
+
+.url-upload-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.url-upload-section label {
+  display: block;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.url-input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.url-input-group input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  transition: border-color 0.2s ease;
+}
+
+.url-input-group input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.url-load-btn {
+  padding: 0.75rem 1rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.url-load-btn:hover:not(:disabled) {
+  background: #5a67d8;
+}
+
+.url-load-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.url-error {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #ef4444;
 }
 
 .image-preview {

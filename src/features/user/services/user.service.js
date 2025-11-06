@@ -47,7 +47,7 @@ class UserService {
     try {
       console.log('📤 프로필 조회 요청');
       
-      const response = await apiClient.get('/user/profile');
+      const response = await apiClient.get('/member/profile');
       
       console.log('✅ 프로필 조회 성공:', response.data);
       return response.data;
