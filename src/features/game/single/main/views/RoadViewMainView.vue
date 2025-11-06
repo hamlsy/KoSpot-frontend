@@ -147,12 +147,24 @@
           </div>
 
           <div v-if="selectedGameMode.id === 'rank'" class="rank-mode-options">
-            <div class="rank-details">
-              <div class="current-rank">
-                <p>현재 랭크: {{ userRank }}</p>
+            <div class="rank-info-card">
+              <div class="rank-info-header">
+                <span class="rank-label">현재 랭크</span>
+                <div class="rank-icon" v-if="rankInfo">
+                  <i :class="getRankIcon(userRank)"></i>
+                </div>
               </div>
-              <div class="rank-icon">
-                <i :class="getRankIcon(userRank)"></i>
+              <div class="rank-info-content">
+                <div class="rank-tier-level" v-if="rankInfo">
+                  <span class="rank-value">{{ userRank }}</span>
+                </div>
+                <div class="rank-rating" v-if="rankInfo">
+                  <span class="rating-label">레이팅</span>
+                  <span class="rating-value">{{ formatNumber(rankInfo.ratingScore) }}</span>
+                </div>
+                <div v-else class="rank-loading">
+                  <p>랭크 정보를 불러오는 중...</p>
+                </div>
               </div>
             </div>
           </div>
@@ -417,10 +429,30 @@ function toggleProfileMenu() {
 // 랭크 아이콘 가져오기 함수
 function getRankIcon(rank) {
   // 랭크에 따른 아이콘 클래스 반환
+  if (rank.includes("Master")) return "fas fa-trophy master";
+  if (rank.includes("Diamond")) return "fas fa-trophy diamond";
+  if (rank.includes("Platinum")) return "fas fa-trophy platinum";
   if (rank.includes("Gold")) return "fas fa-trophy gold";
   if (rank.includes("Silver")) return "fas fa-trophy silver";
   if (rank.includes("Bronze")) return "fas fa-trophy bronze";
   return "fas fa-trophy";
+}
+
+// 더미 데이터 생성 함수 (인터넷 연결 실패 시 사용)
+function getDummyData() {
+  return {
+    rankInfo: {
+      rankTier: 'GOLD',
+      rankLevel: 'THREE',
+      ratingScore: 1250,
+      rankPercentage: 35.5
+    },
+    statisticInfo: {
+      totalPlayCount: 42,
+      bestScore: 8500
+    },
+    recentGames: []
+  };
 }
 
 // 메인 페이지 데이터 가져오기 함수
@@ -448,15 +480,36 @@ async function fetchMainPageData() {
       console.log("메인 페이지 데이터 로드 완료:", result);
     } else {
       console.error("메인 페이지 데이터 조회 실패:", response.data.message);
+      // API 응답 실패 시 더미 데이터 사용
+      useDummyData();
     }
   } catch (error) {
     console.error("메인 페이지 데이터 조회 중 오류 발생:", error);
     
-    // 에러 발생 시 기본값 설정
-    rankInfo.value = null;
-    statisticInfo.value = null;
-    recentGamesData.value = [];
+    // 인터넷 연결 실패 또는 API 오류 시 더미 데이터 사용
+    useDummyData();
   }
+}
+
+// 더미 데이터 사용 함수
+function useDummyData() {
+  const dummyData = getDummyData();
+  
+  // 더미 랭크 정보 저장
+  rankInfo.value = dummyData.rankInfo;
+  
+  // 더미 통계 정보 저장
+  statisticInfo.value = dummyData.statisticInfo;
+  
+  // 더미 최근 게임 기록 저장
+  recentGamesData.value = dummyData.recentGames;
+  
+  // userRank도 업데이트 (랭크 모드 팝업에서 사용)
+  const tier = tierMap[dummyData.rankInfo.rankTier] || dummyData.rankInfo.rankTier;
+  const level = levelMap[dummyData.rankInfo.rankLevel] || dummyData.rankInfo.rankLevel;
+  userRank.value = `${tier} ${level}`;
+  
+  console.log("더미 데이터로 표시합니다:", dummyData);
 }
 
 // 게임 모드 팝업 열기 함수
