@@ -26,7 +26,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 
 const emit = defineEmits(['open-tutorial']);
@@ -35,7 +35,17 @@ const router = useRouter();
 
 const isClosed = ref(false);
 
+// 로그인 여부 확인
+const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'));
+
 const startRoadView = () => {
+  // 로그인하지 않은 경우 로그인 페이지로 이동
+  if (!isLoggedIn.value) {
+    router.push('/loginPage');
+    return;
+  }
+  
+  // 로그인한 경우 로드뷰 메인으로 이동
   router.push('/roadView/main');
 };
 

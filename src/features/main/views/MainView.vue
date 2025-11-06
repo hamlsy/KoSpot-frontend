@@ -424,61 +424,64 @@ async function loadMainPageData() {
     const response = await mainService.getMainPageData();
     
     if (response.isSuccess && response.result) {
-      const data = response.result;
+      const result = response.result;
       
-      // 관리자 여부 업데이트
-      userProfile.value.isAdmin = data.isAdmin || false;
-      
-      // 사용자 프로필 정보 업데이트 (nickname, email, equippedMarkerImageUrl)
-      if (data.nickname) {
-        userProfile.value.name = data.nickname;
-      }
-      if (data.email) {
-        userProfile.value.email = data.email;
-      }
-      if (data.equippedMarkerImageUrl) {
-        userProfile.value.avatar = data.equippedMarkerImageUrl;
-      }
-      
-      // 첫 방문자 여부 확인 (백엔드에서 제공)
-      if (data.isFirstVisited === true) {
-        isFirstVisited.value = true;
-        // 닉네임 설정 모달 먼저 표시
-        showNicknameModal.value = true;
-        console.log('🎉 첫 방문자입니다! 닉네임 설정을 진행합니다.');
+      // 사용자 정보 업데이트 (myInfo 객체에서 가져오기)
+      if (result.myInfo) {
+        const myInfo = result.myInfo;
+        
+        // 관리자 여부 업데이트
+        userProfile.value.isAdmin = myInfo.isAdmin || false;
+        
+        // 사용자 프로필 정보 업데이트 (nickname, email, equippedMarkerImageUrl)
+        if (myInfo.nickname) {
+          userProfile.value.name = myInfo.nickname;
+        }
+        if (myInfo.email) {
+          userProfile.value.email = myInfo.email;
+        }
+        if (myInfo.equippedMarkerImageUrl) {
+          userProfile.value.avatar = myInfo.equippedMarkerImageUrl;
+        }
+        
+        // 첫 방문자 여부 확인 (백엔드에서 제공)
+        if (myInfo.isFirstVisited === true) {
+          isFirstVisited.value = true;
+          userProfile.value.isFirstVisited = true;
+          // 닉네임 설정 모달 먼저 표시
+          showNicknameModal.value = true;
+          console.log('🎉 첫 방문자입니다! 닉네임 설정을 진행합니다.');
+        } else {
+          isFirstVisited.value = false;
+          userProfile.value.isFirstVisited = false;
+        }
       }
       
       // 게임 모드 상태 업데이트
-      if (data.gameModeStatus) {
+      if (result.gameModeStatus) {
         gameModeStatus.value = {
-          roadviewEnabled: data.gameModeStatus.roadviewEnabled ?? true,
-          photoEnabled: data.gameModeStatus.photoEnabled ?? false,
-          multiplayEnabled: data.gameModeStatus.multiplayEnabled ?? true
+          roadviewEnabled: result.gameModeStatus.roadviewEnabled ?? true,
+          photoEnabled: result.gameModeStatus.photoEnabled ?? false,
+          multiplayEnabled: result.gameModeStatus.multiplayEnabled ?? true
         };
       }
       
       // 배너 데이터 변환 및 업데이트
-      if (data.banners && Array.isArray(data.banners) && data.banners.length > 0) {
-        banners.value = mainService.transformBannersForUI(data.banners);
+      if (result.banners && Array.isArray(result.banners) && result.banners.length > 0) {
+        banners.value = mainService.transformBannersForUI(result.banners);
       } else {
         // 배너가 없으면 빈 배열
         banners.value = [];
       }
       
       // 공지사항 데이터 변환 및 업데이트
-      if (data.recentNotices && Array.isArray(data.recentNotices)) {
-        recentNotices.value = mainService.transformNoticesForUI(data.recentNotices);
+      if (result.recentNotices && Array.isArray(result.recentNotices)) {
+        recentNotices.value = mainService.transformNoticesForUI(result.recentNotices);
       } else {
         recentNotices.value = [];
       }
       
-      console.log('✅ 메인 페이지 데이터 로드 완료:', {
-        isAdmin: userProfile.value.isAdmin,
-        isFirstVisited: isFirstVisited.value,
-        gameModeStatus: gameModeStatus.value,
-        banners: banners.value.length,
-        notices: recentNotices.value.length
-      });
+   
     } else {
       throw new Error(response.message || '메인 페이지 데이터 조회 실패');
     }

@@ -12,8 +12,8 @@
             @click="goToSlide(index)"
           ></span>
         </div>
-        <button class="close-button" @click="skipTutorial" title="닫기">
-          <i class="fas fa-times"></i>
+        <button class="nav-button complete-button" @click="skipTutorial">
+          튜토리얼 닫기
         </button>
       </div>
 
@@ -152,32 +152,36 @@ const completeTutorial = () => {
 <style scoped>
 /* 오버레이 */
 .tutorial-overlay {
-  position: absolute;
+  /* position: absolute; */
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: white;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1001;
-  padding: 20px;
+  padding: 0;
   border-radius: 24px;
+  overflow: hidden;
 }
 
 /* 튜토리얼 컨테이너 */
 .tutorial-container {
   background: white;
-  border-radius: 16px;
+  border-radius: 0;
   width: 100%;
-  max-width: 500px;
-  max-height: 85vh;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  padding-top: 0px;
   position: relative;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  overflow: hidden;
+  box-shadow: none;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
+  padding: 2rem;
 }
 
 /* 헤더 */
@@ -185,8 +189,9 @@ const completeTutorial = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 0;
+  margin-bottom: 1.5rem;
+  border-bottom: none;
   position: relative;
 }
 
@@ -219,23 +224,24 @@ const completeTutorial = () => {
 
 /* 닫기 버튼 */
 .close-button {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #f1f5f9;
+  padding: 10px 20px;
   border: none;
-  color: #64748b;
-  font-size: 1rem;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.95rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.15s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  transition: opacity 0.15s ease;
+  white-space: nowrap;
 }
 
 .close-button:hover {
-  background: #e2e8f0;
-  color: #334155;
+  opacity: 0.9;
+}
+
+.close-button:active {
+  opacity: 0.8;
 }
 
 /* 슬라이드 래퍼 */
@@ -248,14 +254,14 @@ const completeTutorial = () => {
 /* 슬라이드 컨텐츠 */
 .slide-content {
   width: 100%;
-  padding: 24px;
+  padding: 0;
   text-align: center;
 }
 
 /* 이미지 컨테이너 */
 .slide-image-container {
   width: 100%;
-  height: 300px;
+  height: 320px;
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 20px;
@@ -293,8 +299,9 @@ const completeTutorial = () => {
 .navigation-controls {
   display: flex;
   justify-content: space-between;
-  padding: 16px 20px;
-  border-top: 1px solid #e2e8f0;
+  padding: 0;
+  margin-top: 1.5rem;
+  border-top: none;
   gap: 10px;
 }
 

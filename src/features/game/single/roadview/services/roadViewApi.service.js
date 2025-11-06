@@ -4,6 +4,7 @@
  * 랭크 모드와 연습 모드의 게임 시작/종료 API 호출을 처리합니다.
  */
 import { apiClient } from 'src/core/api/apiClient.js';
+import CryptoJS from 'crypto-js';
 
 /**
  * 로드뷰 게임 관련 API 엔드포인트
@@ -18,6 +19,7 @@ const ROADVIEW_ENDPOINTS = {
   PRACTICE: {
     START: '/roadView/practice/start',
     END: '/roadView/practice/end',
+    REISSUE: '/roadView/practice/{gameId}/reissue-coordinate',
   },
 };
 
@@ -191,6 +193,27 @@ class RoadViewApiService {
   }
 
   /**
+   * 연습 게임 좌표 재발급
+   * @param {number} gameId - 게임 ID
+   * @returns {Promise<{isSuccess: boolean, result: {targetLat: string, targetLng: string}}>} API 응답 데이터
+   */
+  async reissuePracticeCoordinate(gameId) {
+    try {
+      console.log('📤 연습 게임 좌표 재발급 요청:', { gameId });
+      
+      const endpoint = ROADVIEW_ENDPOINTS.PRACTICE.REISSUE.replace('{gameId}', gameId);
+      const response = await apiClient.post(endpoint);
+      
+      console.log('✅ 연습 게임 좌표 재발급 성공:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ 연습 게임 좌표 재발급 실패:', error);
+      this._handleApiError(error, '좌표 재발급에 실패했습니다.');
+      throw error;
+    }
+  }
+
+  /**
    * API 에러 처리
    * @param {Error} error - 에러 객체
    * @param {string} defaultMessage - 기본 에러 메시지
@@ -271,6 +294,70 @@ class RoadViewApiService {
       return parseInt(gameId, 10);
     }
     return gameId;
+  }
+
+  /**
+   * 암호화된 좌표를 복호화
+   * @param {string} encryptedCoordinate - 암호화된 좌표 (Base64 문자열)
+   * @returns {number} 복호화된 좌표 (숫자)
+   */
+  decryptCoordinate(encryptedCoordinate) {
+    try {
+      // 환경변수에서 암호화 키 가져오기
+      // 로컬 테스트 시에는 "1234567890123456" 사용, 배포 시에는 env에서 가져오기
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      const encryptKey = isDevelopment 
+        ? (process.env.VUE_APP_ENCRYPT_KEY || '1234567890123456')
+        : process.env.VUE_APP_ENCRYPT_KEY;
+      
+      if (!encryptKey) {
+        console.warn('⚠️ VUE_APP_ENCRYPT_KEY가 설정되지 않았습니다. 암호화된 좌표를 복호화할 수 없습니다.');
+        // 키가 없으면 원본 값을 숫자로 변환하여 반환
+        return typeof encryptedCoordinate === 'string' ? parseFloat(encryptedCoordinate) : encryptedCoordinate;
+      }
+
+      if (!encryptedCoordinate || typeof encryptedCoordinate !== 'string') {
+        console.warn('⚠️ 암호화된 좌표가 유효하지 않습니다:', encryptedCoordinate);
+        return typeof encryptedCoordinate === 'string' ? parseFloat(encryptedCoordinate) : encryptedCoordinate;
+      }
+
+      // 암호화 키 로그 출력 (로컬 테스트 시에만)
+      if (isDevelopment) {
+        console.log('🔑 사용 중인 암호화 키:', encryptKey === '1234567890123456' ? '1234567890123456 (로컬 테스트용)' : 'env에서 가져온 키');
+      }
+
+      // 1. Base64 디코딩
+      const encryptedWords = CryptoJS.enc.Base64.parse(encryptedCoordinate);
+
+      // 2. 키를 WordArray로 변환
+      const keyWords = CryptoJS.enc.Utf8.parse(encryptKey);
+
+      // 3. 복호화 수행
+      const decrypted = CryptoJS.AES.decrypt(
+        { ciphertext: encryptedWords },
+        keyWords,
+        {
+          mode: CryptoJS.mode.ECB,
+          padding: CryptoJS.pad.Pkcs7
+        }
+      );
+
+      // 4. 복호화된 문자열을 숫자로 변환
+      const decryptedString = decrypted.toString(CryptoJS.enc.Utf8);
+      const decryptedNumber = parseFloat(decryptedString);
+
+      if (isNaN(decryptedNumber)) {
+        console.error('❌ 복호화된 좌표를 숫자로 변환할 수 없습니다:', decryptedString);
+        throw new Error('좌표 복호화 실패: 숫자 변환 불가');
+      }
+
+
+      return decryptedNumber;
+    } catch (error) {
+      console.error('❌ 좌표 복호화 실패:', error);
+      // 복호화 실패 시 원본 값을 숫자로 변환하여 반환 (폴백)
+      return typeof encryptedCoordinate === 'string' ? parseFloat(encryptedCoordinate) : encryptedCoordinate;
+    }
   }
 }
 
