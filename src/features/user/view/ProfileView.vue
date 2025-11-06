@@ -1,6 +1,9 @@
 <template>
   <div class="profile-page">
-    <NavigationBar />
+    <NavigationBar 
+      :is-logged-in="isLoggedIn"
+      :user-info="userInfoForNav"
+    />
     
     <div class="profile-content">
       <!-- 로딩 상태 -->
@@ -27,13 +30,13 @@
               <h1 class="profile-nickname">{{ profile.nickname }}</h1>
               <p class="profile-email">{{ profile.email }}</p>
               
-              <!-- 가입일 & 마지막 플레이 -->
-              <div class="profile-dates">
-                <span class="date-item">
+              <!-- 가입일 & 마지막 플레이 (추후 구현 예정) -->
+              <div class="profile-dates" v-if="profile.joinedAt || profile.lastPlayedAt">
+                <span class="date-item" v-if="profile.joinedAt">
                   <i class="fas fa-calendar-alt"></i>
                   가입: {{ formatDate(profile.joinedAt) }}
                 </span>
-                <span class="date-item">
+                <span class="date-item" v-if="profile.lastPlayedAt">
                   <i class="fas fa-clock"></i>
                   최근: {{ formatDate(profile.lastPlayedAt) }}
                 </span>
@@ -41,8 +44,8 @@
                 </div>
               </div>
               
-          <!-- 연속 플레이 스트릭 -->
-          <div class="streak-section">
+          <!-- 연속 플레이 스트릭 (추후 구현 예정) -->
+          <div class="streak-section" v-if="profile.currentStreak !== undefined && profile.currentStreak !== null">
             <div class="streak-card" :class="{ 'streak-active': profile.currentStreak > 0 }">
               <div class="streak-icon">
                 <i class="fas fa-fire" :class="{ 'fire-active': profile.currentStreak > 0 }"></i>
@@ -96,15 +99,14 @@
             
           <!-- 전체 통계 -->
           <div v-if="activeTab === 'overall'" class="tab-content">
-            <!-- 전체 랭크 카드 -->
+            <!-- 전체 랭크 카드 (로드뷰 랭크 표시) -->
             <div class="rank-card-inline">
               <div class="rank-icon">{{ rankInfo.icon }}</div>
               <div class="rank-details">
                 <div class="rank-tier">
-                  전체 랭크: {{ rankInfo.name }} {{ getRankLevel(profile.rankInfo.rankLevel) }}
+                  전체 랭크: {{ rankInfo.name }} {{ getRankLevel(profile.rankInfo?.roadViewRank?.level) }}
                 </div>
-                <div class="rank-rating">{{ formatNumber(profile.rankInfo.ratingScore) }} RP</div>
-                <div class="rank-percentage">상위 {{ profile.rankInfo.rankPercentage }}%</div>
+                <div class="rank-rating">{{ formatNumber(profile.rankInfo?.roadViewRank?.ratingScore || 0) }} RP</div>
               </div>
               </div>
               
@@ -114,7 +116,7 @@
                 </div>
               <div class="best-score-content">
                 <div class="best-score-label">전체 최고 점수</div>
-                <div class="best-score-value">{{ formatNumber(profile.statistics.bestScore) }}</div>
+                <div class="best-score-value">{{ formatNumber(profile.statistics?.bestScore || 0) }}</div>
                 </div>
               </div>
 
@@ -148,10 +150,9 @@
               <div class="rank-icon">{{ rankInfo.icon }}</div>
               <div class="rank-details">
                 <div class="rank-tier">
-                  로드뷰 랭크: {{ rankInfo.name }} {{ getRankLevel(profile.rankInfo.rankLevel) }}
+                  로드뷰 랭크: {{ rankInfo.name }} {{ getRankLevel(profile.rankInfo?.roadViewRank?.level) }}
                 </div>
-                <div class="rank-rating">{{ formatNumber(profile.rankInfo.ratingScore) }} RP</div>
-                <div class="rank-percentage">상위 {{ profile.rankInfo.rankPercentage }}%</div>
+                <div class="rank-rating">{{ formatNumber(profile.rankInfo?.roadViewRank?.ratingScore || 0) }} RP</div>
               </div>
             </div>
 
@@ -161,7 +162,7 @@
               </div>
               <div class="best-score-content">
                 <div class="best-score-label">로드뷰 최고 점수</div>
-                <div class="best-score-value">{{ formatNumber(profile.statistics.bestScore) }}</div>
+                <div class="best-score-value">{{ formatNumber(profile.statistics?.bestScore || 0) }}</div>
               </div>
             </div>
 
@@ -183,11 +184,11 @@
                   <div class="stat-details">
                     <div class="stat-row">
                       <span class="stat-label">게임 수</span>
-                      <span class="stat-value">{{ formatNumber(profile.statistics.singleGame.practice.totalGames) }}</span>
+                      <span class="stat-value">{{ formatNumber(profile.statistics?.roadView?.practice?.totalGames || 0) }}</span>
               </div>
                     <div class="stat-row">
                       <span class="stat-label">평균 점수</span>
-                      <span class="stat-value">{{ formatNumber(profile.statistics.singleGame.practice.averageScore) }}</span>
+                      <span class="stat-value">{{ formatNumber(profile.statistics?.roadView?.practice?.averageScore || 0) }}</span>
               </div>
                   </div>
                 </div>
@@ -201,11 +202,11 @@
                   <div class="stat-details">
                     <div class="stat-row">
                       <span class="stat-label">게임 수</span>
-                      <span class="stat-value">{{ formatNumber(profile.statistics.singleGame.rank.totalGames) }}</span>
+                      <span class="stat-value">{{ formatNumber(profile.statistics?.roadView?.rank?.totalGames || 0) }}</span>
                     </div>
                     <div class="stat-row">
                       <span class="stat-label">평균 점수</span>
-                      <span class="stat-value">{{ formatNumber(profile.statistics.singleGame.rank.averageScore) }}</span>
+                      <span class="stat-value">{{ formatNumber(profile.statistics?.roadView?.rank?.averageScore || 0) }}</span>
                     </div>
                   </div>
               </div>
@@ -223,11 +224,11 @@
                 <div class="stat-item full-width">
                   <div class="stat-row">
                     <span class="stat-label">총 게임 수</span>
-                    <span class="stat-value">{{ formatNumber(profile.statistics.multiGame.totalGames) }}</span>
+                    <span class="stat-value">{{ formatNumber(profile.statistics?.roadView?.multi?.totalGames || 0) }}</span>
             </div>
                   <div class="stat-row">
                     <span class="stat-label">평균 점수</span>
-                    <span class="stat-value">{{ formatNumber(profile.statistics.multiGame.averageScore) }}</span>
+                    <span class="stat-value">{{ formatNumber(profile.statistics?.roadView?.multi?.averageScore || 0) }}</span>
                   </div>
                 </div>
 
@@ -235,17 +236,17 @@
                 <div class="rank-counts">
                   <div class="rank-count-item first">
                     <div class="rank-count-icon">🥇</div>
-                    <div class="rank-count-value">{{ formatNumber(profile.statistics.multiGame.firstPlaceCount) }}</div>
+                    <div class="rank-count-value">{{ formatNumber(profile.statistics?.roadView?.multi?.firstPlaceCount || 0) }}</div>
                     <div class="rank-count-label">1위</div>
                   </div>
                   <div class="rank-count-item second">
                     <div class="rank-count-icon">🥈</div>
-                    <div class="rank-count-value">{{ formatNumber(profile.statistics.multiGame.secondPlaceCount) }}</div>
+                    <div class="rank-count-value">{{ formatNumber(profile.statistics?.roadView?.multi?.secondPlaceCount || 0) }}</div>
                     <div class="rank-count-label">2위</div>
                   </div>
                   <div class="rank-count-item third">
                     <div class="rank-count-icon">🥉</div>
-                    <div class="rank-count-value">{{ formatNumber(profile.statistics.multiGame.thirdPlaceCount) }}</div>
+                    <div class="rank-count-value">{{ formatNumber(profile.statistics?.roadView?.multi?.thirdPlaceCount || 0) }}</div>
                     <div class="rank-count-label">3위</div>
                   </div>
                 </div>
@@ -265,15 +266,14 @@
 
           <!-- 멀티플레이 전체 통계 -->
           <div v-if="activeTab === 'multiplayer'" class="tab-content">
-            <!-- 멀티플레이 랭크 카드 -->
+            <!-- 멀티플레이 랭크 카드 (로드뷰 멀티플레이 랭크 표시) -->
             <div class="rank-card-inline">
               <div class="rank-icon">{{ rankInfo.icon }}</div>
               <div class="rank-details">
                 <div class="rank-tier">
-                  멀티플레이 랭크: {{ rankInfo.name }} {{ getRankLevel(profile.rankInfo.rankLevel) }}
+                  멀티플레이 랭크: {{ rankInfo.name }} {{ getRankLevel(profile.rankInfo?.roadViewRank?.level) }}
               </div>
-                <div class="rank-rating">{{ formatNumber(profile.rankInfo.ratingScore) }} RP</div>
-                <div class="rank-percentage">상위 {{ profile.rankInfo.rankPercentage }}%</div>
+                <div class="rank-rating">{{ formatNumber(profile.rankInfo?.roadViewRank?.ratingScore || 0) }} RP</div>
             </div>
           </div>
 
@@ -283,7 +283,7 @@
         </div>
               <div class="best-score-content">
                 <div class="best-score-label">멀티플레이 최고 점수</div>
-                <div class="best-score-value">{{ formatNumber(profile.statistics.multiGame.averageScore) }}</div>
+                <div class="best-score-value">{{ formatNumber(profile.statistics?.roadView?.multi?.averageScore || 0) }}</div>
       </div>
             </div>
 
@@ -296,17 +296,17 @@
               <div class="rank-counts">
                 <div class="rank-count-item first">
                   <div class="rank-count-icon">🥇</div>
-                  <div class="rank-count-value">{{ formatNumber(profile.statistics.multiGame.firstPlaceCount) }}</div>
+                  <div class="rank-count-value">{{ formatNumber(profile.statistics?.roadView?.multi?.firstPlaceCount || 0) }}</div>
                   <div class="rank-count-label">1위</div>
         </div>
                 <div class="rank-count-item second">
                   <div class="rank-count-icon">🥈</div>
-                  <div class="rank-count-value">{{ formatNumber(profile.statistics.multiGame.secondPlaceCount) }}</div>
+                  <div class="rank-count-value">{{ formatNumber(profile.statistics?.roadView?.multi?.secondPlaceCount || 0) }}</div>
                   <div class="rank-count-label">2위</div>
       </div>
                 <div class="rank-count-item third">
                   <div class="rank-count-icon">🥉</div>
-                  <div class="rank-count-value">{{ formatNumber(profile.statistics.multiGame.thirdPlaceCount) }}</div>
+                  <div class="rank-count-value">{{ formatNumber(profile.statistics?.roadView?.multi?.thirdPlaceCount || 0) }}</div>
                   <div class="rank-count-label">3위</div>
                 </div>
               </div>
@@ -314,11 +314,11 @@
               <div class="stat-item full-width" style="margin-top: 1rem;">
                 <div class="stat-row">
                   <span class="stat-label">총 게임 수</span>
-                  <span class="stat-value">{{ formatNumber(profile.statistics.multiGame.totalGames) }}</span>
+                  <span class="stat-value">{{ formatNumber(profile.statistics?.roadView?.multi?.totalGames || 0) }}</span>
                 </div>
                 <div class="stat-row">
                   <span class="stat-label">평균 점수</span>
-                  <span class="stat-value">{{ formatNumber(profile.statistics.multiGame.averageScore) }}</span>
+                  <span class="stat-value">{{ formatNumber(profile.statistics?.roadView?.multi?.averageScore || 0) }}</span>
                 </div>
               </div>
             </div>
@@ -404,6 +404,9 @@ import { ref, computed, onMounted, watch } from 'vue';
 import NavigationBar from '@/core/components/NavigationBar.vue';
 import { userService } from '@/features/user/services/user.service.js';
 
+// 로그인 여부 확인
+const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'));
+
 // 반응형 상태
 const isLoading = ref(true);
 const showToast = ref(false);
@@ -418,11 +421,11 @@ const profile = ref({
   email: '',
   profileImageUrl: '',
   currentPoint: 0,
-  joinedAt: '',
-  lastPlayedAt: '',
+  joinedAt: null,
+  lastPlayedAt: null,
   currentStreak: 0,
   statistics: {
-    singleGame: {
+    roadView: {
       practice: {
         totalGames: 0,
         averageScore: 0
@@ -430,22 +433,45 @@ const profile = ref({
       rank: {
         totalGames: 0,
         averageScore: 0
+      },
+      multi: {
+        totalGames: 0,
+        averageScore: 0,
+        firstPlaceCount: 0,
+        secondPlaceCount: 0,
+        thirdPlaceCount: 0
       }
     },
-    multiGame: {
+    photo: {
+      practice: {
+        totalGames: 0,
+        averageScore: 0
+      },
+      rank: {
+        totalGames: 0,
+        averageScore: 0
+      },
+      multi: {
       totalGames: 0,
       averageScore: 0,
       firstPlaceCount: 0,
       secondPlaceCount: 0,
       thirdPlaceCount: 0
+      }
     },
     bestScore: 0
   },
   rankInfo: {
-    rankTier: 'BRONZE',
-    rankLevel: 'ONE',
-    ratingScore: 0,
-    rankPercentage: 0
+    roadViewRank: {
+      tier: 'BRONZE',
+      level: 'FIVE',
+      ratingScore: 0
+    },
+    photoRank: {
+      tier: 'BRONZE',
+      level: 'FIVE',
+      ratingScore: 0
+    }
   }
 });
 
@@ -470,9 +496,13 @@ const inventoryTabs = [
 const inventoryItems = ref([]);
 const isLoadingInventory = ref(false);
 
-// Computed: 랭크 정보
+// Computed: 랭크 정보 (활성 탭에 따라 반환)
 const rankInfo = computed(() => {
-  return userService.getRankTierInfo(profile.value.rankInfo.rankTier);
+  if (activeTab.value === 'photo') {
+    return userService.getRankTierInfo(profile.value.rankInfo?.photoRank?.tier || 'BRONZE');
+  }
+  // 전체, 로드뷰, 멀티플레이 탭은 로드뷰 랭크 사용
+  return userService.getRankTierInfo(profile.value.rankInfo?.roadViewRank?.tier || 'BRONZE');
 });
 
 // Computed: 필터링된 인벤토리 아이템
@@ -481,6 +511,20 @@ const filteredInventoryItems = computed(() => {
     return inventoryItems.value;
   }
   return inventoryItems.value.filter(item => item.type === activeInventoryTab.value);
+});
+
+// Computed: NavigationBar에 전달할 사용자 정보
+const userInfoForNav = computed(() => {
+  if (!profile.value || !profile.value.nickname) {
+    return {};
+  }
+  
+  return {
+    name: profile.value.nickname,
+    email: profile.value.email || '',
+    avatar: profile.value.profileImageUrl || null,
+    isAdmin: localStorage.getItem('isAdmin') === 'true' || false
+  };
 });
 
 // 더미 데이터 생성 함수
@@ -494,7 +538,7 @@ function getDummyProfileData() {
     lastPlayedAt: '2025-11-02T14:30:00Z',
     currentStreak: 7,
     statistics: {
-      singleGame: {
+      roadView: {
         practice: {
           totalGames: 45,
           averageScore: 7850
@@ -502,22 +546,45 @@ function getDummyProfileData() {
         rank: {
           totalGames: 128,
           averageScore: 8920
-        }
       },
-      multiGame: {
+        multi: {
         totalGames: 89,
         averageScore: 7650,
         firstPlaceCount: 23,
         secondPlaceCount: 31,
         thirdPlaceCount: 18
+        }
+      },
+      photo: {
+        practice: {
+          totalGames: 0,
+          averageScore: 0
+        },
+        rank: {
+          totalGames: 0,
+          averageScore: 0
+        },
+        multi: {
+          totalGames: 0,
+          averageScore: 0,
+          firstPlaceCount: 0,
+          secondPlaceCount: 0,
+          thirdPlaceCount: 0
+        }
       },
       bestScore: 9875
     },
     rankInfo: {
-      rankTier: 'GOLD',
-      rankLevel: 'THREE',
-      ratingScore: 2450,
-      rankPercentage: 15.5
+      roadViewRank: {
+        tier: 'GOLD',
+        level: 'THREE',
+        ratingScore: 2450
+      },
+      photoRank: {
+        tier: 'BRONZE',
+        level: 'FIVE',
+        ratingScore: 0
+      }
     }
   };
 }
@@ -580,20 +647,27 @@ function showErrorToast(message) {
 
 // 전체 게임 수 계산
 function getTotalGames() {
-  const singleTotal = 
-    profile.value.statistics.singleGame.practice.totalGames + 
-    profile.value.statistics.singleGame.rank.totalGames;
-  const multiTotal = profile.value.statistics.multiGame.totalGames;
-  return formatNumber(singleTotal + multiTotal);
+  const roadViewTotal = 
+    (profile.value.statistics?.roadView?.practice?.totalGames || 0) + 
+    (profile.value.statistics?.roadView?.rank?.totalGames || 0) +
+    (profile.value.statistics?.roadView?.multi?.totalGames || 0);
+  const photoTotal = 
+    (profile.value.statistics?.photo?.practice?.totalGames || 0) + 
+    (profile.value.statistics?.photo?.rank?.totalGames || 0) +
+    (profile.value.statistics?.photo?.multi?.totalGames || 0);
+  return formatNumber(roadViewTotal + photoTotal);
 }
 
 // 전체 평균 점수 계산
 function getAverageScore() {
-  const practiceScore = profile.value.statistics.singleGame.practice.averageScore;
-  const rankScore = profile.value.statistics.singleGame.rank.averageScore;
-  const multiScore = profile.value.statistics.multiGame.averageScore;
+  const roadViewPractice = profile.value.statistics?.roadView?.practice?.averageScore || 0;
+  const roadViewRank = profile.value.statistics?.roadView?.rank?.averageScore || 0;
+  const roadViewMulti = profile.value.statistics?.roadView?.multi?.averageScore || 0;
+  const photoPractice = profile.value.statistics?.photo?.practice?.averageScore || 0;
+  const photoRank = profile.value.statistics?.photo?.rank?.averageScore || 0;
+  const photoMulti = profile.value.statistics?.photo?.multi?.averageScore || 0;
   
-  const scores = [practiceScore, rankScore, multiScore].filter(s => s > 0);
+  const scores = [roadViewPractice, roadViewRank, roadViewMulti, photoPractice, photoRank, photoMulti].filter(s => s > 0);
   if (scores.length === 0) return '0';
   
   const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
@@ -724,6 +798,7 @@ watch(showInventoryModal, (newValue) => {
   min-height: 100vh;
   width: 100%;
   background: #f8f9fa;
+  overflow-y: auto;
 }
 
 .profile-content {

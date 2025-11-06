@@ -93,6 +93,10 @@ const props = defineProps({
     type: String,
     default: 'single',
     validator: (value) => ['single', 'team', 'solo'].includes(value)
+  },
+  markerImageUrl: {
+    type: String,
+    default: null,
   }
 });
 
@@ -149,11 +153,21 @@ const getMapInstance = () => {
   return map.value;
 };
 
+// 지도 초기화 보장 메서드
+const ensureMapInitialized = () => {
+  if (!isInitialized.value || !map.value) {
+    initMap();
+  } else {
+    resizeMap();
+  }
+};
+
 // defineExpose를 사용하여 메서드 노출
 defineExpose({
   getMapInstance,
   getMarkerPosition,
-  startTeamVoting
+  startTeamVoting,
+  ensureMapInitialized
 });
 
 // 감시자 설정

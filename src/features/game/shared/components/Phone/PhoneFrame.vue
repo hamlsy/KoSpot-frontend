@@ -14,6 +14,7 @@
         :showDistance="showDistance"
         :showActionButton="showActionButton"
         :gameMode="gameMode"
+        :markerImageUrl="markerImageUrl"
         @close="$emit('close')"
         @check-answer="onCheckAnswer"
         ref="phoneMapGame"
@@ -90,6 +91,10 @@ export default {
       type: String,
       default: 'single', // 기본값을 single로 설정
     },
+    markerImageUrl: {
+      type: String,
+      default: null,
+    },
   },
   methods: {
     onCheckAnswer(location) {
@@ -162,6 +167,13 @@ export default {
         return Promise.reject("지도가 준비되지 않았습니다.");
       }
       return this.$refs.phoneMapGame.getMarkerPosition();
+    },
+
+    // 지도 초기화 보장
+    ensureMapInitialized() {
+      if (this.$refs.phoneMapGame && typeof this.$refs.phoneMapGame.ensureMapInitialized === 'function') {
+        this.$refs.phoneMapGame.ensureMapInitialized();
+      }
     },
   },
 };

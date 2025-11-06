@@ -117,7 +117,10 @@
             </button>
           </div>
 
-          <div class="popup-description">
+          <div 
+            v-if="!showPracticeTutorial || selectedGameMode.id !== 'practice'"
+            class="popup-description"
+          >
             <p>{{ selectedGameMode.fullDescription }}</p>
           </div>
 
@@ -130,7 +133,7 @@
           />
 
           <div
-            v-if="selectedGameMode.id === 'practice'"
+            v-if="selectedGameMode.id === 'practice' && !showPracticeTutorial"
             class="practice-mode-options"
           >
             <h3>지역 선택</h3>
@@ -146,7 +149,10 @@
             </div>
           </div>
 
-          <div v-if="selectedGameMode.id === 'rank'" class="rank-mode-options">
+          <div 
+            v-if="selectedGameMode.id === 'rank' && (!showPracticeTutorial || selectedGameMode.id !== 'practice')" 
+            class="rank-mode-options"
+          >
             <div class="rank-info-card">
               <div class="rank-info-header">
                 <span class="rank-label">현재 랭크</span>
@@ -170,6 +176,7 @@
           </div>
 
           <button
+            v-if="!showPracticeTutorial || selectedGameMode.id !== 'practice'"
             class="start-game-button"
             @click="startGame"
             :disabled="!isGameStartReady"
@@ -366,6 +373,16 @@ const isGameStartReady = computed(() => {
 
 // 컴포넌트 마운트 시 실행
 onMounted(() => {
+  // 로그인 여부 확인
+  const isLoggedIn = !!localStorage.getItem('accessToken');
+  
+  if (!isLoggedIn) {
+    // 로그인하지 않은 경우 메인 페이지로 리다이렉션
+    alert('로그인한 사용자만 접근할 수 있습니다.');
+    router.push('/');
+    return;
+  }
+  
   fetchMainPageData();
 });
 

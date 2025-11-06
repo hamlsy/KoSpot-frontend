@@ -327,6 +327,16 @@ const toggleDevMode = async () => {
 
 // 라이프사이클 훅
 onMounted(() => {
+  // 로그인 여부 확인
+  const isLoggedIn = !!localStorage.getItem('accessToken');
+  
+  if (!isLoggedIn) {
+    // 로그인하지 않은 경우 메인 페이지로 리다이렉션
+    alert('로그인한 사용자만 접근할 수 있습니다.');
+    router.push('/');
+    return;
+  }
+  
   checkAdminStatus();
   initializeData();
   checkMobileView();
@@ -347,7 +357,7 @@ onBeforeUnmount(() => {
 @import url("@/shared/assets/styles/common/header.css");
 
 .multiplayer-container {
-  min-height: 100vh;
+  min-height: 120vh;
   padding-bottom: 40px;
   position: relative;
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -824,6 +834,7 @@ onBeforeUnmount(() => {
   
   .main-content {
     padding: 70px 15px 15px;
+    margin-bottom: 0px;
   }
   
   .chat-toggle-button {

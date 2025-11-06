@@ -46,13 +46,14 @@
       <!-- 휴대폰 프레임 -->
       <PhoneFrame
         :style="{ zIndex: isMapOpen ? 15 : -1 }"
-        :centerLocation="centerLocation"
+        :centerLocation="{ lat: 36.5, lng: 127.5 }"
         :actualLocation="currentLocation"
         :showHintCircles="false"
         :disabled="showResult"
         :showDistance="false"
         :showActionButton="false"
         :gameMode="'single'"
+        :markerImageUrl="markerImageUrl"
         @close="toggleMap"
         @check-answer="checkAnswer"
         @spot-answer="checkSpotAnswer"
@@ -246,36 +247,8 @@ export default {
 
     // 게임 상태 초기화
     resetGame() {
-      // 타이머 정리
-      this.clearAllTimers();
-
-      // 상태 초기화
-      this.showResult = false;
-      this.isMapOpen = false;
-      this.guessedLocation = null;
-      this.distance = null;
-      this.score = 0;
-      this.elapsedTime = 0;
-      
-      // API 관련 상태 초기화
-      this.gameId = null;
-      this.markerImageUrl = null;
-      this.gameStartTime = null;
-      this.poiName = null;
-      
-      // 랭크 티어/레벨 정보 초기화
-      this.previousRatingScore = 0;
-      this.currentRatingScore = 0;
-      this.rankPointChange = 0;
-      this.previousRankTier = null;
-      this.previousRankLevel = null;
-      this.currentRankTier = null;
-      this.currentRankLevel = null;
-      
-      this.showCountdown = true;
-
-      // 새로운 게임 위치 데이터 요청
-      this.fetchGameLocationData();
+      // 페이지 새로고침으로 게임을 완전히 초기화
+      window.location.reload();
     },
 
     // 모든 타이머 정리
@@ -367,9 +340,14 @@ export default {
           this.gameId = roadViewApiService.convertGameIdToNumber(gameId);
           this.markerImageUrl = markerImageUrl;
           this.poiName = poiName || null; // POI 이름 저장
+          
+          // 암호화된 좌표를 복호화
+          const decryptedLat = roadViewApiService.decryptCoordinate(targetLat);
+          const decryptedLng = roadViewApiService.decryptCoordinate(targetLng);
+          
           this.currentLocation = {
-            lat: roadViewApiService.convertCoordinateToNumber(targetLat),
-            lng: roadViewApiService.convertCoordinateToNumber(targetLng)
+            lat: decryptedLat,
+            lng: decryptedLng
           };
           
           console.log("백엔드에서 받은 랭크 게임 데이터:", {
@@ -377,6 +355,31 @@ export default {
             location: this.currentLocation,
             markerImageUrl,
             poiName: this.poiName
+          });
+          
+          console.log("📍 RankView - 복호화된 좌표:", {
+            위도: decryptedLat,
+            경도: decryptedLng,
+            암호화된위도: targetLat,
+            암호화된경도: targetLng
+          });
+          
+          // currentLocation이 설정된 후 PhoneFrame의 지도 초기화 보장
+          this.$nextTick(() => {
+            if (this.$refs.phoneFrame) {
+              // 지도가 열려있으면 리사이즈, 닫혀있으면 초기화만 보장
+              this.$refs.phoneFrame.ensureMapInitialized();
+              
+              // 지도가 열려있으면 리사이즈
+              if (this.isMapOpen) {
+                setTimeout(() => {
+                  const mapInstance = this.$refs.phoneFrame.getMapInstance();
+                  if (mapInstance) {
+                    mapInstance.relayout();
+                  }
+                }, 100);
+              }
+            }
           });
         } else {
           throw new Error(response.message || '게임 시작에 실패했습니다.');
@@ -416,6 +419,24 @@ export default {
       // 더미 게임 ID 생성 (Number 타입)
       this.gameId = Date.now();
       this.markerImageUrl = null;
+      
+      // currentLocation이 설정된 후 PhoneFrame의 지도 초기화 보장
+      this.$nextTick(() => {
+        if (this.$refs.phoneFrame) {
+          // 지도가 열려있으면 리사이즈, 닫혀있으면 초기화만 보장
+          this.$refs.phoneFrame.ensureMapInitialized();
+          
+          // 지도가 열려있으면 리사이즈
+          if (this.isMapOpen) {
+            setTimeout(() => {
+              const mapInstance = this.$refs.phoneFrame.getMapInstance();
+              if (mapInstance) {
+                mapInstance.relayout();
+              }
+            }, 100);
+          }
+        }
+      });
       
       console.log("더미 데이터로 선택된 위치:", this.currentLocation);
     },
