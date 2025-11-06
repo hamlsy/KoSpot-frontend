@@ -3,15 +3,15 @@
 // todo 변경 예정
 export const API_ENDPOINTS = {
     // 인증 관련
-    // AUTH: {
-    //   LOGIN: '/auth/login',
-    //   LOGOUT: '/auth/logout',
-    //   REGISTER: '/auth/register',
-    //   REFRESH: '/auth/refresh',
-    //   VERIFY_EMAIL: '/auth/verify-email',
-    //   FORGOT_PASSWORD: '/auth/forgot-password',
-    //   RESET_PASSWORD: '/auth/reset-password'
-    // },
+    AUTH: {
+      LOGIN: '/auth/login',
+      LOGOUT: '/auth/logout',
+      REGISTER: '/auth/register',
+      RE_ISSUE: '/auth/reIssue',
+      VERIFY_EMAIL: '/auth/verify-email',
+      FORGOT_PASSWORD: '/auth/forgot-password',
+      RESET_PASSWORD: '/auth/reset-password'
+    },
     
     // 메인 페이지
     MAIN: '/main',
