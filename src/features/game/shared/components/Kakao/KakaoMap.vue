@@ -278,10 +278,13 @@ export default {
         // 기존 마커 위치 변경
         this.actualMarker.setPosition(markerPosition);
       } else {
-        // 새 마커 생성 - 정답 마커는 다른 이미지 사용
+        // 새 마커 생성 - 정답 마커는 location-flag.png 사용
         const markerImage = new kakao.maps.MarkerImage(
-          'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png',
-          new kakao.maps.Size(35, 35) 
+          require('@/shared/assets/images/marker/location-flag.png'),
+          new kakao.maps.Size(35, 35),
+          {
+            offset: new kakao.maps.Point(2, 0) // 오른쪽으로 2픽셀 이동
+          }
         );
         
         this.actualMarker = new kakao.maps.Marker({
