@@ -19,6 +19,7 @@ const ROADVIEW_ENDPOINTS = {
   PRACTICE: {
     START: '/roadView/practice/start',
     END: '/roadView/practice/end',
+    REISSUE: '/roadView/practice/{gameId}/reissue-coordinate',
   },
 };
 
@@ -192,6 +193,27 @@ class RoadViewApiService {
   }
 
   /**
+   * 연습 게임 좌표 재발급
+   * @param {number} gameId - 게임 ID
+   * @returns {Promise<{isSuccess: boolean, result: {targetLat: string, targetLng: string}}>} API 응답 데이터
+   */
+  async reissuePracticeCoordinate(gameId) {
+    try {
+      console.log('📤 연습 게임 좌표 재발급 요청:', { gameId });
+      
+      const endpoint = ROADVIEW_ENDPOINTS.PRACTICE.REISSUE.replace('{gameId}', gameId);
+      const response = await apiClient.post(endpoint);
+      
+      console.log('✅ 연습 게임 좌표 재발급 성공:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ 연습 게임 좌표 재발급 실패:', error);
+      this._handleApiError(error, '좌표 재발급에 실패했습니다.');
+      throw error;
+    }
+  }
+
+  /**
    * API 에러 처리
    * @param {Error} error - 에러 객체
    * @param {string} defaultMessage - 기본 에러 메시지
@@ -282,7 +304,11 @@ class RoadViewApiService {
   decryptCoordinate(encryptedCoordinate) {
     try {
       // 환경변수에서 암호화 키 가져오기
-      const encryptKey = process.env.VUE_APP_ENCRYPT_KEY;
+      // 로컬 테스트 시에는 "1234567890123456" 사용, 배포 시에는 env에서 가져오기
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      const encryptKey = isDevelopment 
+        ? (process.env.VUE_APP_ENCRYPT_KEY || '1234567890123456')
+        : process.env.VUE_APP_ENCRYPT_KEY;
       
       if (!encryptKey) {
         console.warn('⚠️ VUE_APP_ENCRYPT_KEY가 설정되지 않았습니다. 암호화된 좌표를 복호화할 수 없습니다.');
@@ -293,6 +319,11 @@ class RoadViewApiService {
       if (!encryptedCoordinate || typeof encryptedCoordinate !== 'string') {
         console.warn('⚠️ 암호화된 좌표가 유효하지 않습니다:', encryptedCoordinate);
         return typeof encryptedCoordinate === 'string' ? parseFloat(encryptedCoordinate) : encryptedCoordinate;
+      }
+
+      // 암호화 키 로그 출력 (로컬 테스트 시에만)
+      if (isDevelopment) {
+        console.log('🔑 사용 중인 암호화 키:', encryptKey === '1234567890123456' ? '1234567890123456 (로컬 테스트용)' : 'env에서 가져온 키');
       }
 
       // 1. Base64 디코딩
@@ -319,6 +350,7 @@ class RoadViewApiService {
         console.error('❌ 복호화된 좌표를 숫자로 변환할 수 없습니다:', decryptedString);
         throw new Error('좌표 복호화 실패: 숫자 변환 불가');
       }
+
 
       return decryptedNumber;
     } catch (error) {

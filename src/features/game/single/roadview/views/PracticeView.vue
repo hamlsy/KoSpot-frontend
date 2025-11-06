@@ -62,13 +62,14 @@
       <!-- 휴대폰 프레임 -->
       <PhoneFrame
         :style="{ zIndex: isMapOpen ? 15 : -1 }"
-        :centerLocation="centerLocation"
+        :centerLocation="{ lat: 36.5, lng: 127.5 }"
         :actualLocation="currentLocation"
         :showHintCircles="true"
         :disabled="showResult"
         :showDistance="false"
         :showActionButton="false"
         :gameMode="'single'"
+        :markerImageUrl="markerImageUrl"
         @close="toggleMap"
         @check-answer="checkAnswer"
         @spot-answer="checkSpotAnswer"
@@ -407,16 +408,23 @@ export default {
 
       if (this.isMapOpen) {
         this.$nextTick(() => {
-          // 지도 리사이즈
-          const mapInstance = this.$refs.phoneFrame.getMapInstance();
-          if (mapInstance) {
-            mapInstance.relayout();
+          // 지도가 초기화되지 않았으면 초기화 시도
+          if (this.$refs.phoneFrame) {
+            this.$refs.phoneFrame.ensureMapInitialized();
           }
           
-          // 힌트 원 재표시
-          if (this.hintCircle && mapInstance) {
-            this.hintCircle.setMap(mapInstance);
-          }
+          // 지도가 초기화될 때까지 기다린 후 리사이즈
+          setTimeout(() => {
+            const mapInstance = this.$refs.phoneFrame.getMapInstance();
+            if (mapInstance) {
+              mapInstance.relayout();
+              
+              // 힌트 원 재표시
+              if (this.hintCircle) {
+                this.hintCircle.setMap(mapInstance);
+              }
+            }
+          }, 200);
         });
       } else {
         // 지도를 닫을 때는 인라인 스타일에서 자동으로 z-index가 -1로 설정됨
@@ -598,11 +606,8 @@ export default {
     async fetchGameLocationData() {
       this.isLoading = true;
 
-      // 선택된 지역의 센터 위치로 중앙 설정
-      this.centerLocation = {
-        lat: this.selectedRegion.centerLat,
-        lng: this.selectedRegion.centerLng,
-      };
+      // PhoneFrame의 지도 시작 위치는 대한민국 중심으로 고정
+      // centerLocation은 PhoneFrame에 직접 전달하지 않으므로 여기서는 설정하지 않음
 
       try {
         // 현재 설정된 sido key 사용 (쿼리 파라미터에서 받은 값)
@@ -620,17 +625,33 @@ export default {
           this.markerImageUrl = markerImageUrl;
           
           // 암호화된 좌표를 복호화
+          const decryptedLat = roadViewApiService.decryptCoordinate(targetLat);
+          const decryptedLng = roadViewApiService.decryptCoordinate(targetLng);
+          
           this.currentLocation = {
-            lat: roadViewApiService.decryptCoordinate(targetLat),
-            lng: roadViewApiService.decryptCoordinate(targetLng)
+            lat: decryptedLat,
+            lng: decryptedLng
           };
           
-          console.log("백엔드에서 받은 연습 게임 데이터:", {
-            gameId: this.gameId,
-            sido,
-            location: this.currentLocation,
-            markerImageUrl
+          // currentLocation이 설정된 후 PhoneFrame의 지도 초기화 보장
+          this.$nextTick(() => {
+            if (this.$refs.phoneFrame) {
+              // 지도가 열려있으면 리사이즈, 닫혀있으면 초기화만 보장
+              console.log("resize!");
+              this.$refs.phoneFrame.ensureMapInitialized();
+              
+              // 지도가 열려있으면 리사이즈
+              if (this.isMapOpen) {
+                setTimeout(() => {
+                  const mapInstance = this.$refs.phoneFrame.getMapInstance();
+                  if (mapInstance) {
+                    mapInstance.relayout();
+                  }
+                }, 100);
+              }
+            }
           });
+          
         } else {
           throw new Error(response.message || '연습 게임 시작에 실패했습니다.');
         }
@@ -682,6 +703,24 @@ export default {
       this.markerImageUrl = null;
       
       console.log("더미 데이터로 선택된 위치:", this.currentLocation);
+      
+      // currentLocation이 설정된 후 PhoneFrame의 지도 초기화 보장
+      this.$nextTick(() => {
+        if (this.$refs.phoneFrame) {
+          // 지도가 열려있으면 리사이즈, 닫혀있으면 초기화만 보장
+          this.$refs.phoneFrame.ensureMapInitialized();
+          
+          // 지도가 열려있으면 리사이즈
+          if (this.isMapOpen) {
+            setTimeout(() => {
+              const mapInstance = this.$refs.phoneFrame.getMapInstance();
+              if (mapInstance) {
+                mapInstance.relayout();
+              }
+            }, 100);
+          }
+        }
+      });
     },
 
     // 게임 결과 확인
@@ -929,17 +968,75 @@ export default {
     },
 
     // 로드뷰 로드 오류 이벤트 핸들러
-    onRoadViewError() {
-      console.error("로드뷰 로드 오류, 새 위치 시도");
+    async onRoadViewError() {
+      console.error("로드뷰 로드 오류, 좌표 재발급 시도");
       this.errorCount++;
-      if (this.errorCount > this.maxErrorRetry) {
-        this.showToastMessage("로드뷰를 찾을 수 없어 지도 모드로 전환합니다.");
-        this.isMapOpen = true;
+      
+      // gameId가 있으면 재발급 API 호출
+      if (this.gameId) {
+        try {
+          this.showToastMessage("로드뷰를 찾을 수 없어 새로운 좌표를 요청합니다...");
+          
+          const response = await roadViewApiService.reissuePracticeCoordinate(this.gameId);
+          
+          if (response.isSuccess && response.result) {
+            const { targetLat, targetLng } = response.result;
+            
+            // 암호화된 좌표를 복호화
+            const decryptedLat = roadViewApiService.decryptCoordinate(targetLat);
+            const decryptedLng = roadViewApiService.decryptCoordinate(targetLng);
+            
+            this.currentLocation = {
+              lat: decryptedLat,
+              lng: decryptedLng
+            };
+            
+            // currentLocation이 설정된 후 PhoneFrame의 지도 초기화 보장
+            this.$nextTick(() => {
+              if (this.$refs.phoneFrame) {
+                this.$refs.phoneFrame.ensureMapInitialized();
+                
+                if (this.isMapOpen) {
+                  setTimeout(() => {
+                    const mapInstance = this.$refs.phoneFrame.getMapInstance();
+                    if (mapInstance) {
+                      mapInstance.relayout();
+                    }
+                  }, 100);
+                }
+              }
+            });
+            
+            this.errorCount = 0; // 성공 시 에러 카운트 초기화
+            this.showToastMessage("새로운 좌표로 로드뷰를 다시 시도합니다.");
+          } else {
+            throw new Error(response.message || '좌표 재발급에 실패했습니다.');
+          }
+        } catch (error) {
+          console.error("좌표 재발급 실패:", error);
+          
+          // 재발급 실패 시 기존 로직으로 폴백
+          if (this.errorCount > this.maxErrorRetry) {
+            this.showToastMessage("로드뷰를 찾을 수 없어 지도 모드로 전환합니다.");
+            this.isMapOpen = true;
+          } else {
+            this.showToastMessage(
+              `로드뷰 로드 실패 (${this.errorCount}/${this.maxErrorRetry}), 새 위치를 시도합니다...`
+            );
+            this.fetchGameLocationData();
+          }
+        }
       } else {
-        this.showToastMessage(
-          `로드뷰 로드 실패 (${this.errorCount}/${this.maxErrorRetry}), 새 위치를 시도합니다...`
-        );
-        this.fetchGameLocationData();
+        // gameId가 없으면 기존 로직 사용
+        if (this.errorCount > this.maxErrorRetry) {
+          this.showToastMessage("로드뷰를 찾을 수 없어 지도 모드로 전환합니다.");
+          this.isMapOpen = true;
+        } else {
+          this.showToastMessage(
+            `로드뷰 로드 실패 (${this.errorCount}/${this.maxErrorRetry}), 새 위치를 시도합니다...`
+          );
+          this.fetchGameLocationData();
+        }
       }
     },
 

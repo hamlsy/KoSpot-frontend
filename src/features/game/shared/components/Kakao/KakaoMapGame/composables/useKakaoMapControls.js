@@ -39,8 +39,8 @@ export function useKakaoMapControls(props, emit) {
       
       map.value = new kakao.maps.Map(container, options);
 
-      // 마커 이미지 설정
-      const imageSrc = "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
+      // 마커 이미지 설정 (markerImageUrl이 있으면 사용, 없으면 기본 이미지)
+      const imageSrc = props.markerImageUrl || "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
       const imageSize = new kakao.maps.Size(24, 35);
       const imageOption = { offset: new kakao.maps.Point(12, 35) };
       markerImage.value = new kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
@@ -131,9 +131,21 @@ export function useKakaoMapControls(props, emit) {
       
       // 클릭한 위치에 마커 생성
       const latlng = mouseEvent.latLng;
+      
+      // 마커 이미지 설정 (markerImageUrl이 있으면 사용, 없으면 기본 이미지)
+      let markerImageToUse = markerImage.value;
+      if (props.markerImageUrl && markerImage.value) {
+        // markerImageUrl이 변경되었으면 새로운 마커 이미지 생성
+        const imageSrc = props.markerImageUrl;
+        const imageSize = new kakao.maps.Size(24, 35);
+        const imageOption = { offset: new kakao.maps.Point(12, 35) };
+        markerImageToUse = new kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
+      }
+      
       marker.value = new kakao.maps.Marker({
         position: latlng,
-        map: map.value
+        map: map.value,
+        image: markerImageToUse
       });
       
       hasMarker.value = true;
@@ -168,6 +180,22 @@ export function useKakaoMapControls(props, emit) {
       hasMarker.value = false;
     }
   };
+
+  // markerImageUrl 변경 감지
+  watch(() => props.markerImageUrl, (newUrl) => {
+    if (newUrl && markerImage.value) {
+      // 마커 이미지 업데이트
+      const imageSrc = newUrl;
+      const imageSize = new kakao.maps.Size(24, 35);
+      const imageOption = { offset: new kakao.maps.Point(12, 35) };
+      markerImage.value = new kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
+      
+      // 기존 마커가 있으면 이미지 업데이트
+      if (marker.value) {
+        marker.value.setImage(markerImage.value);
+      }
+    }
+  });
 
   onMounted(() => {
     if (props.isOpen) {

@@ -46,13 +46,14 @@
       <!-- 휴대폰 프레임 -->
       <PhoneFrame
         :style="{ zIndex: isMapOpen ? 15 : -1 }"
-        :centerLocation="centerLocation"
+        :centerLocation="{ lat: 36.5, lng: 127.5 }"
         :actualLocation="currentLocation"
         :showHintCircles="false"
         :disabled="showResult"
         :showDistance="false"
         :showActionButton="false"
         :gameMode="'single'"
+        :markerImageUrl="markerImageUrl"
         @close="toggleMap"
         @check-answer="checkAnswer"
         @spot-answer="checkSpotAnswer"
@@ -341,9 +342,12 @@ export default {
           this.poiName = poiName || null; // POI 이름 저장
           
           // 암호화된 좌표를 복호화
+          const decryptedLat = roadViewApiService.decryptCoordinate(targetLat);
+          const decryptedLng = roadViewApiService.decryptCoordinate(targetLng);
+          
           this.currentLocation = {
-            lat: roadViewApiService.decryptCoordinate(targetLat),
-            lng: roadViewApiService.decryptCoordinate(targetLng)
+            lat: decryptedLat,
+            lng: decryptedLng
           };
           
           console.log("백엔드에서 받은 랭크 게임 데이터:", {
@@ -351,6 +355,31 @@ export default {
             location: this.currentLocation,
             markerImageUrl,
             poiName: this.poiName
+          });
+          
+          console.log("📍 RankView - 복호화된 좌표:", {
+            위도: decryptedLat,
+            경도: decryptedLng,
+            암호화된위도: targetLat,
+            암호화된경도: targetLng
+          });
+          
+          // currentLocation이 설정된 후 PhoneFrame의 지도 초기화 보장
+          this.$nextTick(() => {
+            if (this.$refs.phoneFrame) {
+              // 지도가 열려있으면 리사이즈, 닫혀있으면 초기화만 보장
+              this.$refs.phoneFrame.ensureMapInitialized();
+              
+              // 지도가 열려있으면 리사이즈
+              if (this.isMapOpen) {
+                setTimeout(() => {
+                  const mapInstance = this.$refs.phoneFrame.getMapInstance();
+                  if (mapInstance) {
+                    mapInstance.relayout();
+                  }
+                }, 100);
+              }
+            }
           });
         } else {
           throw new Error(response.message || '게임 시작에 실패했습니다.');
@@ -390,6 +419,24 @@ export default {
       // 더미 게임 ID 생성 (Number 타입)
       this.gameId = Date.now();
       this.markerImageUrl = null;
+      
+      // currentLocation이 설정된 후 PhoneFrame의 지도 초기화 보장
+      this.$nextTick(() => {
+        if (this.$refs.phoneFrame) {
+          // 지도가 열려있으면 리사이즈, 닫혀있으면 초기화만 보장
+          this.$refs.phoneFrame.ensureMapInitialized();
+          
+          // 지도가 열려있으면 리사이즈
+          if (this.isMapOpen) {
+            setTimeout(() => {
+              const mapInstance = this.$refs.phoneFrame.getMapInstance();
+              if (mapInstance) {
+                mapInstance.relayout();
+              }
+            }, 100);
+          }
+        }
+      });
       
       console.log("더미 데이터로 선택된 위치:", this.currentLocation);
     },
