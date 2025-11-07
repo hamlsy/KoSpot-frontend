@@ -126,7 +126,8 @@ const {
   addClickListener,
   removeClickListener,
   removeMarker,
-  getMarkerPosition
+  getMarkerPosition,
+  reloadMap
 } = useKakaoMapControls(props, emit);
 
 // 거리 계산
@@ -167,7 +168,8 @@ defineExpose({
   getMapInstance,
   getMarkerPosition,
   startTeamVoting,
-  ensureMapInitialized
+  ensureMapInitialized,
+  reloadMap
 });
 
 // 감시자 설정
@@ -183,7 +185,8 @@ watch(() => props.isOpen, (newValue) => {
 });
 
 watch(() => props.actualLocation, (newLocation) => {
-  if (newLocation && marker.value && map.value) {
+  // actualLocation이 있고 마커가 있을 때만 거리 계산
+  if (newLocation && marker.value && map.value && props.showDistance) {
     calculateDistance();
   }
 });
@@ -195,6 +198,7 @@ onMounted(() => {
     initMap();
   }
   
+  // actualLocation이 있을 때만 힌트 원 생성 (싱글 게임에서는 필요 없음)
   if (props.showHintCircles && props.actualLocation) {
     createHintCircles();
   }
