@@ -112,10 +112,22 @@
               </div>
             </div>
 
+            <!-- 전체 주소 -->
+            <div v-if="fullAddress" class="full-address-section">
+              <div class="address-icon">
+                <i class="fas fa-home"></i>
+              </div>
+              <div class="address-text">
+                <div class="address-label">상세 주소</div>
+                <div class="address-value">{{ fullAddress }}</div>
+              </div>
+            </div>
+
             <ResultMapSection
               :currentLocation="currentLocation"
               :guessedLocation="guessedLocation"
               :locationDescription="locationDescription"
+              :markerImageUrl="markerImageUrl"
             />
           </div>
         </div>
@@ -199,6 +211,10 @@ export default {
       default: "",
     },
     poiName: {
+      type: String,
+      default: null,
+    },
+    fullAddress: {
       type: String,
       default: null,
     },
@@ -477,7 +493,8 @@ export default {
 }
 
 /* POI 이름 섹션 */
-.poi-name-section {
+.poi-name-section,
+.full-address-section {
   background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
   border: 2px solid #93c5fd;
   padding: 14px 18px;
@@ -490,12 +507,14 @@ export default {
   transition: all 0.3s ease;
 }
 
-.poi-name-section:hover {
+.poi-name-section:hover,
+.full-address-section:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(59, 130, 246, 0.2);
 }
 
-.poi-icon {
+.poi-icon,
+.address-icon {
   width: 42px;
   height: 42px;
   background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
@@ -519,11 +538,13 @@ export default {
   }
 }
 
-.poi-text {
+.poi-text,
+.address-text {
   flex: 1;
 }
 
-.poi-label {
+.poi-label,
+.address-label {
   font-size: 0.75rem;
   color: #1e40af;
   margin-bottom: 2px;
@@ -537,6 +558,14 @@ export default {
   color: #1e3a8a;
   font-weight: 700;
   letter-spacing: -0.3px;
+}
+
+.address-value {
+  font-size: 1rem;
+  color: #1e3a8a;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  line-height: 1.4;
 }
 
 /* 티어 변화 섹션 */
@@ -1080,11 +1109,13 @@ export default {
     font-size: 0.7rem;
   }
 
-  .poi-name-section {
+  .poi-name-section,
+  .full-address-section {
     padding: 10px 14px;
   }
 
-  .poi-icon {
+  .poi-icon,
+  .address-icon {
     width: 38px;
     height: 38px;
     font-size: 1rem;
@@ -1092,6 +1123,10 @@ export default {
 
   .poi-name {
     font-size: 1.05rem;
+  }
+
+  .address-value {
+    font-size: 0.9rem;
   }
 
   .score-icon,

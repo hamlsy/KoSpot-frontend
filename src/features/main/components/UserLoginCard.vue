@@ -5,7 +5,7 @@
       <div class="profile-header">
         <div class="user-avatar">
           <img 
-            :src="userProfile.avatar || userProfile.equippedMarkerImageUrl || '/assets/markers/default-marker.png'" 
+            :src="userProfile.avatar || userProfile.equippedMarkerImageUrl" 
             alt="마커 이미지"
             @error="handleImageError"
           >
@@ -49,7 +49,7 @@ export default {
         photoRating: 0,
         roadRating: 0,
         playCount: 0,
-        marker: "/assets/markers/default-marker.png"
+        marker: ""
       })
     }
   },
@@ -68,7 +68,7 @@ export default {
     },
     handleImageError(event) {
       // 이미지 로드 실패 시 기본 이미지로 대체
-      event.target.src = '/assets/markers/default-marker.png';
+      event.target.src = '';
     }
   }
 };

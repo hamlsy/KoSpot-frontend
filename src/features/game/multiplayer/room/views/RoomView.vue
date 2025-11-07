@@ -1,5 +1,13 @@
 <template>
   <div class="multiplayer-room-waiting">
+    <!-- 네비게이션 바 - Simple Mode -->
+    <NavigationBar
+      :simple-mode="true"
+      :show-back-button="true"
+      back-button-text="방 나가기"
+      @back="leaveRoom"
+    />
+
     <!-- 배경 요소 -->
     <div class="mode-background"></div>
 
@@ -116,12 +124,6 @@
 
           <div class="chat-container">
             <div class="chat-messages" ref="chatMessagesRef">
-              <div class="chat-welcome">
-                <div class="welcome-icon">
-                  <i class="fas fa-comments"></i>
-                </div>
-                <p class="welcome-text">채팅으로 다른 플레이어들과 소통해보세요!</p>
-              </div>
               
               <ChatMessage
                 v-for="(message, index) in chatMessages"
@@ -181,6 +183,12 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { useRouter } from 'vue-router';
+
+// Core Components
+import NavigationBar from '@/core/components/NavigationBar.vue';
+
+// Room Components
 import RoomHeader from 'src/features/game/multiplayer/room/components/header/RoomHeader.vue'
 //waiting list
 import TeamWaitingList from 'src/features/game/multiplayer/room/components/list/TeamWaitingList.vue'
@@ -198,42 +206,66 @@ import ToastNotification from 'src/features/game/multiplayer/room/components/not
 // Composables
 import { useRoom } from '../composables/useRoom';
 
-// Props
+// Props - route params에서 roomId 받기
 const props = defineProps({
-  roomData: {
-    type: Object,
-    default: () => ({
-      id: 'room123',
-      title: 'KoSpot 멀티플레이어 게임방',
-      gameMode: 'roadview',
-      isTeamMode: true,
-      maxPlayers: 8,
-      rounds: 5,
-      timeLimit: 60,
-      isPrivate: false,
-      password: '',
-      hostId: 'user1',
-      createdAt: new Date().toISOString(),
-    })
-  },
-  players: {
-    type: Array,
-    default: () => [
-      { id: 'user1', nickname: '방장닉네임', profileImage: '', team: 1, isHost: true },
-      { id: 'user2', nickname: '플레이어2', profileImage: '', team: 1, isHost: false },
-      { id: 'user3', nickname: '플레이어3', profileImage: '', team: 2, isHost: false },
-      { id: 'user4', nickname: '플레이어4', profileImage: '', team: 2, isHost: false },
-      { id: 'user5', nickname: '플레이어5', profileImage: '', team: 1, isHost: false },
-    ]
-  },
-  isHost: {
-    type: Boolean,
-    default: true
-  },
-  currentUserId: {
-    type: String,
-    default: 'user1'
-  },
+  roomId: {
+    type: [String, Number],
+    required: true
+  }
+});
+
+// Vue Router
+const router = useRouter();
+
+// 현재 사용자 ID (localStorage에서 가져오기)
+const currentUserId = localStorage.getItem('memberId') || '';
+
+// Router state에서 전달받은 데이터 확인 (방 생성 시 LobbyView에서 전달)
+const routerState = history.state?.roomData || null;
+
+// 초기 roomData 설정
+// 1순위: router state (방금 생성한 경우)
+// 2순위: API 호출 (페이지 새로고침 또는 직접 접근)
+const initialRoomData = routerState ? {
+  id: routerState.id || props.roomId,
+  title: routerState.title || '로딩 중...',
+  gameMode: routerState.gameMode || 'roadview',
+  isTeamMode: routerState.isTeamMode || false,
+  maxPlayers: routerState.maxPlayers || 8,
+  rounds: routerState.rounds || 5,
+  timeLimit: routerState.timeLimit || 60,
+  isPrivate: routerState.isPrivate || false,
+  password: routerState.password || '',
+  hostId: routerState.hostId || '',
+  currentPlayerCount: routerState.currentPlayerCount || 0,
+  createdAt: routerState.createdAt || new Date().toISOString(),
+} : {
+  id: props.roomId,
+  title: '로딩 중...',
+  gameMode: 'roadview',
+  isTeamMode: false,
+  maxPlayers: 8,
+  rounds: 5,
+  timeLimit: 60,
+  isPrivate: false,
+  password: '',
+  hostId: '',
+  currentPlayerCount: 0,
+  createdAt: new Date().toISOString(),
+};
+
+// isHost 판단: routerState의 hostId와 현재 사용자 ID 비교
+const isHost = ref(routerState ? routerState.hostId === currentUserId : false);
+
+// 초기 players 빈 배열 (API에서 가져올 예정)
+const initialPlayers = [];
+
+console.log('🏠 RoomView 초기화:', {
+  roomId: props.roomId,
+  hasRouterState: !!routerState,
+  initialRoomData,
+  isHost: isHost.value,
+  currentUserId
 });
 
 const emit = defineEmits([
@@ -250,8 +282,16 @@ const emit = defineEmits([
 // 알림 시스템 - 반드시 useRoom 호출보다 먼저 선언되어야 함
 const toastRef = ref(null);
 
+// Room composable에 전달할 props 구성
+const roomProps = {
+  roomData: initialRoomData,
+  players: initialPlayers,
+  isHost: isHost.value,
+  currentUserId: currentUserId
+};
+
 // Room composable 사용 - 알림 시스템과 연결
-const room = useRoom(props, emit, { toastRef });
+const room = useRoom(roomProps, emit, { toastRef });
 
 // 템플릿에서 사용할 상태와 메서드 추출
 const {
@@ -286,7 +326,7 @@ const {
   
   // 방 관련 메서드
   updateRoomSettings,
-  leaveRoom,
+  leaveRoom: leaveRoomOriginal,
   startGame,
   kickPlayer,
   joinTeam,
@@ -316,6 +356,22 @@ const {
   canJoinTeam,
   getTeamPlayerCount
 } = room;
+
+// leaveRoom 래퍼: 방 퇴장 후 로비로 새로고침 리다이렉션
+const leaveRoom = async () => {
+  try {
+    // 원래 leaveRoom 호출 (API 호출 + WebSocket 연결 해제)
+    await leaveRoomOriginal();
+    
+    // 로비로 새로고침 리다이렉션 (페이지 전체 리로드)
+    window.location.href = '/lobby';
+    console.log('✅ 로비로 이동 완료');
+  } catch (error) {
+    console.error('❌ 방 퇴장 중 오류 발생:', error);
+    // 에러가 발생해도 로비로 이동
+    window.location.href = '/lobby';
+  }
+};
 
 // 반응형 디자인 상태 관리
 const isMobileView = ref(false);
@@ -376,6 +432,7 @@ const formatUpdateTime = (timestamp) => {
   height: 100vh;
   position: relative;
   padding: 1rem;
+  padding-top: 5rem;
   overflow: hidden;
 }
 
@@ -406,7 +463,7 @@ const formatUpdateTime = (timestamp) => {
 
 .right-panel {
   flex: 1;
-  min-width: 380px;
+  min-width: 280px;
   display: flex;
   flex-direction: column;
 }

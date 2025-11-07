@@ -19,8 +19,9 @@ const ROADVIEW_ENDPOINTS = {
   PRACTICE: {
     START: '/roadView/practice/start',
     END: '/roadView/practice/end',
-    REISSUE: '/roadView/practice/{gameId}/reissue-coordinate',
   },
+  // 공통 (연습/랭크 공통 사용)
+  REISSUE: '/roadView/{gameId}/reissue-coordinate',
 };
 
 /**
@@ -41,6 +42,7 @@ const ROADVIEW_ENDPOINTS = {
  * @property {string} result.targetLng - 목표 경도
  * @property {string} result.markerImageUrl - 마커 이미지 URL
  * @property {string} result.poiName - 정답 위치의 POI 이름
+ * @property {string} result.fullAddress - 전체 주소 (시도, 시군구, 동 포함)
  */
 
 /**
@@ -67,6 +69,8 @@ const ROADVIEW_ENDPOINTS = {
  * @property {string} result.previousRankLevel - 게임 전 레벨 (ONE, TWO, THREE, FOUR, FIVE)
  * @property {string} result.currentRankTier - 게임 후 티어
  * @property {string} result.currentRankLevel - 게임 후 레벨
+ * @property {string} result.poiName - 정답 위치의 POI 이름
+ * @property {string} result.fullAddress - 전체 주소 (시도, 시군구, 동 포함)
  */
 
 /**
@@ -86,6 +90,8 @@ const ROADVIEW_ENDPOINTS = {
  * @property {string} result.targetLat - 목표 위도
  * @property {string} result.targetLng - 목표 경도
  * @property {string} result.markerImageUrl - 마커 이미지 URL
+ * @property {string} result.poiName - 정답 위치의 POI 이름
+ * @property {string} result.fullAddress - 전체 주소 (시도, 시군구, 동 포함)
  */
 
 /**
@@ -105,6 +111,8 @@ const ROADVIEW_ENDPOINTS = {
  * @property {string} message - 응답 메시지
  * @property {Object} result - 결과 데이터
  * @property {number} result.score - 게임 점수
+ * @property {string} result.poiName - 정답 위치의 POI 이름
+ * @property {string} result.fullAddress - 전체 주소 (시도, 시군구, 동 포함)
  */
 
 /**
@@ -117,11 +125,7 @@ class RoadViewApiService {
    */
   async startRankGame() {
     try {
-      console.log('📤 랭크 게임 시작 요청');
-      
       const response = await apiClient.post(ROADVIEW_ENDPOINTS.RANK.START);
-      
-      console.log('✅ 랭크 게임 시작 성공:', response.data);
       return response.data;
     } catch (error) {
       console.error('❌ 랭크 게임 시작 실패:', error);
@@ -137,11 +141,8 @@ class RoadViewApiService {
    */
   async endRankGame(endData) {
     try {
-      console.log('📤 랭크 게임 종료 요청:', endData);
       
       const response = await apiClient.post(ROADVIEW_ENDPOINTS.RANK.END, endData);
-      
-      console.log('✅ 랭크 게임 종료 성공:', response.data);
       return response.data;
     } catch (error) {
       console.error('❌ 랭크 게임 종료 실패:', error);
@@ -152,24 +153,45 @@ class RoadViewApiService {
 
   /**
    * 연습 게임 시작
+   * 최대 5번까지 재시도합니다.
    * @param {string} sido - 시도 (지역명)
+   * @param {number} maxRetries - 최대 재시도 횟수 (기본값: 5)
    * @returns {Promise<PracticeStartResponse>} API 응답 데이터
    */
-  async startPracticeGame(sido) {
-    try {
-      console.log('📤 연습 게임 시작 요청:', { sido });
-      
-      const response = await apiClient.post(ROADVIEW_ENDPOINTS.PRACTICE.START, null, {
-        params: { sido }
-      });
-      
-      console.log('✅ 연습 게임 시작 성공:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('❌ 연습 게임 시작 실패:', error);
-      this._handleApiError(error, '연습 게임 시작에 실패했습니다.');
-      throw error;
+  async startPracticeGame(sido, maxRetries = 5) {
+    let lastError = null;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`📤 연습 게임 시작 요청 (시도 ${attempt}/${maxRetries}):`, { sido });
+        
+        const response = await apiClient.post(ROADVIEW_ENDPOINTS.PRACTICE.START, null, {
+          params: { sido }
+        });
+        
+        if (response.data && response.data.isSuccess && response.data.result) {
+          console.log(`✅ 연습 게임 시작 성공 (시도 ${attempt}/${maxRetries}):`, response.data);
+          return response.data;
+        } else {
+          throw new Error(response.data?.message || '연습 게임 시작 응답이 유효하지 않습니다.');
+        }
+      } catch (error) {
+        lastError = error;
+        console.error(`❌ 연습 게임 시작 실패 (시도 ${attempt}/${maxRetries}):`, error);
+        
+        // 마지막 시도가 아니면 잠시 대기 후 재시도
+        if (attempt < maxRetries) {
+          const waitTime = attempt * 500; // 점진적 대기 (500ms, 1000ms, 1500ms, 2000ms)
+          console.log(`⏳ ${waitTime}ms 후 재시도...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
+      }
     }
+    
+    // 모든 시도 실패
+    console.error(`❌ 연습 게임 시작 최종 실패 (${maxRetries}회 시도):`, lastError);
+    this._handleApiError(lastError, `연습 게임 시작에 실패했습니다. (${maxRetries}회 시도)`);
+    throw lastError;
   }
 
   /**
@@ -193,24 +215,44 @@ class RoadViewApiService {
   }
 
   /**
-   * 연습 게임 좌표 재발급
+   * 좌표 재발급 (연습/랭크 공통)
+   * 최대 5번까지 재시도합니다.
    * @param {number} gameId - 게임 ID
+   * @param {number} maxRetries - 최대 재시도 횟수 (기본값: 5)
    * @returns {Promise<{isSuccess: boolean, result: {targetLat: string, targetLng: string}}>} API 응답 데이터
    */
-  async reissuePracticeCoordinate(gameId) {
-    try {
-      console.log('📤 연습 게임 좌표 재발급 요청:', { gameId });
-      
-      const endpoint = ROADVIEW_ENDPOINTS.PRACTICE.REISSUE.replace('{gameId}', gameId);
-      const response = await apiClient.post(endpoint);
-      
-      console.log('✅ 연습 게임 좌표 재발급 성공:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('❌ 연습 게임 좌표 재발급 실패:', error);
-      this._handleApiError(error, '좌표 재발급에 실패했습니다.');
-      throw error;
+  async reissueCoordinate(gameId, maxRetries = 5) {
+    let lastError = null;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`📤 좌표 재발급 요청 (시도 ${attempt}/${maxRetries}):`, { gameId });
+        
+        const endpoint = ROADVIEW_ENDPOINTS.REISSUE.replace('{gameId}', gameId);
+        const response = await apiClient.post(endpoint);
+        
+        if (response.data && response.data.isSuccess && response.data.result) {
+          console.log(`✅ 좌표 재발급 성공 (시도 ${attempt}/${maxRetries}):`, response.data);
+          return response.data;
+        } else {
+          throw new Error(response.data?.message || '좌표 재발급 응답이 유효하지 않습니다.');
+        }
+      } catch (error) {
+        lastError = error;
+        console.error(`❌ 좌표 재발급 실패 (시도 ${attempt}/${maxRetries}):`, error);
+        
+        // 마지막 시도가 아니면 잠시 대기 후 재시도
+        if (attempt < maxRetries) {
+          const waitTime = attempt * 500; // 점진적 대기 (500ms, 1000ms, 1500ms, 2000ms)
+          console.log(`⏳ ${waitTime}ms 후 재시도...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
+      }
     }
+    
+    // 모든 시도 실패
+    console.error(`❌ 좌표 재발급 최종 실패 (${maxRetries}회 시도):`, lastError);
+    throw new Error(`좌표 재발급에 실패했습니다. (${maxRetries}회 시도)`);
   }
 
   /**
@@ -307,8 +349,8 @@ class RoadViewApiService {
       // 로컬 테스트 시에는 "1234567890123456" 사용, 배포 시에는 env에서 가져오기
       const isDevelopment = process.env.NODE_ENV === 'development';
       const encryptKey = isDevelopment 
-        ? (process.env.VUE_APP_ENCRYPT_KEY || '1234567890123456')
-        : process.env.VUE_APP_ENCRYPT_KEY;
+        ? (process.env.VUE_APP_AES_SECRET_KEY || '1234567890123456')
+        : process.env.VUE_APP_AES_SECRET_KEY;
       
       if (!encryptKey) {
         console.warn('⚠️ VUE_APP_ENCRYPT_KEY가 설정되지 않았습니다. 암호화된 좌표를 복호화할 수 없습니다.');

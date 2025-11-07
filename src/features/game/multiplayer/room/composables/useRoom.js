@@ -50,12 +50,12 @@ export function useRoom(props, emit, options = {}) {
       const roomDetail = await roomApiService.getRoomDetail(localRoomData.value.id);
       
       // 방 정보 업데이트
-      if (roomDetail.roomInfo) {
+      if (roomDetail) {
         localRoomData.value = {
           ...localRoomData.value,
-          ...roomDetail.roomInfo
+          ...roomDetail
         };
-        console.log('✅ 방 정보 로딩 완료:', roomDetail.roomInfo.title);
+        console.log('✅ 방 정보 로딩 완료:', roomDetail.title);
       }
       
       // 초기 플레이어 목록 설정
@@ -524,20 +524,13 @@ export function useRoom(props, emit, options = {}) {
     return teamNames[teamId] || `팀 ${teamId}`;
   };
 
-  // Watchers
-  watch(() => props.chatMessages, (newMessages) => {
-    roomChat.updateChatMessages(newMessages);
-  }, { deep: true });
-
   // Lifecycle hooks
   onMounted(async () => {
     try {
       console.log('🚀 RoomView 마운트 시작');
       
-      // 1. 초기 채팅 메시지 로드
-      if (props.chatMessages) {
-        roomChat.updateChatMessages(props.chatMessages);
-      }
+      // 1. 초기 환영 메시지 추가
+      roomChat.addSystemMessage('채팅방에 오신 것을 환영합니다!');
       roomChat.scrollChatToBottom();
       
       // 2. 초기 방 데이터 로딩 (방 정보 + 초기 플레이어 목록)
@@ -561,9 +554,10 @@ export function useRoom(props, emit, options = {}) {
       
       if (wsConnected) {
         console.log('✅ WebSocket 연결 성공 - 실시간 모드');
+        roomChat.addSystemMessage('실시간 채팅에 연결되었습니다.');
       } else {
         console.warn('⚠️ WebSocket 연결 실패 - 연결 재시도 필요');
-        // 폴링 대신 WebSocket 재연결 시도나 에러 처리
+        roomChat.addSystemMessage('채팅 연결 중... 잠시만 기다려주세요.');
       }
       
       console.log('🎉 RoomView 초기화 완료');

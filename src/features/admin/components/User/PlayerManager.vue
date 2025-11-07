@@ -105,7 +105,7 @@
             <div class="col-name">
               <div class="player-info">
                 <div class="player-avatar">
-                  <img :src="player.avatar || '/default-avatar.png'" :alt="player.nickname" />
+                  <img :src="player.avatar" :alt="player.nickname" />
                 </div>
                 <div class="player-details">
                   <span class="nickname">{{ player.nickname }}</span>

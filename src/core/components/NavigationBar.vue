@@ -3,49 +3,60 @@
     <header class="header">
       <div class="header-content">
         <div class="header-left">
-          <div class="home-link" @click="goToMain">
+          <div class="home-link" @click="simpleMode ? null : goToMain" :style="{ cursor: simpleMode ? 'default' : 'pointer' }">
             <h1 class="logo">KoSpot</h1>
             <span class="badge">Beta</span>
           </div>
         </div>
 
-        <!-- 네비게이션 추가 - 웹 전용 -->
-        <div class="main-nav desktop-only">
-          <router-link :to="{ name: 'NoticeListView' }" class="nav-link">공지사항</router-link>
-          <!-- 메인 페이지만 통계/상점/이벤트 표시 -->
-          <template v-if="isMainPage">
-            <!-- <router-link v-if="actualIsAdmin" :to="{ name: 'NoticeListView', query: { category: '이벤트' } }" class="nav-link">이벤트</router-link>
-            <router-link v-if="actualIsAdmin" to="/tempPage" class="nav-link">통계</router-link>
-            <router-link v-if="actualIsAdmin" to="/shopMain" class="nav-link">상점</router-link> -->
-          </template>
-          <!-- 로그인한 경우에만 마이페이지 표시 -->
-          <router-link v-if="actualIsLoggedIn" to="/myProfile" class="nav-link">마이페이지</router-link>
-          <!-- 관리자 버튼 -->
-          <router-link v-if="actualIsAdmin" to="/admin" class="nav-link admin-link">관리자</router-link>
-          <!-- 개발 모드일 때만 개발자 페이지 표시 -->
-          <router-link v-if="isDevMode" to="/dev/test" class="nav-link temp-login-link">🧪 개발자 페이지</router-link>
-        </div>
+        <!-- Simple Mode가 아닐 때만 네비게이션 표시 -->
+        <template v-if="!simpleMode">
+          <!-- 네비게이션 추가 - 웹 전용 -->
+          <div class="main-nav desktop-only">
+            <router-link :to="{ name: 'NoticeListView' }" class="nav-link">공지사항</router-link>
+            <!-- 메인 페이지만 통계/상점/이벤트 표시 -->
+            <template v-if="isMainPage">
+              <!-- <router-link v-if="actualIsAdmin" :to="{ name: 'NoticeListView', query: { category: '이벤트' } }" class="nav-link">이벤트</router-link>
+              <router-link v-if="actualIsAdmin" to="/tempPage" class="nav-link">통계</router-link>
+              <router-link v-if="actualIsAdmin" to="/shopMain" class="nav-link">상점</router-link> -->
+            </template>
+            <!-- 로그인한 경우에만 마이페이지 표시 -->
+            <router-link v-if="actualIsLoggedIn" to="/myProfile" class="nav-link">마이페이지</router-link>
+            <!-- 관리자 버튼 -->
+            <router-link v-if="actualIsAdmin" to="/admin" class="nav-link admin-link">관리자</router-link>
+            <!-- 개발 모드일 때만 개발자 페이지 표시 -->
+            <router-link v-if="isDevMode" to="/dev/test" class="nav-link temp-login-link">🧪 개발자 페이지</router-link>
+          </div>
 
-        <div class="header-right">
-          <button class="tutorial-button" @click="openTutorial" title="게임 소개">
-            <i class="fas fa-question-circle"></i>
-            <span class="tutorial-text">게임 소개</span>
-          </button>
-          <!-- <button v-if="actualIsAdmin" class="icon-button" @click="openNotifications">
-            <i class="fas fa-bell"></i>
-            <span class="notification-badge" v-if="unreadNotifications">{{ unreadNotifications }}</span>
-          </button> -->
-          <div class="user-profile" @click="toggleProfileMenu">
-            <div class="user-avatar" :class="{ 'guest-avatar': !actualIsLoggedIn }">
-              <img
-                v-if="actualIsLoggedIn"
-                :src="userProfile.avatar || '/default-avatar.png'"
-                alt="프로필"
-              />
-              <span v-else class="guest-text">Guest</span>
+          <div class="header-right">
+            <button class="tutorial-button" @click="openTutorial" title="게임 소개">
+              <i class="fas fa-question-circle"></i>
+              <span class="tutorial-text">게임 소개</span>
+            </button>
+            <!-- <button v-if="actualIsAdmin" class="icon-button" @click="openNotifications">
+              <i class="fas fa-bell"></i>
+              <span class="notification-badge" v-if="unreadNotifications">{{ unreadNotifications }}</span>
+            </button> -->
+            <div class="user-profile" @click="toggleProfileMenu">
+              <div class="user-avatar" :class="{ 'guest-avatar': !actualIsLoggedIn }">
+                <img
+                  v-if="actualIsLoggedIn"
+                  :src="userProfile.avatar"
+                  alt="프로필"
+                />
+                <span v-else class="guest-text">Guest</span>
+              </div>
             </div>
           </div>
-        </div>
+        </template>
+
+        <!-- Simple Mode일 때: 나가기 버튼만 표시 -->
+        <!-- <div v-if="simpleMode && showBackButton" class="header-right">
+          <button class="back-button" @click="handleBackButton">
+            <i class="fas fa-arrow-left"></i>
+            {{ backButtonText }}
+          </button>
+        </div> -->
       </div>
     </header>
     
@@ -84,7 +95,7 @@
         <div v-else class="profile-info-section">
           <div class="profile-info">
             <img
-              :src="userProfile.avatar || '/default-avatar.png'"
+              :src="userProfile.avatar"
               alt="프로필"
             />
             <div class="profile-text">
@@ -143,6 +154,8 @@
 
 
 <script>
+import { tokenRefreshService } from '@/core/services/tokenRefresh.service.js';
+
 export default {
   name: 'NavigationBar',
   props: {
@@ -153,6 +166,18 @@ export default {
     userInfo: {
       type: Object,
       default: () => ({})
+    },
+    simpleMode: {
+      type: Boolean,
+      default: false
+    },
+    showBackButton: {
+      type: Boolean,
+      default: false
+    },
+    backButtonText: {
+      type: String,
+      default: '나가기'
     }
   },
   data() {
@@ -300,6 +325,10 @@ export default {
     },
     // 로그아웃 처리
     handleLogout() {
+      // 토큰 갱신 서비스 중지
+      console.log('🛑 로그아웃: 토큰 갱신 서비스 중지');
+      tokenRefreshService.stop();
+      
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('memberId');
@@ -313,6 +342,10 @@ export default {
       this.$router.push('/main');
       // 부모 컴포넌트에 로그아웃 이벤트 전달
       this.$emit('logout');
+    },
+    // 나가기 버튼 처리 (Simple Mode)
+    handleBackButton() {
+      this.$emit('back');
     }
   }
 };
@@ -450,6 +483,31 @@ export default {
 }
 
 .tutorial-text {
+  font-size: 0.9rem;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.back-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.back-button i {
   font-size: 0.9rem;
 }
 

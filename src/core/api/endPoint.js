@@ -79,7 +79,7 @@ export const API_ENDPOINTS = {
     GAME_ROOM: {
       LIST: '/rooms',
       JOIN: (roomId) => `/rooms/${roomId}/join`,
-      CREATE: '/rooms',
+      CREATE: '/rooms/',
       LEAVE: (roomId) => `/rooms/${roomId}/leave`,
       DETAILS: (roomId) => `/rooms/${roomId}`
     }

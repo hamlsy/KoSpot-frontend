@@ -23,7 +23,7 @@
         <div class="user-profile" @click="toggleProfileMenu">
           <div class="user-avatar">
             <img
-              :src="userProfile.avatar || '/default-avatar.png'"
+              :src="userProfile.avatar"
               alt="프로필"
             />
           </div>
@@ -46,7 +46,7 @@
         <div class="profile-header">
           <div class="profile-info">
             <img
-              :src="userProfile.avatar || '/default-avatar.png'"
+              :src="userProfile.avatar"
               alt="프로필"
             />
             <div class="profile-text">

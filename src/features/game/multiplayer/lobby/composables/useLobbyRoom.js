@@ -223,12 +223,8 @@ export function useLobbyRoom() {
         const newRoom = response.data.result;
         console.log('✅ 방 생성 성공:', newRoom);
         
-        // 방 목록 새로고침 (생성 후 즉시 입장하므로 목록 업데이트 필요)
-        await fetchRooms(0, true);
-        
-        // 생성한 방으로 자동 입장 (GameRoomResponse.gameRoomId 사용)
-        await joinRoom(newRoom.gameRoomId);
-        
+        // 방 생성 성공 시 newRoom 반환
+        // 반환 형식: { gameRoomId, title, gameModeKey, playerMatchTypeKey, maxPlayers }
         return newRoom;
       } else {
         throw new Error(response.data?.message || '방 생성에 실패했습니다.');
@@ -328,6 +324,7 @@ export function useLobbyRoom() {
         gameMode: '로드뷰',
         gameType: '개인전',
         maxPlayers: 4,
+        timeLimit: 60,
         currentPlayerCount: 2,
         hostNickname: '김서울',
         privateRoom: false,
@@ -339,6 +336,7 @@ export function useLobbyRoom() {
         gameMode: '포토모드',
         gameType: '팀전',
         maxPlayers: 6,
+        timeLimit: 90,
         currentPlayerCount: 4,
         hostNickname: '부산갈매기',
         privateRoom: false,
@@ -350,6 +348,7 @@ export function useLobbyRoom() {
         gameMode: '로드뷰',
         gameType: '개인전',
         maxPlayers: 8,
+        timeLimit: 45,
         currentPlayerCount: 6,
         hostNickname: '제주감귤',
         privateRoom: false,
@@ -361,6 +360,7 @@ export function useLobbyRoom() {
         gameMode: '포토모드',
         gameType: '팀전',
         maxPlayers: 4,
+        timeLimit: 120,
         currentPlayerCount: 1,
         hostNickname: '경기도민',
         privateRoom: true,
@@ -372,6 +372,7 @@ export function useLobbyRoom() {
         gameMode: '로드뷰',
         gameType: '개인전',
         maxPlayers: 6,
+        timeLimit: 60,
         currentPlayerCount: 3,
         hostNickname: '대구사과',
         privateRoom: false,
@@ -383,6 +384,7 @@ export function useLobbyRoom() {
         gameMode: '포토모드',
         gameType: '팀전',
         maxPlayers: 8,
+        timeLimit: 30,
         currentPlayerCount: 7,
         hostNickname: '인천바다',
         privateRoom: false,
