@@ -258,6 +258,7 @@ const emptySlots = computed(() => {
   align-items: center;
   justify-content: center;
   min-height: 120px;
+  max-height: 160px;
   transition: all 0.2s ease;
 }
 

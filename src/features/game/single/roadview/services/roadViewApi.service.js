@@ -307,8 +307,8 @@ class RoadViewApiService {
       // 로컬 테스트 시에는 "1234567890123456" 사용, 배포 시에는 env에서 가져오기
       const isDevelopment = process.env.NODE_ENV === 'development';
       const encryptKey = isDevelopment 
-        ? (process.env.VUE_APP_ENCRYPT_KEY || '1234567890123456')
-        : process.env.VUE_APP_ENCRYPT_KEY;
+        ? (process.env.VUE_APP_AES_SECRET_KEY || '1234567890123456')
+        : process.env.VUE_APP_AES_SECRET_KEY;
       
       if (!encryptKey) {
         console.warn('⚠️ VUE_APP_ENCRYPT_KEY가 설정되지 않았습니다. 암호화된 좌표를 복호화할 수 없습니다.');

@@ -52,6 +52,7 @@ class RoomApiService {
    * @param {string} roomData.gameModeKey - 게임 모드 (ROADVIEW, PHOTO)
    * @param {string} roomData.playerMatchTypeKey - 매치 타입 (SOLO, TEAM)
    * @param {number} roomData.maxPlayers - 최대 플레이어 수 (2~8)
+   * @param {number} roomData.timeLimit - 시간 제한 (초 단위)
    * @param {boolean} roomData.privateRoom - 비공개 방 여부
    * @returns {Promise<Object>} 생성된 게임 방 정보
    */
@@ -62,7 +63,8 @@ class RoomApiService {
       const response = await apiClient.post(ROOM_ENDPOINTS.CREATE_ROOM, roomData);
       
       console.log('✅ 게임 방 생성 성공:', response.data);
-      return response.data.data;
+      // response.data.result에서 방 정보 반환
+      return response.data.result;
     } catch (error) {
       console.error('❌ 게임 방 생성 실패:', error);
       this._handleApiError(error, '게임 방 생성에 실패했습니다.');
@@ -179,7 +181,7 @@ class RoomApiService {
       const response = await apiClient.get(ROOM_ENDPOINTS.GET_ROOM_DETAIL(roomId));
       
       console.log('✅ 게임 방 상세 정보 조회 성공:', response.data);
-      return response.data.data;
+      return response.data.result;
     } catch (error) {
       console.error('❌ 게임 방 상세 정보 조회 실패:', error);
       this._handleApiError(error, '게임 방 정보 조회에 실패했습니다.');
@@ -205,6 +207,7 @@ class RoomApiService {
       gameMode: room.gameMode || 'ROADVIEW',
       gameType: room.gameType || 'SOLO',
       maxPlayers: room.maxPlayers || 8,
+      timeLimit: room.timeLimit || 60,
       currentPlayerCount: room.currentPlayerCount || 0,
       hostNickname: room.hostNickname || '알 수 없음',
       isPrivate: room.privateRoom || false,

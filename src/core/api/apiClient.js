@@ -42,6 +42,7 @@ apiClient.interceptors.response.use(
       // 토큰 재발급 API 호출은 제외 (무한 루프 방지)
       if (originalRequest.url?.includes('/auth/reIssue')) {
         // 토큰 재발급 실패 시 로그아웃 처리
+        console.error('❌ reIssue API 호출 실패 - 로그아웃 처리')
         localStorage.removeItem('accessToken')
         localStorage.removeItem('refreshToken')
         localStorage.removeItem('memberId')
@@ -77,12 +78,13 @@ apiClient.interceptors.response.use(
           }
         }
       } catch (refreshError) {
-        // 리프레시 토큰도 만료된 경우 로그아웃 처리
-        console.error('토큰 재발급 실패:', refreshError)
+        // reIssue API 에러 발생 시 무조건 모든 토큰 제거 및 메인 페이지로 리다이렉션
+        console.error('❌ 토큰 재발급 실패 - 로그아웃 처리:', refreshError)
         localStorage.removeItem('accessToken')
         localStorage.removeItem('refreshToken')
         localStorage.removeItem('memberId')
         window.location.href = '/'
+        return Promise.reject(refreshError)
       }
     }
     

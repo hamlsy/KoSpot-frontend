@@ -1,13 +1,19 @@
 <template>
   <div 
     class="chat-message"
-    :class="{ 'own-message': isOwnMessage }"
+    :class="{ 'own-message': isOwnMessage, 'system-message': isSystemMessage }"
   >
-    <div class="message-sender" v-if="!isOwnMessage">
-      {{ message.senderName }}
+    <div v-if="isSystemMessage" class="system-content">
+      <i class="fas fa-info-circle"></i>
+      {{ message.content }}
     </div>
-    <div class="message-content">{{ message.content }}</div>
-    <div class="message-time">{{ formattedTime }}</div>
+    <template v-else>
+      <div class="message-sender" v-if="!isOwnMessage">
+        {{ message.senderName }}
+      </div>
+      <div class="message-content">{{ message.content }}</div>
+      <div class="message-time">{{ formattedTime }}</div>
+    </template>
   </div>
 </template>
 
@@ -28,6 +34,10 @@ const props = defineProps({
 // Computed properties
 const isOwnMessage = computed(() => {
   return props.message.senderId === props.currentUserId;
+});
+
+const isSystemMessage = computed(() => {
+  return props.message.isSystem === true || props.message.messageType === 'SYSTEM';
 });
 
 const formattedTime = computed(() => {
@@ -93,5 +103,32 @@ const formattedTime = computed(() => {
 /* Add subtle transition */
 .chat-message .message-content {
   transition: all 0.2s ease;
+}
+
+/* System message styles */
+.chat-message.system-message {
+  align-self: center;
+  max-width: 90%;
+  margin: 0.5rem 0;
+}
+
+.system-content {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  color: #6b7280;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+}
+
+.system-content i {
+  font-size: 0.8rem;
+  color: #9ca3af;
 }
 </style>

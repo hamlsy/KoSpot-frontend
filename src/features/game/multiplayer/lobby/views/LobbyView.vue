@@ -276,11 +276,10 @@ const createRoom = async (roomData) => {
     // 모달 닫기
     showCreateRoomModal.value = false;
     
-    // API를 통해 방 생성 (자동으로 해당 방에 입장 및 라우팅 처리됨)
-    // createRoomAPI 내부에서 joinRoom을 호출하고, joinRoom이 router.push를 수행함
+    // API를 통해 방 생성 - response.data.result에서 방 정보 받음
     const newRoom = await createRoomAPI(roomData);
     
-    if (newRoom) {
+    if (newRoom && newRoom.gameRoomId) {
       // 사용자 정보 가져오기 
       const { user: authUser } = useAuth();
       const userNickname = authUser.value?.nickname || '익명';
@@ -289,6 +288,26 @@ const createRoom = async (roomData) => {
       lobbyService.createGlobalSystemMessage(
         `${userNickname}님이 '${roomData.title}' 방을 생성했습니다.`
       );
+      
+      // 생성된 방으로 자동 입장 및 RoomView로 이동
+      // newRoom 구조: { gameRoomId, title, gameModeKey, playerMatchTypeKey, maxPlayers }
+      await router.push({
+        name: 'RoomView',
+        params: { roomId: newRoom.gameRoomId.toString() },
+        // 방 정보를 state로 전달하여 RoomView에서 즉시 사용 가능
+        state: {
+          roomData: {
+            id: newRoom.gameRoomId,
+            title: newRoom.title,
+            gameMode: newRoom.gameModeKey,
+            isTeamMode: newRoom.playerMatchTypeKey === 'TEAM',
+            maxPlayers: newRoom.maxPlayers,
+            isPrivate: newRoom.privateRoom || false,
+            hostId: getCurrentUserId(),
+            currentPlayerCount: 1 // 방장 혼자
+          }
+        }
+      });
     }
   } catch (error) {
     console.error('❌ 방 생성 처리 중 오류:', error);

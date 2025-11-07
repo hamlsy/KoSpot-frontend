@@ -13,6 +13,7 @@
 <script setup>
 import { onMounted } from 'vue';
 import { useRoute } from 'vue-router';
+import { tokenRefreshService } from '@/core/services/tokenRefresh.service.js';
 
 const route = useRoute();
 
@@ -55,6 +56,10 @@ onMounted(() => {
       const memberIdString = String(decodedToken.memberId);
       localStorage.setItem('memberId', memberIdString);
     }
+
+    // 토큰 갱신 서비스 시작
+    console.log('🚀 OAuth 로그인 성공: 토큰 갱신 서비스 시작');
+    tokenRefreshService.start();
 
     // 로그인 성공 후 메인 페이지로 리다이렉트 (새로고침)
     setTimeout(() => {

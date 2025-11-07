@@ -39,74 +39,87 @@ export const GAME_ROOM_NOTIFICATION_TYPES = {
 };
 
 /**
- * ID 유효성 검증 (백엔드 validateId와 동일한 로직)
- * @param {string} id - 검증할 ID
+ * ID 유효성 검증 및 String 변환
+ * Number 타입도 허용하고 자동으로 String으로 변환합니다.
+ * @param {string|number} id - 검증할 ID (String 또는 Number)
  * @param {string} fieldName - 필드명 (에러 메시지용)
+ * @returns {string} String으로 변환된 ID
  * @throws {Error} ID가 유효하지 않은 경우
  */
 const validateId = (id, fieldName = 'id') => {
-  if (!id || typeof id !== 'string' || id.trim() === '') {
-    throw new Error(`${fieldName}는 null이거나 빈 문자열일 수 없습니다.`);
+  // null, undefined 체크
+  if (id === null || id === undefined) {
+    throw new Error(`${fieldName}는 null이거나 undefined일 수 없습니다.`);
   }
+  
+  // Number 타입이면 String으로 변환
+  const stringId = typeof id === 'number' ? String(id) : id;
+  
+  // String으로 변환 후 유효성 검증
+  if (typeof stringId !== 'string' || stringId.trim() === '') {
+    throw new Error(`${fieldName}는 유효한 값이어야 합니다.`);
+  }
+  
+  return stringId;
 };
 
 /**
  * 게임 방 플레이어 목록 채널 생성
  * 백엔드 WebSocketChannelConstants.getGameRoomPlayerListChannel()과 동일
- * @param {string} roomId - 게임 방 ID
+ * @param {string|number} roomId - 게임 방 ID
  * @returns {string} WebSocket 채널 경로: /topic/room/{roomId}/playerList
  */
 export const getGameRoomPlayerListChannel = (roomId) => {
-  validateId(roomId, 'roomId');
-  return `${GAME_ROOM_PREFIX}${roomId}/playerList`;
+  const validatedRoomId = validateId(roomId, 'roomId');
+  return `${GAME_ROOM_PREFIX}${validatedRoomId}/playerList`;
 };
 
 /**
  * 게임 방 채팅 채널 생성
  * 백엔드 WebSocketChannelConstants.getGameRoomChatChannel()과 동일
- * @param {string} roomId - 게임 방 ID
+ * @param {string|number} roomId - 게임 방 ID
  * @returns {string} WebSocket 채널 경로: /topic/room/{roomId}/chat
  */
 export const getGameRoomChatChannel = (roomId) => {
-  validateId(roomId, 'roomId');
-  return `${GAME_ROOM_PREFIX}${roomId}/chat`;
+  const validatedRoomId = validateId(roomId, 'roomId');
+  return `${GAME_ROOM_PREFIX}${validatedRoomId}/chat`;
 };
 
 /**
  * 게임 방 설정 채널 생성
  * 백엔드 WebSocketChannelConstants.getGameRoomSettingsChannel()과 동일
- * @param {string} roomId - 게임 방 ID
+ * @param {string|number} roomId - 게임 방 ID
  * @returns {string} WebSocket 채널 경로: /topic/room/{roomId}/settings
  */
 export const getGameRoomSettingsChannel = (roomId) => {
-  validateId(roomId, 'roomId');
-  return `${GAME_ROOM_PREFIX}${roomId}/settings`;
+  const validatedRoomId = validateId(roomId, 'roomId');
+  return `${GAME_ROOM_PREFIX}${validatedRoomId}/settings`;
 };
 
 /**
  * 게임 방 상태 채널 생성
  * 백엔드 WebSocketChannelConstants.getGameRoomStatusChannel()과 동일
- * @param {string} roomId - 게임 방 ID
+ * @param {string|number} roomId - 게임 방 ID
  * @returns {string} WebSocket 채널 경로: /topic/room/{roomId}/status
  */
 export const getGameRoomStatusChannel = (roomId) => {
-  validateId(roomId, 'roomId');
-  return `${GAME_ROOM_PREFIX}${roomId}/status`;
+  const validatedRoomId = validateId(roomId, 'roomId');
+  return `${GAME_ROOM_PREFIX}${validatedRoomId}/status`;
 };
 
 /**
  * 모든 게임 방 채널 생성
- * @param {string} roomId - 게임 방 ID
+ * @param {string|number} roomId - 게임 방 ID
  * @returns {Object} 모든 채널 객체
  */
 export const getAllGameRoomChannels = (roomId) => {
-  validateId(roomId, 'roomId');
+  const validatedRoomId = validateId(roomId, 'roomId');
   
   return {
-    playerList: getGameRoomPlayerListChannel(roomId),
-    chat: getGameRoomChatChannel(roomId),
-    settings: getGameRoomSettingsChannel(roomId),
-    status: getGameRoomStatusChannel(roomId)
+    playerList: getGameRoomPlayerListChannel(validatedRoomId),
+    chat: getGameRoomChatChannel(validatedRoomId),
+    settings: getGameRoomSettingsChannel(validatedRoomId),
+    status: getGameRoomStatusChannel(validatedRoomId)
   };
 };
 
