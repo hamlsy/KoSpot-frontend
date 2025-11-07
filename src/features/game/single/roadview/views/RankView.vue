@@ -41,13 +41,22 @@
           ></i>
           {{ isMapOpen ? "로드뷰로 돌아가기" : "지도 열기" }}
         </button>
+
+        <!-- 지도 재로딩 버튼 (지도가 열려있을 때만 표시) -->
+        <button
+          v-if="isMapOpen && !showResult"
+          class="map-reload-button"
+          @click="reloadPhoneMap"
+          title="지도 새로고침"
+        >
+          <i class="fas fa-sync-alt"></i>
+        </button>
       </div>
 
       <!-- 휴대폰 프레임 -->
       <PhoneFrame
         :style="{ zIndex: isMapOpen ? 15 : -1 }"
         :centerLocation="{ lat: 36.5, lng: 127.5 }"
-        :actualLocation="currentLocation"
         :showHintCircles="false"
         :disabled="showResult"
         :showDistance="false"
@@ -94,6 +103,7 @@
         :guessedLocation="guessedLocation"
         :locationDescription="getLocationDescription()"
         :poiName="poiName"
+        :fullAddress="fullAddress"
         :markerImageUrl="markerImageUrl"
         :userNickname="'플레이어'"
         @restart="resetGame"
@@ -174,6 +184,7 @@ export default {
       markerImageUrl: null, // 마커 이미지 URL
       gameStartTime: null, // 게임 시작 시간 (타임스탬프)
       poiName: null, // 정답 위치의 POI 이름 (백엔드에서 받음)
+      fullAddress: null, // 전체 주소 (시도, 시군구, 동 포함)
 
       // 게임 점수 관련
       distance: null,
@@ -266,8 +277,21 @@ export default {
 
     // 지도 토글
     toggleMap() {
+      const wasOpen = this.isMapOpen;
       // 상태 변경
       this.isMapOpen = !this.isMapOpen;
+      
+      // 지도가 열릴 때 (false -> true) 자동으로 재로딩
+      if (!wasOpen && this.isMapOpen) {
+        // PhoneFrame이 마운트된 후 재로딩 실행
+        this.$nextTick(() => {
+          // 약간의 딜레이를 주어 PhoneFrame이 완전히 렌더링된 후 재로딩
+          // 자동 재로딩이므로 토스트 메시지 표시 안 함
+          setTimeout(() => {
+            this.reloadPhoneMap(false);
+          }, 100);
+        });
+      }
     },
 
     // 랭크 모드 타이머 시작
@@ -333,13 +357,14 @@ export default {
         const response = await roadViewApiService.startRankGame();
         
         if (response.isSuccess && response.result) {
-          const { gameId, targetLat, targetLng, markerImageUrl, poiName } = response.result;
+          const { gameId, targetLat, targetLng, markerImageUrl, poiName, fullAddress } = response.result;
           
           // API 응답 데이터를 컴포넌트 상태에 저장
           // gameId를 숫자로 변환하여 저장 (백엔드 Long 타입)
           this.gameId = roadViewApiService.convertGameIdToNumber(gameId);
           this.markerImageUrl = markerImageUrl;
           this.poiName = poiName || null; // POI 이름 저장
+          this.fullAddress = fullAddress || null; // 전체 주소 저장
           
           // 암호화된 좌표를 복호화
           const decryptedLat = roadViewApiService.decryptCoordinate(targetLat);
@@ -350,19 +375,6 @@ export default {
             lng: decryptedLng
           };
           
-          console.log("백엔드에서 받은 랭크 게임 데이터:", {
-            gameId: this.gameId,
-            location: this.currentLocation,
-            markerImageUrl,
-            poiName: this.poiName
-          });
-          
-          console.log("📍 RankView - 복호화된 좌표:", {
-            위도: decryptedLat,
-            경도: decryptedLng,
-            암호화된위도: targetLat,
-            암호화된경도: targetLng
-          });
           
           // currentLocation이 설정된 후 PhoneFrame의 지도 초기화 보장
           this.$nextTick(() => {
@@ -438,7 +450,7 @@ export default {
         }
       });
       
-      console.log("더미 데이터로 선택된 위치:", this.currentLocation);
+    
     },
 
     // 결과 화면 표시 메서드
@@ -462,7 +474,7 @@ export default {
     calculateRankPointChange() {
       // API 호출로 이미 랭크 포인트가 설정된 경우 그대로 사용
       if (this.rankPointChange !== 0) {
-        console.log("백엔드에서 계산된 랭크 포인트 변화 사용:", this.rankPointChange);
+        
         return;
       }
 
@@ -522,7 +534,7 @@ export default {
     // 결과 지도 초기화 - ResultMapSection 컴포넌트로 이동됨
     initResultMap() {
       // 이제 ResultMapSection 컴포넌트에서 처리함
-      console.log("지도 초기화는 ResultMapSection 컴포넌트에서 처리합니다.");
+      
     },
 
     // 결과 화면 닫기
@@ -614,7 +626,7 @@ export default {
           answerTime: answerTime // Number 타입 (초)
         };
 
-        console.log("게임 종료 요청 데이터:", endData);
+        
 
         const response = await roadViewApiService.endRankGame(endData);
         
@@ -627,7 +639,9 @@ export default {
             previousRankTier,
             previousRankLevel,
             currentRankTier,
-            currentRankLevel
+            currentRankLevel,
+            poiName,
+            fullAddress
           } = response.result;
           
           // 백엔드에서 계산된 점수와 랭킹 정보로 업데이트
@@ -643,15 +657,10 @@ export default {
           this.currentRankTier = currentRankTier;
           this.currentRankLevel = currentRankLevel;
           
-          console.log("백엔드에서 받은 랭크 게임 결과:", {
-            score,
-            previousRatingScore,
-            currentRatingScore,
-            ratingScoreChange,
-            previousRank: `${previousRankTier} ${previousRankLevel}`,
-            currentRank: `${currentRankTier} ${currentRankLevel}`,
-            answerTime
-          });
+          // POI 이름과 전체 주소 업데이트 (종료 응답에 포함된 경우)
+          if (poiName) this.poiName = poiName;
+          if (fullAddress) this.fullAddress = fullAddress;
+          
         } else {
           throw new Error(response.message || '게임 결과 처리에 실패했습니다.');
         }
@@ -684,7 +693,6 @@ export default {
 
     // 로드뷰 로드 완료 이벤트 핸들러
     onRoadViewLoaded(data) {
-      console.log("로드뷰 로드 완료", data);
       this.errorCount = 0; // 에러 카운트 초기화
     },
 
@@ -748,6 +756,28 @@ export default {
       this.gameStartTime = Date.now();
       
       this.startTimer();
+    },
+
+    // PhoneFrame 내부 지도 재로딩
+    reloadPhoneMap(showToast = true) {
+      if (!this.$refs.phoneFrame) {
+        if (showToast) {
+          this.showToastMessage("지도가 준비되지 않았습니다.");
+        }
+        return;
+      }
+
+      try {
+        this.$refs.phoneFrame.reloadMap();
+        if (showToast) {
+          this.showToastMessage("지도를 재로딩합니다...");
+        }
+      } catch (error) {
+        console.error("지도 재로딩 실패:", error);
+        if (showToast) {
+          this.showToastMessage("지도 재로딩에 실패했습니다. 다시 시도해주세요.");
+        }
+      }
     },
   },
 };
@@ -885,6 +915,46 @@ export default {
   font-size: 1.1rem;
 }
 
+/* 지도 재로딩 버튼 */
+.map-reload-button {
+  position: fixed;
+  top: 80px;
+  right: 30px;
+  background: white;
+  border: none;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-size: 1.2rem;
+  color: #333;
+  transition: all 0.3s ease;
+  z-index: 16;
+}
+
+.map-reload-button:hover {
+  background: #f5f5f5;
+  transform: rotate(180deg) scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.map-reload-button:active {
+  transform: rotate(180deg) scale(0.95);
+}
+
+.map-reload-button i {
+  transition: transform 0.3s ease;
+  color: #3498db;
+}
+
+.map-reload-button:hover i {
+  color: #2980b9;
+}
+
 /* 반응형 디자인 */
 @media (max-width: 480px) {
   .map-toggle {
@@ -892,6 +962,14 @@ export default {
     font-size: 0.9rem;
     bottom: 20px;
     right: 20px;
+  }
+
+  .map-reload-button {
+    width: 45px;
+    height: 45px;
+    top: 70px;
+    right: 20px;
+    font-size: 1rem;
   }
 }
 
@@ -922,7 +1000,7 @@ export default {
 
 .timer-container {
   position: absolute;
-  top: 30px;
+  top: 70px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 20;

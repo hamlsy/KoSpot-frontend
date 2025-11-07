@@ -5,39 +5,8 @@ import { ref, computed, nextTick } from 'vue';
  * 방 채팅 메시지, 시스템 메시지, 읽지 않은 메시지 등을 관리합니다.
  */
 export function useRoomChat() {
-  // 채팅 상태
-  const chatMessages = ref([
-    {
-      id: 1,
-      senderId: 'user2',
-      content: '안녕하세요! 게임 시작하나요?',
-      timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-    },
-    {
-      id: 2,
-      senderId: 'user1',
-      content: '네, 곧 시작할게요. 모두 대기해주세요!',
-      timestamp: new Date(Date.now() - 1000 * 60 * 4).toISOString(),
-    },
-    {
-      id: 3,
-      senderId: 'user3',
-      content: '첫 게임이라 잘 모르겠어요. 어떻게 하는 건가요?',
-      timestamp: new Date(Date.now() - 1000 * 60 * 3).toISOString(),
-    },
-    {
-      id: 4,
-      senderId: 'user1',
-      content: '로드뷰나 사진을 보고 지도에 위치를 찍는 게임이에요!',
-      timestamp: new Date(Date.now() - 1000 * 60 * 2).toISOString(),
-    },
-    {
-      id: 5,
-      senderId: 'user4',
-      content: '잘 부탁드립니다!',
-      timestamp: new Date(Date.now() - 1000 * 60 * 1).toISOString(),
-    },
-  ]);
+  // 채팅 상태 - 빈 배열로 시작 (WebSocket으로부터 메시지 수신)
+  const chatMessages = ref([]);
   
   const chatInput = ref('');
   const unreadMessages = ref(0);
@@ -61,8 +30,10 @@ export function useRoomChat() {
     const systemMessage = {
       id: Date.now(),
       senderId: 'system',
+      senderName: '시스템',
       content,
       timestamp: new Date().toISOString(),
+      messageType: 'SYSTEM',
       isSystem: true
     };
     
@@ -86,28 +57,33 @@ export function useRoomChat() {
 
   /**
    * 채팅 메시지 처리 (WebSocket으로부터 수신)
+   * roomWebSocket.service.js에서 전달하는 형식:
+   * { senderId, messageId, nickname, content, messageType, teamId, timestamp }
    */
   const handleRoomChatMessage = (chatEvent, currentUserId) => {
-    console.log('💬 방 채팅 메시지:', chatEvent);
+    console.log('💬 방 채팅 메시지 수신:', chatEvent);
     
-    if (!chatEvent || !chatEvent.message) {
+    if (!chatEvent || !chatEvent.content) {
       console.warn('⚠️ 잘못된 채팅 이벤트 형식:', chatEvent);
       return;
     }
     
-    // 채팅 메시지 추가
+    // WebSocket에서 받은 메시지 형식을 UI 컴포넌트 형식으로 변환
     const message = {
-      id: chatEvent.message.id || Date.now(),
-      senderId: chatEvent.message.senderId,
-      content: chatEvent.message.content,
-      timestamp: chatEvent.message.timestamp || new Date().toISOString(),
-      senderNickname: chatEvent.message.senderNickname
+      id: chatEvent.messageId || Date.now(),
+      senderId: chatEvent.senderId,
+      senderName: chatEvent.nickname,  // ChatMessage 컴포넌트가 기대하는 필드명
+      content: chatEvent.content,
+      timestamp: chatEvent.timestamp || new Date().toISOString(),
+      messageType: chatEvent.messageType,
+      teamId: chatEvent.teamId || null,
+      isSystem: chatEvent.messageType === 'SYSTEM'
     };
     
     addChatMessage(message);
     
-    // 읽지 않은 메시지 카운트 증가
-    if (chatEvent.message.senderId !== currentUserId) {
+    // 읽지 않은 메시지 카운트 증가 (자신이 보낸 메시지가 아닌 경우)
+    if (chatEvent.senderId !== currentUserId) {
       unreadMessages.value++;
     }
   };

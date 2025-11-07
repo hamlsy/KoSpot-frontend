@@ -17,7 +17,7 @@
       <div class="kick-modal-body">
         <div class="player-info" v-if="player">
           <div class="player-avatar">
-            <img :src="player.profileImage || '/assets/default-avatar.png'" :alt="player.nickname">
+            <img :src="player.profileImage" :alt="player.nickname">
           </div>
           <div class="player-name">{{ player.nickname }}</div>
         </div>

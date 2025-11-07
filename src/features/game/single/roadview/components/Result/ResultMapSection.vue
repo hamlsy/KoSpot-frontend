@@ -27,6 +27,10 @@ export default {
       type: String,
       default: "",
     },
+    markerImageUrl: {
+      type: String,
+      default: null,
+    },
   },
   mounted() {
     this.$nextTick(() => {
@@ -103,17 +107,38 @@ export default {
 
       actualOverlay.setMap(resultMap);
 
-      // 사용자가 선택한 위치 마커 (기본 마커)
+      // 사용자가 선택한 위치 마커 (장착한 마커 이미지 사용)
       if (this.guessedLocation) {
-        const guessedMarker = new window.kakao.maps.Marker({
-          position: new window.kakao.maps.LatLng(
-            this.guessedLocation.lat,
-            this.guessedLocation.lng
-          ),
-          map: resultMap,
-          title: "선택한 위치",
-          zIndex: 5
-        });
+        let guessedMarker;
+        
+        if (this.markerImageUrl) {
+          // 사용자가 장착한 마커 이미지가 있는 경우
+          const userMarkerImage = new window.kakao.maps.MarkerImage(
+            this.markerImageUrl,
+            new window.kakao.maps.Size(35, 35)
+          );
+          guessedMarker = new window.kakao.maps.Marker({
+            position: new window.kakao.maps.LatLng(
+              this.guessedLocation.lat,
+              this.guessedLocation.lng
+            ),
+            map: resultMap,
+            image: userMarkerImage,
+            title: "선택한 위치",
+            zIndex: 5
+          });
+        } else {
+          // 기본 마커 사용
+          guessedMarker = new window.kakao.maps.Marker({
+            position: new window.kakao.maps.LatLng(
+              this.guessedLocation.lat,
+              this.guessedLocation.lng
+            ),
+            map: resultMap,
+            title: "선택한 위치",
+            zIndex: 5
+          });
+        }
 
         // 선택한 위치 커스텀 오버레이 생성
         const guessedOverlayContent = `

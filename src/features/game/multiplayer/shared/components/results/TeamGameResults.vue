@@ -26,7 +26,7 @@
               :key="player.id"
               class="player-card"
             >
-              <img :src="player.profileImage || '/assets/default-avatar.png'" :alt="player.nickname" class="player-avatar">
+              <img :src="player.profileImage" :alt="player.nickname" class="player-avatar">
               <div class="player-info">
                 <div class="player-name">{{ player.nickname }}</div>
                 <div class="player-level">Lv. {{ player.level }}</div>

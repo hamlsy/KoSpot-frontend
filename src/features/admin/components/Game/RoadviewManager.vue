@@ -70,11 +70,11 @@
             <label>위치 타입</label>
             <select v-model="newLocation.locationType">
               <option value="">타입 선택</option>
-              <option value="TOURIST">관광지</option>
-              <option value="LANDMARK">랜드마크</option>
-              <option value="NATURE">자연경관</option>
-              <option value="CULTURAL">문화시설</option>
-              <option value="COMMERCIAL">상업지역</option>
+              <option value="TOURIST_ATTRACTION">관광지</option>
+              <option value="NATURE_LEISURE">자연/레저</option>
+              <option value="CULTURAL_FACILITY">문화시설</option>
+              <option value="HISTORICAL_SITE">역사유적</option>
+              <option value="COMMERCIAL_AREA">상업지역</option>
             </select>
           </div>
         </div>
@@ -229,18 +229,31 @@
         />
         <select v-model="filterType" class="filter-select">
           <option value="">모든 타입</option>
-          <option value="TOURIST">관광지</option>
-          <option value="LANDMARK">랜드마크</option>
-          <option value="NATURE">자연경관</option>
-          <option value="CULTURAL">문화시설</option>
-          <option value="COMMERCIAL">상업지역</option>
+          <option value="TOURIST_ATTRACTION">관광지</option>
+          <option value="NATURE_LEISURE">자연/레저</option>
+          <option value="CULTURAL_FACILITY">문화시설</option>
+          <option value="HISTORICAL_SITE">역사유적</option>
+          <option value="COMMERCIAL_AREA">상업지역</option>
         </select>
+        <button 
+          @click="loadLocations" 
+          :disabled="loading"
+          class="refresh-btn"
+          title="전체 좌표 목록 다시 불러오기"
+        >
+          <i class="fas fa-sync-alt" :class="{ 'fa-spin': loading }"></i>
+          전체조회
+        </button>
       </div>
 
       <div class="locations-table">
         <div class="table-header">
+          <div class="col-id">ID</div>
           <div class="col-name">장소명</div>
-          <div class="col-address">주소</div>
+          <div class="col-sido">시도</div>
+          <div class="col-sigungu">시군구</div>
+          <div class="col-detail">동/읍/면</div>
+          <div class="col-full-address">전체주소</div>
           <div class="col-type">타입</div>
           <div class="col-coords">좌표</div>
           <div class="col-actions">작업</div>
@@ -251,8 +264,12 @@
             :key="location.id"
             class="table-row"
           >
+            <div class="col-id">{{ location.id }}</div>
             <div class="col-name">{{ location.poiName }}</div>
-            <div class="col-address">{{ location.detailAddress }}</div>
+            <div class="col-sido">{{ location.sidoKey }}</div>
+            <div class="col-sigungu">{{ location.sigungu }}</div>
+            <div class="col-detail">{{ location.detailAddress }}</div>
+            <div class="col-full-address">{{ location.fullAddress || '-' }}</div>
             <div class="col-type">
               <span class="type-badge" :class="location.locationType.toLowerCase()">
                 {{ getTypeLabel(location.locationType) }}
@@ -362,7 +379,7 @@ const filteredLocations = computed(() => {
   if (searchQuery.value) {
     filtered = filtered.filter(loc => 
       loc.poiName.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      loc.detailAddress.toLowerCase().includes(searchQuery.value.toLowerCase())
+      (loc.fullAddress || loc.detailAddress).toLowerCase().includes(searchQuery.value.toLowerCase())
     )
   }
 
@@ -415,7 +432,7 @@ const fetchAddressFromCoords = async () => {
 
   try {
     // 카카오맵 좌표→주소 변환 API 호출
-    const apiKey = process.env.VUE_APP_KAKAO_REST_API_KEY || process.env.VUE_APP_KAKAO_MAP_API_KEY
+    const apiKey = process.env.VUE_APP_KAKAO_MAP_API_KEY || process.env.VUE_APP_KAKAO_MAP_API_KEY
     if (!apiKey) {
       console.error('카카오 API 키가 설정되지 않았습니다.')
       return
@@ -668,11 +685,11 @@ const deleteLocation = async (id) => {
 // 타입 라벨 가져오기
 const getTypeLabel = (type) => {
   const labels = {
-    TOURIST: '관광지',
-    LANDMARK: '랜드마크',
-    NATURE: '자연경관',
-    CULTURAL: '문화시설',
-    COMMERCIAL: '상업지역'
+    TOURIST_ATTRACTION: '관광지',
+    NATURE_LEISURE: '자연/레저',
+    CULTURAL_FACILITY: '문화시설',
+    HISTORICAL_SITE: '역사유적',
+    COMMERCIAL_AREA: '상업지역'
   }
   return labels[type] || type
 }
@@ -1110,20 +1127,95 @@ onBeforeUnmount(() => {
   min-width: 150px;
 }
 
+.refresh-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  white-space: nowrap;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.refresh-btn i {
+  font-size: 0.9rem;
+}
+
 .locations-table {
   background: white;
   border-radius: 12px;
-  overflow: hidden;
+  overflow-x: auto;
   border: 1px solid #e5e7eb;
+}
+
+.locations-table::-webkit-scrollbar {
+  height: 8px;
+}
+
+.locations-table::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.locations-table::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.locations-table::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 .table-header,
 .table-row {
   display: grid;
-  grid-template-columns: 2fr 3fr 1fr 2fr 1fr;
-  gap: 1rem;
+  grid-template-columns: 0.5fr 1.5fr 1fr 1fr 1.5fr 2fr 1fr 1.5fr 1fr;
+  gap: 0.75rem;
   padding: 1rem;
   align-items: center;
+  font-size: 0.85rem;
+  min-width: 1400px;
+}
+
+.col-id,
+.col-sido,
+.col-sigungu {
+  text-align: center;
+}
+
+.col-name,
+.col-detail,
+.col-full-address {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.col-coords {
+  font-family: monospace;
+  font-size: 0.8rem;
+}
+
+.col-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
 }
 
 .table-header {
@@ -1148,27 +1240,27 @@ onBeforeUnmount(() => {
   font-weight: 500;
 }
 
-.type-badge.tourist {
+.type-badge.tourist_attraction {
   background: #dbeafe;
   color: #1e40af;
 }
 
-.type-badge.landmark {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.type-badge.nature {
+.type-badge.nature_leisure {
   background: #d1fae5;
   color: #065f46;
 }
 
-.type-badge.cultural {
+.type-badge.cultural_facility {
   background: #e0e7ff;
   color: #3730a3;
 }
 
-.type-badge.commercial {
+.type-badge.historical_site {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.type-badge.commercial_area {
   background: #fce7f3;
   color: #be185d;
 }
@@ -1180,7 +1272,6 @@ onBeforeUnmount(() => {
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-right: 0.5rem;
 }
 
 .edit-btn {
@@ -1263,14 +1354,25 @@ onBeforeUnmount(() => {
     grid-template-columns: 1fr;
   }
   
+  .locations-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
   .table-header,
   .table-row {
-    grid-template-columns: 1fr;
-    gap: 0.5rem;
+    min-width: 1200px;
+    font-size: 0.75rem;
+    padding: 0.75rem 0.5rem;
   }
   
   .list-controls {
     flex-direction: column;
+  }
+  
+  .refresh-btn {
+    width: 100%;
+    justify-content: center;
   }
   
   /* 엑셀 형식 표 모바일 스타일 */

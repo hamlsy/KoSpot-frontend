@@ -2,6 +2,7 @@
 import { onMounted, onBeforeUnmount, watch } from 'vue';
 import { useKakaoMapState } from './useKakaoMapState';
 import { useKakaoMapDistance } from './useKakaoMapDistance';
+import { useKakaoMapHintCircles } from './useKakaoMapHintCircles';
 
 export function useKakaoMapControls(props, emit) {
   const {
@@ -16,6 +17,7 @@ export function useKakaoMapControls(props, emit) {
   } = useKakaoMapState();
 
   const { calculateDistance } = useKakaoMapDistance(props);
+  const { removeCircles, createHintCircles } = useKakaoMapHintCircles(props);
 
   const initMap = () => {
     console.log("Initializing KakaoMap:", isInitialized.value);
@@ -30,20 +32,20 @@ export function useKakaoMapControls(props, emit) {
     if (window.kakao && window.kakao.maps) {
       const container = document.getElementById('map-container');
       const options = {
-        center: new kakao.maps.LatLng(
+        center: new window.kakao.maps.LatLng(
           props.centerLocation.lat, 
           props.centerLocation.lng
         ),
         level: props.zoomLevel
       };
       
-      map.value = new kakao.maps.Map(container, options);
+      map.value = new window.kakao.maps.Map(container, options);
 
       // 마커 이미지 설정 (markerImageUrl이 있으면 사용, 없으면 기본 이미지)
       const imageSrc = props.markerImageUrl || "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
-      const imageSize = new kakao.maps.Size(24, 35);
-      const imageOption = { offset: new kakao.maps.Point(12, 35) };
-      markerImage.value = new kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
+      const imageSize = new window.kakao.maps.Size(24, 35);
+      const imageOption = { offset: new window.kakao.maps.Point(12, 35) };
+      markerImage.value = new window.kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
       
       if (!props.disabled) {
         // 클릭 이벤트 등록
@@ -72,10 +74,12 @@ export function useKakaoMapControls(props, emit) {
         map.value.relayout();
         
         // 센터 위치 재설정
-        map.value.setCenter(new kakao.maps.LatLng(
-          props.centerLocation.lat, 
-          props.centerLocation.lng
-        ));
+        if (window.kakao && window.kakao.maps) {
+          map.value.setCenter(new window.kakao.maps.LatLng(
+            props.centerLocation.lat, 
+            props.centerLocation.lng
+          ));
+        }
         
         isLoading.value = false;
       }, 100);
@@ -95,9 +99,9 @@ export function useKakaoMapControls(props, emit) {
   };
   
   const resetZoom = () => {
-    if (map.value) {
+    if (map.value && window.kakao && window.kakao.maps) {
       map.value.setLevel(props.zoomLevel);
-      map.value.setCenter(new kakao.maps.LatLng(
+      map.value.setCenter(new window.kakao.maps.LatLng(
         props.centerLocation.lat, 
         props.centerLocation.lng
       ));
@@ -115,7 +119,7 @@ export function useKakaoMapControls(props, emit) {
     removeClickListener();
     
     // 새 리스너 추가
-    clickListener.value = kakao.maps.event.addListener(map.value, 'click', (mouseEvent) => {
+    clickListener.value = window.kakao.maps.event.addListener(map.value, 'click', (mouseEvent) => {
       // 비활성화 상태에서는 마커 설정 불가
       if (props.disabled) return;
       
@@ -137,12 +141,12 @@ export function useKakaoMapControls(props, emit) {
       if (props.markerImageUrl && markerImage.value) {
         // markerImageUrl이 변경되었으면 새로운 마커 이미지 생성
         const imageSrc = props.markerImageUrl;
-        const imageSize = new kakao.maps.Size(24, 35);
-        const imageOption = { offset: new kakao.maps.Point(12, 35) };
-        markerImageToUse = new kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
+        const imageSize = new window.kakao.maps.Size(24, 35);
+        const imageOption = { offset: new window.kakao.maps.Point(12, 35) };
+        markerImageToUse = new window.kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
       }
       
-      marker.value = new kakao.maps.Marker({
+      marker.value = new window.kakao.maps.Marker({
         position: latlng,
         map: map.value,
         image: markerImageToUse
@@ -167,8 +171,8 @@ export function useKakaoMapControls(props, emit) {
   };
   
   const removeClickListener = () => {
-    if (clickListener.value) {
-      kakao.maps.event.removeListener(clickListener.value);
+    if (clickListener.value && window.kakao && window.kakao.maps) {
+      window.kakao.maps.event.removeListener(clickListener.value);
       clickListener.value = null;
     }
   };
@@ -181,14 +185,55 @@ export function useKakaoMapControls(props, emit) {
     }
   };
 
+  // 지도 재로딩 (완전히 새로 초기화)
+  const reloadMap = () => {
+    console.log("🔄 지도 재로딩 시작");
+    
+    // 기존 힌트 원 제거
+    removeCircles();
+    
+    // 기존 리스너 제거
+    removeClickListener();
+    
+    // 기존 마커 제거
+    removeMarker();
+    
+    // 지도 제거
+    if (map.value) {
+      // 지도 컨테이너 초기화
+      const container = document.getElementById('map-container');
+      if (container) {
+        container.innerHTML = '';
+      }
+      map.value = null;
+    }
+    
+    // 상태 초기화
+    isInitialized.value = false;
+    isLoading.value = true;
+    hasMarker.value = false;
+    
+    // 짧은 딜레이 후 지도 재초기화 (컨테이너가 완전히 정리되도록)
+    setTimeout(() => {
+      initMap();
+      
+      // 힌트 원이 필요하면 다시 생성 (initMap 완료 후)
+      if (props.showHintCircles && props.actualLocation) {
+        setTimeout(() => {
+          createHintCircles();
+        }, 300);
+      }
+    }, 100);
+  };
+
   // markerImageUrl 변경 감지
   watch(() => props.markerImageUrl, (newUrl) => {
     if (newUrl && markerImage.value) {
       // 마커 이미지 업데이트
       const imageSrc = newUrl;
-      const imageSize = new kakao.maps.Size(24, 35);
-      const imageOption = { offset: new kakao.maps.Point(12, 35) };
-      markerImage.value = new kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
+      const imageSize = new window.kakao.maps.Size(24, 35);
+      const imageOption = { offset: new window.kakao.maps.Point(12, 35) };
+      markerImage.value = new window.kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
       
       // 기존 마커가 있으면 이미지 업데이트
       if (marker.value) {
@@ -231,6 +276,7 @@ export function useKakaoMapControls(props, emit) {
     addClickListener,
     removeClickListener,
     removeMarker,
-    getMarkerPosition
+    getMarkerPosition,
+    reloadMap
   };
 }

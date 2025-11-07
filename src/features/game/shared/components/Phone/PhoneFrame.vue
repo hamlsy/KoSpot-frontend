@@ -64,7 +64,8 @@ export default {
     },
     actualLocation: {
       type: Object,
-      required: true,
+      required: false,
+      default: null,
     },
     showHintCircles: {
       type: Boolean,
@@ -173,6 +174,23 @@ export default {
     ensureMapInitialized() {
       if (this.$refs.phoneMapGame && typeof this.$refs.phoneMapGame.ensureMapInitialized === 'function') {
         this.$refs.phoneMapGame.ensureMapInitialized();
+      }
+    },
+
+    // 지도 재로딩
+    reloadMap() {
+      if (!this.$refs.phoneMapGame) {
+        this.$emit("error", "지도가 준비되지 않았습니다. 다시 시도해주세요.");
+        return;
+      }
+
+      if (typeof this.$refs.phoneMapGame.reloadMap === 'function') {
+        console.log("🔄 PhoneFrame: 지도 재로딩 요청");
+        this.$refs.phoneMapGame.reloadMap();
+        this.$emit("map-reloaded");
+      } else {
+        console.warn("⚠️ reloadMap 메서드를 사용할 수 없습니다. ensureMapInitialized를 사용합니다.");
+        this.ensureMapInitialized();
       }
     },
   },

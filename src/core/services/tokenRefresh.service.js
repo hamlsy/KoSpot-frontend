@@ -134,10 +134,8 @@ class TokenRefreshService {
     } catch (error) {
       console.error('❌ 토큰 재발급 실패:', error)
       
-      // 401 Unauthorized 또는 403 Forbidden이면 토큰이 유효하지 않음
-      if (error.response?.status === 401 || error.response?.status === 403) {
-        this.handleTokenExpired()
-      }
+      // 에러 발생 시 무조건 모든 토큰 제거 및 메인 페이지로 리다이렉션
+      this.handleTokenExpired()
       
       return false
     } finally {

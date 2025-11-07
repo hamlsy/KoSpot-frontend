@@ -57,14 +57,23 @@
           {{ isMapOpen ? "로드뷰로 돌아가기" : "지도 열기" }}
         </button>
 
+        <!-- 지도 재로딩 버튼 (지도가 열려있을 때만 표시) -->
+        <button
+          v-if="isMapOpen && !showResult"
+          class="map-reload-button"
+          @click="reloadPhoneMap"
+          title="지도 새로고침"
+        >
+          <i class="fas fa-sync-alt"></i>
+        </button>
+
       </div>
 
       <!-- 휴대폰 프레임 -->
       <PhoneFrame
         :style="{ zIndex: isMapOpen ? 15 : -1 }"
         :centerLocation="{ lat: 36.5, lng: 127.5 }"
-        :actualLocation="currentLocation"
-        :showHintCircles="true"
+        :showHintCircles="false"
         :disabled="showResult"
         :showDistance="false"
         :showActionButton="false"
@@ -134,6 +143,28 @@
                 {{ formatTime(180 - timeRemaining) }}
               </div>
               <div class="info-label"> 소요 시간</div>
+            </div>
+          </div>
+
+          <!-- 정답 위치 정보 -->
+          <div v-if="poiName || fullAddress" class="answer-location-info">
+            <div v-if="poiName" class="poi-info">
+              <div class="poi-icon">
+                <i class="fas fa-map-marker-alt"></i>
+              </div>
+              <div class="poi-text">
+                <div class="poi-label">정답 위치</div>
+                <div class="poi-name">{{ poiName }}</div>
+              </div>
+            </div>
+            <div v-if="fullAddress" class="address-info">
+              <div class="address-icon">
+                <i class="fas fa-home"></i>
+              </div>
+              <div class="address-text">
+                <div class="address-label">상세 주소</div>
+                <div class="address-value">{{ fullAddress }}</div>
+              </div>
             </div>
           </div>
 
@@ -222,6 +253,8 @@ export default {
       markerImageUrl: null, // 마커 이미지 URL
       currentSidoKey: null, // 현재 선택된 sido key (API 호출 시 사용)
       gameStartTime: null, // 게임 시작 시간 (타임스탬프)
+      poiName: null, // 정답 위치의 POI 이름 (백엔드에서 받음)
+      fullAddress: null, // 전체 주소 (시도, 시군구, 동 포함)
 
       // 게임 점수 관련
       distance: null,
@@ -324,7 +357,7 @@ export default {
         // 게임 제목을 지역명으로 업데이트
         this.gameTitle = `${regionName} 로드뷰 연습게임`;
         
-        console.log("쿼리 파라미터에서 받은 sido:", sidoKey, "→", regionName);
+        
       } else {
         console.warn("알 수 없는 sido key:", sidoKey);
         this.selectedRegion = this.regions[0]; // 기본값: 서울
@@ -377,6 +410,8 @@ export default {
       this.gameId = null;
       this.markerImageUrl = null;
       this.gameStartTime = null;
+      this.poiName = null;
+      this.fullAddress = null;
       // currentSidoKey는 쿼리 파라미터에서 온 값이므로 유지
 
       // 힌트 상태 초기화
@@ -403,6 +438,7 @@ export default {
 
     // 지도 토글
     toggleMap() {
+      const wasOpen = this.isMapOpen;
       // 상태 변경 - 이것만으로 인라인 스타일에서 z-index가 변경됨
       this.isMapOpen = !this.isMapOpen;
 
@@ -426,6 +462,18 @@ export default {
             }
           }, 200);
         });
+        
+        // 지도가 열릴 때 (false -> true) 자동으로 재로딩
+        if (!wasOpen && this.isMapOpen) {
+          // PhoneFrame이 마운트된 후 재로딩 실행
+          this.$nextTick(() => {
+            // 약간의 딜레이를 주어 PhoneFrame이 완전히 렌더링된 후 재로딩
+            // 자동 재로딩이므로 토스트 메시지 표시 안 함
+            setTimeout(() => {
+              this.reloadPhoneMap(false);
+            }, 300); // 힌트 원 재표시보다 약간 늦게 실행
+          });
+        }
       } else {
         // 지도를 닫을 때는 인라인 스타일에서 자동으로 z-index가 -1로 설정됨
         
@@ -524,8 +572,7 @@ export default {
       });
 
       // 힌트 원이 보이도록 지도 이동 (원의 중심으로)
-      console.log("힌트 원 중심 위치:", circleCenter);
-      console.log("실제 정답 위치:", actualPosition);
+      
       // map.setCenter(circleCenter);
 
       // 힌트 반경 조정 (힌트를 사용할 때마다 원이 작아짐)
@@ -605,6 +652,8 @@ export default {
     // 게임 위치 데이터 가져오기 (백엔드 API 연동)
     async fetchGameLocationData() {
       this.isLoading = true;
+      // coordinate를 받을 때까지 로드뷰를 표시하지 않도록 currentLocation 초기화
+      this.currentLocation = null;
 
       // PhoneFrame의 지도 시작 위치는 대한민국 중심으로 고정
       // centerLocation은 PhoneFrame에 직접 전달하지 않으므로 여기서는 설정하지 않음
@@ -613,31 +662,45 @@ export default {
         // 현재 설정된 sido key 사용 (쿼리 파라미터에서 받은 값)
         const sido = this.currentSidoKey || "SEOUL";
         
-        // 백엔드 API 호출하여 연습 게임 시작
+        // 백엔드 API 호출하여 연습 게임 시작 (최대 5번 재시도)
         const response = await roadViewApiService.startPracticeGame(sido);
         
         if (response.isSuccess && response.result) {
-          const { gameId, targetLat, targetLng, markerImageUrl } = response.result;
+          const { gameId, targetLat, targetLng, markerImageUrl, poiName, fullAddress } = response.result;
+          
+          // 좌표 유효성 검사
+          if (!targetLat || !targetLng) {
+            throw new Error('좌표 데이터가 유효하지 않습니다.');
+          }
           
           // API 응답 데이터를 컴포넌트 상태에 저장
           // gameId를 숫자로 변환하여 저장 (백엔드 Long 타입)
           this.gameId = roadViewApiService.convertGameIdToNumber(gameId);
           this.markerImageUrl = markerImageUrl;
+          this.poiName = poiName || null;
+          this.fullAddress = fullAddress || null;
           
           // 암호화된 좌표를 복호화
           const decryptedLat = roadViewApiService.decryptCoordinate(targetLat);
           const decryptedLng = roadViewApiService.decryptCoordinate(targetLng);
           
+          // 복호화된 좌표 유효성 검사
+          if (isNaN(decryptedLat) || isNaN(decryptedLng)) {
+            throw new Error('좌표 복호화에 실패했습니다.');
+          }
+          
+          // coordinate를 확실하게 받은 후에만 currentLocation 설정
           this.currentLocation = {
             lat: decryptedLat,
             lng: decryptedLng
           };
           
+          console.log("✅ 좌표 수신 완료, 로드뷰 표시 준비:", this.currentLocation);
+          
           // currentLocation이 설정된 후 PhoneFrame의 지도 초기화 보장
           this.$nextTick(() => {
             if (this.$refs.phoneFrame) {
               // 지도가 열려있으면 리사이즈, 닫혀있으면 초기화만 보장
-              console.log("resize!");
               this.$refs.phoneFrame.ensureMapInitialized();
               
               // 지도가 열려있으면 리사이즈
@@ -656,7 +719,8 @@ export default {
           throw new Error(response.message || '연습 게임 시작에 실패했습니다.');
         }
       } catch (error) {
-        console.error("연습 게임 시작 API 호출 실패:", error);
+        console.error("연습 게임 시작 API 호출 최종 실패:", error);
+        // 5번 시도 후 모두 실패한 경우에만 에러 메시지 표시
         this.showToastMessage("게임을 시작할 수 없습니다. 다시 시도해주세요.");
         
         // API 실패 시 더미 데이터로 폴백
@@ -789,15 +853,15 @@ export default {
         const response = await roadViewApiService.endPracticeGame(endData);
         
         if (response.isSuccess && response.result) {
-          const { score } = response.result;
+          const { score, poiName, fullAddress } = response.result;
           
           // 백엔드에서 계산된 점수로 업데이트
           this.score = score;
           
-          console.log("백엔드에서 받은 연습 게임 결과:", {
-            score,
-            answerTime
-          });
+          // POI 이름과 전체 주소 업데이트 (종료 응답에 포함된 경우)
+          if (poiName) this.poiName = poiName;
+          if (fullAddress) this.fullAddress = fullAddress;
+          
         } else {
           throw new Error(response.message || '게임 결과 처리에 실패했습니다.');
         }
@@ -822,19 +886,32 @@ export default {
         level: 8,
       });
 
-      // 사용자 마커
-      new kakao.maps.Marker({
-        position: new kakao.maps.LatLng(guessPosition.lat, guessPosition.lng),
-        map: resultMap,
-        imageSrc: "@/assets/currentLocation.png",
-      });
+      // 사용자 마커 (장착한 마커 이미지 사용)
+      if (this.markerImageUrl) {
+        // 사용자가 장착한 마커 이미지가 있는 경우
+        const userMarkerImage = new kakao.maps.MarkerImage(
+          this.markerImageUrl,
+          new kakao.maps.Size(35, 35)
+        );
+        new kakao.maps.Marker({
+          position: new kakao.maps.LatLng(guessPosition.lat, guessPosition.lng),
+          map: resultMap,
+          image: userMarkerImage,
+        });
+      } else {
+        // 기본 마커 사용
+        new kakao.maps.Marker({
+          position: new kakao.maps.LatLng(guessPosition.lat, guessPosition.lng),
+          map: resultMap,
+        });
+      }
 
-      // 실제 위치 마커 (location-flag.png 사용)
-      const imageSrc = require('@/shared/assets/images/marker/location-flag.png');
-      const imageSize = new kakao.maps.Size(35, 35);
-      const markerImage = new kakao.maps.MarkerImage(
-        imageSrc,
-        imageSize
+      // 실제 위치 마커 (location-flag.png 사용 - RankView와 동일)
+      const answerImageSrc = require('@/shared/assets/images/marker/location-flag.png');
+      const answerImageSize = new kakao.maps.Size(35, 35);
+      const answerMarkerImage = new kakao.maps.MarkerImage(
+        answerImageSrc,
+        answerImageSize
       );
 
       new kakao.maps.Marker({
@@ -843,7 +920,7 @@ export default {
           this.currentLocation.lng
         ),
         map: resultMap,
-        image: markerImage,
+        image: answerMarkerImage,
       });
 
       // 선 그리기
@@ -963,7 +1040,7 @@ export default {
 
     // 로드뷰 로드 완료 이벤트 핸들러
     onRoadViewLoaded(data) {
-      console.log("로드뷰 로드 완료", data);
+    
       this.errorCount = 0; // 에러 카운트 초기화
     },
 
@@ -972,24 +1049,41 @@ export default {
       console.error("로드뷰 로드 오류, 좌표 재발급 시도");
       this.errorCount++;
       
-      // gameId가 있으면 재발급 API 호출
+      // gameId가 있으면 재발급 API 호출 (최대 5번 재시도)
       if (this.gameId) {
         try {
           this.showToastMessage("로드뷰를 찾을 수 없어 새로운 좌표를 요청합니다...");
           
-          const response = await roadViewApiService.reissuePracticeCoordinate(this.gameId);
+          // coordinate를 받을 때까지 로드뷰를 표시하지 않도록 currentLocation 초기화
+          this.currentLocation = null;
+          
+          // 최대 5번 재시도하는 reissueCoordinate 호출
+          const response = await roadViewApiService.reissueCoordinate(this.gameId);
           
           if (response.isSuccess && response.result) {
             const { targetLat, targetLng } = response.result;
+            
+            // 좌표 유효성 검사
+            if (!targetLat || !targetLng) {
+              throw new Error('좌표 데이터가 유효하지 않습니다.');
+            }
             
             // 암호화된 좌표를 복호화
             const decryptedLat = roadViewApiService.decryptCoordinate(targetLat);
             const decryptedLng = roadViewApiService.decryptCoordinate(targetLng);
             
+            // 복호화된 좌표 유효성 검사
+            if (isNaN(decryptedLat) || isNaN(decryptedLng)) {
+              throw new Error('좌표 복호화에 실패했습니다.');
+            }
+            
+            // coordinate를 확실하게 받은 후에만 currentLocation 설정
             this.currentLocation = {
               lat: decryptedLat,
               lng: decryptedLng
             };
+            
+          
             
             // currentLocation이 설정된 후 PhoneFrame의 지도 초기화 보장
             this.$nextTick(() => {
@@ -1013,9 +1107,9 @@ export default {
             throw new Error(response.message || '좌표 재발급에 실패했습니다.');
           }
         } catch (error) {
-          console.error("좌표 재발급 실패:", error);
+          console.error("좌표 재발급 최종 실패 (5회 시도):", error);
           
-          // 재발급 실패 시 기존 로직으로 폴백
+          // 5번 시도 후 모두 실패한 경우에만 에러 처리
           if (this.errorCount > this.maxErrorRetry) {
             this.showToastMessage("로드뷰를 찾을 수 없어 지도 모드로 전환합니다.");
             this.isMapOpen = true;
@@ -1102,6 +1196,29 @@ export default {
           clearInterval(this.hintTimer);
         }
       }, 1000);
+    },
+
+    // PhoneFrame 내부 지도 재로딩
+    reloadPhoneMap(showToast = true) {
+      if (!this.$refs.phoneFrame) {
+        if (showToast) {
+          this.showToastMessage("지도가 준비되지 않았습니다.");
+        }
+        return;
+      }
+
+      try {
+      
+        this.$refs.phoneFrame.reloadMap();
+        if (showToast) {
+          this.showToastMessage("지도를 재로딩합니다...");
+        }
+      } catch (error) {
+        console.error("지도 재로딩 실패:", error);
+        if (showToast) {
+          this.showToastMessage("지도 재로딩에 실패했습니다. 다시 시도해주세요.");
+        }
+      }
     },
   },
 };
@@ -1265,6 +1382,46 @@ export default {
 
 .map-toggle i {
   font-size: 1.1rem;
+}
+
+/* 지도 재로딩 버튼 */
+.map-reload-button {
+  position: fixed;
+  top: 80px;
+  right: 30px;
+  background: white;
+  border: none;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-size: 1.2rem;
+  color: #333;
+  transition: all 0.3s ease;
+  z-index: 16;
+}
+
+.map-reload-button:hover {
+  background: #f5f5f5;
+  transform: rotate(180deg) scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.map-reload-button:active {
+  transform: rotate(180deg) scale(0.95);
+}
+
+.map-reload-button i {
+  transition: transform 0.3s ease;
+  color: #3498db;
+}
+
+.map-reload-button:hover i {
+  color: #2980b9;
 }
 
 /* 결과 화면 */
@@ -1521,6 +1678,14 @@ export default {
     bottom: 20px;
     right: 20px;
   }
+
+  .map-reload-button {
+    width: 45px;
+    height: 45px;
+    top: 70px;
+    right: 20px;
+    font-size: 1rem;
+  }
 }
 
 /* 로드뷰 토스트 메시지 */
@@ -1590,5 +1755,95 @@ export default {
 
 .phone-hint-button i {
   font-size: 0.9rem;
+}
+
+/* 정답 위치 정보 스타일 */
+.answer-location-info {
+  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.poi-info,
+.address-info {
+  background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+  border: 2px solid #93c5fd;
+  padding: 14px 18px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  transition: all 0.3s ease;
+}
+
+.poi-info:hover,
+.address-info:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.2);
+}
+
+.poi-icon,
+.address-icon {
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+.poi-text,
+.address-text {
+  flex: 1;
+}
+
+.poi-label,
+.address-label {
+  font-size: 0.75rem;
+  color: #1e40af;
+  margin-bottom: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.poi-name,
+.address-value {
+  font-size: 1rem;
+  color: #1e3a8a;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  line-height: 1.4;
+}
+
+@media (max-width: 480px) {
+  .answer-location-info {
+    margin: 15px 0;
+    gap: 10px;
+  }
+
+  .poi-info,
+  .address-info {
+    padding: 12px 15px;
+  }
+
+  .poi-icon,
+  .address-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 1rem;
+  }
+
+  .poi-name,
+  .address-value {
+    font-size: 0.9rem;
+  }
 }
 </style>

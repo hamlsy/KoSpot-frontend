@@ -8,8 +8,8 @@ import { apiClient } from 'src/core/api/apiClient.js';
  * 좌표 관련 API 엔드포인트
  */
 const COORDINATE_ENDPOINTS = {
-  GET_COORDINATES: '/admin/coordinates',
-  CREATE_COORDINATE: '/admin/coordinates',
+  GET_COORDINATES: '/admin/coordinates/',
+  CREATE_COORDINATE: '/admin/coordinates/',
   IMPORT_EXCEL: '/admin/coordinates/import-excel',
   DELETE_COORDINATE: (coordinateId) => `/admin/coordinates/${coordinateId}`,
 };
@@ -23,7 +23,7 @@ class CoordinateAdminService {
    * @param {Object} params - 쿼리 파라미터
    * @param {number} params.page - 페이지 번호 (기본값: 0)
    * @param {number} params.size - 페이지 크기 (기본값: 20)
-   * @param {string} params.sort - 정렬 기준 (기본값: createdAt,DESC)
+   * @param {string} params.sort - 정렬 기준 (기본값: createdDate,DESC)
    * @returns {Promise<Object>} 페이징된 좌표 목록
    */
   async getCoordinates(params = {}) {
@@ -33,7 +33,7 @@ class CoordinateAdminService {
       const queryParams = {
         page: params.page || 0,
         size: params.size || 20,
-        sort: params.sort || 'createdAt,DESC'
+        sort: params.sort || 'createdDate,DESC'
       };
       
       const response = await apiClient.get(COORDINATE_ENDPOINTS.GET_COORDINATES, {
@@ -41,7 +41,7 @@ class CoordinateAdminService {
       });
       
       console.log('✅ 좌표 목록 조회 성공:', response.data);
-      return this._transformCoordinatesPageData(response.data.data);
+      return this._transformCoordinatesPageData(response.data.result);
     } catch (error) {
       console.error('❌ 좌표 목록 조회 실패:', error);
       this._handleApiError(error, '좌표 목록 조회에 실패했습니다.');
@@ -68,7 +68,7 @@ class CoordinateAdminService {
       const response = await apiClient.post(COORDINATE_ENDPOINTS.CREATE_COORDINATE, coordinateData);
       
       console.log('✅ 좌표 생성 성공:', response.data);
-      return response.data.data;
+      return response.data.result;
     } catch (error) {
       console.error('❌ 좌표 생성 실패:', error);
       this._handleApiError(error, '좌표 생성에 실패했습니다.');
@@ -173,10 +173,11 @@ class CoordinateAdminService {
       lat: coord.lat,
       lng: coord.lng,
       poiName: coord.poiName || '이름 없음',
-      sido: coord.sido || '',
+      sidoKey: coord.sido || '',  // 백엔드의 sido를 sidoKey로 매핑
       sigungu: coord.sigungu || '',
       detailAddress: coord.detailAddress || '',
-      locationType: coord.locationType || 'LANDMARK'
+      fullAddress: coord.fullAddress || coord.detailAddress || '',  // 전체 주소 (시도+시군구+동)
+      locationType: coord.locationType || 'TOURIST_ATTRACTION'
     }));
   }
 

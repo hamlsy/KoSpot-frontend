@@ -66,6 +66,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import apiClient from '@/core/api/apiClient.js'
+import { tokenRefreshService } from '@/core/services/tokenRefresh.service.js'
 
 const router = useRouter()
 
@@ -106,6 +107,10 @@ const handleTempLogin = async () => {
     localStorage.setItem('refreshToken', refreshToken)
     localStorage.setItem('memberId', memberId)
     
+    // 토큰 갱신 서비스 시작
+    console.log('🚀 임시 로그인 성공: 토큰 갱신 서비스 시작')
+    tokenRefreshService.start()
+    
     successMessage.value = '임시 로그인에 성공했습니다!'
     
     // 3초 후 메인페이지로 이동
@@ -143,6 +148,10 @@ const handleLogout = async () => {
     console.error('로그아웃 실패:', err)
     error.value = err.response?.data?.message || err.message || '로그아웃 요청에 실패했습니다.'
   } finally {
+    // 토큰 갱신 서비스 중지
+    console.log('🛑 로그아웃: 토큰 갱신 서비스 중지')
+    tokenRefreshService.stop()
+    
     // 로컬 스토리지 정리
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
