@@ -3,6 +3,14 @@
     <div class="tutorial-container">
       <!-- 헤더 -->
       <div class="tutorial-header">
+        <button
+          class="top-dismiss-button"
+          type="button"
+          @click="skipTutorial"
+        >
+          <i class="fas fa-times"></i>
+          튜토리얼 닫기
+        </button>
         <div class="progress-indicator">
           <span
             v-for="(slide, index) in slides"
@@ -12,9 +20,6 @@
             @click="goToSlide(index)"
           ></span>
         </div>
-        <button class="nav-button complete-button" @click="skipTutorial">
-          튜토리얼 닫기
-        </button>
       </div>
 
       <!-- 슬라이드 컨텐츠 -->
@@ -181,18 +186,48 @@ const completeTutorial = () => {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  padding: 2rem;
+  padding: 1rem;
 }
 
 /* 헤더 */
 .tutorial-header {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
+  gap: 0.75rem;
   padding: 0;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.75rem;
   border-bottom: none;
   position: relative;
+}
+
+.top-dismiss-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+  border: 1px solid #cbd5f5;
+  color: #1e293b;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.top-dismiss-button i {
+  font-size: 0.9rem;
+}
+
+.top-dismiss-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(148, 163, 184, 0.35);
+}
+
+.top-dismiss-button:active {
+  transform: translateY(0);
+  box-shadow: none;
 }
 
 /* 진행 표시기 */
@@ -204,44 +239,23 @@ const completeTutorial = () => {
 }
 
 .progress-dot {
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: #cbd5e1;
+  background: #e2e8f0;
+  border: 2px solid #cbd5f5;
   cursor: pointer;
-  transition: width 0.2s ease, background-color 0.2s ease;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
 .progress-dot.active {
   background: #3b82f6;
-  width: 20px;
-  border-radius: 3px;
+  border-color: #2563eb;
+  transform: scale(1.15);
 }
 
 .progress-dot:hover {
-  background: #94a3b8;
-}
-
-/* 닫기 버튼 */
-.close-button {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  background: #f1f5f9;
-  color: #475569;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.15s ease;
-  white-space: nowrap;
-}
-
-.close-button:hover {
-  opacity: 0.9;
-}
-
-.close-button:active {
-  opacity: 0.8;
+  background: #bfdbfe;
 }
 
 /* 슬라이드 래퍼 */
@@ -299,10 +313,12 @@ const completeTutorial = () => {
 .navigation-controls {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: 0;
   margin-top: 1.5rem;
   border-top: none;
   gap: 10px;
+  flex-wrap: nowrap;
 }
 
 .nav-button {
@@ -390,11 +406,12 @@ const completeTutorial = () => {
   }
 
   .navigation-controls {
-    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
   }
 
   .nav-button {
-    width: 100%;
+    min-width: 120px;
     justify-content: center;
   }
 
@@ -404,4 +421,3 @@ const completeTutorial = () => {
   }
 }
 </style>
-

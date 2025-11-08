@@ -618,6 +618,10 @@ function startThemeGame(gameData) {
   margin: 0;
 }
 
+.popup-header {
+  margin: 0px;
+}
+
 /* 반응형 */
 @media (max-width: 768px) {
   .google-ads-space {
