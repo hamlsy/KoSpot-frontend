@@ -19,7 +19,34 @@
           <span>로그아웃</span>
         </button>
       </div>
-      <!-- 통계 정보는 나중에 추가 예정 (첫 가입일, Spot 수 등) -->
+
+      <div class="user-highlights">
+        <div class="highlight-card">
+          <div class="highlight-icon">
+            <i class="fas fa-coins"></i>
+          </div>
+          <div class="highlight-text">
+            <span class="highlight-label">보유 포인트</span>
+            <span class="highlight-value">
+              <template v-if="formattedPoint !== null">{{ formattedPoint }}P</template>
+              <template v-else>포인트 없음</template>
+            </span>
+          </div>
+        </div>
+
+        <div class="highlight-card">
+          <div class="highlight-icon">
+            <i class="fas fa-clock"></i>
+          </div>
+          <div class="highlight-text">
+            <span class="highlight-label">마지막 플레이</span>
+            <span class="highlight-value">
+              <template v-if="formattedLastPlayed !== null">{{ formattedLastPlayed }}</template>
+              <template v-else>기록 없음</template>
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 로그인되지 않은 경우 로그인 버튼 표시 -->
@@ -49,8 +76,35 @@ export default {
         photoRating: 0,
         roadRating: 0,
         playCount: 0,
-        marker: ""
+        marker: "",
+        currentPoint: 0,
+        lastPlayedAt: null
       })
+    }
+  },
+  computed: {
+    formattedPoint() {
+      const point = this.userProfile?.currentPoint;
+      if (point === undefined || point === null) {
+        return null;
+      }
+      const formatter = new Intl.NumberFormat('ko-KR');
+      return formatter.format(point);
+    },
+    formattedLastPlayed() {
+      const lastPlayed = this.userProfile?.lastPlayedAt;
+      if (!lastPlayed) {
+        return null;
+      }
+      const parsedDate = new Date(lastPlayed);
+      if (Number.isNaN(parsedDate.getTime())) {
+        return null;
+      }
+      return parsedDate.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
     }
   },
   methods: {
@@ -85,7 +139,7 @@ export default {
   flex-direction: column;
   justify-content: center;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  max-height: 180px;
+  min-height: 180px;
 }
 
 .clickable {
@@ -175,33 +229,55 @@ export default {
 }
 
 /* 통계 정보는 나중에 추가 예정 */
-.user-stats {
+.user-highlights {
   display: flex;
-  justify-content: space-between;
-  margin-top: 8px;
-  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-  border-radius: 12px;
-  padding: 10px;
+  gap: 12px;
+  margin-top: 12px;
 }
 
-.user-stat {
+.highlight-card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #f8fafc, #eef2ff);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.highlight-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(59, 130, 246, 0.08);
+  color: #000;
+  flex-shrink: 0;
+}
+
+.highlight-icon i {
+  font-size: 0.95rem;
+}
+
+.highlight-text {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  flex: 1;
+  gap: 2px;
 }
 
-.stat-value {
-  font-size: 1rem;
+.highlight-label {
+  font-size: 0.7rem;
+  color: rgba(0, 0, 0, 0.65);
+  font-weight: 500;
+}
+
+.highlight-value {
+  font-size: 0.95rem;
   font-weight: 600;
   color: #000;
-}
-
-.stat-label {
-  font-size: 0.7rem;
-  color: #000;
-  opacity: 0.7;
-  margin-top: 2px;
 }
 
 .login-section {
@@ -263,13 +339,8 @@ export default {
     font-size: 0.9rem;
     max-width: 100px;
   }
-  
-  .stat-value {
-    font-size: 0.9rem;
-  }
-  
-  .stat-label {
-    font-size: 0.65rem;
+  .user-highlights {
+    flex-direction: column;
   }
 }
 </style>

@@ -383,7 +383,9 @@ const userProfile = ref({
   email: "user@example.com",
   avatar: "/default-avatar.png",
   isAdmin: false,
-  isFirstVisited: false
+  isFirstVisited: false,
+  lastPlayedAt: null,
+  currentPoint: 0
 });
 
 // 게임 모드 상태
@@ -442,6 +444,12 @@ async function loadMainPageData() {
         }
         if (myInfo.equippedMarkerImageUrl) {
           userProfile.value.avatar = myInfo.equippedMarkerImageUrl;
+        }
+        if(myInfo.lastPlayedAt) {
+          userProfile.value.lastPlayedAt = myInfo.lastPlayedAt;
+        }
+        if(myInfo.currentPoint) {
+          userProfile.value.currentPoint = myInfo.currentPoint;
         }
         
         // 첫 방문자 여부 확인 (백엔드에서 제공)

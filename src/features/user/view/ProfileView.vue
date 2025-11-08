@@ -45,14 +45,31 @@
               </div>
               
           <!-- 연속 플레이 스트릭 (추후 구현 예정) -->
-          <div class="streak-section" v-if="profile.currentStreak !== undefined && profile.currentStreak !== null">
-            <div class="streak-card" :class="{ 'streak-active': profile.currentStreak > 0 }">
+          <div class="streak-section" v-if="hasStreakData">
+            <div
+              v-if="profile.currentStreak !== undefined && profile.currentStreak !== null"
+              class="streak-card"
+              :class="{ 'streak-active': profile.currentStreak > 0 }"
+            >
               <div class="streak-icon">
                 <i class="fas fa-fire" :class="{ 'fire-active': profile.currentStreak > 0 }"></i>
-                </div>
+              </div>
               <div class="streak-content">
                 <div class="streak-value">{{ profile.currentStreak }}일</div>
                 <div class="streak-label">연속 플레이</div>
+              </div>
+            </div>
+
+            <div
+              v-if="profile.longestStreak !== undefined && profile.longestStreak !== null"
+              class="streak-card longest-streak-card"
+            >
+              <div class="streak-icon">
+                <i class="fas fa-crown"></i>
+              </div>
+              <div class="streak-content">
+                <div class="streak-value">{{ profile.longestStreak }}일</div>
+                <div class="streak-label">최장 연속 플레이</div>
               </div>
             </div>
           </div>
@@ -424,6 +441,7 @@ const profile = ref({
   joinedAt: null,
   lastPlayedAt: null,
   currentStreak: 0,
+  longestStreak: 0,
   statistics: {
     roadView: {
       practice: {
@@ -452,14 +470,13 @@ const profile = ref({
         averageScore: 0
       },
       multi: {
-      totalGames: 0,
-      averageScore: 0,
-      firstPlaceCount: 0,
-      secondPlaceCount: 0,
-      thirdPlaceCount: 0
+        totalGames: 0,
+        averageScore: 0,
+        firstPlaceCount: 0,
+        secondPlaceCount: 0,
+        thirdPlaceCount: 0
       }
     },
-    bestScore: 0
   },
   rankInfo: {
     roadViewRank: {
@@ -513,6 +530,15 @@ const filteredInventoryItems = computed(() => {
   return inventoryItems.value.filter(item => item.type === activeInventoryTab.value);
 });
 
+const hasStreakData = computed(() => {
+  const current = profile.value.currentStreak;
+  const longest = profile.value.longestStreak;
+  return (
+    (current !== undefined && current !== null) ||
+    (longest !== undefined && longest !== null)
+  );
+});
+
 // Computed: NavigationBar에 전달할 사용자 정보
 const userInfoForNav = computed(() => {
   if (!profile.value || !profile.value.nickname) {
@@ -537,6 +563,7 @@ function getDummyProfileData() {
     joinedAt: '2024-01-15T09:00:00Z',
     lastPlayedAt: '2025-11-02T14:30:00Z',
     currentStreak: 7,
+    longestStreak: 24,
     statistics: {
       roadView: {
         practice: {
@@ -932,7 +959,10 @@ watch(showInventoryModal, (newValue) => {
 /* 스트릭 섹션 */
 .streak-section {
   display: flex;
-  align-items: center;
+  align-items: stretch;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: flex-start;
 }
 
 .streak-card {
@@ -944,11 +974,17 @@ watch(showInventoryModal, (newValue) => {
   align-items: center;
   gap: 1rem;
   min-width: 160px;
+  flex: 1 1 220px;
 }
 
 .streak-card.streak-active {
   border-color: #3b82f6;
   background: #eff6ff;
+}
+
+.streak-card.longest-streak-card {
+  border-color: #f59e0b;
+  background: #fffbeb;
 }
 
 .streak-icon {
@@ -960,6 +996,10 @@ watch(showInventoryModal, (newValue) => {
 }
 
 .streak-icon i.fire-active {
+  color: #f59e0b;
+}
+
+.streak-card.longest-streak-card .streak-icon i {
   color: #f59e0b;
 }
 
