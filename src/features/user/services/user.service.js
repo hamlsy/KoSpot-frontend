@@ -45,11 +45,7 @@ class UserService {
    */
   async getProfile() {
     try {
-      console.log('📤 프로필 조회 요청');
-      
       const response = await apiClient.get('/member/profile');
-      
-      console.log('✅ 프로필 조회 성공:', response.data);
       return response.data;
     } catch (error) {
       console.error('❌ 프로필 조회 실패:', error);
@@ -65,11 +61,7 @@ class UserService {
    */
   async updateProfile(profileData) {
     try {
-      console.log('📤 프로필 업데이트 요청:', profileData);
-      
       const response = await apiClient.put('/user/profile', profileData);
-      
-      console.log('✅ 프로필 업데이트 성공:', response.data);
       return response.data;
     } catch (error) {
       console.error('❌ 프로필 업데이트 실패:', error);

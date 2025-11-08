@@ -3,7 +3,7 @@
     <header class="header">
       <div class="header-content">
         <div class="header-left">
-          <div class="home-link" @click="simpleMode ? null : goToMain" :style="{ cursor: simpleMode ? 'default' : 'pointer' }">
+          <div class="home-link" @click="goToMain">
             <h1 class="logo">KoSpot</h1>
             <span class="badge">Beta</span>
           </div>
@@ -380,8 +380,8 @@ export default {
   display: flex;
   align-items: center;
   text-decoration: none;
-  cursor: pointer;
   transition: opacity 0.2s ease;
+  cursor: pointer;
 }
 
 .home-link:hover {
