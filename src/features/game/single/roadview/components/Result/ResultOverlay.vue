@@ -62,20 +62,22 @@
             </div>
 
             <div class="result-score-section compact">
-              <div class="score-display">
-                <div class="score-icon">
-                  <i class="fas fa-star"></i>
+              <div class="score-distance-row">
+                <div class="score-display">
+                  <div class="score-icon">
+                    <i class="fas fa-star"></i>
+                  </div>
+                  <div class="score-label"> 점수</div>
+                  <div class="score-value">{{ score.toFixed(1) }}</div>
                 </div>
-                <div class="score-label"> 점수</div>
-                <div class="score-value">{{ score.toFixed(1) }}</div>
-              </div>
 
-              <div class="distance-display">
-                <div class="distance-icon">
-                  <i class="fas fa-ruler"></i>
+                <div class="distance-display">
+                  <div class="distance-icon">
+                    <i class="fas fa-ruler"></i>
+                  </div>
+                  <div class="distance-label"> 거리</div>
+                  <div class="distance-value">{{ formattedDistance }}</div>
                 </div>
-                <div class="distance-label"> 거리</div>
-                <div class="distance-value">{{ formattedDistance }}</div>
               </div>
 
               <div class="rank-points-display">
@@ -98,8 +100,6 @@
               </div>
             </div>
           </div>
-
-          <!-- 우측: 지도 및 위치 정보 -->
           <div class="right-section">
             <!-- POI 이름 -->
             <div v-if="poiName" class="poi-name-section">
@@ -130,6 +130,10 @@
               :markerImageUrl="markerImageUrl"
             />
           </div>
+          
+
+          <!-- 우측: 지도 및 위치 정보 -->
+          
         </div>
       </div>
 
@@ -623,7 +627,8 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 20px;
+  gap: 16px;
+  flex-wrap: nowrap;
 }
 
 .rank-badge {
@@ -634,7 +639,8 @@ export default {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 130px;
+  min-width: 0;
+  flex: 1 1 0;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
@@ -793,6 +799,18 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.score-distance-row {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  flex-wrap: nowrap;
+}
+
+.score-distance-row > div {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .result-score-section.compact {
@@ -1034,14 +1052,6 @@ export default {
     gap: 15px;
   }
 
-  .rank-change-content {
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .rank-arrow {
-    transform: rotate(90deg);
-  }
 }
 
 @media (max-width: 480px) {

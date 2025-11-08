@@ -6,6 +6,7 @@ import ComponentTest from 'src/dummy/ComponentTest.vue'
 import TempLoginView from '@/features/auth/views/TempLoginView.vue'
 import SoloGameView from '@/features/game/multiplayer/roadview/views/SoloGameView.vue'
 import DevTestPage from '@/dummy/DevTestPage.vue'
+import ResultOverlay from '@/features/game/single/roadview/components/Result/ResultOverlay.vue'
 
 const devRoutes = [
     {
@@ -53,6 +54,28 @@ const devRoutes = [
         meta: {
             title: '로드뷰 개인전 테스트'
         }
+    }, {
+        path: '/devRoute',
+        name: "DevRoundTest",
+        component: ResultOverlay,
+        props: {
+            show: true,
+            score: 87.5,
+            distance: 0.83,
+            currentRankPoints: 1200,
+            rankPointChange: 24,
+            previousRankTier: 'SILVER',
+            previousRankLevel: 'ONE',
+            currentRankTier: 'GOLD',
+            currentRankLevel: 'TWO',
+            poiName: '서울특별시 마포구 어디',
+            fullAddress: '서울 마포구 ...',
+            userNickname: '테스트유저',
+            currentLocation: { lat: 37.55, lng: 126.98 },
+            guessedLocation: { lat: 37.57, lng: 126.99 },
+            locationDescription: '테스트 좌표',
+            markerImageUrl: null,
+          },
     }
 ];
 
