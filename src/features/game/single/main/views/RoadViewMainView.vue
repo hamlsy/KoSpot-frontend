@@ -584,6 +584,35 @@ function startThemeGame(gameData) {
 @import url("@/shared/assets/styles/common/slide-menu/slide-menu.css");
 @import url("@/shared/assets/styles/game/roadView/roadview-main.css");
 
+.practice-mode-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.region-selector {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  width: 100%;
+}
+
+
+@media (max-width: 640px) {
+  .practice-mode-options {
+    gap: 0.75rem;
+  }
+
+  .region-selector {
+    gap: 0.5rem;
+  }
+
+  .region-selector button {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.82rem;
+  }
+}
+
 /* Google Ads 공간 스타일 */
 .google-ads-space {
   margin: 20px 0;
@@ -619,7 +648,7 @@ function startThemeGame(gameData) {
 }
 
 .popup-header {
-  margin: 0px;
+  margin: 8px;
 }
 
 /* 반응형 */
