@@ -50,16 +50,22 @@ const connect = (endpoint = "/api/ws", onConnectCallback = null) => {
   try {
     // WebSocket URL 구성
     let wsUrl;
+    // endpoint 정규화: 항상 "/"로 시작
+    const normalizedEndpoint = endpoint?.startsWith("/")
+      ? endpoint
+      : `/${endpoint || ""}`;
+
     if (process.env.NODE_ENV === "development") {
       // 개발 환경: localhost:8080 사용
-      wsUrl = `${window.location.protocol}//localhost:8080${endpoint}`;
+      wsUrl = `${window.location.protocol}//localhost:8080${normalizedEndpoint}`;
     } else {
       // 프로덕션 환경: 환경 변수 또는 현재 호스트 사용
       if (process.env.VUE_APP_WS_URL) {
-        wsUrl = `${process.env.VUE_APP_WS_URL}${endpoint}`;
+        const baseUrl = process.env.VUE_APP_WS_URL.replace(/\/+$/, "");
+        wsUrl = `${baseUrl}${normalizedEndpoint}`;
       } else {
         // 환경 변수가 없으면 현재 페이지의 호스트 사용
-        wsUrl = `${window.location.protocol}//${window.location.host}${endpoint}`;
+        wsUrl = `${window.location.protocol}//${window.location.host}${normalizedEndpoint}`;
       }
     }
 
