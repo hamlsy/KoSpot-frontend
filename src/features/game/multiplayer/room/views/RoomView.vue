@@ -1,13 +1,6 @@
 <template>
   <div class="multiplayer-room-waiting">
-    <!-- 네비게이션 바 - Simple Mode -->
-    <NavigationBar
-      :simple-mode="true"
-      :show-back-button="true"
-      back-button-text="방 나가기"
-      @back="leaveRoom"
-    />
-
+  
     <!-- 배경 요소 -->
     <div class="mode-background"></div>
 
@@ -140,6 +133,8 @@
                 v-model="chatInput"
                 placeholder="메시지를 입력하세요..."
                 @keyup.enter="sendChatMessage"
+                @focus="handleChatInputFocus"
+                ref="chatInputFieldRef"
               />
               <button class="send-button" @click="sendChatMessage">
                 <i class="fas fa-paper-plane"></i>
@@ -182,7 +177,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 
 // Core Components
@@ -376,6 +371,7 @@ const leaveRoom = async () => {
 // 반응형 디자인 상태 관리
 const isMobileView = ref(false);
 const isChatVisible = ref(false);
+const chatInputFieldRef = ref(null);
 
 // 화면 크기 감지
 const checkScreenSize = () => {
@@ -394,6 +390,22 @@ const handleToggleChat = () => {
     isChatVisible.value = !isChatVisible.value;
   }
   toggleChat();
+};
+
+const handleChatInputFocus = () => {
+  if (!isMobileView.value) {
+    return;
+  }
+
+  nextTick(() => {
+    scrollChatToBottom();
+    if (chatInputFieldRef.value) {
+      chatInputFieldRef.value.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest'
+      });
+    }
+  });
 };
 
 onMounted(() => {
@@ -454,7 +466,8 @@ const formatUpdateTime = (timestamp) => {
 }
 
 .left-panel {
-  flex: 1.2;
+  flex: 0 0 65%;
+  max-width: 65%;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -462,8 +475,9 @@ const formatUpdateTime = (timestamp) => {
 }
 
 .right-panel {
-  flex: 1;
-  min-width: 280px;
+  flex: 0 0 35%;
+  max-width: 35%;
+  min-width: 320px;
   display: flex;
   flex-direction: column;
 }
@@ -840,11 +854,14 @@ const formatUpdateTime = (timestamp) => {
 /* Responsive design */
 @media (max-width: 1200px) {
   .left-panel {
-    flex: 1.4;
+    flex: 1;
+    max-width: 100%;
   }
   
   .right-panel {
-    min-width: 350px;
+    flex: 1;
+    max-width: 100%;
+    min-width: 280px;
   }
 }
 
@@ -856,12 +873,14 @@ const formatUpdateTime = (timestamp) => {
 
   .left-panel {
     flex: none;
+    max-width: 100%;
     height: auto;
     min-height: 50vh;
   }
 
   .right-panel {
     flex: 1;
+    max-width: 100%;
     min-width: 0;
     min-height: 45vh;
   }

@@ -111,13 +111,15 @@ class RoomWebSocketService {
       subscriptions.push(
         this.webSocketManager.subscribe(playerListChannel, (message) => {
           try {
-            const notification = JSON.parse(message.body);
+            const notification =
+              message && typeof message === 'object' && 'body' in message
+                ? JSON.parse(message.body)
+                : message;
+
             console.log('📥 게임 방 알림 수신:', notification);
-            
-            // 알림 타입에 따라 처리
             this._handleGameRoomNotification(notification, eventHandlers);
           } catch (error) {
-            console.error('❌ 게임 방 알림 파싱 실패:', error);
+            console.error('❌ 게임 방 알림 파싱 실패:', error, message);
           }
         })
       );
@@ -130,10 +132,13 @@ class RoomWebSocketService {
       subscriptions.push(
         this.webSocketManager.subscribe(chatChannel, (message) => {
           try {
-            const chatEvent = JSON.parse(message.body);
+            const chatEvent =
+              message && typeof message === 'object' && 'body' in message
+                ? JSON.parse(message.body)
+                : message;
+
             console.log('📥 채팅 메시지 수신:', chatEvent);
             
-            // API 명세서 형식 처리: { senderId, messageId, nickname, content, messageType, teamId, timestamp }
             const processedChatEvent = {
               senderId: chatEvent.senderId,
               messageId: chatEvent.messageId,
@@ -146,7 +151,7 @@ class RoomWebSocketService {
             
             eventHandlers.onChatMessage(processedChatEvent);
           } catch (error) {
-            console.error('❌ 채팅 메시지 파싱 실패:', error);
+            console.error('❌ 채팅 메시지 파싱 실패:', error, message);
           }
         })
       );
@@ -158,11 +163,15 @@ class RoomWebSocketService {
       subscriptions.push(
         this.webSocketManager.subscribe(settingsChannel, (message) => {
           try {
-            const settingsUpdate = JSON.parse(message.body);
+            const settingsUpdate =
+              message && typeof message === 'object' && 'body' in message
+                ? JSON.parse(message.body)
+                : message;
+
             console.log('📥 게임 방 설정 업데이트 수신:', settingsUpdate);
             this._handleGameRoomSettingsUpdate(settingsUpdate, eventHandlers);
           } catch (error) {
-            console.error('❌ 게임 방 설정 업데이트 파싱 실패:', error);
+            console.error('❌ 게임 방 설정 업데이트 파싱 실패:', error, message);
           }
         })
       );
@@ -174,11 +183,15 @@ class RoomWebSocketService {
       subscriptions.push(
         this.webSocketManager.subscribe(statusChannel, (message) => {
           try {
-            const statusEvent = JSON.parse(message.body);
+            const statusEvent =
+              message && typeof message === 'object' && 'body' in message
+                ? JSON.parse(message.body)
+                : message;
+
             console.log('📥 게임 방 상태 변경 수신:', statusEvent);
             eventHandlers.onGameRoomStatusChange(statusEvent);
           } catch (error) {
-            console.error('❌ 게임 방 상태 이벤트 파싱 실패:', error);
+            console.error('❌ 게임 방 상태 이벤트 파싱 실패:', error, message);
           }
         })
       );

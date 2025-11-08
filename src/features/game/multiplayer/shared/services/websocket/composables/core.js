@@ -18,7 +18,7 @@ const connectionCallbacks = ref(new Set());
  * @param {String} endpoint - WebSocket 서버 엔드포인트
  * @param {Function} onConnectCallback - 연결 성공 시 실행할 콜백 함수
  */
-const connect = (endpoint = "/ws", onConnectCallback = null) => {
+const connect = (endpoint = "/api/ws", onConnectCallback = null) => {
   // 기존 연결이 있는 경우 정리 (새로고침 시 중복 연결 방지)
   if (stompClient.value && !isConnected.value) {
     try {
