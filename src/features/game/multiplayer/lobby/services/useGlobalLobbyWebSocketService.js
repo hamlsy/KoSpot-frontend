@@ -38,7 +38,7 @@ export function useGlobalLobbyWebSocketService() {
      * 
      * @param {String} [endpoint='/ws'] - WebSocket 서버의 엔드포인트 URL
      */
-    const connectWebSocket = (endpoint = '/api/ws') => {
+    const connectWebSocket = (endpoint = '/ws') => {
         // 이미 연결된 경우에는 글로벌 로비 채널만 구독
         if (webSocketManager.isConnected.value) {
             subscribeToGlobalLobbyChat();

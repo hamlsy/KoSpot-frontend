@@ -18,7 +18,7 @@ const connectionCallbacks = ref(new Set());
  * @param {String} endpoint - WebSocket 서버 엔드포인트
  * @param {Function} onConnectCallback - 연결 성공 시 실행할 콜백 함수
  */
-const connect = (endpoint = "/api/ws", onConnectCallback = null) => {
+const connect = (endpoint = "/ws", onConnectCallback = null) => {
   // 기존 연결이 있는 경우 정리 (새로고침 시 중복 연결 방지)
   if (stompClient.value && !isConnected.value) {
     try {
@@ -52,7 +52,9 @@ const connect = (endpoint = "/api/ws", onConnectCallback = null) => {
     let wsUrl;
     if (process.env.NODE_ENV === "development") {
       // 개발 환경: localhost:8080 사용
-      wsUrl = `${window.location.protocol}//localhost:8080${endpoint}`;
+      wsUrl = `${process.env.VUE_APP_WS_URL}${endpoint}`;
+      console.log("🔵 개발 환경 WebSocket URL:", wsUrl);
+      console.log(process.env.VUE_APP_WS_URL)
     } else {
       // 프로덕션 환경: 환경 변수 또는 현재 호스트 사용
       if (process.env.VUE_APP_WS_URL) {
@@ -78,11 +80,6 @@ const connect = (endpoint = "/api/ws", onConnectCallback = null) => {
       transports: ["websocket", "xhr-polling", "jsonp-polling"],
     };
 
-    console.log("📋 SockJS 옵션:", {
-      timeout: sockjsOptions.timeout,
-      transports: sockjsOptions.transports,
-      timestamp: new Date().toISOString()
-    });
 
     const socket = new SockJS(wsUrl, undefined, sockjsOptions);
     
@@ -171,13 +168,7 @@ const connect = (endpoint = "/api/ws", onConnectCallback = null) => {
     
     // SockJS 연결 상태 변화 추적
     socket.onopen = function (event) {
-      console.log("🟢 SockJS onopen 이벤트 발생:", {
-        type: event.type,
-        target: event.target,
-        currentURL: event.target?.url || wsUrl,
-        readyState: event.target?.readyState,
-        timestamp: new Date().toISOString()
-      });
+      
     };
     
     // SockJS 메시지 이벤트 (디버깅용)
@@ -271,13 +262,7 @@ const connect = (endpoint = "/api/ws", onConnectCallback = null) => {
         });
         
         isConnected.value = true;
-        
-        console.log("📊 연결 성공 후 상태:", {
-          isConnected: isConnected.value,
-          hasStompClient: !!stompClient.value,
-          connectionCallbacksCount: connectionCallbacks.value.size,
-          activeSubscriptionsCount: activeSubscriptions.value.size
-        });
+
         
         // 등록된 콜백들 실행
         connectionCallbacks.value.forEach((callback, index) => {

@@ -345,8 +345,8 @@ const stats = computed(() => {
   return [
     { icon: "fas fa-trophy", label: "내 랭크", value: rankDisplay },
     { icon: "fas fa-trophy", label: "내 레이팅 점수", value: rankInfo.value.ratingScore.toLocaleString() },
-    { icon: "fas fa-clock", label: "총 플레이 수", value: `${statisticInfo.value.totalPlayCount} 판` },
-    { icon: "fas fa-medal", label: "최고 점수", value: `${formatNumber(Math.round(statisticInfo.value.bestScore))}점` },
+    { icon: "fas fa-clock", label: "총 플레이 수", value: `${statisticInfo.value.rankPlayCount} 판` },
+    { icon: "fas fa-medal", label: "평균 점수", value: `${formatNumber(Math.round(statisticInfo.value.rankAvgScore))}점` },
     { icon: "fas fa-users", label: "전체 랭킹", value: `상위 ${rankInfo.value.rankPercentage}%` },
   ];
 });
