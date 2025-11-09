@@ -97,7 +97,7 @@
 
           <!-- 메인 게임 영역 (로드뷰 또는 결과 컴포넌트) -->
           <slot name="main">
-          <road-view
+            <road-view
               v-if="
                 !gameStore.state.roundEnded && 
                 gameStore.state.currentLocation
@@ -111,7 +111,6 @@
               :show-controls="true"
               :prevent-mouse-events="gameStore.state.hasSubmittedGuess"
               @load-complete="onViewLoaded"
-              @load-error="onViewLoadError"
             />
           </slot>
 
@@ -530,11 +529,6 @@ export default {
     // 로드뷰 로딩 완료 처리
     onViewLoaded() {
       console.log("로드뷰 로딩 완료");
-    },
-
-    onViewLoadError() {
-      console.warn('로드뷰 로딩 실패');
-      this.$emit('roadview-load-error');
     },
 
     // 추측 위치 설정

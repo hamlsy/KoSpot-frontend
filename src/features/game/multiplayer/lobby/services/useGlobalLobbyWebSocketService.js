@@ -29,6 +29,8 @@ const globalLobbySubscriptions = ref(new Map());
  * @returns {Object} 글로벌 로비 WebSocket 서비스 관련 함수와 데이터를 포함하는 객체
  */
 export function useGlobalLobbyWebSocketService() {
+    const hasDisconnected = ref(false);
+
     // 인증 컴포저블에서 사용자 정보 가져오기
     const { user: authUser, isAuthenticated } = useAuth();
     
@@ -39,6 +41,7 @@ export function useGlobalLobbyWebSocketService() {
      * @param {String} [endpoint='/ws'] - WebSocket 서버의 엔드포인트 URL
      */
     const connectWebSocket = (endpoint = '/ws') => {
+        hasDisconnected.value = false;
         // 이미 연결된 경우에는 글로벌 로비 채널만 구독
         if (webSocketManager.isConnected.value) {
             subscribeToGlobalLobbyChat();
@@ -64,7 +67,13 @@ export function useGlobalLobbyWebSocketService() {
      * 글로벌 로비 관련 WebSocket 구독을 해제합니다.
      * 컴포넌트가 언마운트되기 전에 호출되어야 합니다.
      */
-    const disconnectWebSocket = () => {
+    const disconnectWebSocket = async () => {
+        if (hasDisconnected.value) {
+            return;
+        }
+
+        hasDisconnected.value = true;
+
         // 글로벌 로비 구독 해제
         globalLobbySubscriptions.value.forEach((_, topic) => {
             try {
@@ -76,6 +85,18 @@ export function useGlobalLobbyWebSocketService() {
         
         // 구독 목록 초기화
         globalLobbySubscriptions.value.clear();
+
+        try {
+            leaveGlobalLobby();
+        } catch (error) {
+            console.error('로비 퇴장 중 오류:', error);
+        }
+
+        if (typeof webSocketManager.deactivate === 'function') {
+            await webSocketManager.deactivate();
+        } else {
+            webSocketManager.disconnect();
+        }
     };
     
     /**
@@ -213,12 +234,12 @@ export function useGlobalLobbyWebSocketService() {
     });
     
     // 컴포넌트 언마운트 시 정리 작업
-    onBeforeUnmount(() => {
+    onBeforeUnmount(async () => {
         // 이벤트 리스너 제거
         window.removeEventListener('beforeunload', handleBeforeUnload);
         
         // 구독 해제 (연결은 유지)
-        disconnectWebSocket();
+        await disconnectWebSocket();
     });
     
     // 반환할 객체

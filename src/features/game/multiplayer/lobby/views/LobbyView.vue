@@ -225,16 +225,15 @@ const initializeData = async () => {
 
 const connectToChat = async () => {
   try {
-    // WebSocket 서비스 연결
     lobbyService.connectWebSocket();
   } catch (error) {
     console.error('채팅 서비스 연결 실패:', error);
   }
 };
 
-const disconnectFromChat = () => {
+const disconnectFromChat = async () => {
   try {
-    lobbyService.disconnectWebSocket();
+    await lobbyService.disconnectWebSocket();
   } catch (error) {
     console.error('채팅 연결 해제 중 오류:', error);
   }
@@ -294,7 +293,6 @@ const createRoom = async (roomData) => {
       await router.push({
         name: 'RoomView',
         params: { roomId: newRoom.gameRoomId.toString() },
-        // 방 정보를 state로 전달하여 RoomView에서 즉시 사용 가능
         state: {
           roomData: {
             id: newRoom.gameRoomId,
@@ -304,7 +302,7 @@ const createRoom = async (roomData) => {
             maxPlayers: newRoom.maxPlayers,
             isPrivate: newRoom.privateRoom || false,
             hostId: getCurrentUserId(),
-            currentPlayerCount: 1 // 방장 혼자
+            currentPlayerCount: 1
           }
         }
       });
@@ -326,10 +324,8 @@ const handleDisableDummyData = async () => {
   }
 };
 
-// 개발 모드 토글 메서드
 const toggleDevMode = async () => {
   if (useDummyData.value) {
-    // 개발 모드에서 API 모드로 전환
     console.log('🌐 API 모드로 전환');
     try {
       await disableDummyData();
@@ -337,9 +333,8 @@ const toggleDevMode = async () => {
       console.error('❌ API 모드 전환 실패:', error);
     }
   } else {
-    // API 모드에서 개발 모드로 전환
     console.log('🧪 개발 모드로 전환');
-    clearError(); // 기존 에러 클리어
+    clearError();
     enableDummyData(true);
   }
 };
@@ -362,12 +357,12 @@ onMounted(() => {
   window.addEventListener('resize', checkMobileView);
 });
 
-onBeforeUnmount(() => {
+onBeforeUnmount(async () => {
   // 정리 작업
   if (refreshInterval.value) {
     clearInterval(refreshInterval.value);
   }
-  disconnectFromChat();
+  await disconnectFromChat();
   window.removeEventListener('resize', checkMobileView);
 });
 </script>

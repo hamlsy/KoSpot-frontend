@@ -361,6 +361,39 @@ const disconnect = () => {
 };
 
 /**
+ * STOMP 클라이언트 비동기 비활성화
+ * 서버로 DISCONNECT 프레임을 보장하고 소켓 리소스를 해제합니다.
+ */
+const deactivate = async () => {
+  if (!stompClient.value) {
+    return;
+  }
+
+  try {
+    // STOMP 5.x deactivate는 Promise 반환
+    if (typeof stompClient.value.deactivate === "function") {
+      await stompClient.value.deactivate();
+    } else {
+      // 구버전 호환: disconnect 호출
+      await new Promise((resolve) => {
+        try {
+          stompClient.value.disconnect(() => resolve());
+        } catch (error) {
+          resolve();
+        }
+      });
+    }
+  } catch (error) {
+    console.error("STOMP 비활성화 중 오류:", error);
+  } finally {
+    activeSubscriptions.value.clear();
+    connectionCallbacks.value.clear();
+    isConnected.value = false;
+    stompClient.value = null;
+  }
+};
+
+/**
  * 특정 주제 구독
  * @param {String} topic - 구독할 주제 경로
  * @param {Function} callback - 메시지 수신 시 실행할 콜백
@@ -493,6 +526,7 @@ export {
   // 메서드
   connect,
   disconnect,
+  deactivate,
   subscribe,
   unsubscribe,
   publish,

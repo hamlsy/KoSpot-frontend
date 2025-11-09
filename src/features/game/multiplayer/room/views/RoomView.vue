@@ -452,7 +452,8 @@ const {
   getCurrentPlayerNickname,
   getCurrentPlayerTeam,
   canJoinTeam,
-  getTeamPlayerCount
+  getTeamPlayerCount,
+  disconnectWebSocket
 } = room;
 
 // leaveRoom 래퍼: 방 퇴장 후 로비로 새로고침 리다이렉션
@@ -519,6 +520,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('resize', checkScreenSize);
   clearCountdownTimer();
+  disconnectWebSocket();
 });
 
 watch(

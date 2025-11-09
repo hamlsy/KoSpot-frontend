@@ -72,30 +72,6 @@ export const submitSoloAnswer = async (roomId, gameId, roundId, submission) => {
 }
 
 /**
- * 로드뷰 문제 재발급 요청
- * @param {String|Number} roomId - 게임 방 ID
- * @param {Number} gameId - 게임 ID
- * @param {Number} roundId - 라운드 ID
- * @returns {Promise<Object>} 재발급 응답 데이터
- */
-export const reIssueRound = async (roomId, gameId, roundId) => {
-  try {
-    const response = await apiClient.post(
-      `/rooms/${roomId}/roadview/games/${gameId}/rounds/${roundId}/reIssue`
-    )
-
-    if (response.data?.isSuccess) {
-      return response.data.result
-    } else {
-      throw new Error(response.data?.message || '로드뷰 재발급 요청 실패')
-    }
-  } catch (error) {
-    console.error('로드뷰 재발급 API 오류:', error)
-    throw error
-  }
-}
-
-/**
  * 게임방 참여
  * @param {String} roomId - 게임방 ID
  * @param {String} password - 비공개 방인 경우 비밀번호 (optional)
@@ -141,7 +117,6 @@ export const leaveGameRoom = async (roomId) => {
 export default {
   startSoloGame,
   submitSoloAnswer,
-  reIssueRound,
   joinGameRoom,
   leaveGameRoom
 }

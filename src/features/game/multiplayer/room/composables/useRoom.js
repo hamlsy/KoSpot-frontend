@@ -21,6 +21,27 @@ export function useRoom(props, emit, options = {}) {
   const lastPlayerListUpdate = ref(Date.now());
   const isStartingGame = ref(false);
   const isDummyMode = ref(Boolean(dummyMode));
+  const hasDisconnected = ref(false);
+  const disconnectWebSocket = async () => {
+    if (hasDisconnected.value || isDummyMode.value) {
+      return;
+    }
+
+    hasDisconnected.value = true;
+
+    try {
+      await roomWebSocketService.disconnectFromRoom(
+        localRoomData.value.id,
+        props.currentUserId,
+        props.isHost
+      );
+
+      console.log('🔌 WebSocket 연결 해제 완료');
+    } catch (error) {
+      console.error('❌ WebSocket 연결 해제 중 오류:', error);
+    }
+  };
+
   
   // 각 기능별 composables 초기화
   const roomWebSocket = useRoomWebSocket();
@@ -64,6 +85,14 @@ export function useRoom(props, emit, options = {}) {
         raw: player
       };
     });
+  };
+
+  const transformGameRoomPlayer = (playerInfo) => {
+    if (!playerInfo) {
+      return null;
+    }
+    const transformed = transformGameRoomPlayers([playerInfo]);
+    return transformed.length ? transformed[0] : null;
   };
 
   const buildDummyRoomData = (source) => {
@@ -214,21 +243,39 @@ export function useRoom(props, emit, options = {}) {
     try {
       isLoadingPlayerList.value = true;
       
-      // 플레이어 목록이 포함된 경우 업데이트
-      if (players && Array.isArray(players)) {
-        // Spring Boot GameRoomPlayerInfo를 프론트엔드 형식으로 변환
-        const transformedPlayers = transformGameRoomPlayers(players);
+      const type = notification?.type;
+      const hasPlayersArray = Array.isArray(players) && players.length > 0;
+      const hasPlayerInfo = !!playerInfo;
 
-        // 플레이어 목록 업데이트
+      if (hasPlayersArray) {
+        const transformedPlayers = transformGameRoomPlayers(players);
         roomPlayer.updatePlayerList(transformedPlayers);
-        
-        // 현재 플레이어 수 업데이트
         localRoomData.value.currentPlayerCount = transformedPlayers.length;
-        
-        // 부모 컴포넌트에 업데이트 알림
         emit('player-list-updated', transformedPlayers);
-        
         console.log(`✅ 플레이어 목록 업데이트 완료: ${transformedPlayers.length}명`);
+      } else if (hasPlayerInfo) {
+        const transformedPlayer = transformGameRoomPlayer(playerInfo);
+        if (transformedPlayer) {
+          const eventTypeMap = {
+            PLAYER_JOINED: 'JOIN',
+            PLAYER_LEFT: 'LEAVE',
+            PLAYER_KICKED: 'KICKED',
+            TEAM_CHANGED: 'TEAM_CHANGE'
+          };
+
+          const eventType = eventTypeMap[type] || null;
+          if (eventType) {
+            roomPlayer.handlePlayerStatusChange(
+              {
+                eventType,
+                player: transformedPlayer
+              },
+              roomChat.addSystemMessage
+            );
+            localRoomData.value.currentPlayerCount = roomPlayer.localPlayers.value.length;
+            emit('player-list-updated', roomPlayer.localPlayers.value);
+          }
+        }
       }
       
       // 실시간 알림 표시
@@ -568,7 +615,26 @@ export function useRoom(props, emit, options = {}) {
 
     try {
       isStartingGame.value = true;
-      await roomApiService.startGame(localRoomData.value.id);
+
+      const gameModeKey = (localRoomData.value.gameMode || props.roomData?.gameMode || 'ROADVIEW')
+        .toString()
+        .toUpperCase();
+      const playerMatchTypeKey = localRoomData.value.isTeamMode ? 'TEAM' : 'SOLO';
+
+      const roundsRaw = localRoomData.value.rounds ?? localRoomData.value.totalRounds ?? 5;
+      const totalRounds = Number.isFinite(Number(roundsRaw)) ? Number(roundsRaw) : 5;
+
+      const timeLimitRaw = localRoomData.value.timeLimit ?? null;
+      const normalizedTimeLimit = timeLimitRaw != null && Number.isFinite(Number(timeLimitRaw))
+        ? Number(timeLimitRaw)
+        : null;
+
+      await roomApiService.startGame(localRoomData.value.id, {
+        gameModeKey,
+        playerMatchTypeKey,
+        totalRounds,
+        timeLimit: normalizedTimeLimit
+      });
       requestSucceeded = true;
       roomChat.addSystemMessage('방장이 게임 시작을 요청했습니다. 잠시 후 게임이 시작됩니다.');
       if (toastRef?.value) {
@@ -801,23 +867,7 @@ export function useRoom(props, emit, options = {}) {
   });
 
   onBeforeUnmount(async () => {
-    if (isDummyMode.value) {
-      console.log('🧪 더미 모드 - WebSocket 정리 생략');
-      return;
-    }
-
-    try {
-      // WebSocket 연결 해제
-      await roomWebSocketService.disconnectFromRoom(
-        localRoomData.value.id,
-        props.currentUserId,
-        props.isHost
-      );
-      
-      console.log('✅ 방 정리 완료');
-    } catch (error) {
-      console.error('❌ 방 정리 실패:', error);
-    }
+    await disconnectWebSocket();
   });
 
   return {
@@ -885,6 +935,8 @@ export function useRoom(props, emit, options = {}) {
     getCurrentPlayerNickname: roomPlayer.getCurrentPlayerNickname,
     getCurrentPlayerTeam: roomPlayer.getCurrentPlayerTeam,
     canJoinTeam: roomPlayer.canJoinTeam,
-    getTeamPlayerCount: roomPlayer.getTeamPlayerCount
+    getTeamPlayerCount: roomPlayer.getTeamPlayerCount,
+
+    disconnectWebSocket
   };
 } 

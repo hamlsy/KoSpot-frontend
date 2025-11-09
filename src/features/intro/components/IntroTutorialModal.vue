@@ -459,7 +459,7 @@ const goToLogin = () => {
   flex: 1;
   max-width: 180px;
   padding: 24px 16px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
   border-radius: 16px;
   border: 2px solid #e2e8f0;
   transition: all 0.3s ease;
@@ -967,4 +967,3 @@ const goToLogin = () => {
   }
 }
 </style>
-

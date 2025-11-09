@@ -773,6 +773,13 @@ class RoomWebSocketService {
       // 재연결 상태 초기화
       this.reconnectAttempts = 0;
 
+      // STOMP 연결 비활성화 (서버에 DISCONNECT 프레임 전송)
+      if (typeof this.webSocketManager.deactivate === 'function') {
+        await this.webSocketManager.deactivate();
+      } else {
+        this.webSocketManager.disconnect();
+      }
+
       console.log('✅ 게임 방 WebSocket 연결 해제 완료:', roomId);
     } catch (error) {
       console.error('❌ 게임 방 WebSocket 연결 해제 실패:', error);

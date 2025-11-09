@@ -174,11 +174,22 @@ class RoomApiService {
    * @param {number|string} roomId - 게임 방 ID
    * @returns {Promise<Object>} API 응답 데이터
    */
-  async startGame(roomId) {
+  async startGame(roomId, startPayload = {}) {
     try {
-      console.log('📤 게임 시작 요청:', { roomId });
 
-      const response = await apiClient.post(ROOM_ENDPOINTS.START_GAME(roomId));
+      if (!startPayload.gameModeKey || !startPayload.playerMatchTypeKey || typeof startPayload.totalRounds !== 'number') {
+        throw new Error('startGame 요청에 필요한 필드가 누락되었습니다.');
+      }
+
+      const response = await apiClient.post(
+        ROOM_ENDPOINTS.START_GAME(roomId),
+        {
+          gameModeKey: startPayload.gameModeKey,
+          playerMatchTypeKey: startPayload.playerMatchTypeKey,
+          totalRounds: startPayload.totalRounds,
+          timeLimit: startPayload.timeLimit ?? null
+        }
+      );
 
       console.log('✅ 게임 시작 요청 성공:', response.data);
       return response.data;

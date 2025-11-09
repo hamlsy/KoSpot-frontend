@@ -14,7 +14,6 @@
     :use-custom-websocket="isServerMode"
       :show-leave-button="true"
       @leave-game="exitToLobby"
-      @roadview-load-error="handleRoadViewLoadError"
     @guess-submitted="handleGuessSubmission"
     @round-ended="handleRoundEnded"
     @game-finished="handleGameFinished"
@@ -109,7 +108,6 @@ import PlayerLoadingOverlay from 'src/features/game/multiplayer/roadview/compone
 import gameStore from 'src/store/gameStore.js'
 import { useSoloGameFlow } from '@/features/game/multiplayer/roadview/composables/useSoloGameFlow'
 import soloGameWebSocket from '@/features/game/multiplayer/roadview/services/soloGameWebSocket'
-import soloGameApi from '@/features/game/multiplayer/roadview/services/soloGameApi'
 
 export default {
   name: "SoloRoadViewGame",
@@ -164,10 +162,7 @@ export default {
         players: []
       },
 
-      pendingIntroOverlay: false,
-      isReissuingRound: false,
-      currentGameId: null,
-      currentRoundId: null
+      pendingIntroOverlay: false
     };
   },
 
@@ -200,31 +195,6 @@ export default {
     } else {
       console.log('[Solo Game] 서버 모드로 게임 시작')
       await this.startServerMode()
-    }
-
-    if (this.soloGameFlow?.gameId) {
-      this.$watch(
-        () => this.soloGameFlow.gameId.value,
-        (newVal) => {
-          if (newVal) {
-            this.currentGameId = newVal
-          }
-        },
-        { immediate: true }
-      )
-    }
-
-    if (this.soloGameFlow?.roundId) {
-      this.$watch(
-        () => this.soloGameFlow.roundId.value,
-        (newVal) => {
-          if (newVal) {
-            this.currentRoundId = newVal
-            this.isReissuingRound = false
-          }
-        },
-        { immediate: true }
-      )
     }
   },
 
@@ -370,48 +340,6 @@ export default {
       }
     },
 
-    async handleRoadViewLoadError() {
-      console.warn('[Solo Game] 로드뷰 로딩 실패 감지')
-
-      if (this.isDummyRuntime) {
-        setTimeout(() => this.simulateRoundData(), 400)
-        return
-      }
-
-      if (this.isReissuingRound) {
-        console.log('[Solo Game] 재발급 요청 진행 중')
-        return
-      }
-
-      const gameId = this.soloGameFlow?.gameId?.value || this.currentGameId || this.gameStore.state.gameId
-      const roundId = this.soloGameFlow?.roundId?.value || this.currentRoundId
-
-      if (!gameId || !roundId) {
-        console.warn('[Solo Game] 재발급 요청에 필요한 gameId 또는 roundId가 없습니다.', { gameId, roundId })
-        return
-      }
-
-      try {
-        this.isReissuingRound = true
-        this.pendingIntroOverlay = true
-        console.log('[Solo Game] 로드뷰 재발급 요청 전송:', { roomId: this.roomId, gameId, roundId })
-        await soloGameApi.reIssueRound(this.roomId, gameId, roundId)
-      } catch (error) {
-        this.isReissuingRound = false
-        console.error('[Solo Game] 로드뷰 재발급 요청 실패:', error)
-      }
-    },
-
-    handleRoundReissued(message) {
-      console.log('[Solo Game] 라운드 재발급 수신:', message)
-      this.isReissuingRound = false
-      this.currentRoundId = message?.roundInfo?.roundId ?? this.currentRoundId
-
-      if (this.$refs.baseGame) {
-        this.$refs.baseGame.showIntroOverlay = true
-      }
-    },
-
     // ==================== 서버 모드 메서드 ====================
     
     /**
@@ -481,9 +409,6 @@ export default {
           this.calculatePlayerAverageDistances()
           
           // 최종 결과는 gameStore.state.showGameResults가 true가 되면 자동으로 표시됨
-        },
-        onRoundReissued: (message) => {
-          this.handleRoundReissued(message)
         }
       }
     },
@@ -505,8 +430,6 @@ export default {
         
         // 게임 시작 시간 기록
         this.gameStartTime = Date.now()
-        this.currentGameId = result.gameId
-        this.currentRoundId = result.roundInfo?.roundId ?? this.currentRoundId
         
         // 인트로 오버레이 표시
         if (this.$refs.baseGame) {
@@ -601,7 +524,6 @@ export default {
       if (this.isServerMode) return; // 서버 모드에서는 무시
       
       console.log('[Dummy Mode] 개인전 라운드 데이터 수신:', message);
-      this.currentRoundId = message?.roundNumber ?? this.currentRoundId;
       
       // 라운드 상태 초기화
       this.simulationTriggered = false;
@@ -1090,7 +1012,6 @@ export default {
         totalRounds: this.gameStore.state.totalRounds,
         serverStartTime: Date.now()
       }
-      this.currentGameId = this.currentGameId || 'dummy-game'
       
       // BaseGameView의 게임 시작 핸들러 호출
       if (this.$refs.baseGame) {
@@ -1108,7 +1029,6 @@ export default {
      */
     simulateRoundData() {
       console.log(`[Solo Game] 더미 라운드 ${this.gameStore.state.currentRound} 데이터 시뮬레이션`)
-      this.currentRoundId = this.gameStore.state.currentRound
       
       const roundDataMessage = {
         roundNumber: this.gameStore.state.currentRound,
