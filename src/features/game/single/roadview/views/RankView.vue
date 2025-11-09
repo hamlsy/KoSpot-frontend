@@ -90,7 +90,7 @@
       <ResultOverlay
         :show="showResult"
         :score="score"
-        :distance="distance"
+        :distance="answerDistance"
         :currentRankPoints="currentRankPoints"
         :rankPointChange="rankPointChange"
         :previousRatingScore="previousRatingScore"
@@ -105,7 +105,7 @@
         :poiName="poiName"
         :fullAddress="fullAddress"
         :markerImageUrl="markerImageUrl"
-        :userNickname="'플레이어'"
+        :userNickname="nickname"
         @restart="resetGame"
         @exit="exitGame"
       />
@@ -165,6 +165,7 @@ export default {
 
       // 게임 화면 관련
       isMapOpen: false,
+      phoneMapInitialized: false,
       showExitConfirmation: false,
       showResult: false,
       showToast: false,
@@ -187,7 +188,8 @@ export default {
       fullAddress: null, // 전체 주소 (시도, 시군구, 동 포함)
 
       // 게임 점수 관련
-      distance: null,
+      answerDistance: null,
+      nickname: null,
       score: 0,
       elapsedTime: 0, // 게임 경과 시간 (초)
 
@@ -278,20 +280,34 @@ export default {
     // 지도 토글
     toggleMap() {
       const wasOpen = this.isMapOpen;
-      // 상태 변경
       this.isMapOpen = !this.isMapOpen;
-      
-      // 지도가 열릴 때 (false -> true) 자동으로 재로딩
-      if (!wasOpen && this.isMapOpen) {
-        // PhoneFrame이 마운트된 후 재로딩 실행
+
+      if (this.isMapOpen && !wasOpen) {
         this.$nextTick(() => {
-          // 약간의 딜레이를 주어 PhoneFrame이 완전히 렌더링된 후 재로딩
-          // 자동 재로딩이므로 토스트 메시지 표시 안 함
-          setTimeout(() => {
-            this.reloadPhoneMap(false);
-          }, 100);
+          this.initializePhoneMapIfNeeded();
         });
       }
+    },
+
+    initializePhoneMapIfNeeded() {
+      if (this.phoneMapInitialized || !this.$refs.phoneFrame) {
+        return;
+      }
+
+      this.$refs.phoneFrame.ensureMapInitialized();
+
+      setTimeout(() => {
+        const mapInstance = this.$refs.phoneFrame?.getMapInstance?.();
+        if (mapInstance) {
+          mapInstance.relayout();
+        }
+      }, 100);
+
+      setTimeout(() => {
+        this.reloadPhoneMap(false);
+      }, 150);
+
+      this.phoneMapInitialized = true;
     },
 
     // 랭크 모드 타이머 시작
@@ -376,21 +392,21 @@ export default {
           };
           
           
-          // currentLocation이 설정된 후 PhoneFrame의 지도 초기화 보장
+          // currentLocation이 설정된 후 PhoneFrame 상태 보장
           this.$nextTick(() => {
-            if (this.$refs.phoneFrame) {
-              // 지도가 열려있으면 리사이즈, 닫혀있으면 초기화만 보장
-              this.$refs.phoneFrame.ensureMapInitialized();
-              
-              // 지도가 열려있으면 리사이즈
-              if (this.isMapOpen) {
-                setTimeout(() => {
-                  const mapInstance = this.$refs.phoneFrame.getMapInstance();
-                  if (mapInstance) {
-                    mapInstance.relayout();
-                  }
-                }, 100);
-              }
+            if (!this.isMapOpen) {
+              return;
+            }
+
+            if (!this.phoneMapInitialized) {
+              this.initializePhoneMapIfNeeded();
+            } else {
+              setTimeout(() => {
+                const mapInstance = this.$refs.phoneFrame?.getMapInstance?.();
+                if (mapInstance) {
+                  mapInstance.relayout();
+                }
+              }, 100);
             }
           });
         } else {
@@ -432,21 +448,21 @@ export default {
       this.gameId = Date.now();
       this.markerImageUrl = null;
       
-      // currentLocation이 설정된 후 PhoneFrame의 지도 초기화 보장
+      // currentLocation이 설정된 후 PhoneFrame 상태 보장
       this.$nextTick(() => {
-        if (this.$refs.phoneFrame) {
-          // 지도가 열려있으면 리사이즈, 닫혀있으면 초기화만 보장
-          this.$refs.phoneFrame.ensureMapInitialized();
-          
-          // 지도가 열려있으면 리사이즈
-          if (this.isMapOpen) {
-            setTimeout(() => {
-              const mapInstance = this.$refs.phoneFrame.getMapInstance();
-              if (mapInstance) {
-                mapInstance.relayout();
-              }
-            }, 100);
-          }
+        if (!this.isMapOpen) {
+          return;
+        }
+
+        if (!this.phoneMapInitialized) {
+          this.initializePhoneMapIfNeeded();
+        } else {
+          setTimeout(() => {
+            const mapInstance = this.$refs.phoneFrame?.getMapInstance?.();
+            if (mapInstance) {
+              mapInstance.relayout();
+            }
+          }, 100);
         }
       });
       
@@ -589,7 +605,7 @@ export default {
       const localScore = Math.max(0, Math.floor(100 - Math.sqrt(distance) * 10));
 
       // 게임 결과 저장 (백엔드 API 호출 전 임시 저장)
-      this.distance = distance;
+      this.answerDistance = distance;
       this.guessedLocation = position;
 
       try {
@@ -632,7 +648,9 @@ export default {
         
         if (response.isSuccess && response.result) {
           const { 
+            nickname,
             score,
+            answerDistance,
             previousRatingScore,
             currentRatingScore,
             ratingScoreChange,
@@ -645,7 +663,9 @@ export default {
           } = response.result;
           
           // 백엔드에서 계산된 점수와 랭킹 정보로 업데이트
+          this.nickname = nickname;
           this.score = score;
+          this.answerDistance = answerDistance;
           this.previousRatingScore = previousRatingScore;
           this.currentRatingScore = currentRatingScore;
           this.rankPointChange = ratingScoreChange;

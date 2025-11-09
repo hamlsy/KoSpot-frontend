@@ -9,6 +9,7 @@ import {
   getGameRoomSettingsChannel,
   getGameRoomChatChannel,
   getGameRoomStatusChannel,
+  getGameStartChannel,
   GAME_ROOM_NOTIFICATION_TYPES
 } from '../constants/webSocketChannels.js';
 
@@ -39,6 +40,7 @@ class RoomWebSocketService {
    * @param {Function} eventHandlers.onGameRoomNotification - 게임 방 알림 통합 핸들러
    * @param {Function} eventHandlers.onChatMessage - 채팅 메시지 핸들러
    * @param {Function} eventHandlers.onGameStateChange - 게임 상태 변경 핸들러
+   * @param {Function} eventHandlers.onGameStartCountdown - 게임 시작 카운트다운 핸들러
    * @returns {Promise<boolean>} 연결 성공 여부
    */
   async connectToRoom(roomId, currentUserId, eventHandlers = {}) {
@@ -192,6 +194,26 @@ class RoomWebSocketService {
             eventHandlers.onGameRoomStatusChange(statusEvent);
           } catch (error) {
             console.error('❌ 게임 방 상태 이벤트 파싱 실패:', error, message);
+          }
+        })
+      );
+    }
+
+    // 게임 시작 카운트다운 채널 구독
+    if (eventHandlers.onGameStartCountdown) {
+      const gameStartChannel = getGameStartChannel(roomId);
+      subscriptions.push(
+        this.webSocketManager.subscribe(gameStartChannel, (message) => {
+          try {
+            const startEvent =
+              message && typeof message === 'object' && 'body' in message
+                ? JSON.parse(message.body)
+                : message;
+
+            console.log('📥 게임 시작 카운트다운 수신:', startEvent);
+            eventHandlers.onGameStartCountdown(startEvent);
+          } catch (error) {
+            console.error('❌ 게임 시작 카운트다운 파싱 실패:', error, message);
           }
         })
       );

@@ -16,6 +16,7 @@ const ROOM_ENDPOINTS = {
   JOIN_ROOM: (roomId) => `/rooms/${roomId}/join`,     // 게임 방 참여
   LEAVE_ROOM: (roomId) => `/rooms/${roomId}/leave`,    // 게임 방 퇴장
   KICK_PLAYER: (roomId) => `/rooms/${roomId}/kick`, // 플레이어 강퇴
+  START_GAME: (roomId) => `/rooms/${roomId}/start`, // 게임 시작
 };
 
 /**
@@ -164,6 +165,26 @@ class RoomApiService {
     } catch (error) {
       console.error('❌ 플레이어 강퇴 실패:', error);
       this._handleApiError(error, '플레이어 강퇴에 실패했습니다.');
+      throw error;
+    }
+  }
+
+  /**
+   * 게임 시작 요청
+   * @param {number|string} roomId - 게임 방 ID
+   * @returns {Promise<Object>} API 응답 데이터
+   */
+  async startGame(roomId) {
+    try {
+      console.log('📤 게임 시작 요청:', { roomId });
+
+      const response = await apiClient.post(ROOM_ENDPOINTS.START_GAME(roomId));
+
+      console.log('✅ 게임 시작 요청 성공:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ 게임 시작 요청 실패:', error);
+      this._handleApiError(error, '게임 시작 요청에 실패했습니다.');
       throw error;
     }
   }

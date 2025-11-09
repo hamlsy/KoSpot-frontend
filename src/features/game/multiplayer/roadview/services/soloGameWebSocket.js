@@ -19,11 +19,13 @@ class SoloGameWebSocketService {
     this.subscriptions = new Map()
     this.handlers = {
       onTimerStart: null,
+      onTimerSync: null,
       onRoundResult: null,
       onRoundTransition: null,
       onNextRound: null,
       onPlayerSubmission: null,
-      onGameFinished: null
+      onGameFinished: null,
+      onLoadingStatus: null
     }
   }
 
@@ -50,6 +52,13 @@ class SoloGameWebSocketService {
       `/topic/game/${roomId}/timer`,
       'timer',
       this.handleTimerStart.bind(this)
+    )
+
+    // 타이머 동기화 구독
+    this.subscribe(
+      `/topic/game/${roomId}/timer/sync`,
+      'timerSync',
+      this.handleTimerSync.bind(this)
     )
 
     // 라운드 결과 구독
@@ -80,6 +89,11 @@ class SoloGameWebSocketService {
       this.handleGameFinished.bind(this)
     )
 
+    // 로딩 상태 채널 구독 (필요 시)
+    if (handlers.onLoadingStatus) {
+      this.setupLoadingSubscription(roomId, handlers.onLoadingStatus)
+    }
+
     console.log(`[Solo WebSocket] 모든 게임 채널 구독 완료`)
   }
 
@@ -109,7 +123,16 @@ class SoloGameWebSocketService {
       return
     }
 
-    const subscriptionId = webSocketManager.subscribe(topic, callback)
+    const subscriptionId = webSocketManager.subscribe(topic, (message) => {
+      try {
+        const payload = message && typeof message === 'object' && 'body' in message
+          ? JSON.parse(message.body)
+          : message
+        callback(payload)
+      } catch (error) {
+        console.error(`[Solo WebSocket] 메시지 파싱 실패 (${topic}):`, error, message)
+      }
+    })
     if (subscriptionId) {
       this.subscriptions.set(key, { topic, subscriptionId })
       console.log(`[Solo WebSocket] 구독 성공: ${topic}`)
@@ -134,6 +157,17 @@ class SoloGameWebSocketService {
         startTime: serverStartTimeMs,
         duration: durationMs
       })
+    }
+  }
+
+  /**
+   * 타이머 동기화 메시지 처리
+   */
+  handleTimerSync(message) {
+    console.log('[Solo WebSocket] 타이머 동기화:', message)
+
+    if (this.handlers.onTimerSync) {
+      this.handlers.onTimerSync(message)
     }
   }
 
@@ -200,6 +234,88 @@ class SoloGameWebSocketService {
     if (this.handlers.onGameFinished) {
       this.handlers.onGameFinished(message)
     }
+  }
+
+  /**
+   * 로딩 상태 메시지 처리
+   */
+  handleLoadingStatus(message) {
+    console.log('[Solo WebSocket] 로딩 상태 업데이트:', message)
+
+    if (this.handlers.onLoadingStatus) {
+      this.handlers.onLoadingStatus(message)
+    }
+  }
+
+  /**
+   * 로딩 상태 채널 구독
+   */
+  setupLoadingSubscription(roomId, handler) {
+    if (!this.isConnected) {
+      console.warn('[Solo WebSocket] 연결되지 않아 로딩 채널을 구독할 수 없습니다.')
+      return
+    }
+
+    this.handlers.onLoadingStatus = handler
+    this.unsubscribe('loadingStatus')
+
+    this.subscribe(
+      `/topic/game/${roomId}/loading/status`,
+      'loadingStatus',
+      this.handleLoadingStatus.bind(this)
+    )
+    console.log(`[Solo WebSocket] 로딩 상태 채널 구독 완료: Room ${roomId}`)
+  }
+
+  /**
+   * 로딩 상태 구독 해제
+   */
+  removeLoadingSubscription() {
+    this.unsubscribe('loadingStatus')
+    this.handlers.onLoadingStatus = null
+  }
+
+  /**
+   * 로딩 ACK 발행
+   */
+  publishLoadingAcknowledge(roomId, payload = {}) {
+    if (!this.isConnected) {
+      console.warn('[Solo WebSocket] 연결되지 않아 로딩 ACK를 보낼 수 없습니다.')
+      return false
+    }
+
+    const topic = `/app/room.${roomId}.loading.ack`
+    const acknowledgePayload = {
+      ...payload,
+      acknowledgedAt: payload.acknowledgedAt || new Date().toISOString()
+    }
+
+    const success = webSocketManager.publish(topic, acknowledgePayload)
+    if (success) {
+      console.log('[Solo WebSocket] 로딩 ACK 발행 성공:', acknowledgePayload)
+    } else {
+      console.error('[Solo WebSocket] 로딩 ACK 발행 실패')
+    }
+    return success
+  }
+
+  /**
+   * 개별 구독 해제
+   */
+  unsubscribe(key) {
+    const subscription = this.subscriptions.get(key)
+    if (!subscription) {
+      return
+    }
+
+    try {
+      webSocketManager.unsubscribe(subscription.topic)
+      console.log(`[Solo WebSocket] 구독 해제: ${subscription.topic}`)
+    } catch (error) {
+      console.error(`[Solo WebSocket] 구독 해제 오류 (${subscription.topic}):`, error)
+    }
+
+    this.subscriptions.delete(key)
   }
 
   /**

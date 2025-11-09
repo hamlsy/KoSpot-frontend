@@ -1,10 +1,20 @@
 <template>
-  <BaseMultiRoadViewGame
+  <div class="solo-game-container">
+    <PlayerLoadingOverlay
+      v-if="playerLoading.isActive"
+      :ready-count="playerLoading.readyCount"
+      :total-count="playerLoading.totalCount"
+      :players="playerLoading.players"
+    />
+    <BaseMultiRoadViewGame
     :room-id="roomId"
     :game-mode="gameMode"
     :is-team-mode="false"
     :current-user-rank="currentUserRank"
     :use-custom-websocket="isServerMode"
+      :show-leave-button="true"
+      @leave-game="exitToLobby"
+      @roadview-load-error="handleRoadViewLoadError"
     @guess-submitted="handleGuessSubmission"
     @round-ended="handleRoundEnded"
     @game-finished="handleGameFinished"
@@ -84,7 +94,8 @@
         @exit-to-lobby="exitToLobby"
       />
     </template>
-  </BaseMultiRoadViewGame>
+    </BaseMultiRoadViewGame>
+  </div>
 </template>
 
 <script>
@@ -93,9 +104,12 @@ import ChatWindow from 'src/features/game/multiplayer/chat/components/Lobby/Chat
 import RoundResults from 'src/features/game/multiplayer/roadview/components/results/RoundResults.vue'
 import FinalResults from 'src/features/game/multiplayer/roadview/components/results/FinalResults.vue'
 import PlayerList from 'src/features/game/multiplayer/roadview/components/playerlist/SoloPlayerList.vue'
+import PlayerLoadingOverlay from 'src/features/game/multiplayer/roadview/components/overlays/PlayerLoadingOverlay.vue'
 
 import gameStore from 'src/store/gameStore.js'
 import { useSoloGameFlow } from '@/features/game/multiplayer/roadview/composables/useSoloGameFlow'
+import soloGameWebSocket from '@/features/game/multiplayer/roadview/services/soloGameWebSocket'
+import soloGameApi from '@/features/game/multiplayer/roadview/services/soloGameApi'
 
 export default {
   name: "SoloRoadViewGame",
@@ -106,6 +120,7 @@ export default {
     RoundResults,
     FinalResults,
     PlayerList,
+    PlayerLoadingOverlay
   },
 
   setup() {
@@ -138,31 +153,78 @@ export default {
       playerChatMessages: {},
       
       // 서버 모드 플래그
-      isServerMode: false
+      isServerMode: false,
+      isDummyRuntime: false,
+
+      // 플레이어 로딩 상태
+      playerLoading: {
+        isActive: true,
+        readyCount: 0,
+        totalCount: history.state?.expectedPlayers || 1,
+        players: []
+      },
+
+      pendingIntroOverlay: false,
+      isReissuingRound: false,
+      currentGameId: null,
+      currentRoundId: null
     };
   },
 
   created() {
     // 테스트 데이터 로드 (더미 모드용)
     this.gameStore.loadTestData(false);
+    this.initializePlayerLoadingState();
     
     // 더미 모드에서만 초기화
-    if (this.$route.query.test === 'true') {
+    const navigationDummyMode = history.state?.dummyMode === true;
+    if (this.$route.query.test === 'true' || navigationDummyMode) {
       this.initGame();
     }
   },
 
   async mounted() {
     // 모드 결정: URL 쿼리 파라미터 또는 라우트 메타로 판단
-    const isDummyMode = this.$route.query.test === 'true'
+    const navigationDummyMode = history.state?.dummyMode === true;
+    const queryDummyMode = this.$route.query.test === 'true';
+    const offlineFallback = !navigator.onLine;
+    const isDummyMode = queryDummyMode || navigationDummyMode || offlineFallback;
     this.isServerMode = !isDummyMode
+    this.isDummyRuntime = isDummyMode
+    this.initializePlayerLoadingState()
     
     if (isDummyMode) {
       console.log('[Solo Game] 더미 모드로 게임 시작')
       this.startDummyMode()
+      this.simulateDummyLoading()
     } else {
       console.log('[Solo Game] 서버 모드로 게임 시작')
       await this.startServerMode()
+    }
+
+    if (this.soloGameFlow?.gameId) {
+      this.$watch(
+        () => this.soloGameFlow.gameId.value,
+        (newVal) => {
+          if (newVal) {
+            this.currentGameId = newVal
+          }
+        },
+        { immediate: true }
+      )
+    }
+
+    if (this.soloGameFlow?.roundId) {
+      this.$watch(
+        () => this.soloGameFlow.roundId.value,
+        (newVal) => {
+          if (newVal) {
+            this.currentRoundId = newVal
+            this.isReissuingRound = false
+          }
+        },
+        { immediate: true }
+      )
     }
   },
 
@@ -184,11 +246,172 @@ export default {
     if (this.isServerMode) {
       this.soloGameFlow.cleanup()
     }
+
+    soloGameWebSocket.removeLoadingSubscription()
     
     console.log('[Solo Game] 컴포넌트 정리 완료')
   },
 
   methods: {
+    initializePlayerLoadingState() {
+      const expectedFromState = parseInt(history.state?.expectedPlayers, 10)
+      let total = this.playerLoading.totalCount
+
+      if (!Number.isNaN(expectedFromState) && expectedFromState > 0) {
+        total = expectedFromState
+      } else if (this.gameStore?.state?.players?.length) {
+        total = this.gameStore.state.players.length
+      }
+
+      this.playerLoading.totalCount = Math.max(1, total)
+      this.playerLoading.readyCount = this.isDummyRuntime ? 0 : this.playerLoading.readyCount
+    },
+
+    setupLoadingStatusSubscription() {
+      if (!this.roomId) {
+        return
+      }
+      soloGameWebSocket.setupLoadingSubscription(this.roomId, this.handleLoadingStatus)
+    },
+
+    sendLoadingAcknowledge() {
+      if (this.isDummyRuntime || !this.roomId) {
+        return
+      }
+
+      const memberId = this.gameStore?.state?.currentUser?.id || null
+      soloGameWebSocket.publishLoadingAcknowledge(this.roomId, {
+        memberId
+      })
+
+      if (this.playerLoading.totalCount <= 1) {
+        setTimeout(() => this.finishPlayerLoading(), 300)
+      }
+    },
+
+    handleLoadingStatus(statusMessage) {
+      if (!statusMessage) {
+        return
+      }
+
+      const players = Array.isArray(statusMessage.players) ? statusMessage.players : []
+      const transformedPlayers = players.map(player => {
+        const storePlayer = this.gameStore?.state?.players?.find(p => p.id === player.memberId)
+        return {
+          memberId: player.memberId,
+          arrived: Boolean(player.arrived),
+          acknowledgeAt: player.acknowledgeAt,
+          nickname: storePlayer?.nickname || player.nickname || null
+        }
+      })
+
+      this.playerLoading.players = transformedPlayers
+
+      const arrivedCount = transformedPlayers.filter(player => player.arrived).length
+      this.playerLoading.readyCount = arrivedCount
+      if (players.length) {
+        this.playerLoading.totalCount = players.length
+      } else if (arrivedCount > this.playerLoading.totalCount) {
+        this.playerLoading.totalCount = arrivedCount
+      }
+
+      if (statusMessage.allArrived) {
+        this.finishPlayerLoading()
+      }
+    },
+
+    finishPlayerLoading() {
+      this.playerLoading.readyCount = Math.max(this.playerLoading.readyCount, this.playerLoading.totalCount)
+      this.playerLoading.isActive = false
+      this.triggerIntroOverlayIfNeeded()
+    },
+
+    simulateDummyLoading() {
+      if (!this.isDummyRuntime) {
+        return
+      }
+
+      const players = this.gameStore?.state?.players || []
+      this.playerLoading.players = players.map(player => ({
+        memberId: player.id,
+        nickname: player.nickname,
+        arrived: false,
+        acknowledgeAt: null
+      }))
+      this.playerLoading.readyCount = 0
+      this.playerLoading.totalCount = Math.max(this.playerLoading.totalCount, this.playerLoading.players.length || 1)
+      this.playerLoading.isActive = true
+
+      let index = 0
+      const simulateArrival = () => {
+        if (index >= this.playerLoading.players.length) {
+          this.finishPlayerLoading()
+          return
+        }
+
+        this.playerLoading.players[index].arrived = true
+        this.playerLoading.players[index].acknowledgeAt = new Date().toISOString()
+        this.playerLoading.readyCount = index + 1
+        index += 1
+        setTimeout(simulateArrival, 600)
+      }
+
+      setTimeout(simulateArrival, 450)
+    },
+
+    triggerIntroOverlayIfNeeded() {
+      if (!this.$refs.baseGame) {
+        return
+      }
+
+      if (this.pendingIntroOverlay) {
+        this.$refs.baseGame.showIntroOverlay = true
+        this.pendingIntroOverlay = false
+      }
+    },
+
+    async handleRoadViewLoadError() {
+      console.warn('[Solo Game] 로드뷰 로딩 실패 감지')
+
+      if (this.isDummyRuntime) {
+        setTimeout(() => this.simulateRoundData(), 400)
+        return
+      }
+
+      if (this.isReissuingRound) {
+        console.log('[Solo Game] 재발급 요청 진행 중')
+        return
+      }
+
+      const gameId = this.soloGameFlow?.gameId?.value || this.currentGameId || this.gameStore.state.gameId
+      const roundId = this.soloGameFlow?.roundId?.value || this.currentRoundId
+
+      if (!gameId || !roundId) {
+        console.warn('[Solo Game] 재발급 요청에 필요한 gameId 또는 roundId가 없습니다.', { gameId, roundId })
+        return
+      }
+
+      try {
+        this.isReissuingRound = true
+        this.pendingIntroOverlay = true
+        console.log('[Solo Game] 로드뷰 재발급 요청 전송:', { roomId: this.roomId, gameId, roundId })
+        await soloGameApi.reIssueRound(this.roomId, gameId, roundId)
+      } catch (error) {
+        this.isReissuingRound = false
+        console.error('[Solo Game] 로드뷰 재발급 요청 실패:', error)
+      }
+    },
+
+    handleRoundReissued(message) {
+      console.log('[Solo Game] 라운드 재발급 수신:', message)
+      this.isReissuingRound = false
+      this.currentRoundId = message?.roundInfo?.roundId ?? this.currentRoundId
+
+      if (this.$refs.baseGame) {
+        this.$refs.baseGame.showIntroOverlay = true
+      }
+    },
+
     // ==================== 서버 모드 메서드 ====================
     
     /**
@@ -204,6 +427,9 @@ export default {
         
         // 게임방 ID 가져오기 (라우트에서)
         this.roomId = this.$route.params.roomId || 'test-room'
+
+        this.setupLoadingStatusSubscription()
+        this.sendLoadingAcknowledge()
         
         // 게임 시작 (방장이 시작 버튼을 누르면 호출되어야 함)
         // 지금은 자동으로 시작 (테스트용)
@@ -255,6 +481,9 @@ export default {
           this.calculatePlayerAverageDistances()
           
           // 최종 결과는 gameStore.state.showGameResults가 true가 되면 자동으로 표시됨
+        },
+        onRoundReissued: (message) => {
+          this.handleRoundReissued(message)
         }
       }
     },
@@ -276,10 +505,18 @@ export default {
         
         // 게임 시작 시간 기록
         this.gameStartTime = Date.now()
+        this.currentGameId = result.gameId
+        this.currentRoundId = result.roundInfo?.roundId ?? this.currentRoundId
         
         // 인트로 오버레이 표시
         if (this.$refs.baseGame) {
-          this.$refs.baseGame.showIntroOverlay = true
+          if (this.playerLoading.isActive) {
+            this.$refs.baseGame.showIntroOverlay = false
+            this.pendingIntroOverlay = true
+          } else {
+            this.$refs.baseGame.showIntroOverlay = true
+            this.pendingIntroOverlay = false
+          }
         }
       } catch (error) {
         console.error('[Solo Game] 게임 시작 오류:', error)
@@ -364,6 +601,7 @@ export default {
       if (this.isServerMode) return; // 서버 모드에서는 무시
       
       console.log('[Dummy Mode] 개인전 라운드 데이터 수신:', message);
+      this.currentRoundId = message?.roundNumber ?? this.currentRoundId;
       
       // 라운드 상태 초기화
       this.simulationTriggered = false;
@@ -819,6 +1057,8 @@ export default {
      */
     startDummyMode() {
       console.log('[Solo Game] 더미 모드 게임 플로우 시작')
+
+      this.simulateDummyLoading()
       
       // 게임 시작 시간 기록
       this.gameStartTime = Date.now()
@@ -850,6 +1090,7 @@ export default {
         totalRounds: this.gameStore.state.totalRounds,
         serverStartTime: Date.now()
       }
+      this.currentGameId = this.currentGameId || 'dummy-game'
       
       // BaseGameView의 게임 시작 핸들러 호출
       if (this.$refs.baseGame) {
@@ -867,6 +1108,7 @@ export default {
      */
     simulateRoundData() {
       console.log(`[Solo Game] 더미 라운드 ${this.gameStore.state.currentRound} 데이터 시뮬레이션`)
+      this.currentRoundId = this.gameStore.state.currentRound
       
       const roundDataMessage = {
         roundNumber: this.gameStore.state.currentRound,

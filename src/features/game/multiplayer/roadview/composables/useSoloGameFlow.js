@@ -31,6 +31,7 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     onIntroShow: null,
     onRoundResultShow: null,
     onNextRoundShow: null,
+    onRoundReissued: null,
     onGameFinish: null,
     ...uiCallbacks
   }
@@ -128,6 +129,7 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     // 게임 채널 구독
     soloGameWebSocket.setupGameSubscriptions(roomIdParam, {
       onTimerStart: handleTimerStart,
+      onTimerSync: handleTimerSync,
       onRoundResult: handleRoundResult,
       onRoundTransition: handleRoundTransition,
       onNextRound: handleNextRound,
@@ -145,6 +147,9 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     console.log('[Solo Flow] 타이머 시작:', message)
 
     roundStartTime.value = Date.now()
+    if (gameStore) {
+      gameStore.state.isFinalCountdown = false
+    }
 
     // 타이머 UI 업데이트
     clearTimerInterval()
@@ -161,6 +166,24 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
         clearTimerInterval()
       }
     }, 100)
+  }
+
+  /**
+   * 타이머 동기화 처리
+   */
+  const handleTimerSync = (message) => {
+    console.log('[Solo Flow] 타이머 동기화:', message)
+
+    if (!gameStore) return
+
+    if (typeof message.remainingTimeMs === 'number') {
+      const remaining = Math.max(0, Math.ceil(message.remainingTimeMs / 1000))
+      gameStore.state.remainingTime = remaining
+    }
+
+    if (typeof message.isFinalCountDown === 'boolean') {
+      gameStore.state.isFinalCountdown = message.isFinalCountDown
+    }
   }
 
   /**
@@ -267,13 +290,21 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
 
     if (!gameStore) return
 
+    clearTimerInterval()
+
+    const previousRoundNumber = gameStore.state.currentRound
+    const previousRoundId = roundId.value != null ? roundId.value.toString() : null
+    const incomingRoundId = message.roundInfo?.roundId ?? null
+    const incomingRoundIdString = incomingRoundId != null ? incomingRoundId.toString() : null
+
     // 전환 타이머 정리
     clearTransitionInterval()
 
     // 라운드 정보 업데이트
     gameId.value = message.gameId
     roundId.value = message.roundInfo.roundId
-    
+    gameStore.state.gameId = message.gameId
+
     gameStore.state.currentRound = message.currentRound
     gameStore.state.currentLocation = {
       lat: message.roundInfo.targetLat,
@@ -302,7 +333,17 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     roundStartTime.value = null
     
     // UI 콜백: 다음 라운드 오버레이 표시
-    if (callbacks.onNextRoundShow) {
+    const isReissuedRound =
+      previousRoundId &&
+      incomingRoundIdString &&
+      previousRoundId === incomingRoundIdString &&
+      previousRoundNumber === message.currentRound
+
+    if (isReissuedRound) {
+      if (callbacks.onRoundReissued) {
+        callbacks.onRoundReissued(message)
+      }
+    } else if (callbacks.onNextRoundShow) {
       callbacks.onNextRoundShow()
     }
   }

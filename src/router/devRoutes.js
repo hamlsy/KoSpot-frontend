@@ -5,6 +5,7 @@ import EncryptTest from 'src/dummy/EncryptTest.vue'
 import ComponentTest from 'src/dummy/ComponentTest.vue'
 import TempLoginView from '@/features/auth/views/TempLoginView.vue'
 import SoloGameView from '@/features/game/multiplayer/roadview/views/SoloGameView.vue'
+import RoomView from '@/features/game/multiplayer/room/views/RoomView.vue'
 import DevTestPage from '@/dummy/DevTestPage.vue'
 import ResultOverlay from '@/features/game/single/roadview/components/Result/ResultOverlay.vue'
 
@@ -54,7 +55,19 @@ const devRoutes = [
         meta: {
             title: '로드뷰 개인전 테스트'
         }
-    }, {
+    },
+    {
+        path: '/test/room-start',
+        name: "TestRoomStartCountdown",
+        component: RoomView,
+        props: {
+            roomId: 'dev-room-start'
+        },
+        meta: {
+            title: '멀티플레이어 방 시작 테스트'
+        }
+    },
+    {
         path: '/devRoute',
         name: "DevRoundTest",
         component: ResultOverlay,

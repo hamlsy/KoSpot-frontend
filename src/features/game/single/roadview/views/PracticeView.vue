@@ -234,6 +234,7 @@ export default {
 
       // 게임 화면 관련
       isMapOpen: false,
+      phoneMapInitialized: false,
       showExitConfirmation: false,
       showResult: false,
       showToast: false,
@@ -439,46 +440,38 @@ export default {
     // 지도 토글
     toggleMap() {
       const wasOpen = this.isMapOpen;
-      // 상태 변경 - 이것만으로 인라인 스타일에서 z-index가 변경됨
       this.isMapOpen = !this.isMapOpen;
 
-      if (this.isMapOpen) {
+      if (this.isMapOpen && !wasOpen) {
         this.$nextTick(() => {
-          // 지도가 초기화되지 않았으면 초기화 시도
-          if (this.$refs.phoneFrame) {
-            this.$refs.phoneFrame.ensureMapInitialized();
-          }
-          
-          // 지도가 초기화될 때까지 기다린 후 리사이즈
-          setTimeout(() => {
-            const mapInstance = this.$refs.phoneFrame.getMapInstance();
-            if (mapInstance) {
-              mapInstance.relayout();
-              
-              // 힌트 원 재표시
-              if (this.hintCircle) {
-                this.hintCircle.setMap(mapInstance);
-              }
-            }
-          }, 200);
+          this.initializePhoneMapIfNeeded();
         });
-        
-        // 지도가 열릴 때 (false -> true) 자동으로 재로딩
-        if (!wasOpen && this.isMapOpen) {
-          // PhoneFrame이 마운트된 후 재로딩 실행
-          this.$nextTick(() => {
-            // 약간의 딜레이를 주어 PhoneFrame이 완전히 렌더링된 후 재로딩
-            // 자동 재로딩이므로 토스트 메시지 표시 안 함
-            setTimeout(() => {
-              this.reloadPhoneMap(false);
-            }, 300); // 힌트 원 재표시보다 약간 늦게 실행
-          });
+      }
+    },
+
+    initializePhoneMapIfNeeded() {
+      if (this.phoneMapInitialized || !this.$refs.phoneFrame) {
+        return;
+      }
+
+      this.$refs.phoneFrame.ensureMapInitialized();
+
+      setTimeout(() => {
+        const mapInstance = this.$refs.phoneFrame.getMapInstance();
+        if (mapInstance) {
+          mapInstance.relayout();
+
+          if (this.hintCircle) {
+            this.hintCircle.setMap(mapInstance);
+          }
         }
-      } else {
-        // 지도를 닫을 때는 인라인 스타일에서 자동으로 z-index가 -1로 설정됨
-        
-        // hintCircle 객체는 그대로 유지, 다음에 지도가 열렸을 때 다시 표시
-      }  
+      }, 200);
+
+      setTimeout(() => {
+        this.reloadPhoneMap(false);
+      }, 300);
+
+      this.phoneMapInitialized = true;
     },
 
     // 힌트 사용
@@ -697,21 +690,21 @@ export default {
           
           console.log("✅ 좌표 수신 완료, 로드뷰 표시 준비:", this.currentLocation);
           
-          // currentLocation이 설정된 후 PhoneFrame의 지도 초기화 보장
+          // currentLocation이 설정된 후 PhoneFrame의 지도 초기 상태 보장
           this.$nextTick(() => {
-            if (this.$refs.phoneFrame) {
-              // 지도가 열려있으면 리사이즈, 닫혀있으면 초기화만 보장
-              this.$refs.phoneFrame.ensureMapInitialized();
-              
-              // 지도가 열려있으면 리사이즈
-              if (this.isMapOpen) {
-                setTimeout(() => {
-                  const mapInstance = this.$refs.phoneFrame.getMapInstance();
-                  if (mapInstance) {
-                    mapInstance.relayout();
-                  }
-                }, 100);
-              }
+            if (!this.isMapOpen) {
+              return;
+            }
+
+            if (!this.phoneMapInitialized) {
+              this.initializePhoneMapIfNeeded();
+            } else {
+              setTimeout(() => {
+                const mapInstance = this.$refs.phoneFrame?.getMapInstance?.();
+                if (mapInstance) {
+                  mapInstance.relayout();
+                }
+              }, 100);
             }
           });
           
@@ -768,21 +761,21 @@ export default {
       
       console.log("더미 데이터로 선택된 위치:", this.currentLocation);
       
-      // currentLocation이 설정된 후 PhoneFrame의 지도 초기화 보장
+      // currentLocation이 설정된 후 PhoneFrame의 지도 초기 상태 보장
       this.$nextTick(() => {
-        if (this.$refs.phoneFrame) {
-          // 지도가 열려있으면 리사이즈, 닫혀있으면 초기화만 보장
-          this.$refs.phoneFrame.ensureMapInitialized();
-          
-          // 지도가 열려있으면 리사이즈
-          if (this.isMapOpen) {
-            setTimeout(() => {
-              const mapInstance = this.$refs.phoneFrame.getMapInstance();
-              if (mapInstance) {
-                mapInstance.relayout();
-              }
-            }, 100);
-          }
+        if (!this.isMapOpen) {
+          return;
+        }
+
+        if (!this.phoneMapInitialized) {
+          this.initializePhoneMapIfNeeded();
+        } else {
+          setTimeout(() => {
+            const mapInstance = this.$refs.phoneFrame?.getMapInstance?.();
+            if (mapInstance) {
+              mapInstance.relayout();
+            }
+          }, 100);
         }
       });
     },
@@ -1085,19 +1078,21 @@ export default {
             
           
             
-            // currentLocation이 설정된 후 PhoneFrame의 지도 초기화 보장
+            // currentLocation이 설정된 후 PhoneFrame의 지도 초기 상태 보장
             this.$nextTick(() => {
-              if (this.$refs.phoneFrame) {
-                this.$refs.phoneFrame.ensureMapInitialized();
-                
-                if (this.isMapOpen) {
-                  setTimeout(() => {
-                    const mapInstance = this.$refs.phoneFrame.getMapInstance();
-                    if (mapInstance) {
-                      mapInstance.relayout();
-                    }
-                  }, 100);
-                }
+              if (!this.isMapOpen) {
+                return;
+              }
+
+              if (!this.phoneMapInitialized) {
+                this.initializePhoneMapIfNeeded();
+              } else {
+                setTimeout(() => {
+                  const mapInstance = this.$refs.phoneFrame?.getMapInstance?.();
+                  if (mapInstance) {
+                    mapInstance.relayout();
+                  }
+                }, 100);
               }
             });
             

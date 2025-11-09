@@ -12,7 +12,9 @@
         <RoomHeader
           :room-data="localRoomData"
           :is-host="isHost"
-          :can-start-game="canStartGame"
+          :can-start-game="isRoomDummyMode ? true : canStartGame"
+          :is-starting="isStartingGame"
+          :is-dummy-mode="isRoomDummyMode"
           :unread-messages="unreadMessages"
           :is-team-mode="isTeamMode"
           :show-chat-toggle="isMobileView"
@@ -173,12 +175,21 @@
 
     <!-- 실시간 알림 토스트 -->
     <ToastNotification ref="toastRef" />
+
+    <!-- 게임 시작 카운트다운 오버레이 -->
+    <CountdownOverlay
+      :is-active="isCountdownActive"
+      :countdown="countdownSeconds"
+      :message="countdownMessage"
+      :is-host="isHost"
+      :can-cancel="false"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 
 // Core Components
 import NavigationBar from '@/core/components/NavigationBar.vue';
@@ -197,6 +208,8 @@ import ChatMessage from 'src/features/game/multiplayer/chat/components/Room/Chat
 
 //notifications
 import ToastNotification from 'src/features/game/multiplayer/room/components/notifications/ToastNotification.vue'
+import CountdownOverlay from 'src/features/game/multiplayer/room/components/settings/CountdownOverlay.vue'
+import { soloTestData } from 'src/features/game/multiplayer/room/composables/MultiplayerGameTestData.js'
 
 // Composables
 import { useRoom } from '../composables/useRoom';
@@ -211,9 +224,20 @@ const props = defineProps({
 
 // Vue Router
 const router = useRouter();
+const route = useRoute();
 
 // 현재 사용자 ID (localStorage에서 가져오기)
-const currentUserId = localStorage.getItem('memberId') || '';
+let currentUserId = localStorage.getItem('memberId') || '';
+
+const navigationDummyMode = history.state?.dummyMode === true;
+const queryDummyMode = route.query?.offline === 'true' || route.query?.dummy === 'true';
+const shouldUseDummyMode = navigationDummyMode || queryDummyMode || !navigator.onLine;
+
+if (shouldUseDummyMode && !currentUserId) {
+  currentUserId = soloTestData.currentUser?.id || 'dummy-host';
+}
+
+const normalizedCurrentUserId = currentUserId ? currentUserId.toString() : '';
 
 // Router state에서 전달받은 데이터 확인 (방 생성 시 LobbyView에서 전달)
 const routerState = history.state?.roomData || null;
@@ -231,7 +255,7 @@ const initialRoomData = routerState ? {
   timeLimit: routerState.timeLimit || 60,
   isPrivate: routerState.isPrivate || false,
   password: routerState.password || '',
-  hostId: routerState.hostId || '',
+  hostId: routerState.hostId || (shouldUseDummyMode ? currentUserId : ''),
   currentPlayerCount: routerState.currentPlayerCount || 0,
   createdAt: routerState.createdAt || new Date().toISOString(),
 } : {
@@ -244,13 +268,17 @@ const initialRoomData = routerState ? {
   timeLimit: 60,
   isPrivate: false,
   password: '',
-  hostId: '',
+  hostId: shouldUseDummyMode ? currentUserId : '',
   currentPlayerCount: 0,
   createdAt: new Date().toISOString(),
 };
 
+const initialHostId = routerState?.hostId != null
+  ? routerState.hostId.toString()
+  : (initialRoomData.hostId != null ? initialRoomData.hostId.toString() : '');
+
 // isHost 판단: routerState의 hostId와 현재 사용자 ID 비교
-const isHost = ref(routerState ? routerState.hostId === currentUserId : false);
+const isHost = ref(shouldUseDummyMode || (initialHostId !== '' && initialHostId === normalizedCurrentUserId));
 
 // 초기 players 빈 배열 (API에서 가져올 예정)
 const initialPlayers = [];
@@ -277,16 +305,89 @@ const emit = defineEmits([
 // 알림 시스템 - 반드시 useRoom 호출보다 먼저 선언되어야 함
 const toastRef = ref(null);
 
+// 게임 시작 카운트다운 상태
+const isCountdownActive = ref(false);
+const countdownSeconds = ref(3);
+const countdownMessage = ref('게임이 곧 시작됩니다!');
+const pendingGameStartPayload = ref(null);
+const hasNavigatedToGame = ref(false);
+let countdownIntervalId = null;
+
+const clearCountdownTimer = () => {
+  if (countdownIntervalId !== null) {
+    clearInterval(countdownIntervalId);
+    countdownIntervalId = null;
+  }
+};
+
+const navigateToSoloGame = (payload = {}) => {
+  if (hasNavigatedToGame.value) {
+    return;
+  }
+
+  clearCountdownTimer();
+  hasNavigatedToGame.value = true;
+  isCountdownActive.value = false;
+
+  const targetRoomId = payload?.roomId || localRoomData?.value?.id || props.roomId;
+
+  router.push({
+    name: 'SoloRoadViewGameView',
+    params: { roomId: targetRoomId },
+    state: {
+      expectedPlayers: localPlayers.value.length || localRoomData.value.currentPlayerCount || 1,
+      dummyMode: isRoomDummyMode.value
+    }
+  });
+};
+
+function handleGameStartSignal(startEvent = {}) {
+  clearCountdownTimer();
+  hasNavigatedToGame.value = false;
+  pendingGameStartPayload.value = startEvent;
+
+  const rawCountdown = Number(
+    startEvent?.countdown ?? startEvent?.countDown ?? startEvent?.countdownSeconds ?? 3
+  );
+  const sanitizedCountdown = Number.isFinite(rawCountdown) && rawCountdown > 0
+    ? Math.floor(rawCountdown)
+    : 3;
+
+  countdownSeconds.value = sanitizedCountdown;
+  countdownMessage.value = startEvent?.message || '게임이 곧 시작됩니다!';
+  isCountdownActive.value = true;
+
+  if (typeof addSystemMessage === 'function') {
+    addSystemMessage(`게임이 ${countdownSeconds.value}초 후 시작됩니다.`);
+  }
+
+  if (sanitizedCountdown <= 0) {
+    navigateToSoloGame(startEvent);
+    return;
+  }
+
+  countdownIntervalId = window.setInterval(() => {
+    if (countdownSeconds.value > 1) {
+      countdownSeconds.value -= 1;
+      return;
+    }
+
+    countdownSeconds.value = 0;
+    clearCountdownTimer();
+    navigateToSoloGame(pendingGameStartPayload.value || {});
+  }, 1000);
+}
+
 // Room composable에 전달할 props 구성
 const roomProps = {
   roomData: initialRoomData,
   players: initialPlayers,
   isHost: isHost.value,
-  currentUserId: currentUserId
+  currentUserId: normalizedCurrentUserId
 };
 
 // Room composable 사용 - 알림 시스템과 연결
-const room = useRoom(roomProps, emit, { toastRef });
+const room = useRoom(roomProps, emit, { toastRef, onGameStartMessage: handleGameStartSignal, dummyMode: shouldUseDummyMode });
 
 // 템플릿에서 사용할 상태와 메서드 추출
 const {
@@ -294,6 +395,8 @@ const {
   localRoomData,
   isTeamMode,
   canStartGame,
+  isStartingGame,
+  isDummyMode: isRoomDummyMode,
   
   // WebSocket 및 로딩 상태
   isWebSocketConnected,
@@ -415,7 +518,21 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', checkScreenSize);
+  clearCountdownTimer();
 });
+
+watch(
+  () => localRoomData.value?.hostId,
+  (newHostId) => {
+    const match = newHostId != null && newHostId.toString() === normalizedCurrentUserId;
+    const nextIsHost = shouldUseDummyMode || match;
+    if (nextIsHost !== isHost.value) {
+      isHost.value = nextIsHost;
+      roomProps.isHost = nextIsHost;
+    }
+  },
+  { immediate: true }
+);
 
 // 시간 포맷팅 유틸리티
 const formatUpdateTime = (timestamp) => {

@@ -3,7 +3,15 @@
     <!-- 게임 헤더 -->
     <div class="game-header row">
       <div class="header-left col-md-4">
-        <div class="room-info">
+        <button
+          v-if="showLeaveButton"
+          class="leave-game-button"
+          @click="$emit('leave-game')"
+          title="나가기"
+        >
+          <i class="fas fa-sign-out-alt"></i>
+        </button>
+        <div class="room-info" :class="{ 'without-button': !showLeaveButton }">
           <div class="room-name">{{ roomData?.name || "방 이름 없음" }}</div>
           <div class="game-mode">{{ gameMode === "team" ? "팀전" : "개인전" }}</div>
         </div>
@@ -89,7 +97,7 @@
 
           <!-- 메인 게임 영역 (로드뷰 또는 결과 컴포넌트) -->
           <slot name="main">
-            <road-view
+          <road-view
               v-if="
                 !gameStore.state.roundEnded && 
                 gameStore.state.currentLocation
@@ -103,6 +111,7 @@
               :show-controls="true"
               :prevent-mouse-events="gameStore.state.hasSubmittedGuess"
               @load-complete="onViewLoaded"
+              @load-error="onViewLoadError"
             />
           </slot>
 
@@ -203,8 +212,14 @@ export default {
     useCustomWebSocket: {
       type: Boolean,
       default: false
+    },
+    showLeaveButton: {
+      type: Boolean,
+      default: false
     }
   },
+
+  emits: ['leave-game'],
 
   provide() {
     return {
@@ -515,6 +530,11 @@ export default {
     // 로드뷰 로딩 완료 처리
     onViewLoaded() {
       console.log("로드뷰 로딩 완료");
+    },
+
+    onViewLoadError() {
+      console.warn('로드뷰 로딩 실패');
+      this.$emit('roadview-load-error');
     },
 
     // 추측 위치 설정
@@ -1140,42 +1160,55 @@ export default {
   align-items: center;
 }
 
+.leave-game-button {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18);
+}
+
+.leave-game-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.leave-game-button:active {
+  transform: translateY(0);
+}
+
+.leave-game-button i {
+  pointer-events: none;
+}
+
 .header-center {
   flex: 1;
   max-width: 400px;
   margin: 0 2rem;
 }
 
-.exit-button {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background-color: rgba(255, 255, 255, 0.1);
-  border: none;
-  border-radius: 8px;
-  color: white;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
 @media (max-width: 768px) {
-  .exit-text {
-    display: none;
+  .leave-game-button {
+    width: 38px;
+    height: 38px;
+    font-size: 0.95rem;
   }
-
-  .exit-button {
-    padding: 0.5rem;
-  }
-}
-
-.exit-button:hover {
-  background-color: rgba(255, 255, 255, 0.2);
 }
 
 .room-info {
   margin-left: 1rem;
+}
+
+.room-info.without-button {
+  margin-left: 0;
 }
 
 .room-name {
