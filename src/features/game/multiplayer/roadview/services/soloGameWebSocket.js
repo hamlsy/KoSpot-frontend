@@ -90,9 +90,9 @@ class SoloGameWebSocketService {
       this.handleGameFinished.bind(this)
     )
 
-    // 게임 중 채팅 구독 (서버가 /topic/room/{roomId}/chat/global로 브로드캐스트)
+    // 게임 중 채팅 구독 (서버가 /topic/game/{roomId}/chat/global로 브로드캐스트)
     this.subscribe(
-      `/topic/room/${roomId}/chat/global`,
+      `/topic/game/${roomId}/chat/global`,
       'globalChat',
       this.handleGlobalChat.bind(this)
     )

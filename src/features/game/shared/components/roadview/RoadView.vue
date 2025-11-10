@@ -1,8 +1,8 @@
 <template>
   <div class="road-view">
     <div id="roadview-container" ref="roadviewContainer"></div>
-    
-    <div class="road-error" v-if="hasError && !suppressError">
+    <!-- 임시로 제거 -->
+    <!-- <div class="road-error" v-if="hasError && !suppressError">
       <div class="error-icon">
         <i class="fas fa-exclamation-triangle"></i>
       </div>
@@ -10,7 +10,7 @@
         <h3>로드뷰를 불러올 수 없습니다</h3>
         <p>이 위치에 로드뷰 데이터가 없습니다.</p>
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -136,8 +136,13 @@ export default {
           roadviewClient.getNearestPanoId(position, 100, (panoId) => {
             if (panoId === null) {
               console.error('[RoadView] 해당 위치에서 로드뷰를 찾을 수 없습니다:', this.position);
+              console.log('[RoadView] load-error 이벤트 emit 시작 (suppressError:', this.suppressError, ')');
               this.hasError = true;
+              
+              // suppressError가 true여도 재발급 요청을 위해 이벤트는 emit해야 함
+              // (에러 화면 표시만 막으면 됨)
               this.$emit('load-error', { position: this.position });
+              console.log('[RoadView] load-error 이벤트 emit 완료');
               return;
             }
             

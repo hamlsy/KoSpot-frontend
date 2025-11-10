@@ -298,7 +298,27 @@ export default {
       serverStartTime: 0,
       // 라운드 타이머
       roundTimer: null,
+      // 라운드별 지도 초기화 플래그 (라운드당 최초 1번만 초기화)
+      mapInitializedForRound: null, // 현재 초기화된 라운드 번호
     };
+  },
+
+  watch: {
+    // 라운드가 변경될 때 지도 초기화 플래그 리셋
+    'gameStore.state.currentRound'(newRound, oldRound) {
+      if (newRound !== oldRound && oldRound != null) {
+        console.log(`[BaseGameView] 라운드 변경 감지: ${oldRound} -> ${newRound}, 지도 초기화 플래그 리셋`);
+        this.mapInitializedForRound = null;
+      }
+    },
+    // useCustomWebSocket prop 변경 감지 (디버깅용)
+    useCustomWebSocket(newVal, oldVal) {
+      console.log('[BaseGameView] useCustomWebSocket prop 변경:', {
+        oldVal,
+        newVal,
+        type: typeof newVal
+      })
+    }
   },
 
   computed: {
@@ -341,10 +361,21 @@ export default {
   },
 
   created() {
+    // useCustomWebSocket prop 값 확인
+    console.log('[BaseGameView] created - useCustomWebSocket prop:', {
+      useCustomWebSocket: this.useCustomWebSocket,
+      type: typeof this.useCustomWebSocket,
+      parent: this.$parent?.$options?.name || '알 수 없음'
+    })
+    
     // 게임 중에도 WebSocket 연결 상태 확인 및 구독 설정
     // Solo 게임에서 useSoloGameFlow를 사용하는 경우 건너뜀
-    if (!this.useCustomWebSocket) {
+    // useCustomWebSocket이 명시적으로 false가 아니면 서버 모드로 간주
+    if (this.useCustomWebSocket !== true) {
+      console.log('[BaseGameView] useCustomWebSocket이 true가 아니므로 기본 WebSocket 초기화')
       this.initializeWebSocketConnection();
+    } else {
+      console.log('[BaseGameView] useCustomWebSocket이 true이므로 서버 모드 - 기본 WebSocket 초기화 스킵')
     }
   },
 
@@ -417,6 +448,13 @@ export default {
     startNextRound(userRank, totalPlayers) {
       this.userRank = userRank;
       this.totalPlayers = totalPlayers;
+      
+      // 새 라운드 시작 시 지도 초기화 플래그 리셋
+      // (다음 라운드 데이터가 오면 새로 초기화됨)
+      const nextRound = this.gameStore.state.currentRound + 1;
+      this.mapInitializedForRound = null;
+      console.log(`[BaseGameView] 라운드 ${nextRound} 시작 준비 - 지도 초기화 플래그 리셋`);
+      
       this.$nextTick(() => {
         setTimeout(() => {
           this.showNextRoundOverlay = true;
@@ -565,15 +603,25 @@ export default {
 
     // 로드뷰 로딩 실패 처리
     onViewLoadError(errorData) {
-      console.error("[BaseGameView] 로드뷰 로딩 실패:", errorData);
+      // useCustomWebSocket prop 값 확인 (반응형으로 최신 값 사용)
+      const useCustomWs = this.useCustomWebSocket
+      console.log('[BaseGameView] onViewLoadError 호출됨:', {
+        useCustomWebSocket: useCustomWs,
+        useCustomWebSocketType: typeof useCustomWs,
+        errorData,
+        parentComponent: this.$parent?.$options?.name || '알 수 없음'
+      })
       
-      // Solo 게임에서 useSoloGameFlow를 사용하는 경우 재발급 요청
-      if (this.useCustomWebSocket) {
+      // Solo 게임에서 useSoloGameFlow를 사용하는 경우 (서버 모드) 재발급 요청
+      // 명시적으로 true인지 확인 (falsy 값 체크)
+      if (useCustomWs === true) {
+        console.error("[BaseGameView] 로드뷰 로딩 실패 - 서버 모드에서 재발급 요청:", errorData);
         // 부모 컴포넌트(SoloGameView)에 로드 에러 이벤트 전달
-        console.log("[BaseGameView] SoloGameView에 roadview-load-error 이벤트 전달");
         this.$emit('roadview-load-error', errorData);
+        console.log('[BaseGameView] roadview-load-error 이벤트 emit 완료')
       } else {
-        console.log("[BaseGameView] useCustomWebSocket이 false이므로 재발급 요청하지 않음");
+        // 더미 모드에서는 로드뷰 에러를 무시 (로컬 테스트 데이터 사용)
+        console.warn('[BaseGameView] 더미 모드이므로 재발급 요청하지 않음 (useCustomWebSocket:', useCustomWs, ')')
       }
     },
 
@@ -601,15 +649,30 @@ export default {
         const wasOpen = this.isMapOpen;
         this.isMapOpen = !this.isMapOpen;
         
-        // 지도가 열릴 때 (false -> true) 자동으로 재로딩
+        // 지도가 열릴 때 (false -> true)
+        // 라운드별로 최초 1번만 초기화하도록 변경
         if (!wasOpen && this.isMapOpen) {
-          // PhoneFrame이 마운트된 후 재로딩 실행
-          this.$nextTick(() => {
-            // 약간의 딜레이를 주어 PhoneFrame이 완전히 렌더링된 후 재로딩
-            setTimeout(() => {
-              this.reloadPhoneMap(false);
-            }, 100);
-          });
+          const currentRound = this.gameStore.state.currentRound;
+          
+          // 현재 라운드에서 지도가 아직 초기화되지 않은 경우에만 초기화
+          if (this.mapInitializedForRound !== currentRound) {
+            console.log(`[BaseGameView] 라운드 ${currentRound} 지도 최초 초기화`);
+            // PhoneFrame이 마운트된 후 재로딩 실행
+            this.$nextTick(() => {
+              // 약간의 딜레이를 주어 PhoneFrame이 완전히 렌더링된 후 재로딩
+              setTimeout(() => {
+                this.reloadPhoneMap(false);
+                // 초기화 플래그 설정
+                this.mapInitializedForRound = currentRound;
+              }, 100);
+            });
+          } else {
+            console.log(`[BaseGameView] 라운드 ${currentRound} 지도는 이미 초기화됨 - 재로딩하지 않음`);
+            // 지도는 이미 초기화되어 있으므로 크기만 조정
+            if (this.$refs.phoneFrame) {
+              this.$refs.phoneFrame.ensureMapInitialized();
+            }
+          }
         }
       }
     },

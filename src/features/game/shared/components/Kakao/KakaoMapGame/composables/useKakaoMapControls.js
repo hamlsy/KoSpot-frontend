@@ -14,6 +14,7 @@ export function useKakaoMapControls(props, emit) {
     hasMarker,
     clickListener,
     isVoteInProgress,
+    gameStore,
   } = useKakaoMapState();
 
   const { calculateDistance } = useKakaoMapDistance(props);
@@ -24,6 +25,8 @@ export function useKakaoMapControls(props, emit) {
     // 이미 초기화되어 있는 경우 리턴
     if (isInitialized.value && map.value) {
       resizeMap();
+      // 제출한 마커가 있으면 복원
+      restoreSubmittedMarker();
       return;
     }
     
@@ -47,10 +50,14 @@ export function useKakaoMapControls(props, emit) {
       const imageOption = { offset: new window.kakao.maps.Point(12, 35) };
       markerImage.value = new window.kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
       
-      if (!props.disabled) {
-        // 클릭 이벤트 등록
+      if (!props.disabled && !props.hasSubmitted) {
+        // 클릭 이벤트 등록 (제출하지 않은 경우에만)
         addClickListener();
       }
+      
+      // 제출한 마커가 있으면 복원 (제출 후 지도가 다시 열릴 때)
+      // 클릭 리스너 등록 후에 복원해야 함 (제출한 경우 클릭 리스너가 추가되지 않음)
+      restoreSubmittedMarker();
       
       isLoading.value = false;
       isInitialized.value = true;
@@ -63,6 +70,55 @@ export function useKakaoMapControls(props, emit) {
       // API가 로드되지 않은 경우 500ms 후에 다시 시도
       setTimeout(() => initMap(), 500);
       isLoading.value = false;
+    }
+  };
+  
+  // 제출한 마커 복원 함수
+  const restoreSubmittedMarker = () => {
+    if (!map.value || !window.kakao || !window.kakao.maps) return;
+    if (!gameStore || !gameStore.state) return;
+    
+    // 제출한 위치 확인 (hasSubmitted가 true이거나 userGuess가 있는 경우)
+    const userGuess = gameStore.state.userGuess;
+    const hasSubmitted = props.hasSubmitted || gameStore.state.hasSubmittedGuess;
+    
+    if (userGuess && userGuess.position && hasSubmitted) {
+      console.log("제출한 마커 복원:", userGuess.position, "hasSubmitted:", hasSubmitted);
+      
+      // 기존 마커 제거 (있는 경우)
+      if (marker.value) {
+        marker.value.setMap(null);
+        marker.value = null;
+      }
+      
+      // 마커 이미지 설정 (props.markerImageUrl 우선, 없으면 기본 이미지)
+      const imageSrc = props.markerImageUrl || "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
+      const imageSize = new window.kakao.maps.Size(24, 35);
+      const imageOption = { offset: new window.kakao.maps.Point(12, 35) };
+      const markerImageToUse = new window.kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
+      
+      // 제출한 위치에 마커 생성
+      const position = new window.kakao.maps.LatLng(
+        userGuess.position.lat,
+        userGuess.position.lng
+      );
+      
+      marker.value = new window.kakao.maps.Marker({
+        position: position,
+        map: map.value,
+        image: markerImageToUse
+      });
+      
+      hasMarker.value = true;
+      
+      // 거리 계산
+      if (props.actualLocation && props.showDistance) {
+        calculateDistance();
+      }
+    } else if (!hasSubmitted && marker.value) {
+      // 제출하지 않은 상태에서 마커가 있는 경우, 마커는 그대로 유지
+      // (사용자가 클릭한 마커가 있는 경우)
+      console.log("제출하지 않은 상태 - 기존 마커 유지");
     }
   };
   
@@ -118,10 +174,22 @@ export function useKakaoMapControls(props, emit) {
     // 기존 리스너 제거
     removeClickListener();
     
+    // 제출한 경우 클릭 리스너를 추가하지 않음 (마커 고정)
+    if (props.hasSubmitted) {
+      console.log("제출 완료 - 마커 고정되어 클릭 불가");
+      return;
+    }
+    
     // 새 리스너 추가
     clickListener.value = window.kakao.maps.event.addListener(map.value, 'click', (mouseEvent) => {
       // 비활성화 상태에서는 마커 설정 불가
       if (props.disabled) return;
+      
+      // 제출한 경우 마커 변경 불가 (이중 체크)
+      if (props.hasSubmitted) {
+        console.log("제출 완료 - 마커 변경 불가");
+        return;
+      }
       
       // 투표 진행 중일 때 마커 이동 제한
       if (isVoteInProgress.value) {
@@ -170,6 +238,19 @@ export function useKakaoMapControls(props, emit) {
     });
   };
   
+  // hasSubmitted prop 변경 감지 - 제출 후 클릭 리스너 제거
+  watch(() => props.hasSubmitted, (newValue) => {
+    if (newValue) {
+      console.log("제출 완료 - 클릭 리스너 제거하여 마커 고정");
+      removeClickListener();
+    } else {
+      // 제출이 취소된 경우(거의 없음) 클릭 리스너 다시 추가
+      if (map.value && !props.disabled) {
+        addClickListener();
+      }
+    }
+  });
+  
   const removeClickListener = () => {
     if (clickListener.value && window.kakao && window.kakao.maps) {
       window.kakao.maps.event.removeListener(clickListener.value);
@@ -186,8 +267,14 @@ export function useKakaoMapControls(props, emit) {
   };
 
   // 지도 재로딩 (완전히 새로 초기화)
+  // 주의: 제출한 마커 위치는 userGuess에 저장되어 있으므로, 
+  // 지도가 재초기화되어도 restoreSubmittedMarker에서 복원됨
   const reloadMap = () => {
     console.log("🔄 지도 재로딩 시작");
+    
+    // 제출 상태 저장 (지도 재초기화 후 마커 복원을 위해)
+    const hasSubmitted = props.hasSubmitted || (gameStore && gameStore.state && gameStore.state.hasSubmittedGuess);
+    const userGuess = gameStore && gameStore.state ? gameStore.state.userGuess : null;
     
     // 기존 힌트 원 제거
     removeCircles();
@@ -195,7 +282,7 @@ export function useKakaoMapControls(props, emit) {
     // 기존 리스너 제거
     removeClickListener();
     
-    // 기존 마커 제거
+    // 마커 제거 (제출한 마커는 initMap에서 복원됨)
     removeMarker();
     
     // 지도 제거
@@ -214,6 +301,7 @@ export function useKakaoMapControls(props, emit) {
     hasMarker.value = false;
     
     // 짧은 딜레이 후 지도 재초기화 (컨테이너가 완전히 정리되도록)
+    // initMap에서 restoreSubmittedMarker가 호출되어 제출한 마커가 복원됨
     setTimeout(() => {
       initMap();
       
@@ -277,6 +365,7 @@ export function useKakaoMapControls(props, emit) {
     removeClickListener,
     removeMarker,
     getMarkerPosition,
-    reloadMap
+    reloadMap,
+    restoreSubmittedMarker
   };
 }

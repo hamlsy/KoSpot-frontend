@@ -26,7 +26,9 @@ const gameStore = {
       name: '',
       description: '',
       image: '',
-      fact: ''
+      fact: '',
+      poiName: '', // 지역이름 (POI Name)
+      fullAddress: '' // 주소 (Full Address)
     },
     guessPosition: null,
     hasSubmittedGuess: false,

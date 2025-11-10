@@ -97,6 +97,10 @@ const props = defineProps({
   markerImageUrl: {
     type: String,
     default: null,
+  },
+  hasSubmitted: {
+    type: Boolean,
+    default: false,
   }
 });
 
@@ -127,7 +131,8 @@ const {
   removeClickListener,
   removeMarker,
   getMarkerPosition,
-  reloadMap
+  reloadMap,
+  restoreSubmittedMarker
 } = useKakaoMapControls(props, emit);
 
 // 거리 계산
@@ -159,7 +164,7 @@ const ensureMapInitialized = () => {
   if (!isInitialized.value || !map.value) {
     initMap();
   } else {
-    resizeMap();
+    // resizeMap();
   }
 };
 
@@ -177,9 +182,12 @@ watch(() => props.isOpen, (newValue) => {
   if (newValue) {
     if (!isInitialized.value) {
       initMap();
-      
     } else {
       resizeMap();
+      // 지도가 다시 열릴 때 제출한 마커가 있으면 복원
+      if (props.hasSubmitted) {
+        restoreSubmittedMarker();
+      }
     }
   }
 });
@@ -188,6 +196,19 @@ watch(() => props.actualLocation, (newLocation) => {
   // actualLocation이 있고 마커가 있을 때만 거리 계산
   if (newLocation && marker.value && map.value && props.showDistance) {
     calculateDistance();
+  }
+});
+
+// hasSubmitted prop 변경 시 클릭 리스너 관리 및 마커 복원
+watch(() => props.hasSubmitted, (newValue) => {
+  if (newValue && isInitialized.value) {
+    // 제출 완료 시 클릭 리스너 제거하여 마커 고정
+    removeClickListener();
+    // 제출한 마커 복원
+    restoreSubmittedMarker();
+  } else if (map.value && !props.disabled && !newValue) {
+    // 제출이 취소된 경우(거의 없음) 클릭 리스너 다시 추가
+    addClickListener();
   }
 });
 

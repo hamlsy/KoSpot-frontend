@@ -65,16 +65,8 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
       }
     }
 
-    console.log("🔵 WebSocket 연결 초기화:", {
-      endpoint: endpoint,
-      wsUrl: wsUrl,
-      nodeEnv: process.env.NODE_ENV,
-      protocol: window.location.protocol,
-      host: window.location.host,
-      timestamp: new Date().toISOString()
-    });
 
-    // SockJS 설정 옵션
+    // SockJS 설정 옵션 
     const sockjsOptions = {
       timeout: 10000, // 10초 타임아웃
       transports: ["websocket", "xhr-polling", "jsonp-polling"],
@@ -190,7 +182,7 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
     // STOMP 클라이언트 디버깅 비활성화 (프로덕션에서)
     if (process.env.NODE_ENV === "development") {
       stompClient.value.debug = function (str) {
-        console.log("STOMP:", str);
+        // console.log("STOMP:", str);
       };
     } else {
       stompClient.value.debug = function () {}; // 디버깅 비활성화

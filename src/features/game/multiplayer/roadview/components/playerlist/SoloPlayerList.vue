@@ -190,8 +190,12 @@ export default {
 
     formatDistance(distance) {
       // 소수점 3자리에서 반올림
-      if (!distance && distance !== 0) return "0";
-      return Math.round(distance * 1000) / 1000;
+      if (distance == null || (distance !== 0 && !distance)) return "0";
+      // 소수점 3자리에서 반올림: 소수점 4자리에서 반올림하여 소수점 3자리까지 표시
+      // 예: 1.23456 -> 1.235, 1.23444 -> 1.234
+      const rounded = Math.round(Number(distance) * 1000) / 1000;
+      // 소수점 3자리까지 표시 (불필요한 0은 자동 제거됨)
+      return parseFloat(rounded.toFixed(3));
     },
   },
 };

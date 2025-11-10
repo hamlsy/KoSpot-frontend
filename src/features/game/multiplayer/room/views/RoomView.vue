@@ -229,10 +229,9 @@ const route = useRoute();
 // 현재 사용자 ID (localStorage에서 가져오기)
 let currentUserId = localStorage.getItem('memberId') || '';
 
-// 개발자모드 파라미터만 확인 (인터넷 연결 상태는 더미 모드 전환 조건에서 제외)
-const navigationDummyMode = history.state?.dummyMode === true;
-const queryDummyMode = route.query?.offline === 'true' || route.query?.dummy === 'true';
-const shouldUseDummyMode = navigationDummyMode || queryDummyMode;
+// 더미 모드: 오직 라우터 state에서만 활성화 가능 (개발자 전용)
+// URL 쿼리 파라미터나 기타 방법으로는 더미 모드를 활성화할 수 없음
+const shouldUseDummyMode = history.state?.dummyMode === true;
 
 if (shouldUseDummyMode && !currentUserId) {
   currentUserId = soloTestData.currentUser?.id || 'dummy-host';
@@ -406,6 +405,7 @@ const {
   canStartGame,
   isStartingGame,
   isDummyMode: isRoomDummyMode,
+  
   
   // WebSocket 및 로딩 상태
   isWebSocketConnected,

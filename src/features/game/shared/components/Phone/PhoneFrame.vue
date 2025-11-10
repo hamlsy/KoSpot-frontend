@@ -15,6 +15,7 @@
         :showActionButton="showActionButton"
         :gameMode="gameMode"
         :markerImageUrl="markerImageUrl"
+        :hasSubmitted="hasSubmitted"
         @close="$emit('close')"
         @check-answer="onCheckAnswer"
         ref="phoneMapGame"

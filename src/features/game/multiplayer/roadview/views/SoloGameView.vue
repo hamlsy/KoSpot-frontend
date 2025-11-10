@@ -31,8 +31,8 @@
     <!-- 개인전용 플레이어 리스트 -->
     <template #player-list="{ closePlayerList, isMobile }">
       <player-list
-        :players="gameStore.state.players"
-        :current-user-id="gameStore.state.currentUser.id"
+        :players="localPlayers"
+        :current-user-id="currentUserId"
         :show-scores="
           gameStore.state.hasSubmittedGuess || gameStore.state.roundEnded
         "
@@ -56,14 +56,16 @@
     <template #main>
       <round-results
         v-if="gameStore.state.roundEnded"
-        :players="gameStore.state.players"
+        :players="localPlayers"
         :actual-location="
           gameStore.state.actualLocation || { lat: 37.5665, lng: 126.978 }
         "
         :round="gameStore.state.currentRound"
         :total-rounds="gameStore.state.totalRounds"
-        :current-user-id="gameStore.state.currentUser.id"
+        :current-user-id="currentUserId"
         :location-name="gameStore.state.locationInfo.name"
+        :poi-name="gameStore.state.locationInfo.poiName || ''"
+        :full-address="gameStore.state.locationInfo.fullAddress || ''"
         :player-guesses="gameStore.state.playerGuesses"
         :top-player="gameStore.state.topPlayer"
         :num-players-ready="$refs.baseGame ? $refs.baseGame.numPlayersReadyForNextRound : 0"
@@ -88,7 +90,7 @@
       <final-results
         v-if="gameStore.state.showGameResults"
         :player-results="gameStore.state.finalGameResult?.playerResults || []"
-        :current-user-id="gameStore.state.currentUser.id"
+        :current-user-id="currentUserId"
         :total-rounds="gameStore.state.totalRounds"
         :total-game-time="totalGameTime"
         :game-message="gameStore.state.finalGameResult?.message"
@@ -154,11 +156,45 @@ export default {
       playerChatMessages: {},
       
       // 서버 모드 플래그
-      isServerMode: false,
-      isDummyRuntime: false,
+      // 중요: 기본값은 항상 서버 모드(true)
+      // history.state?.dummyMode가 명시적으로 true일 때만 더미 모드(false)
+      // data() 함수에서 초기값을 설정하므로, history.state를 읽을 수 있음
+      isServerMode: (() => {
+        try {
+          const historyState = typeof history !== 'undefined' ? history.state : null
+          const isExplicitlyDummyMode = historyState?.dummyMode === true
+          const serverMode = !isExplicitlyDummyMode // 더미 모드가 아니면 서버 모드 (기본값: true)
+          console.log('[Solo Game] data() - isServerMode 초기값 설정:', {
+            historyState,
+            dummyMode: historyState?.dummyMode,
+            isExplicitlyDummyMode,
+            serverMode,
+            '결론: 서버 모드': serverMode
+          })
+          return serverMode
+        } catch (error) {
+          console.error('[Solo Game] data() - isServerMode 초기값 설정 중 오류:', error)
+          return true // 오류 발생 시 기본값: 서버 모드
+        }
+      })(),
+      isDummyRuntime: (() => {
+        try {
+          const historyState = typeof history !== 'undefined' ? history.state : null
+          const isExplicitlyDummyMode = historyState?.dummyMode === true
+          return isExplicitlyDummyMode
+        } catch (error) {
+          return false // 오류 발생 시 기본값: 더미 모드 아님
+        }
+      })(),
 
       // 게임 시간 제한
-      timeLimit: history.state?.timeLimit || 120,
+      timeLimit: (() => {
+        try {
+          return (typeof history !== 'undefined' && history.state?.timeLimit) || 120
+        } catch (error) {
+          return 120
+        }
+      })(),
 
       // 로드뷰 재시도 중 여부
       isRetryingRoadview: false,
@@ -173,41 +209,156 @@ export default {
 
       pendingIntroOverlay: false,
 
-      // 서버에서 받은 게임 플레이어 정보 (StartPlayerGame 메시지)
+      // 서버에서 받은 게임 플레이어 정보 (처음 게임 시작할 때 받는 정보)
+      // store에 담지 않고 SoloGameView에만 저장
       gamePlayers: []
     };
   },
 
+  computed: {
+    // 현재 사용자 ID (안전하게 접근)
+    currentUserId() {
+      if (this.isDummyRuntime) {
+        return this.gameStore?.state?.currentUser?.id || null
+      }
+      // 서버 모드: localStorage에서 가져오거나 gamePlayers에서 찾기
+      const memberId = localStorage.getItem('memberId')
+      if (memberId) {
+        return memberId
+      }
+      // gamePlayers에서 현재 사용자 찾기 (임시로 첫 번째 플레이어 또는 게임플레이어 정보에서)
+      return this.gameStore?.state?.currentUser?.id || null
+    },
+    
+    // 플레이어 리스트 컴포넌트에서 사용할 형식으로 변환
+    localPlayers() {
+      // 더미 모드에서는 gameStore.state.players 사용
+      if (this.isDummyRuntime) {
+        return this.gameStore.state.players || []
+      }
+      
+      // 서버 모드: gamePlayers를 플레이어 리스트 형식으로 변환
+      return this.gamePlayers.map(player => ({
+        id: String(player.playerId),
+        memberId: String(player.playerId),
+        nickname: player.nickname || '알 수 없음',
+        markerImageUrl: player.markerImageUrl || null,
+        equippedMarker: player.markerImageUrl || null,
+        totalScore: player.totalScore != null ? Number(player.totalScore) : 0,
+        roundRank: player.roundRank != null ? Number(player.roundRank) : 0,
+        score: player.totalScore != null ? Number(player.totalScore) : 0,
+        hasSubmitted: false,
+        distanceToTarget: player.distanceToTarget || null,
+        lastRoundScore: player.lastRoundScore || 0
+      }))
+    }
+  },
+
   created() {
-    // 테스트 데이터 로드 (더미 모드용)
-    this.gameStore.loadTestData(false);
+    // 게임 상태 초기화 (서버 모드/더미 모드 공통)
+    // 이전 게임 상태가 남아있지 않도록 항상 초기화
+    this.gameStore.initGame();
+    
     const resolvedRoomId = this.resolveRoomId();
     if (resolvedRoomId) {
       this.roomId = resolvedRoomId;
     }
-    this.initializePlayerLoadingState();
     
-    // 더미 모드에서만 초기화
-    const navigationDummyMode = history.state?.dummyMode === true;
-    if (this.$route.query.test === 'true' || navigationDummyMode) {
+    // 중요: 더미 모드 확인
+    // history.state?.dummyMode가 명시적으로 true인 경우에만 더미 모드
+    // 그 외의 모든 경우(undefined, null, false 등)는 서버 모드 (기본값)
+    const historyState = typeof history !== 'undefined' ? history.state : null;
+    const isExplicitlyDummyMode = historyState?.dummyMode === true;
+    
+    // isServerMode 설정: 명시적으로 더미 모드가 아니면 서버 모드 (기본값: true)
+    this.isServerMode = !isExplicitlyDummyMode; // 더미 모드가 아니면 서버 모드
+    this.isDummyRuntime = isExplicitlyDummyMode;
+    
+    console.log('[Solo Game] created - 모드 설정 (최종):', {
+      historyState: historyState,
+      dummyMode: historyState?.dummyMode,
+      isExplicitlyDummyMode,
+      isServerMode: this.isServerMode,
+      isDummyRuntime: this.isDummyRuntime,
+      '결론: 서버 모드': this.isServerMode,
+      roomId: this.roomId
+    });
+    
+    // 더미 모드에서만 테스트 데이터 로드 (서버 모드에서는 서버에서 플레이어 데이터를 받음)
+    if (isExplicitlyDummyMode) {
+      console.log('[Solo Game] 더미 모드로 초기화');
+      this.gameStore.loadTestData(false);
       this.initGame();
+    } else {
+      console.log('[Solo Game] 서버 모드로 초기화 (기본값)');
+      // 서버 모드: 플레이어 리스트 초기화 (서버에서 받을 데이터만 사용)
+      // store에 플레이어 정보를 저장하지 않음 (gamePlayers에만 저장)
+      this.gameStore.state.players = [];
+      this.gamePlayers = []; // gamePlayers도 초기화
+      
+      // 서버 모드: currentUser 초기화 (localStorage에서 가져오기)
+      const memberId = localStorage.getItem('memberId');
+      if (memberId && !this.gameStore.state.currentUser) {
+        this.gameStore.state.currentUser = {
+          id: memberId,
+          nickname: localStorage.getItem('nickname') || '플레이어',
+          markerImageUrl: null,
+          equippedMarker: null
+        };
+      }
     }
+    
+    this.initializePlayerLoadingState();
   },
 
   async mounted() {
-    // 개발자모드 파라미터만 확인 (인터넷 연결 상태는 더미 모드 전환 조건에서 제외)
-    const navigationDummyMode = history.state?.dummyMode === true;
-    const queryDummyMode = this.$route.query.test === 'true';
-    const isDummyMode = queryDummyMode || navigationDummyMode;
-    this.isServerMode = !isDummyMode
-    this.isDummyRuntime = isDummyMode
+    // 게임 상태 명시적 초기화 (이전 게임 상태 완전 제거)
+    // showGameResults 등이 true로 남아있으면 게임 완료 화면이 표시될 수 있음
+    this.gameStore.state.showGameResults = false;
+    this.gameStore.state.roundEnded = false;
+    this.gameStore.state.hasSubmittedGuess = false;
+    this.gameStore.state.showRoundResults = false;
+    this.gameStore.state.currentRound = 1;
+    this.gameStore.state.userGuess = null;
+    this.gameStore.state.playerGuesses = [];
+    this.gameStore.state.remainingTime = 120;
+    this.gameStore.state.finalGameResult = null; // 최종 게임 결과 초기화
+    
+    // 개발자모드 파라미터만 확인
+    // history.state?.dummyMode가 명시적으로 true인 경우에만 더미 모드
+    const isExplicitlyDummyMode = history.state?.dummyMode === true;
+    
+    // created()에서 이미 설정했지만, 일관성을 위해 다시 확인
+    // computedIsServerMode가 실제 prop 값이므로 이것이 우선
+    const expectedServerMode = !isExplicitlyDummyMode;
+    if (this.isServerMode !== expectedServerMode) {
+      console.warn('[Solo Game] mounted - isServerMode 불일치 감지:', {
+        created에서설정: this.isServerMode,
+        현재계산값: expectedServerMode,
+        isExplicitlyDummyMode,
+        computedIsServerMode: this.computedIsServerMode
+      });
+      this.isServerMode = expectedServerMode;
+      this.isDummyRuntime = isExplicitlyDummyMode;
+    }
+    
     const resolvedRoomId = this.resolveRoomId()
     if (resolvedRoomId) {
       this.roomId = resolvedRoomId
     }
     this.initializePlayerLoadingState()
     
-    if (isDummyMode) {
+    console.log('[Solo Game] mounted - 최종 모드:', {
+      historyState: history.state,
+      dummyMode: history.state?.dummyMode,
+      isExplicitlyDummyMode,
+      isServerMode: this.isServerMode,
+      isDummyRuntime: this.isDummyRuntime,
+      computedIsServerMode: this.computedIsServerMode, // 실제 prop 값
+      roomId: this.roomId
+    });
+    
+    if (isExplicitlyDummyMode) {
       console.log('[Solo Game] 더미 모드로 게임 시작')
       this.startDummyMode()
       this.simulateDummyLoading()
@@ -264,8 +415,10 @@ export default {
 
       if (!Number.isNaN(expectedFromState) && expectedFromState > 0) {
         total = expectedFromState
-      } else if (this.gameStore?.state?.players?.length) {
+      } else if (this.isDummyRuntime && this.gameStore?.state?.players?.length) {
         total = this.gameStore.state.players.length
+      } else if (!this.isDummyRuntime && this.gamePlayers?.length) {
+        total = this.gamePlayers.length
       }
 
       this.playerLoading.totalCount = Math.max(1, total)
@@ -435,7 +588,7 @@ export default {
           
           // 현재 사용자 등수 계산
           this.currentUserRank = this.calculateUserRank()
-          const totalPlayers = this.gameStore.state.players.length
+          const totalPlayers = this.isDummyRuntime ? this.gameStore.state.players.length : this.gamePlayers.length
           
           // NextRoundOverlay 표시
           if (this.$refs.baseGame) {
@@ -466,28 +619,85 @@ export default {
           }
         },
         onGamePlayersUpdate: (gamePlayers) => {
-          console.log('[Solo Game] 플레이어 정보 업데이트:', gamePlayers)
-          // SoloGameView의 gamePlayers에 저장
+          console.log('[Solo Game] 플레이어 정보 업데이트 (처음 게임 시작할 때 받는 정보):', gamePlayers)
+          
+          // 처음 게임 시작할 때 받는 플레이어 정보를 SoloGameView의 gamePlayers에 저장
+          // store에 담지 않음
           this.gamePlayers = gamePlayers.map(player => ({
             playerId: player.playerId,
-            nickname: player.nickname,
-            markerImageUrl: player.markerImageUrl,
-            totalScore: player.totalScore || 0,
-            roundRank: player.roundRank || 0
+            nickname: player.nickname || '알 수 없음',
+            markerImageUrl: player.markerImageUrl || null,
+            totalScore: player.totalScore != null ? Number(player.totalScore) : 0,
+            roundRank: player.roundRank != null ? Number(player.roundRank) : 0,
+            distanceToTarget: player.distanceToTarget || null,
+            lastRoundScore: player.lastRoundScore || 0
           }))
           
-          // currentUser의 markerImageUrl도 업데이트 (자신의 정보인 경우)
-          const currentUserId = this.gameStore?.state?.currentUser?.id
-          if (currentUserId) {
-            const currentPlayerInfo = gamePlayers.find(p => p.playerId === currentUserId)
-            if (currentPlayerInfo && currentPlayerInfo.markerImageUrl) {
-              if (this.gameStore.state.currentUser) {
+          // currentUser 초기화 및 markerImageUrl 업데이트
+          const memberId = localStorage.getItem('memberId')
+          if (memberId) {
+            // currentUser가 없으면 초기화
+            if (!this.gameStore.state.currentUser) {
+              this.gameStore.state.currentUser = {
+                id: memberId,
+                nickname: localStorage.getItem('nickname') || '플레이어',
+                markerImageUrl: null,
+                equippedMarker: null
+              }
+            }
+            
+            // 자신의 정보를 gamePlayers에서 찾아서 markerImageUrl 및 nickname 업데이트
+            const currentPlayerInfo = gamePlayers.find(p => String(p.playerId) === String(memberId))
+            if (currentPlayerInfo) {
+              if (currentPlayerInfo.markerImageUrl) {
                 this.gameStore.state.currentUser.markerImageUrl = currentPlayerInfo.markerImageUrl
                 this.gameStore.state.currentUser.equippedMarker = currentPlayerInfo.markerImageUrl
               }
+              if (currentPlayerInfo.nickname) {
+                this.gameStore.state.currentUser.nickname = currentPlayerInfo.nickname
+              }
             }
           }
-        }
+        },
+        onRoundResultUpdate: (roundResultData) => {
+          // 라운드 결과에서 받은 플레이어 점수 정보로 gamePlayers 업데이트
+          if (roundResultData.playerTotalResults && Array.isArray(roundResultData.playerTotalResults)) {
+            roundResultData.playerTotalResults.forEach((result, index) => {
+              const player = this.gamePlayers.find(p => p.playerId === result.playerId)
+              if (player) {
+                player.totalScore = result.totalScore != null ? Number(result.totalScore) : player.totalScore
+                player.roundRank = result.roundRank != null ? Number(result.roundRank) : player.roundRank
+                
+                // 제출 결과 매칭
+                const submission = roundResultData.playerSubmissionResults?.[index]
+                if (submission) {
+                  player.distanceToTarget = submission.distance != null ? Number(submission.distance) : player.distanceToTarget
+                  player.lastRoundScore = submission.earnedScore != null ? Number(submission.earnedScore) : player.lastRoundScore
+                }
+              }
+            })
+          }
+          
+          // playerGuesses의 markerImageUrl을 gamePlayers에서 가져와서 업데이트
+          // (처음 게임 시작할 때 받은 정보 사용)
+          if (roundResultData.playerGuesses && Array.isArray(roundResultData.playerGuesses)) {
+            const updatedPlayerGuesses = roundResultData.playerGuesses.map(guess => {
+              const player = this.gamePlayers.find(p => String(p.playerId) === String(guess.playerId))
+              if (player && player.markerImageUrl) {
+                return {
+                  ...guess,
+                  markerImageUrl: player.markerImageUrl // 처음 게임 시작할 때 받은 markerImageUrl 사용
+                }
+              }
+              return guess
+            })
+            
+            // 업데이트된 playerGuesses를 gameStore에 반영
+            if (this.gameStore && this.gameStore.state) {
+              this.gameStore.state.playerGuesses = updatedPlayerGuesses
+            }
+          }
+        },
       })
     },
 
@@ -536,19 +746,32 @@ export default {
     /**
      * 로드뷰 로딩 실패 처리
      */
-    async handleRoadviewLoadError() {
+    async handleRoadviewLoadError(errorData) {
+      console.log('[Solo Game] handleRoadviewLoadError 호출됨:', {
+        isServerMode: this.isServerMode,
+        errorData,
+        roomId: this.roomId
+      })
+      
       if (!this.isServerMode) {
         console.warn('[Solo Game] 더미 모드에서는 로드뷰 재발급을 요청하지 않습니다.')
+        return
+      }
+
+      if (!this.roomId) {
+        console.error('[Solo Game] roomId가 없어 재발급 요청을 할 수 없습니다.')
         return
       }
 
       // 재시도 중인지 확인
       this.isRetryingRoadview = this.soloGameFlow.isRetrying()
       
-      console.log(`[Solo Game] 로드뷰 로딩 실패 - 재발급 요청 (재시도 중: ${this.isRetryingRoadview})`)
+      console.log(`[Solo Game] 로드뷰 로딩 실패 - 재발급 요청 시작 (재시도 중: ${this.isRetryingRoadview}, roomId: ${this.roomId})`)
       
       try {
         const success = await this.soloGameFlow.requestRoadviewReIssue()
+        console.log(`[Solo Game] 재발급 요청 결과: ${success}`)
+        
         if (success) {
           // 재시도 중 플래그 업데이트
           this.isRetryingRoadview = this.soloGameFlow.isRetrying()
@@ -558,6 +781,7 @@ export default {
         } else {
           // 최대 시도 횟수 초과 시에만 에러 화면 표시
           this.isRetryingRoadview = this.soloGameFlow.isRetrying()
+          console.warn(`[Solo Game] 로드뷰 재발급 요청 실패 (success: ${success}, isRetrying: ${this.isRetryingRoadview})`)
           if (!this.isRetryingRoadview) {
             console.error('[Solo Game] 로드뷰 재발급 요청 실패 또는 최대 시도 횟수 초과')
             // 재시도가 끝났으므로 에러 화면을 표시할 수 있음 (RoadView에서 자동으로 표시됨)
@@ -860,7 +1084,10 @@ export default {
       if (!message.trim()) return;
       
       // 현재 사용자의 채팅 말풍선 표시
-      this.showPlayerChatBubble(this.gameStore.state.currentUser.id, message);
+      const userId = this.currentUserId || this.gameStore?.state?.currentUser?.id
+      if (userId) {
+        this.showPlayerChatBubble(userId, message);
+      }
       
       // 서버 모드: 게임 중 채팅 메시지 발행
       if (this.isServerMode) {
@@ -1183,7 +1410,14 @@ export default {
     },
 
     finishGame() {
-      console.log('게임 완료 처리 시작');
+      // 서버 모드에서는 사용하지 않음 (서버에서 game/finished 채널로 게임 종료 브로드캐스트)
+      // 더미 모드에서만 사용
+      if (this.isServerMode) {
+        console.warn('[Solo Game] 서버 모드에서는 finishGame을 사용하지 않습니다. 서버에서 게임 종료를 처리합니다.');
+        return;
+      }
+      
+      console.log('[Solo Game] 더미 모드 게임 완료 처리 시작');
       
       // 총 게임 시간 계산
       if (this.gameStartTime) {
@@ -1193,10 +1427,10 @@ export default {
       // 플레이어들의 평균 거리 계산
       this.calculatePlayerAverageDistances();
       
-      // 게임 스토어의 게임 종료 처리
+      // 게임 스토어의 게임 종료 처리 (더미 모드만)
       this.gameStore.finishGame();
       
-      console.log('게임 완료, 최종 결과 표시');
+      console.log('[Solo Game] 더미 모드 게임 완료, 최종 결과 표시');
     },
 
     restartGame() {
@@ -1284,15 +1518,21 @@ export default {
     
     // 사용자의 현재 등수 계산
     calculateUserRank() {
-      if (!this.gameStore.state.players || this.gameStore.state.players.length === 0) {
+      const players = this.isDummyRuntime ? this.gameStore.state.players : this.localPlayers
+      
+      if (!players || players.length === 0) {
         return 1;
       }
       
       // 점수 기준으로 정렬된 플레이어 배열 생성
-      const sortedPlayers = [...this.gameStore.state.players].sort((a, b) => b.score - a.score);
+      const sortedPlayers = [...players].sort((a, b) => (b.totalScore || b.score || 0) - (a.totalScore || a.score || 0));
       
       // 현재 사용자의 인덱스 찾기
-      const currentUserIndex = sortedPlayers.findIndex(player => player.id === this.gameStore.state.currentUser.id);
+      const userId = this.currentUserId
+      if (!userId) {
+        return 1
+      }
+      const currentUserIndex = sortedPlayers.findIndex(player => String(player.id) === String(userId))
       
       // 인덱스 + 1이 등수
       return currentUserIndex !== -1 ? currentUserIndex + 1 : 1;
@@ -1317,8 +1557,10 @@ export default {
       }
 
       // 현재 플레이어를 제외한 다른 플레이어들
-      const otherPlayers = this.gameStore.state.players.filter(
-        (player) => player.id !== this.gameStore.state.currentUser.id
+      const userId = this.currentUserId
+      const players = this.isDummyRuntime ? this.gameStore.state.players : this.localPlayers
+      const otherPlayers = players.filter(
+        (player) => String(player.id) !== String(userId)
       )
 
       console.log(`[Solo Game] 시뮬레이션 대상: ${otherPlayers.length}명`)
