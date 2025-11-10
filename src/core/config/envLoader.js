@@ -8,7 +8,7 @@
  * @returns {Object} 환경변수 객체
  */
 export function loadEnvConfig() {
-  // 빌드 시점에 process.env에 주입된 환경변수 사용
+
   const config = {}
   
   // VUE_APP_ 접두사가 있는 환경변수만 추출

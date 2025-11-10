@@ -18,7 +18,7 @@ const connectionCallbacks = ref(new Set());
  * @param {String} endpoint - WebSocket 서버 엔드포인트
  * @param {Function} onConnectCallback - 연결 성공 시 실행할 콜백 함수
  */
-const connect = (endpoint = "/ws", onConnectCallback = null) => {
+const connect = (endpoint = "/api/ws", onConnectCallback = null) => {
   // 기존 연결이 있는 경우 정리 (새로고침 시 중복 연결 방지)
   if (stompClient.value && !isConnected.value) {
     try {
@@ -50,6 +50,11 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
   try {
     // WebSocket URL 구성
     let wsUrl;
+    // endpoint 정규화: 항상 "/"로 시작
+    const normalizedEndpoint = endpoint?.startsWith("/")
+      ? endpoint
+      : `/${endpoint || ""}`;
+
     if (process.env.NODE_ENV === "development") {
       // 개발 환경: localhost:8080 사용
       wsUrl = `${process.env.VUE_APP_WS_URL}${endpoint}`;
@@ -61,7 +66,7 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
         wsUrl = `${process.env.VUE_APP_WS_URL}${endpoint}`;
       } else {
         // 환경 변수가 없으면 현재 페이지의 호스트 사용
-        wsUrl = `${window.location.protocol}//${window.location.host}${endpoint}`;
+        wsUrl = `${window.location.protocol}//${window.location.host}${normalizedEndpoint}`;
       }
     }
 

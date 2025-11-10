@@ -18,8 +18,11 @@ class EnvironmentConfig {
     // 기본 환경변수 로드
     this.loadBaseConfig()
     
-    // submodule에서 민감정보 로드
-    this.loadPrivateConfig()
+    // submodule에서 민감정보 로드 (빌드 시점에만 실행, 브라우저에서는 스킵)
+    // 브라우저 환경에서는 이미 process.env에 주입된 값 사용
+    if (typeof window === 'undefined') {
+      this.loadPrivateConfig()
+    }
     
     // 환경별 오버라이드 적용
     this.applyEnvironmentOverrides()
@@ -55,25 +58,26 @@ class EnvironmentConfig {
   }
 
   /**
-   * submodule에서 민감정보 로드
+   * submodule에서 민감정보 로드 (빌드 시점에만 실행)
+   * 브라우저 환경에서는 이미 process.env에 주입된 값을 사용
    */
   loadPrivateConfig() {
     try {
-      // submodule 경로에서 환경변수 로드
+      // submodule 경로에서 환경변수 로드 (Node.js 환경에서만)
       const privateConfig = loadEnvConfig()
       
       // 민감정보 병합
-      this.config = {
-        ...this.config,
-        ...privateConfig
+      if (privateConfig && Object.keys(privateConfig).length > 0) {
+        this.config = {
+          ...this.config,
+          ...privateConfig
+        }
       }
     } catch (error) {
       console.warn('Private config loading failed:', error.message)
-      // 개발 환경에서는 기본값 사용
+      // 빌드 시점 개발 환경에서는 기본값 사용
       if (this.config.nodeEnv === 'development') {
-        this.config.kakaoMapApiKey = 'development_key'
-        this.config.kakaoClientId = 'development_client_id'
-        this.config.googleClientId = 'development_client_id'
+        console.warn('Using default development credentials')
       }
     }
   }
