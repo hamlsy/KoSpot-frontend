@@ -25,7 +25,8 @@ class SoloGameWebSocketService {
       onNextRound: null,
       onPlayerSubmission: null,
       onGameFinished: null,
-      onLoadingStatus: null
+      onLoadingStatus: null,
+      onGlobalChat: null
     }
   }
 
@@ -89,6 +90,13 @@ class SoloGameWebSocketService {
       this.handleGameFinished.bind(this)
     )
 
+    // 게임 중 채팅 구독
+    this.subscribe(
+      `/topic/game/${roomId}/chat/global`,
+      'globalChat',
+      this.handleGlobalChat.bind(this)
+    )
+
     // 로딩 상태 채널 구독 (필요 시)
     if (handlers.onLoadingStatus) {
       this.setupLoadingSubscription(roomId, handlers.onLoadingStatus)
@@ -100,9 +108,11 @@ class SoloGameWebSocketService {
   /**
    * 제출 알림 채널 구독 (gameId 필요)
    * @param {Number} gameId - 게임 ID
+   * @param {Object} handlers - 이벤트 핸들러 객체
    */
-  setupSubmissionSubscription(gameId) {
+  setupSubmissionSubscription(gameId, handlers = {}) {
     this.gameId = gameId
+    this.handlers = { ...this.handlers, ...handlers }
 
     // 플레이어 제출 알림 구독
     this.subscribe(
@@ -237,6 +247,50 @@ class SoloGameWebSocketService {
   }
 
   /**
+   * 게임 중 채팅 메시지 처리
+   */
+  handleGlobalChat(message) {
+    console.log('[Solo WebSocket] 게임 중 채팅:', message)
+
+    if (this.handlers.onGlobalChat) {
+      this.handlers.onGlobalChat(message)
+    }
+  }
+
+  /**
+   * 게임 중 채팅 메시지 발행
+   * @param {String} roomId - 게임방 ID
+   * @param {String} content - 메시지 내용
+   * @returns {Boolean} 발행 성공 여부
+   */
+  publishGlobalChatMessage(roomId, content) {
+    if (!this.isConnected) {
+      console.warn('[Solo WebSocket] 연결되지 않아 채팅 메시지를 발행할 수 없습니다.')
+      return false
+    }
+
+    try {
+      const topic = `/app/room.${roomId}.game.global.chat`
+      const payload = {
+        content: content
+      }
+
+      const success = webSocketManager.publish(topic, payload)
+      
+      if (success) {
+        console.log('[Solo WebSocket] 게임 중 채팅 메시지 발행 성공:', { roomId, content })
+      } else {
+        console.error('[Solo WebSocket] 게임 중 채팅 메시지 발행 실패')
+      }
+      
+      return success
+    } catch (error) {
+      console.error('[Solo WebSocket] 게임 중 채팅 메시지 발행 중 오류:', error)
+      return false
+    }
+  }
+
+  /**
    * 로딩 상태 메시지 처리
    */
   handleLoadingStatus(message) {
@@ -286,8 +340,8 @@ class SoloGameWebSocketService {
 
     const topic = `/app/room.${roomId}.loading.ack`
     const acknowledgePayload = {
-      ...payload,
-      acknowledgedAt: payload.acknowledgedAt || new Date().toISOString()
+      roundId: payload.roundId ?? null,
+      acknowledgedAt: payload.acknowledgedAt ?? Date.now()
     }
 
     const success = webSocketManager.publish(topic, acknowledgePayload)

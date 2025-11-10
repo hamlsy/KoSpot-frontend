@@ -741,7 +741,7 @@ class RoomWebSocketService {
    * @param {string} currentUserId - 현재 사용자 ID
    * @param {boolean} isHost - 방장 여부
    */
-  async disconnectFromRoom(roomId, currentUserId, isHost = false) {
+  async disconnectFromRoom(roomId, currentUserId, isHost = false, options = {}) {
     try {
       console.log('🔌 게임 방 WebSocket 연결 해제:', { roomId, currentUserId, isHost });
 
@@ -759,8 +759,12 @@ class RoomWebSocketService {
         this.connectionMonitorId = null;
       }
 
+      const reason = options?.reason || null;
+      const normalizedReason = typeof reason === 'string' ? reason.toLowerCase() : null;
+      const skipLeaveEvent = normalizedReason === 'navigate-room' || normalizedReason === 'navigate-game';
+
       // 방 퇴장 이벤트 발행 (방장이 아닌 경우만)
-      if (!isHost) {
+      if (!isHost && !skipLeaveEvent) {
         this.publishLeaveRoom(roomId, currentUserId);
       }
 
@@ -773,11 +777,22 @@ class RoomWebSocketService {
       // 재연결 상태 초기화
       this.reconnectAttempts = 0;
 
-      // STOMP 연결 비활성화 (서버에 DISCONNECT 프레임 전송)
-      if (typeof this.webSocketManager.deactivate === 'function') {
-        await this.webSocketManager.deactivate();
+      const shouldKeepConnection = skipLeaveEvent && this.webSocketManager.isConnected?.value;
+
+      if (shouldKeepConnection) {
+        this.isManualDisconnect = false;
+        console.log('🔄 방 전환을 위해 WebSocket 연결을 유지합니다.', { roomId, reason });
       } else {
-        this.webSocketManager.disconnect();
+        // STOMP 연결 비활성화 (서버에 DISCONNECT 프레임 전송)
+        if (typeof this.webSocketManager.deactivate === 'function') {
+          const disconnectHeaders = reason ? { reason } : undefined;
+          await this.webSocketManager.deactivate({
+            disconnectHeaders,
+            force: options?.force,
+          });
+        } else {
+          this.webSocketManager.disconnect();
+        }
       }
 
       console.log('✅ 게임 방 WebSocket 연결 해제 완료:', roomId);

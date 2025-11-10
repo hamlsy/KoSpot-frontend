@@ -331,6 +331,8 @@ const navigateToSoloGame = (payload = {}) => {
 
   const targetRoomId = payload?.roomId || localRoomData?.value?.id || props.roomId;
 
+  prepareForGameNavigation();
+
   router.push({
     name: 'SoloRoadViewGameView',
     params: { roomId: targetRoomId },
@@ -338,6 +340,11 @@ const navigateToSoloGame = (payload = {}) => {
       expectedPlayers: localPlayers.value.length || localRoomData.value.currentPlayerCount || 1,
       dummyMode: isRoomDummyMode.value
     }
+  }).catch((error) => {
+    console.error('❌ 게임 화면 이동 중 오류:', error);
+    setDisconnectReason(null);
+    hasNavigatedToGame.value = false;
+    throw error;
   });
 };
 
@@ -453,6 +460,8 @@ const {
   getCurrentPlayerTeam,
   canJoinTeam,
   getTeamPlayerCount,
+  prepareForGameNavigation,
+  setDisconnectReason,
   disconnectWebSocket
 } = room;
 

@@ -364,15 +364,25 @@ const disconnect = () => {
  * STOMP 클라이언트 비동기 비활성화
  * 서버로 DISCONNECT 프레임을 보장하고 소켓 리소스를 해제합니다.
  */
-const deactivate = async () => {
+const deactivate = async (options = {}) => {
   if (!stompClient.value) {
     return;
+  }
+
+  const { disconnectHeaders, force } = options || {};
+
+  if (stompClient.value && disconnectHeaders && typeof disconnectHeaders === 'object') {
+    try {
+      stompClient.value.disconnectHeaders = disconnectHeaders;
+    } catch (error) {
+      console.warn('disconnectHeaders 설정 중 오류:', error);
+    }
   }
 
   try {
     // STOMP 5.x deactivate는 Promise 반환
     if (typeof stompClient.value.deactivate === "function") {
-      await stompClient.value.deactivate();
+      await stompClient.value.deactivate(force);
     } else {
       // 구버전 호환: disconnect 호출
       await new Promise((resolve) => {

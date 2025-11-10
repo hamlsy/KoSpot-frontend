@@ -55,7 +55,7 @@
           :totalTime="120"
           :warning-threshold="30"
           :danger-threshold="10"
-          :is-running="!showIntroOverlay && !showNextRoundOverlay"
+          :is-running="!showIntroOverlay && !showNextRoundOverlay && !useCustomWebSocket"
         />
       </div>
     </div>
@@ -111,6 +111,7 @@
               :show-controls="true"
               :prevent-mouse-events="gameStore.state.hasSubmittedGuess"
               @load-complete="onViewLoaded"
+              @load-error="onViewLoadError"
             />
           </slot>
 
@@ -154,6 +155,7 @@
       :showMarker="true"
       :isTeamMode="false"
       :gameMode="'solo'"
+      :hasSubmitted="gameStore.state.hasSubmittedGuess"
       @spot-answer="handlePhoneMapGuess"
     />
 
@@ -218,7 +220,7 @@ export default {
     }
   },
 
-  emits: ['leave-game'],
+  emits: ['leave-game', 'roadview-load-error'],
 
   provide() {
     return {
@@ -529,6 +531,17 @@ export default {
     // 로드뷰 로딩 완료 처리
     onViewLoaded() {
       console.log("로드뷰 로딩 완료");
+    },
+
+    // 로드뷰 로딩 실패 처리
+    onViewLoadError() {
+      console.error("로드뷰 로딩 실패");
+      
+      // Solo 게임에서 useSoloGameFlow를 사용하는 경우 재발급 요청
+      if (this.useCustomWebSocket) {
+        // 부모 컴포넌트(SoloGameView)에 로드 에러 이벤트 전달
+        this.$emit('roadview-load-error');
+      }
     },
 
     // 추측 위치 설정

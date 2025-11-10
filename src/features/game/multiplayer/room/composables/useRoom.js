@@ -22,6 +22,16 @@ export function useRoom(props, emit, options = {}) {
   const isStartingGame = ref(false);
   const isDummyMode = ref(Boolean(dummyMode));
   const hasDisconnected = ref(false);
+  const disconnectReason = ref(null);
+  const setDisconnectReason = (reason) => {
+    disconnectReason.value = reason || null;
+  };
+
+  const prepareForGameNavigation = () => {
+    setDisconnectReason('navigate-room');
+    hasDisconnected.value = false;
+  };
+
   const disconnectWebSocket = async () => {
     if (hasDisconnected.value || isDummyMode.value) {
       return;
@@ -30,15 +40,19 @@ export function useRoom(props, emit, options = {}) {
     hasDisconnected.value = true;
 
     try {
+      const reason = disconnectReason.value;
       await roomWebSocketService.disconnectFromRoom(
         localRoomData.value.id,
         props.currentUserId,
-        props.isHost
+        props.isHost,
+        { reason }
       );
 
       console.log('🔌 WebSocket 연결 해제 완료');
     } catch (error) {
       console.error('❌ WebSocket 연결 해제 중 오류:', error);
+    } finally {
+      disconnectReason.value = null;
     }
   };
 
@@ -539,12 +553,8 @@ export function useRoom(props, emit, options = {}) {
     }
 
     try {
-      // WebSocket 연결 해제
-      await roomWebSocketService.disconnectFromRoom(
-        localRoomData.value.id,
-        props.currentUserId,
-        props.isHost
-      );
+      setDisconnectReason('leave-room');
+      await disconnectWebSocket();
       
   
     
@@ -937,6 +947,8 @@ export function useRoom(props, emit, options = {}) {
     canJoinTeam: roomPlayer.canJoinTeam,
     getTeamPlayerCount: roomPlayer.getTeamPlayerCount,
 
+    prepareForGameNavigation,
+    setDisconnectReason,
     disconnectWebSocket
   };
 } 

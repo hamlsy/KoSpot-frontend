@@ -28,6 +28,8 @@
       <button
         v-if="!disabled && !isTeamMode"
         class="phone-spot-button"
+        :class="{ 'disabled': hasSubmitted }"
+        :disabled="hasSubmitted"
         @click="checkSpotAnswer"
       >
         <i class="fas fa-crosshairs"></i> Spot!
@@ -96,6 +98,10 @@ export default {
       type: String,
       default: null,
     },
+    hasSubmitted: {
+      type: Boolean,
+      default: false,
+    },
   },
   methods: {
     onCheckAnswer(location) {
@@ -103,6 +109,11 @@ export default {
     },
 
     checkSpotAnswer() {
+      // 이미 제출한 경우 처리하지 않음
+      if (this.hasSubmitted) {
+        return;
+      }
+
       if (!this.$refs.phoneMapGame) {
         this.$emit("error", "지도가 준비되지 않았습니다. 다시 시도해주세요.");
         return;
@@ -349,6 +360,20 @@ export default {
 
 .phone-spot-button:active {
   transform: translateX(-50%) translateY(-1px);
+}
+
+.phone-spot-button.disabled,
+.phone-spot-button:disabled {
+  background: linear-gradient(135deg, #555, #666);
+  cursor: not-allowed;
+  opacity: 0.6;
+  box-shadow: none;
+}
+
+.phone-spot-button.disabled:hover,
+.phone-spot-button:disabled:hover {
+  transform: translateX(-50%);
+  box-shadow: none;
 }
 
 .phone-spot-button i {

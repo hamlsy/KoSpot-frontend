@@ -22,6 +22,10 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
   const timerInterval = ref(null)
   const transitionInterval = ref(null)
   const transitionCountdown = ref(10) // 라운드 전환 카운트다운 (초)
+  const reIssueAttempts = ref(0) // 로드뷰 재발급 시도 횟수
+  const maxReIssueAttempts = 3 // 최대 재발급 시도 횟수
+  const isOverlayActive = ref(false) // 오버레이 진행 중 여부
+  const pendingTimerStartMessage = ref(null) // 오버레이 진행 중 받은 타이머 시작 메시지
 
   // WebSocket 연결 상태
   const isConnected = computed(() => webSocketManager.isConnected.value)
@@ -32,7 +36,32 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     onRoundResultShow: null,
     onNextRoundShow: null,
     onGameFinish: null,
+    onTimerSync: null,
     ...uiCallbacks
+  }
+
+  const setCallbacks = (nextCallbacks = {}) => {
+    Object.assign(callbacks, nextCallbacks)
+  }
+
+  const ensureSubmissionSubscription = (incomingGameId) => {
+    if (incomingGameId == null) {
+      return
+    }
+
+    const normalized = Number(incomingGameId)
+    if (Number.isNaN(normalized)) {
+      return
+    }
+
+    if (gameId.value === normalized) {
+      return
+    }
+
+    gameId.value = normalized
+    soloGameWebSocket.setupSubmissionSubscription(normalized, {
+      onPlayerSubmission: handlePlayerSubmission
+    })
   }
 
   /**
@@ -119,6 +148,22 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     }
   }
 
+  const initializeFromServerStart = async (roomIdParam) => {
+    if (!roomIdParam) {
+      throw new Error('roomId가 필요합니다.')
+    }
+
+    console.log('[Solo Flow] 서버 주도 게임 초기화:', { roomIdParam })
+
+    roomId.value = roomIdParam
+
+    if (!isConnected.value) {
+      await connectWebSocket()
+    }
+
+    setupWebSocketSubscriptions(roomIdParam)
+  }
+
   /**
    * WebSocket 구독 설정
    */
@@ -128,14 +173,17 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     // 게임 채널 구독
     soloGameWebSocket.setupGameSubscriptions(roomIdParam, {
       onTimerStart: handleTimerStart,
+      onTimerSync: handleTimerSync,
       onRoundResult: handleRoundResult,
       onRoundTransition: handleRoundTransition,
       onNextRound: handleNextRound,
-      onGameFinished: handleGameFinished
+      onGameFinished: handleGameFinished,
+      onGlobalChat: handleGlobalChat
     })
 
-    // 제출 알림 채널 구독
-    soloGameWebSocket.setupSubmissionSubscription(gameIdParam)
+    if (gameIdParam != null) {
+      ensureSubmissionSubscription(gameIdParam)
+    }
   }
 
   /**
@@ -144,6 +192,31 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
   const handleTimerStart = (message) => {
     console.log('[Solo Flow] 타이머 시작:', message)
 
+    ensureSubmissionSubscription(message?.gameId)
+
+    const detectedRoundId = message?.roundInfo?.roundId ?? message?.roundId
+    if (detectedRoundId != null) {
+      const parsedRoundId = Number(detectedRoundId)
+      if (!Number.isNaN(parsedRoundId)) {
+        roundId.value = parsedRoundId
+      }
+    }
+
+    // 오버레이가 진행 중이면 타이머 시작 메시지 저장
+    if (isOverlayActive.value) {
+      console.log('[Solo Flow] 오버레이 진행 중 - 타이머 시작 메시지 저장')
+      pendingTimerStartMessage.value = message
+      return
+    }
+
+    // 오버레이가 완료된 경우에만 타이머 시작
+    startTimer(message)
+  }
+
+  /**
+   * 타이머 시작 (내부 헬퍼)
+   */
+  const startTimer = (message) => {
     roundStartTime.value = Date.now()
 
     // 타이머 UI 업데이트
@@ -155,12 +228,130 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
       const elapsed = now - message.startTime
       const remaining = Math.max(0, message.duration - elapsed)
 
-      gameStore.state.remainingTime = Math.ceil(remaining / 1000)
+      // 소수점까지 정확하게 저장 (밀리초를 초로 변환)
+      gameStore.state.remainingTime = remaining / 1000
 
       if (remaining <= 0) {
         clearTimerInterval()
+        gameStore.state.remainingTime = 0
       }
     }, 100)
+  }
+
+  const handleTimerSync = (message) => {
+    console.log('[Solo Flow] 타이머 동기화:', message)
+
+    ensureSubmissionSubscription(message?.gameId)
+
+    if (!gameStore) {
+      return
+    }
+
+    // 오버레이가 진행 중이면 타이머 업데이트하지 않음
+    if (isOverlayActive.value) {
+      console.log('[Solo Flow] 오버레이 진행 중 - 타이머 동기화 스킵')
+      return
+    }
+
+    if (message?.remainingTimeMs != null) {
+      // 소수점까지 정확하게 저장 (밀리초를 초로 변환)
+      const remainingSeconds = Math.max(0, Number(message.remainingTimeMs) / 1000)
+      gameStore.state.remainingTime = remainingSeconds
+      console.log(`[Solo Flow] 타이머 동기화: ${remainingSeconds.toFixed(3)}초`)
+    }
+
+    if (message?.finalCountDown != null) {
+      gameStore.state.finalCountDown = Boolean(message.finalCountDown)
+    }
+
+    if (callbacks.onTimerSync) {
+      callbacks.onTimerSync(message)
+    }
+  }
+
+  /**
+   * 플레이어 제출 알림 처리
+   */
+  const handlePlayerSubmission = (message) => {
+    console.log('[Solo Flow] 플레이어 제출 알림:', message)
+
+    if (!gameStore) {
+      return
+    }
+
+    // PlayerSubmissionMessage: { playerId, roundId, timestamp }
+    const playerId = message?.playerId
+    if (!playerId) {
+      console.warn('[Solo Flow] 플레이어 제출 메시지에 playerId가 없음:', message)
+      return
+    }
+
+    // 현재 라운드와 일치하는지 확인
+    const messageRoundId = message?.roundId
+    if (messageRoundId != null && roundId.value != null) {
+      const normalizedMessageRoundId = Number(messageRoundId)
+      const normalizedCurrentRoundId = Number(roundId.value)
+      if (!Number.isNaN(normalizedMessageRoundId) && !Number.isNaN(normalizedCurrentRoundId)) {
+        if (normalizedMessageRoundId !== normalizedCurrentRoundId) {
+          console.log('[Solo Flow] 다른 라운드의 제출 메시지 무시:', {
+            messageRoundId: normalizedMessageRoundId,
+            currentRoundId: normalizedCurrentRoundId
+          })
+          return
+        }
+      }
+    }
+
+    // 플레이어 찾기 및 제출 상태 업데이트
+    const player = gameStore.state.players.find(p => p.id === playerId)
+    if (player) {
+      player.hasSubmitted = true
+      console.log(`[Solo Flow] 플레이어 ${player.nickname || playerId} 제출 완료`)
+    } else {
+      console.warn(`[Solo Flow] 플레이어를 찾을 수 없음: ${playerId}`)
+    }
+  }
+
+  /**
+   * 게임 중 채팅 메시지 처리
+   */
+  const handleGlobalChat = (message) => {
+    console.log('[Solo Flow] 게임 중 채팅 메시지:', message)
+
+    if (!gameStore) {
+      return
+    }
+
+    // MultiGameGlobal: { senderId, messageId, nickname, content, messageType, timestamp }
+    const chatMessage = {
+      id: message.messageId || `chat-${Date.now()}`,
+      sender: message.nickname || '알 수 없음',
+      message: message.content || '',
+      timestamp: message.timestamp ? new Date(message.timestamp) : new Date(),
+      system: false,
+      senderId: message.senderId
+    }
+
+    gameStore.state.chatMessages.push(chatMessage)
+    console.log('[Solo Flow] 채팅 메시지 추가:', chatMessage)
+  }
+
+  /**
+   * 게임 중 채팅 메시지 발행
+   */
+  const publishGlobalChatMessage = (content) => {
+    if (!roomId.value) {
+      console.error('[Solo Flow] roomId가 없어 채팅 메시지를 발행할 수 없습니다.')
+      return false
+    }
+
+    try {
+      const success = soloGameWebSocket.publishGlobalChatMessage(roomId.value, content)
+      return success
+    } catch (error) {
+      console.error('[Solo Flow] 채팅 메시지 발행 중 오류:', error)
+      return false
+    }
   }
 
   /**
@@ -168,6 +359,16 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
    */
   const handleRoundResult = (message) => {
     console.log('[Solo Flow] 라운드 결과:', message)
+
+    ensureSubmissionSubscription(message?.gameId)
+
+    const detectedRoundId = message?.roundInfo?.roundId ?? message?.roundId
+    if (detectedRoundId != null) {
+      const parsedRoundId = Number(detectedRoundId)
+      if (!Number.isNaN(parsedRoundId)) {
+        roundId.value = parsedRoundId
+      }
+    }
 
     if (!gameStore) return
 
@@ -214,11 +415,14 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     // 플레이어 추측 위치 설정 (지도 표시용)
     gameStore.state.playerGuesses = message.playerSubmissionResults.map((submission, index) => {
       const player = message.playerTotalResults[index]
+      // gameStore에서 플레이어 정보 가져오기 (마커 이미지, 색상 등)
+      const storePlayer = gameStore.state.players.find(p => p.id === player.playerId)
       return {
         playerId: player.playerId,
         playerName: player.nickname,
         position: { lat: submission.lat, lng: submission.lng },
-        color: getPlayerColor(player.playerId),
+        color: storePlayer?.color || '#3b82f6', // 기본값: 파란색
+        markerImageUrl: storePlayer?.equippedMarker || storePlayer?.markerImageUrl || null,
         score: submission.earnedScore,
         distance: submission.distance
       }
@@ -227,6 +431,9 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     // 라운드 종료 상태 설정
     gameStore.state.roundEnded = true
     gameStore.endGameRound()
+    
+    // 전환 타이머 초기화 (서버 메시지가 올 때까지 10초로 설정)
+    transitionCountdown.value = 10
     
     // UI 콜백: 라운드 결과 표시
     if (callbacks.onRoundResultShow) {
@@ -244,9 +451,16 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
 
     // 전환 타이머 시작 (10초 카운트다운)
     clearTransitionInterval()
+    
+    // 초기 카운트다운 설정 (서버 메시지가 올 때 즉시 설정)
+    const now = Date.now() + message.timeDiff
+    const remaining = Math.max(0, message.nextStartTime - now)
+    const initialSeconds = Math.ceil(remaining / 1000)
+    transitionCountdown.value = initialSeconds
+    
     transitionInterval.value = setInterval(() => {
-      const now = Date.now() + message.timeDiff
-      const remaining = Math.max(0, message.nextStartTime - now)
+      const currentTime = Date.now() + message.timeDiff
+      const remaining = Math.max(0, message.nextStartTime - currentTime)
       const seconds = Math.ceil(remaining / 1000)
 
       // 카운트다운 값 업데이트 (RoundResults 로딩바 연동)
@@ -255,6 +469,7 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
 
       if (remaining <= 0) {
         clearTransitionInterval()
+        transitionCountdown.value = 0
       }
     }, 100)
   }
@@ -265,14 +480,22 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
   const handleNextRound = (message) => {
     console.log('[Solo Flow] 다음 라운드:', message)
 
+    ensureSubmissionSubscription(message?.gameId)
+
     if (!gameStore) return
 
     // 전환 타이머 정리
     clearTransitionInterval()
 
+    // 재발급 시도 횟수 초기화 (새 라운드 시작 시)
+    reIssueAttempts.value = 0
+
     // 라운드 정보 업데이트
     gameId.value = message.gameId
-    roundId.value = message.roundInfo.roundId
+    const nextRoundId = Number(message.roundInfo.roundId)
+    if (!Number.isNaN(nextRoundId)) {
+      roundId.value = nextRoundId
+    }
     
     gameStore.state.currentRound = message.currentRound
     gameStore.state.currentLocation = {
@@ -301,9 +524,75 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     // 라운드 시작 시간 초기화
     roundStartTime.value = null
     
-    // UI 콜백: 다음 라운드 오버레이 표시
-    if (callbacks.onNextRoundShow) {
-      callbacks.onNextRoundShow()
+    // 첫 번째 라운드인지 확인 (currentRound === 1)
+    const isFirstRound = message.currentRound === 1
+    
+    // 오버레이 시작 플래그 설정
+    isOverlayActive.value = true
+    
+    // UI 콜백: 첫 번째 라운드면 IntroOverlay, 아니면 NextRoundOverlay
+    if (isFirstRound) {
+      if (callbacks.onIntroShow) {
+        callbacks.onIntroShow()
+      }
+    } else {
+      if (callbacks.onNextRoundShow) {
+        callbacks.onNextRoundShow()
+      }
+    }
+  }
+
+  /**
+   * 오버레이 완료 처리 (타이머 시작)
+   */
+  const onOverlayComplete = () => {
+    console.log('[Solo Flow] 오버레이 완료 - 타이머 시작 가능')
+    isOverlayActive.value = false
+    
+    // 저장된 타이머 시작 메시지가 있으면 지금 처리
+    if (pendingTimerStartMessage.value) {
+      console.log('[Solo Flow] 저장된 타이머 시작 메시지 처리')
+      const message = pendingTimerStartMessage.value
+      pendingTimerStartMessage.value = null
+      startTimer(message)
+    } else if (!roundStartTime.value) {
+      // 타이머 시작 메시지를 아직 받지 못한 경우 대기
+      console.log('[Solo Flow] 타이머 시작 메시지 대기 중...')
+    } else {
+      // 이미 roundStartTime이 설정되어 있다면 타이머는 이미 시작된 상태
+      console.log('[Solo Flow] 타이머는 이미 시작됨')
+    }
+  }
+
+  /**
+   * 로드뷰 표시 실패 시 재발급 요청
+   */
+  const requestRoadviewReIssue = async () => {
+    if (!roomId.value || !gameId.value || !roundId.value) {
+      console.error('[Solo Flow] 재발급 불가: 게임 정보 없음')
+      return false
+    }
+
+    if (reIssueAttempts.value >= maxReIssueAttempts) {
+      console.warn(`[Solo Flow] 최대 재발급 시도 횟수(${maxReIssueAttempts}) 초과`)
+      return false
+    }
+
+    try {
+      reIssueAttempts.value++
+      console.log(`[Solo Flow] 로드뷰 재발급 요청 (${reIssueAttempts.value}/${maxReIssueAttempts}):`, {
+        roomId: roomId.value,
+        gameId: gameId.value,
+        roundId: roundId.value
+      })
+
+      await soloGameApi.reIssueRoadview(roomId.value, gameId.value, roundId.value)
+      
+      console.log('[Solo Flow] 로드뷰 재발급 요청 완료. 서버에서 새로운 좌표 브로드캐스트 대기 중...')
+      return true
+    } catch (error) {
+      console.error('[Solo Flow] 로드뷰 재발급 요청 실패:', error)
+      return false
     }
   }
 
@@ -312,6 +601,8 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
    */
   const handleGameFinished = (message) => {
     console.log('[Solo Flow] 게임 종료:', message)
+
+    ensureSubmissionSubscription(message?.gameId)
 
     if (!gameStore) return
 
@@ -353,9 +644,18 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     }
 
     try {
-      const timeToAnswer = roundStartTime.value ? Date.now() - roundStartTime.value : 0
+      // timeToAnswer 계산: 라운드 시작부터 정답 제출까지의 시간 (밀리초)
+      let timeToAnswerMs = 0
+      if (roundStartTime.value) {
+        timeToAnswerMs = Date.now() - roundStartTime.value
+      } else {
+        console.warn('[Solo Flow] roundStartTime이 설정되지 않음 - timeToAnswer를 0으로 설정')
+      }
 
-      console.log('[Solo Flow] 정답 제출:', { position, timeToAnswer })
+      // 밀리초를 초로 변환하고 소수점 3자리까지 반올림
+      const timeToAnswer = Number((timeToAnswerMs / 1000).toFixed(3))
+
+      console.log('[Solo Flow] 정답 제출:', { position, timeToAnswer, timeToAnswerMs })
 
       // API 호출
       await soloGameApi.submitSoloAnswer(roomId.value, gameId.value, roundId.value, {
@@ -405,15 +705,19 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
 
   /**
    * 플레이어 색상 가져오기
+   * @param {String|Number} playerId - 플레이어 ID
+   * @returns {String} 플레이어 색상 (기본값: 파란색)
    */
   const getPlayerColor = (playerId) => {
-    const colors = [
-      '#FF4081', '#E040FB', '#7C4DFF', '#536DFE', '#448AFF',
-      '#40C4FF', '#18FFFF', '#64FFDA', '#69F0AE', '#B2FF59',
-      '#EEFF41', '#FFFF00', '#FFD740', '#FFAB40', '#FF6E40'
-    ]
-    const idSum = playerId.toString().split('').reduce((sum, char) => sum + char.charCodeAt(0), 0)
-    return colors[idSum % colors.length]
+    // gameStore에서 플레이어 정보 가져오기
+    if (gameStore) {
+      const player = gameStore.state.players.find(p => p.id === playerId)
+      if (player?.color) {
+        return player.color
+      }
+    }
+    // 기본값: 파란색
+    return '#3b82f6'
   }
 
   /**
@@ -445,7 +749,12 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     // 메서드
     connectWebSocket,
     startGame,
+    initializeFromServerStart,
+    setCallbacks,
     submitAnswer,
+    requestRoadviewReIssue,
+    onOverlayComplete,
+    publishGlobalChatMessage,
     cleanup
   }
 }
