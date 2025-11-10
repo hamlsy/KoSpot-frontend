@@ -229,9 +229,10 @@ const route = useRoute();
 // 현재 사용자 ID (localStorage에서 가져오기)
 let currentUserId = localStorage.getItem('memberId') || '';
 
+// 개발자모드 파라미터만 확인 (인터넷 연결 상태는 더미 모드 전환 조건에서 제외)
 const navigationDummyMode = history.state?.dummyMode === true;
 const queryDummyMode = route.query?.offline === 'true' || route.query?.dummy === 'true';
-const shouldUseDummyMode = navigationDummyMode || queryDummyMode || !navigator.onLine;
+const shouldUseDummyMode = navigationDummyMode || queryDummyMode;
 
 if (shouldUseDummyMode && !currentUserId) {
   currentUserId = soloTestData.currentUser?.id || 'dummy-host';
@@ -338,7 +339,8 @@ const navigateToSoloGame = (payload = {}) => {
     params: { roomId: targetRoomId },
     state: {
       expectedPlayers: localPlayers.value.length || localRoomData.value.currentPlayerCount || 1,
-      dummyMode: isRoomDummyMode.value
+      dummyMode: isRoomDummyMode.value,
+      timeLimit: localRoomData.value.timeLimit || 120
     }
   }).catch((error) => {
     console.error('❌ 게임 화면 이동 중 오류:', error);
@@ -462,7 +464,10 @@ const {
   getTeamPlayerCount,
   prepareForGameNavigation,
   setDisconnectReason,
-  disconnectWebSocket
+  disconnectWebSocket,
+  
+  // 초기화 메서드
+  initializeRoom
 } = room;
 
 // leaveRoom 래퍼: 방 퇴장 후 로비로 새로고침 리다이렉션
@@ -521,9 +526,32 @@ const handleChatInputFocus = () => {
   });
 };
 
-onMounted(() => {
+onMounted(async () => {
   checkScreenSize();
   window.addEventListener('resize', checkScreenSize);
+  
+  // Room 초기화 (방 데이터 로딩 및 WebSocket 연결)
+  try {
+    await initializeRoom();
+  } catch (error) {
+    console.error('❌ RoomView 초기화 실패:', error);
+    
+    // 방 조회 실패 또는 인터넷 연결 문제 시 로비로 리다이렉트
+    const errorCode = error?.code || '';
+    const isRoomNotFound = errorCode === 'ROOM_NOT_FOUND' || errorCode === 'ROOM_LOAD_FAILED';
+    const isNetworkError = !navigator.onLine || error?.message?.includes('network') || error?.message?.includes('Network');
+    
+    if (isRoomNotFound || isNetworkError) {
+      console.warn('⚠️ 방을 조회할 수 없거나 인터넷 연결이 끊겼습니다. 로비로 이동합니다.');
+      alert('방을 조회할 수 없거나 인터넷 연결이 끊겼습니다. 로비로 이동합니다.');
+      window.location.href = '/lobby';
+      return;
+    }
+    
+    // 기타 에러는 사용자에게 알림
+    alert('방 정보를 불러오는 중 오류가 발생했습니다. 로비로 이동합니다.');
+    window.location.href = '/lobby';
+  }
 });
 
 onBeforeUnmount(() => {

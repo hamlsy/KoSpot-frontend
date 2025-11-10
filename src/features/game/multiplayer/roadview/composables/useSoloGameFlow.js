@@ -23,9 +23,11 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
   const transitionInterval = ref(null)
   const transitionCountdown = ref(10) // 라운드 전환 카운트다운 (초)
   const reIssueAttempts = ref(0) // 로드뷰 재발급 시도 횟수
-  const maxReIssueAttempts = 3 // 최대 재발급 시도 횟수
+  const maxReIssueAttempts = 5 // 최대 재발급 시도 횟수
+  const isRetryingRoadview = ref(false) // 로드뷰 재시도 중 여부
   const isOverlayActive = ref(false) // 오버레이 진행 중 여부
   const pendingTimerStartMessage = ref(null) // 오버레이 진행 중 받은 타이머 시작 메시지
+  const timeDiff = ref(0) // 서버 시간과 클라이언트 시간의 차이 (밀리초)
 
   // WebSocket 연결 상태
   const isConnected = computed(() => webSocketManager.isConnected.value)
@@ -217,16 +219,58 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
    * 타이머 시작 (내부 헬퍼)
    */
   const startTimer = (message) => {
-    roundStartTime.value = Date.now()
+    // TimerStartMessage: { roundId, gameMode, serverStartTimeMs, durationMs, serverTimestamp }
+    // roundStartTime 설정: message.serverStartTimeMs가 있으면 사용, 없으면 현재 시간 사용
+    if (message?.serverStartTimeMs != null) {
+      // serverStartTimeMs는 이미 밀리초 단위
+      roundStartTime.value = Number(message.serverStartTimeMs)
+      console.log('[Solo Flow] ✅ roundStartTime 설정 (serverStartTimeMs):', roundStartTime.value)
+    } else if (message?.startTime != null) {
+      // 하위 호환성: startTime 필드도 지원 (초 단위면 * 1000)
+      const serverStartTime = typeof message.startTime === 'number' 
+        ? (message.startTime > 1000000000000 ? message.startTime : message.startTime * 1000)
+        : Date.now()
+      roundStartTime.value = serverStartTime
+      console.log('[Solo Flow] ✅ roundStartTime 설정 (startTime):', roundStartTime.value)
+    } else {
+      roundStartTime.value = Date.now()
+      console.warn('[Solo Flow] ⚠️ serverStartTimeMs가 없어 현재 시간 사용:', roundStartTime.value)
+    }
+
+    console.log('[Solo Flow] 📊 타이머 시작 정보:', {
+      roundStartTime: roundStartTime.value,
+      serverStartTimeMs: message?.serverStartTimeMs,
+      durationMs: message?.durationMs,
+      serverTimestamp: message?.serverTimestamp
+    })
 
     // 타이머 UI 업데이트
     clearTimerInterval()
+    
+    // 서버 시간 동기화를 위한 timeDiff 계산 (서버 타임스탬프와 클라이언트 시간 차이)
+    const serverTimestamp = message?.serverTimestamp || message?.serverStartTimeMs
+    if (serverTimestamp) {
+      // 서버 타임스탬프를 받은 시점의 클라이언트 시간과 서버 시간의 차이 계산
+      // timeDiff = 클라이언트 시간 - 서버 시간 (양수면 클라이언트가 빠름, 음수면 서버가 빠름)
+      timeDiff.value = Date.now() - Number(serverTimestamp)
+      console.log('[Solo Flow] ⏱️ timeDiff 계산:', {
+        serverTimestamp: Number(serverTimestamp),
+        clientTime: Date.now(),
+        timeDiff: timeDiff.value
+      })
+    } else {
+      timeDiff.value = 0
+      console.warn('[Solo Flow] ⚠️ serverTimestamp가 없어 timeDiff를 0으로 설정')
+    }
+    
     timerInterval.value = setInterval(() => {
       if (!gameStore) return
 
-      const now = Date.now() + message.timeDiff
-      const elapsed = now - message.startTime
-      const remaining = Math.max(0, message.duration - elapsed)
+      // 서버 시간에 맞춘 현재 시간 계산
+      const now = Date.now() - timeDiff.value
+      const elapsed = now - roundStartTime.value
+      const duration = message?.durationMs || 120000
+      const remaining = Math.max(0, duration - elapsed)
 
       // 소수점까지 정확하게 저장 (밀리초를 초로 변환)
       gameStore.state.remainingTime = remaining / 1000
@@ -316,24 +360,46 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
    * 게임 중 채팅 메시지 처리
    */
   const handleGlobalChat = (message) => {
-    console.log('[Solo Flow] 게임 중 채팅 메시지:', message)
+    console.log('[Solo Flow] 게임 중 채팅 메시지 수신:', message)
 
     if (!gameStore) {
+      console.warn('[Solo Flow] gameStore가 없어 채팅 메시지를 처리할 수 없습니다.')
       return
     }
 
+    // gameStore.state.chatMessages가 배열인지 확인
+    if (!Array.isArray(gameStore.state.chatMessages)) {
+      console.warn('[Solo Flow] chatMessages가 배열이 아님, 초기화:', gameStore.state.chatMessages)
+      gameStore.state.chatMessages = []
+    }
+
     // MultiGameGlobal: { senderId, messageId, nickname, content, messageType, timestamp }
+    // timestamp는 LocalDateTime 형식일 수 있으므로 올바르게 변환
+    let timestamp = new Date()
+    if (message.timestamp) {
+      if (typeof message.timestamp === 'string') {
+        // ISO 형식 문자열인 경우
+        timestamp = new Date(message.timestamp)
+      } else if (typeof message.timestamp === 'number') {
+        // 밀리초 타임스탬프인 경우
+        timestamp = new Date(message.timestamp)
+      } else if (message.timestamp instanceof Date) {
+        // 이미 Date 객체인 경우
+        timestamp = message.timestamp
+      }
+    }
+
     const chatMessage = {
-      id: message.messageId || `chat-${Date.now()}`,
+      id: message.messageId || `chat-${Date.now()}-${Math.random()}`,
       sender: message.nickname || '알 수 없음',
       message: message.content || '',
-      timestamp: message.timestamp ? new Date(message.timestamp) : new Date(),
+      timestamp: timestamp,
       system: false,
       senderId: message.senderId
     }
 
     gameStore.state.chatMessages.push(chatMessage)
-    console.log('[Solo Flow] 채팅 메시지 추가:', chatMessage)
+    console.log('[Solo Flow] ✅ 채팅 메시지 추가 완료:', chatMessage, '총 메시지 수:', gameStore.state.chatMessages.length)
   }
 
   /**
@@ -488,7 +554,10 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     clearTransitionInterval()
 
     // 재발급 시도 횟수 초기화 (새 라운드 시작 시)
-    reIssueAttempts.value = 0
+    // 단, 재시도 중인 경우에는 초기화하지 않음 (재발급 요청 후 새로운 좌표를 받기 전까지)
+    if (!isRetryingRoadview.value) {
+      reIssueAttempts.value = 0
+    }
 
     // 라운드 정보 업데이트
     gameId.value = message.gameId
@@ -498,6 +567,12 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     }
     
     gameStore.state.currentRound = message.currentRound
+    // 재시도 중인 경우 새로운 좌표를 받았으므로 재시도 플래그 해제
+    if (isRetryingRoadview.value) {
+      console.log('[Solo Flow] 재시도 중 새로운 좌표 수신 - 로드뷰 다시 로드')
+      isRetryingRoadview.value = false
+    }
+
     gameStore.state.currentLocation = {
       lat: message.roundInfo.targetLat,
       lng: message.roundInfo.targetLng
@@ -570,16 +645,19 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
   const requestRoadviewReIssue = async () => {
     if (!roomId.value || !gameId.value || !roundId.value) {
       console.error('[Solo Flow] 재발급 불가: 게임 정보 없음')
+      isRetryingRoadview.value = false
       return false
     }
 
     if (reIssueAttempts.value >= maxReIssueAttempts) {
       console.warn(`[Solo Flow] 최대 재발급 시도 횟수(${maxReIssueAttempts}) 초과`)
+      isRetryingRoadview.value = false
       return false
     }
 
     try {
       reIssueAttempts.value++
+      isRetryingRoadview.value = true
       console.log(`[Solo Flow] 로드뷰 재발급 요청 (${reIssueAttempts.value}/${maxReIssueAttempts}):`, {
         roomId: roomId.value,
         gameId: gameId.value,
@@ -589,11 +667,20 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
       await soloGameApi.reIssueRoadview(roomId.value, gameId.value, roundId.value)
       
       console.log('[Solo Flow] 로드뷰 재발급 요청 완료. 서버에서 새로운 좌표 브로드캐스트 대기 중...')
+      // 새로운 좌표를 받으면 handleNextRound에서 자동으로 로드뷰를 다시 로드함
       return true
     } catch (error) {
       console.error('[Solo Flow] 로드뷰 재발급 요청 실패:', error)
+      isRetryingRoadview.value = false
       return false
     }
+  }
+
+  /**
+   * 재시도 중인지 확인
+   */
+  const isRetrying = () => {
+    return isRetryingRoadview.value
   }
 
   /**
@@ -646,16 +733,67 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     try {
       // timeToAnswer 계산: 라운드 시작부터 정답 제출까지의 시간 (밀리초)
       let timeToAnswerMs = 0
+      
+      console.log('[Solo Flow] ⏱️ timeToAnswer 계산 시작:', {
+        roundStartTime: roundStartTime.value,
+        currentTime: Date.now(),
+        isOverlayActive: isOverlayActive.value,
+        pendingTimerStartMessage: pendingTimerStartMessage.value ? '있음' : '없음'
+      })
+      
       if (roundStartTime.value) {
-        timeToAnswerMs = Date.now() - roundStartTime.value
+        // 서버 시간 기준으로 현재 시간 계산 (timeDiff 적용)
+        // roundStartTime.value는 서버 시간(serverStartTimeMs)이므로
+        // 클라이언트 시간을 서버 시간으로 변환해야 함
+        const serverTimeNow = Date.now() - timeDiff.value
+        timeToAnswerMs = serverTimeNow - roundStartTime.value
+        console.log('[Solo Flow] ✅ roundStartTime 사용:', {
+          roundStartTime: roundStartTime.value,
+          clientTime: Date.now(),
+          serverTimeNow: serverTimeNow,
+          timeDiff: timeDiff.value,
+          timeToAnswerMs: timeToAnswerMs
+        })
       } else {
-        console.warn('[Solo Flow] roundStartTime이 설정되지 않음 - timeToAnswer를 0으로 설정')
+        console.warn('[Solo Flow] ⚠️ roundStartTime이 null입니다!', {
+          isOverlayActive: isOverlayActive.value,
+          pendingTimerStartMessage: pendingTimerStartMessage.value ? '있음' : '없음',
+          message: '타이머 시작 메시지를 아직 받지 못했거나 오버레이 완료 처리가 되지 않았을 수 있습니다.'
+        })
+        
+        // pendingTimerStartMessage가 있으면 지금 처리 시도
+        if (pendingTimerStartMessage.value) {
+          console.log('[Solo Flow] 🔄 pendingTimerStartMessage 처리 시도')
+          const message = pendingTimerStartMessage.value
+          pendingTimerStartMessage.value = null
+          isOverlayActive.value = false
+          startTimer(message)
+          
+          // 다시 계산
+          if (roundStartTime.value) {
+            // 서버 시간 기준으로 현재 시간 계산 (timeDiff 적용)
+            const serverTimeNow = Date.now() - timeDiff.value
+            timeToAnswerMs = serverTimeNow - roundStartTime.value
+            console.log('[Solo Flow] ✅ 처리 후 roundStartTime 사용:', {
+              roundStartTime: roundStartTime.value,
+              clientTime: Date.now(),
+              serverTimeNow: serverTimeNow,
+              timeDiff: timeDiff.value,
+              timeToAnswerMs: timeToAnswerMs
+            })
+          }
+        }
       }
 
       // 밀리초를 초로 변환하고 소수점 3자리까지 반올림
       const timeToAnswer = Number((timeToAnswerMs / 1000).toFixed(3))
 
-      console.log('[Solo Flow] 정답 제출:', { position, timeToAnswer, timeToAnswerMs })
+      console.log('[Solo Flow] 📤 정답 제출:', { 
+        position, 
+        timeToAnswer, 
+        timeToAnswerMs,
+        roundStartTime: roundStartTime.value
+      })
 
       // API 호출
       await soloGameApi.submitSoloAnswer(roomId.value, gameId.value, roundId.value, {

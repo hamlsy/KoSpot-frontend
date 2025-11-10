@@ -50,8 +50,8 @@ class SoloGameWebSocketService {
 
     // 타이머 시작 구독
     this.subscribe(
-      `/topic/game/${roomId}/timer`,
-      'timer',
+      `/topic/game/${roomId}/timer/start`,
+      'timerStart',
       this.handleTimerStart.bind(this)
     )
 
@@ -90,9 +90,9 @@ class SoloGameWebSocketService {
       this.handleGameFinished.bind(this)
     )
 
-    // 게임 중 채팅 구독
+    // 게임 중 채팅 구독 (서버가 /topic/room/{roomId}/chat/global로 브로드캐스트)
     this.subscribe(
-      `/topic/game/${roomId}/chat/global`,
+      `/topic/room/${roomId}/chat/global`,
       'globalChat',
       this.handleGlobalChat.bind(this)
     )
@@ -250,10 +250,13 @@ class SoloGameWebSocketService {
    * 게임 중 채팅 메시지 처리
    */
   handleGlobalChat(message) {
-    console.log('[Solo WebSocket] 게임 중 채팅:', message)
+    console.log('[Solo WebSocket] 게임 중 채팅 메시지 수신:', message)
 
     if (this.handlers.onGlobalChat) {
+      console.log('[Solo WebSocket] onGlobalChat 핸들러 호출')
       this.handlers.onGlobalChat(message)
+    } else {
+      console.warn('[Solo WebSocket] onGlobalChat 핸들러가 설정되지 않았습니다.')
     }
   }
 

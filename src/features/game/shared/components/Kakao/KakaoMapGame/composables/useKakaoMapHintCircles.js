@@ -29,7 +29,7 @@ export function useKakaoMapHintCircles(props) {
     radiusList.forEach((radius) => {
       const circle = new window.kakao.maps.Circle({
         center: position,
-        radius: radius * 1000, // 미터 단위
+        radius: radius * 800, // 미터 단위
         strokeWeight: 1,
         strokeColor: '#75B8FA',
         strokeOpacity: 0.5,

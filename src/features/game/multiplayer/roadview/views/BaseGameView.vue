@@ -52,7 +52,7 @@
         
         <game-timer
           :initialTime="gameStore.state.remainingTime"
-          :totalTime="120"
+          :totalTime="totalTime"
           :warning-threshold="30"
           :danger-threshold="10"
           :is-running="!showIntroOverlay && !showNextRoundOverlay && !useCustomWebSocket"
@@ -110,6 +110,7 @@
               "
               :show-controls="true"
               :prevent-mouse-events="gameStore.state.hasSubmittedGuess"
+              :suppress-error="suppressRoadviewError"
               @load-complete="onViewLoaded"
               @load-error="onViewLoadError"
             />
@@ -129,6 +130,16 @@
           >
             <i class="fas fa-map-marked-alt"></i>
             지도
+          </button>
+
+          <!-- 지도 재로딩 버튼 (지도가 열려있을 때만 표시) -->
+          <button
+            v-if="isMapOpen && !gameStore.state.roundEnded"
+            class="map-reload-button"
+            @click="reloadPhoneMap"
+            title="지도 새로고침"
+          >
+            <i class="fas fa-sync-alt"></i>
           </button>
         </div>
       </div>
@@ -152,11 +163,12 @@
       :showHintCircles="false"
       :disabled="gameStore.state.roundEnded"
       :showDistance="false"
-      :showMarker="true"
-      :isTeamMode="false"
+      :showActionButton="false"
       :gameMode="'solo'"
+      :markerImageUrl="currentUserMarkerImageUrl"
       :hasSubmitted="gameStore.state.hasSubmittedGuess"
       @spot-answer="handlePhoneMapGuess"
+      ref="phoneFrame"
     />
 
     <!-- 토스트 메시지 -->
@@ -217,6 +229,14 @@ export default {
     showLeaveButton: {
       type: Boolean,
       default: false
+    },
+    totalTime: {
+      type: Number,
+      default: 120
+    },
+    suppressRoadviewError: {
+      type: Boolean,
+      default: false
     }
   },
 
@@ -252,6 +272,7 @@ export default {
       mapCenter: null,
       isChatOpen: false,
       isResponsiveMode: false,
+      mapInitialized: false,
       showToastFlag: false,
       // UI 상태 관리
       isPlayerListOpen: window.innerWidth > 992, // 플레이어 리스트 표시 여부 (반응형에서는 기본 닫힘)
@@ -297,6 +318,15 @@ export default {
     nextRoundVoteStatusText() {
       if (!this.isNextRoundVoteActive) return "";
       return `${this.numPlayersReadyForNextRound} / ${this.totalPlayersInRoom}`;
+    },
+    // 현재 사용자의 마커 이미지 URL
+    currentUserMarkerImageUrl() {
+      const currentUser = this.gameStore?.state?.currentUser
+      if (!currentUser) {
+        return null
+      }
+      // equippedMarker 또는 markerImageUrl 우선순위로 반환
+      return currentUser.equippedMarker || currentUser.markerImageUrl || null
     },
     // WebSocket 연결 상태
     isWebSocketConnected() {
@@ -534,13 +564,16 @@ export default {
     },
 
     // 로드뷰 로딩 실패 처리
-    onViewLoadError() {
-      console.error("로드뷰 로딩 실패");
+    onViewLoadError(errorData) {
+      console.error("[BaseGameView] 로드뷰 로딩 실패:", errorData);
       
       // Solo 게임에서 useSoloGameFlow를 사용하는 경우 재발급 요청
       if (this.useCustomWebSocket) {
         // 부모 컴포넌트(SoloGameView)에 로드 에러 이벤트 전달
-        this.$emit('roadview-load-error');
+        console.log("[BaseGameView] SoloGameView에 roadview-load-error 이벤트 전달");
+        this.$emit('roadview-load-error', errorData);
+      } else {
+        console.log("[BaseGameView] useCustomWebSocket이 false이므로 재발급 요청하지 않음");
       }
     },
 
@@ -565,7 +598,19 @@ export default {
         this.showResultMap = !this.showResultMap;
         this.initiateNextRoundVoting(); // Start voting when round results are shown
       } else {
+        const wasOpen = this.isMapOpen;
         this.isMapOpen = !this.isMapOpen;
+        
+        // 지도가 열릴 때 (false -> true) 자동으로 재로딩
+        if (!wasOpen && this.isMapOpen) {
+          // PhoneFrame이 마운트된 후 재로딩 실행
+          this.$nextTick(() => {
+            // 약간의 딜레이를 주어 PhoneFrame이 완전히 렌더링된 후 재로딩
+            setTimeout(() => {
+              this.reloadPhoneMap(false);
+            }, 100);
+          });
+        }
       }
     },
 
@@ -588,6 +633,28 @@ export default {
           console.log("타이머 종료로 다음 라운드 시작", this.gameStore.state.currentRound);
         }
       }, 1000);
+    },
+
+    // PhoneFrame 내부 지도 재로딩
+    reloadPhoneMap(showToast = true) {
+      if (!this.$refs.phoneFrame) {
+        if (showToast) {
+          this.showToastMessage("지도가 준비되지 않았습니다.");
+        }
+        return;
+      }
+
+      try {
+        this.$refs.phoneFrame.reloadMap();
+        if (showToast) {
+          this.showToastMessage("지도를 재로딩합니다...");
+        }
+      } catch (error) {
+        console.error("지도 재로딩 실패:", error);
+        if (showToast) {
+          this.showToastMessage("지도 재로딩에 실패했습니다. 다시 시도해주세요.");
+        }
+      }
     },
 
     // ...
@@ -1763,6 +1830,46 @@ export default {
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
 }
 
+/* 지도 재로딩 버튼 */
+.map-reload-button {
+  position: fixed;
+  top: 80px;
+  right: 30px;
+  background: white;
+  border: none;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-size: 1.2rem;
+  color: #333;
+  transition: all 0.3s ease;
+  z-index: 16;
+}
+
+.map-reload-button:hover {
+  background: #f5f5f5;
+  transform: rotate(180deg) scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.map-reload-button:active {
+  transform: rotate(180deg) scale(0.95);
+}
+
+.map-reload-button i {
+  transition: transform 0.3s ease;
+  color: #3498db;
+}
+
+.map-reload-button:hover i {
+  color: #2980b9;
+}
+
 @media (max-width: 768px) {
   .phone-frame {
     width: 340px;
@@ -1781,6 +1888,14 @@ export default {
     font-size: 0.9rem;
     bottom: 20px;
     right: 20px;
+  }
+
+  .map-reload-button {
+    width: 45px;
+    height: 45px;
+    top: 70px;
+    right: 20px;
+    font-size: 1rem;
   }
 
   .phone-spot-button {

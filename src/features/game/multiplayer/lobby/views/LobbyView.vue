@@ -113,7 +113,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '@/core/composables/useAuth.js';
 import useGlobalLobbyWebSocketService from '../services/useGlobalLobbyWebSocketService';
@@ -340,7 +340,13 @@ const toggleDevMode = async () => {
 };
 
 // 라이프사이클 훅
-onMounted(() => {
+onMounted(async () => {
+  // DOM이 완전히 렌더링된 후 페이지 상단으로 스크롤
+  await nextTick();
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+  
   // 로그인 여부 확인
   const isLoggedIn = !!localStorage.getItem('accessToken');
   

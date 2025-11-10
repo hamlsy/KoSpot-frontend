@@ -467,7 +467,7 @@ export default {
           const position = new kakao.maps.LatLng(guess.position.lat, guess.position.lng);
           
           // 플레이어별 다른 색상의 마커 이미지 생성
-          const markerSize = new kakao.maps.Size(24, 35);
+          const markerSize = new kakao.maps.Size(35, 35);
           
           // 플레이어가 장착한 마커 이미지 사용 (없으면 기본 이미지)
           const markerImageUrl = guess.markerImageUrl || 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png';

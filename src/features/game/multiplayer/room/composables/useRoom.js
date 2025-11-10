@@ -1,4 +1,4 @@
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, onBeforeUnmount } from 'vue';
 import { useRoomWebSocket } from './useRoomWebSocket';
 import { useRoomModal } from './useRoomModal';
 import { useRoomChat } from './useRoomChat';
@@ -194,27 +194,32 @@ export function useRoom(props, emit, options = {}) {
       // 방 상세 정보 + 초기 플레이어 목록 조회
       const roomDetail = await roomApiService.getRoomDetail(localRoomData.value.id);
       
-      if (roomDetail) {
-        localRoomData.value = {
-          ...localRoomData.value,
-          id: roomDetail.roomId ?? localRoomData.value.id,
-          title: roomDetail.title ?? localRoomData.value.title,
-          timeLimit: roomDetail.timeLimit ?? localRoomData.value.timeLimit,
-          gameMode: roomDetail.gameMode?.toLowerCase?.() ?? roomDetail.gameMode ?? localRoomData.value.gameMode,
-          isTeamMode: roomDetail.gameType ? roomDetail.gameType.toLowerCase() === 'team' : localRoomData.value.isTeamMode,
-          isPrivate: roomDetail.privateRoom ?? localRoomData.value.isPrivate,
-          maxPlayers: roomDetail.maxPlayers ?? localRoomData.value.maxPlayers
-        };
-        console.log('✅ 방 정보 로딩 완료:', localRoomData.value.title);
+      if (!roomDetail) {
+        // 방이 존재하지 않는 경우
+        const error = new Error('방을 찾을 수 없습니다.');
+        error.code = 'ROOM_NOT_FOUND';
+        throw error;
+      }
+      
+      localRoomData.value = {
+        ...localRoomData.value,
+        id: roomDetail.roomId ?? localRoomData.value.id,
+        title: roomDetail.title ?? localRoomData.value.title,
+        timeLimit: roomDetail.timeLimit ?? localRoomData.value.timeLimit,
+        gameMode: roomDetail.gameMode?.toLowerCase?.() ?? roomDetail.gameMode ?? localRoomData.value.gameMode,
+        isTeamMode: roomDetail.gameType ? roomDetail.gameType.toLowerCase() === 'team' : localRoomData.value.isTeamMode,
+        isPrivate: roomDetail.privateRoom ?? localRoomData.value.isPrivate,
+        maxPlayers: roomDetail.maxPlayers ?? localRoomData.value.maxPlayers
+      };
+      console.log('✅ 방 정보 로딩 완료:', localRoomData.value.title);
 
-        const initialPlayersResponse = roomDetail.connectedPlayers || roomDetail.players;
-        if (initialPlayersResponse) {
-          const transformedPlayers = transformGameRoomPlayers(initialPlayersResponse);
-          roomPlayer.updatePlayerList(transformedPlayers);
-          emit('player-list-updated', transformedPlayers);
-          localRoomData.value.currentPlayerCount = transformedPlayers.length;
-          console.log('✅ 초기 플레이어 목록 로딩 완료:', transformedPlayers.length, '명');
-        }
+      const initialPlayersResponse = roomDetail.connectedPlayers || roomDetail.players;
+      if (initialPlayersResponse) {
+        const transformedPlayers = transformGameRoomPlayers(initialPlayersResponse);
+        roomPlayer.updatePlayerList(transformedPlayers);
+        emit('player-list-updated', transformedPlayers);
+        localRoomData.value.currentPlayerCount = transformedPlayers.length;
+        console.log('✅ 초기 플레이어 목록 로딩 완료:', transformedPlayers.length, '명');
       }
       
       // 마지막 업데이트 시간 갱신
@@ -222,7 +227,13 @@ export function useRoom(props, emit, options = {}) {
       
     } catch (error) {
       console.error('❌ 초기 방 데이터 로딩 실패:', error);
-      await activateDummyMode('initial-load-failed');
+      
+      // 더미 모드로 전환하지 않고 에러를 다시 throw하여 RoomView에서 처리하도록 함
+      // RoomView에서 로비로 리다이렉트 처리
+      const redirectError = new Error(error.message || '방을 조회할 수 없습니다.');
+      redirectError.code = error.code || 'ROOM_LOAD_FAILED';
+      redirectError.originalError = error;
+      throw redirectError;
     } finally {
       isLoadingPlayerList.value = false;
     }
@@ -824,15 +835,18 @@ export function useRoom(props, emit, options = {}) {
   };
 
   // Lifecycle hooks
-  onMounted(async () => {
+  // Note: onMounted는 RoomView에서 직접 호출하므로 여기서는 제거
+  // 대신 initializeRoom 함수를 export하여 RoomView에서 호출하도록 변경
+  const initializeRoom = async () => {
     try {
-      console.log('🚀 RoomView 마운트 시작');
+      console.log('🚀 RoomView 초기화 시작');
       
       // 1. 초기 환영 메시지 추가
       roomChat.addSystemMessage('채팅방에 오신 것을 환영합니다!');
       roomChat.scrollChatToBottom();
       
       // 2. 초기 방 데이터 로딩 (방 정보 + 초기 플레이어 목록)
+      // 에러 발생 시 RoomView에서 처리하도록 throw
       await loadInitialRoomData();
 
       if (isDummyMode.value) {
@@ -868,13 +882,11 @@ export function useRoom(props, emit, options = {}) {
       console.log('🎉 RoomView 초기화 완료');
       
     } catch (error) {
-      console.error('❌ RoomView 초기화 실패:', error);
-      
-      if (!isDummyMode.value) {
-        alert('방 정보를 불러오는 중 오류가 발생했습니다. 다시 시도해주세요.');
-      }
+      console.error('❌ RoomView 초기화 중 오류:', error);
+      // 에러를 다시 throw하여 RoomView에서 처리하도록 함
+      throw error;
     }
-  });
+  };
 
   onBeforeUnmount(async () => {
     await disconnectWebSocket();
@@ -922,6 +934,7 @@ export function useRoom(props, emit, options = {}) {
     
     // 실시간 업데이트 메서드
     loadInitialRoomData,
+    initializeRoom,
     handleGameRoomNotification,
     handleChatMessage,
     handleGameRoomSettingsUpdate,

@@ -13,6 +13,8 @@
     :current-user-rank="currentUserRank"
     :use-custom-websocket="isServerMode"
       :show-leave-button="true"
+      :total-time="timeLimit"
+      :suppress-roadview-error="isRetryingRoadview"
       @leave-game="exitToLobby"
     @guess-submitted="handleGuessSubmission"
     @round-ended="handleRoundEnded"
@@ -155,6 +157,12 @@ export default {
       isServerMode: false,
       isDummyRuntime: false,
 
+      // 게임 시간 제한
+      timeLimit: history.state?.timeLimit || 120,
+
+      // 로드뷰 재시도 중 여부
+      isRetryingRoadview: false,
+
       // 플레이어 로딩 상태
       playerLoading: {
         isActive: true,
@@ -184,11 +192,10 @@ export default {
   },
 
   async mounted() {
-    // 모드 결정: URL 쿼리 파라미터 또는 라우트 메타로 판단
+    // 개발자모드 파라미터만 확인 (인터넷 연결 상태는 더미 모드 전환 조건에서 제외)
     const navigationDummyMode = history.state?.dummyMode === true;
     const queryDummyMode = this.$route.query.test === 'true';
-    const offlineFallback = !navigator.onLine;
-    const isDummyMode = queryDummyMode || navigationDummyMode || offlineFallback;
+    const isDummyMode = queryDummyMode || navigationDummyMode;
     this.isServerMode = !isDummyMode
     this.isDummyRuntime = isDummyMode
     const resolvedRoomId = this.resolveRoomId()
@@ -203,7 +210,14 @@ export default {
       this.simulateDummyLoading()
     } else {
       console.log('[Solo Game] 서버 모드로 게임 시작')
-      await this.startServerMode()
+      try {
+        await this.startServerMode()
+      } catch (error) {
+        console.error('[Solo Game] 서버 모드 시작 실패:', error)
+        // 오류 시 더미 모드로 전환하지 않고 로비로 리다이렉트
+        alert('게임을 시작할 수 없습니다. 로비로 이동합니다.')
+        this.$router.replace('/lobby')
+      }
     }
   },
 
@@ -221,12 +235,8 @@ export default {
       }
     })
     
-    // 서버 모드 정리
-    if (this.isServerMode) {
-      this.soloGameFlow.cleanup()
-    }
-
-    soloGameWebSocket.removeLoadingSubscription()
+    // 모든 구독 해제
+    this.cleanupSubscriptions()
     
     console.log('[Solo Game] 컴포넌트 정리 완료')
   },
@@ -378,30 +388,22 @@ export default {
      * 서버 모드 게임 시작
      */
     async startServerMode() {
-      try {
-        // UI 콜백 재설정 (setup 이후 this 접근 가능)
-        this.setupUICallbacks()
+      // UI 콜백 재설정 (setup 이후 this 접근 가능)
+      this.setupUICallbacks()
 
-        const resolvedRoomId = this.resolveRoomId()
-        if (!resolvedRoomId) {
-          console.error('[Solo Game] roomId를 확인할 수 없어 로비로 이동합니다.')
-          this.$router.replace('/lobby')
-          return
-        }
-        this.roomId = resolvedRoomId
-
-        await this.soloGameFlow.initializeFromServerStart(this.roomId)
-
-        this.setupLoadingStatusSubscription()
-        this.sendLoadingAcknowledge()
-        
-      } catch (error) {
-        console.error('[Solo Game] 서버 모드 시작 오류:', error)
-        // 오류 시 더미 모드로 전환
-        console.log('[Solo Game] 더미 모드로 전환')
-        this.isServerMode = false
-        this.startDummyMode()
+      const resolvedRoomId = this.resolveRoomId()
+      if (!resolvedRoomId) {
+        console.error('[Solo Game] roomId를 확인할 수 없어 로비로 이동합니다.')
+        const error = new Error('roomId를 확인할 수 없습니다.')
+        error.code = 'ROOM_ID_NOT_FOUND'
+        throw error
       }
+      this.roomId = resolvedRoomId
+
+      await this.soloGameFlow.initializeFromServerStart(this.roomId)
+
+      this.setupLoadingStatusSubscription()
+      this.sendLoadingAcknowledge()
     },
     
     /**
@@ -412,6 +414,9 @@ export default {
       this.soloGameFlow.setCallbacks({
         onIntroShow: () => {
           console.log('[Solo Game] 인트로 오버레이 표시')
+          // 재시도 중 플래그 해제 (새로운 좌표를 받았으므로)
+          this.isRetryingRoadview = false
+          
           if (this.$refs.baseGame) {
             this.$refs.baseGame.showIntroOverlay = true
           }
@@ -422,6 +427,9 @@ export default {
         },
         onNextRoundShow: () => {
           console.log('[Solo Game] 다음 라운드 오버레이 표시')
+          // 재시도 중 플래그 해제 (새로운 좌표를 받았으므로)
+          this.isRetryingRoadview = false
+          
           // 현재 사용자 등수 계산
           this.currentUserRank = this.calculateUserRank()
           const totalPlayers = this.gameStore.state.players.length
@@ -508,17 +516,34 @@ export default {
         return
       }
 
-      console.log('[Solo Game] 로드뷰 로딩 실패 - 재발급 요청')
+      // 재시도 중인지 확인
+      this.isRetryingRoadview = this.soloGameFlow.isRetrying()
+      
+      console.log(`[Solo Game] 로드뷰 로딩 실패 - 재발급 요청 (재시도 중: ${this.isRetryingRoadview})`)
       
       try {
         const success = await this.soloGameFlow.requestRoadviewReIssue()
         if (success) {
+          // 재시도 중 플래그 업데이트
+          this.isRetryingRoadview = this.soloGameFlow.isRetrying()
           console.log('[Solo Game] 로드뷰 재발급 요청 완료. 서버에서 새로운 좌표 브로드캐스트 대기 중...')
+          // 재시도 중이므로 에러 화면을 표시하지 않음
+          // 새로운 좌표를 받으면 handleNextRound에서 자동으로 로드뷰를 다시 로드함
         } else {
-          console.error('[Solo Game] 로드뷰 재발급 요청 실패 또는 최대 시도 횟수 초과')
+          // 최대 시도 횟수 초과 시에만 에러 화면 표시
+          this.isRetryingRoadview = this.soloGameFlow.isRetrying()
+          if (!this.isRetryingRoadview) {
+            console.error('[Solo Game] 로드뷰 재발급 요청 실패 또는 최대 시도 횟수 초과')
+            // 재시도가 끝났으므로 에러 화면을 표시할 수 있음 (RoadView에서 자동으로 표시됨)
+          }
         }
       } catch (error) {
         console.error('[Solo Game] 로드뷰 재발급 요청 중 오류:', error)
+        // 에러 발생 시에도 재시도 중이 아니면 에러 화면 표시
+        this.isRetryingRoadview = this.soloGameFlow.isRetrying()
+        if (!this.isRetryingRoadview) {
+          // 재시도가 끝났으므로 에러 화면을 표시할 수 있음 (RoadView에서 자동으로 표시됨)
+        }
       }
     },
 
@@ -1155,7 +1180,33 @@ export default {
     },
 
     exitToLobby() {
-      this.$router.push("/lobby");
+      // 확인 다이얼로그 표시
+      if (!confirm('정말 게임을 나가시겠습니까? 진행 중인 게임은 저장되지 않습니다.')) {
+        return
+      }
+
+      // 모든 구독 해제
+      this.cleanupSubscriptions()
+
+      // 로비로 이동
+      this.$router.push("/lobby")
+    },
+
+    /**
+     * 모든 구독 해제
+     */
+    cleanupSubscriptions() {
+      console.log('[Solo Game] 모든 구독 해제 시작')
+
+      // 서버 모드 정리
+      if (this.isServerMode) {
+        this.soloGameFlow.cleanup()
+      }
+
+      // 로딩 구독 해제
+      soloGameWebSocket.removeLoadingSubscription()
+
+      console.log('[Solo Game] 모든 구독 해제 완료')
     },
 
     // 모바일 액션 핸들러
