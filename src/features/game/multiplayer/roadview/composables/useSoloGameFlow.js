@@ -39,6 +39,7 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     onNextRoundShow: null,
     onGameFinish: null,
     onTimerSync: null,
+    onGamePlayersUpdate: null,
     ...uiCallbacks
   }
 
@@ -542,6 +543,7 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
 
   /**
    * 다음 라운드 시작 처리
+   * StartPlayerGame 메시지: { gameId, totalRounds, currentRound, roundInfo, roundVersion, gamePlayers }
    */
   const handleNextRound = (message) => {
     console.log('[Solo Flow] 다음 라운드:', message)
@@ -566,13 +568,19 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
       roundId.value = nextRoundId
     }
     
+    // 게임 설정 업데이트
+    if (message.totalRounds != null) {
+      gameStore.state.totalRounds = message.totalRounds
+    }
     gameStore.state.currentRound = message.currentRound
+
     // 재시도 중인 경우 새로운 좌표를 받았으므로 재시도 플래그 해제
     if (isRetryingRoadview.value) {
       console.log('[Solo Flow] 재시도 중 새로운 좌표 수신 - 로드뷰 다시 로드')
       isRetryingRoadview.value = false
     }
 
+    // 라운드 좌표 정보 업데이트
     gameStore.state.currentLocation = {
       lat: message.roundInfo.targetLat,
       lng: message.roundInfo.targetLng
@@ -580,6 +588,46 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     gameStore.state.actualLocation = {
       lat: message.roundInfo.targetLat,
       lng: message.roundInfo.targetLng
+    }
+
+    // 플레이어 정보 업데이트 (gamePlayers가 있는 경우)
+    if (message.gamePlayers && Array.isArray(message.gamePlayers)) {
+      console.log('[Solo Flow] 플레이어 정보 업데이트:', message.gamePlayers)
+      
+      // gameStore의 players 업데이트 (기존 플레이어와 병합)
+      message.gamePlayers.forEach(gamePlayer => {
+        const existingPlayer = gameStore.state.players.find(p => p.id === gamePlayer.playerId)
+        
+        if (existingPlayer) {
+          // 기존 플레이어 정보 업데이트
+          existingPlayer.nickname = gamePlayer.nickname || existingPlayer.nickname
+          existingPlayer.markerImageUrl = gamePlayer.markerImageUrl || existingPlayer.markerImageUrl
+          existingPlayer.equippedMarker = gamePlayer.markerImageUrl || existingPlayer.equippedMarker
+          existingPlayer.totalScore = gamePlayer.totalScore != null ? gamePlayer.totalScore : existingPlayer.totalScore
+          existingPlayer.roundRank = gamePlayer.roundRank != null ? gamePlayer.roundRank : existingPlayer.roundRank
+          existingPlayer.score = gamePlayer.totalScore != null ? gamePlayer.totalScore : existingPlayer.score
+        } else {
+          // 새 플레이어 추가
+          gameStore.state.players.push({
+            id: gamePlayer.playerId,
+            memberId: gamePlayer.playerId,
+            nickname: gamePlayer.nickname || '알 수 없음',
+            markerImageUrl: gamePlayer.markerImageUrl || null,
+            equippedMarker: gamePlayer.markerImageUrl || null,
+            totalScore: gamePlayer.totalScore || 0,
+            roundRank: gamePlayer.roundRank || 0,
+            score: gamePlayer.totalScore || 0,
+            hasSubmitted: false,
+            distanceToTarget: null,
+            lastRoundScore: 0
+          })
+        }
+      })
+
+      // 플레이어 정보를 콜백으로 전달 (SoloGameView에 저장)
+      if (callbacks.onGamePlayersUpdate) {
+        callbacks.onGamePlayersUpdate(message.gamePlayers)
+      }
     }
 
     // 라운드 상태 초기화

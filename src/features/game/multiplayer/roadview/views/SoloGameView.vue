@@ -171,7 +171,10 @@ export default {
         players: []
       },
 
-      pendingIntroOverlay: false
+      pendingIntroOverlay: false,
+
+      // 서버에서 받은 게임 플레이어 정보 (StartPlayerGame 메시지)
+      gamePlayers: []
     };
   },
 
@@ -460,6 +463,29 @@ export default {
             // 소수점까지 정확하게 저장 (밀리초를 초로 변환)
             const remainingSeconds = Math.max(0, Number(message.remainingTimeMs) / 1000)
             this.gameStore.state.remainingTime = remainingSeconds
+          }
+        },
+        onGamePlayersUpdate: (gamePlayers) => {
+          console.log('[Solo Game] 플레이어 정보 업데이트:', gamePlayers)
+          // SoloGameView의 gamePlayers에 저장
+          this.gamePlayers = gamePlayers.map(player => ({
+            playerId: player.playerId,
+            nickname: player.nickname,
+            markerImageUrl: player.markerImageUrl,
+            totalScore: player.totalScore || 0,
+            roundRank: player.roundRank || 0
+          }))
+          
+          // currentUser의 markerImageUrl도 업데이트 (자신의 정보인 경우)
+          const currentUserId = this.gameStore?.state?.currentUser?.id
+          if (currentUserId) {
+            const currentPlayerInfo = gamePlayers.find(p => p.playerId === currentUserId)
+            if (currentPlayerInfo && currentPlayerInfo.markerImageUrl) {
+              if (this.gameStore.state.currentUser) {
+                this.gameStore.state.currentUser.markerImageUrl = currentPlayerInfo.markerImageUrl
+                this.gameStore.state.currentUser.equippedMarker = currentPlayerInfo.markerImageUrl
+              }
+            }
           }
         }
       })
