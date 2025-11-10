@@ -89,11 +89,11 @@
           </button>
           
           <button 
-            v-if="isHost" 
+            v-if="showStartButton" 
             class="action-button start-button" 
-            :disabled="!canStartGame" 
+            :disabled="startButtonDisabled" 
             @click="$emit('start-game')"
-            :class="{ 'disabled': !canStartGame }"
+            :class="{ 'disabled': startButtonDisabled }"
             title="게임 시작"
           >
             <i class="fas fa-play"></i>
@@ -132,6 +132,14 @@ const props = defineProps({
   showChatToggle: {
     type: Boolean,
     default: false
+  },
+  isDummyMode: {
+    type: Boolean,
+    default: false
+  },
+  isStarting: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -158,6 +166,9 @@ const modeIcon = computed(() => {
       return 'fas fa-gamepad';
   }
 });
+
+const showStartButton = computed(() => props.isHost || props.isDummyMode);
+const startButtonDisabled = computed(() => props.isStarting || (!props.canStartGame && !props.isDummyMode));
 
 const copyRoomId = () => {
   navigator.clipboard.writeText(props.roomData.id)
@@ -321,9 +332,10 @@ const leaveRoomWithConfirm = () => {
 
 /* Game info compact */
 .game-info-compact {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(140px, 1fr));
   gap: 1rem;
-  flex-wrap: wrap;
+  width: 100%;
 }
 
 .game-info-item {
@@ -482,7 +494,10 @@ const leaveRoomWithConfirm = () => {
   .header-content { gap: 0.6rem; }
   .room-info-section { gap: 0.3rem; }
   .room-title { font-size: 1.05rem; }
-  .game-info-compact { justify-content: center; gap: 0.6rem; }
+  .game-info-compact {
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+    gap: 0.75rem;
+  }
   .info-icon { width: 28px; height: 28px; font-size: 0.8rem; }
   .info-value { font-size: 0.75rem; }
   .header-actions { flex-direction: column; align-items: stretch; gap: 0.5rem; }
@@ -501,7 +516,7 @@ const leaveRoomWithConfirm = () => {
   }
   
   .game-info-compact {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(130px, 1fr));
     gap: 0.6rem;
   }
   
@@ -530,7 +545,7 @@ const leaveRoomWithConfirm = () => {
   }
   
   .game-info-compact {
-    flex-direction: column;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
     gap: 0.45rem;
   }
   

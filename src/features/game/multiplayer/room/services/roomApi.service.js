@@ -16,6 +16,7 @@ const ROOM_ENDPOINTS = {
   JOIN_ROOM: (roomId) => `/rooms/${roomId}/join`,     // 게임 방 참여
   LEAVE_ROOM: (roomId) => `/rooms/${roomId}/leave`,    // 게임 방 퇴장
   KICK_PLAYER: (roomId) => `/rooms/${roomId}/kick`, // 플레이어 강퇴
+  START_GAME: (roomId) => `/rooms/${roomId}/start`, // 게임 시작
 };
 
 /**
@@ -164,6 +165,37 @@ class RoomApiService {
     } catch (error) {
       console.error('❌ 플레이어 강퇴 실패:', error);
       this._handleApiError(error, '플레이어 강퇴에 실패했습니다.');
+      throw error;
+    }
+  }
+
+  /**
+   * 게임 시작 요청
+   * @param {number|string} roomId - 게임 방 ID
+   * @returns {Promise<Object>} API 응답 데이터
+   */
+  async startGame(roomId, startPayload = {}) {
+    try {
+
+      if (!startPayload.gameModeKey || !startPayload.playerMatchTypeKey || typeof startPayload.totalRounds !== 'number') {
+        throw new Error('startGame 요청에 필요한 필드가 누락되었습니다.');
+      }
+
+      const response = await apiClient.post(
+        ROOM_ENDPOINTS.START_GAME(roomId),
+        {
+          gameModeKey: startPayload.gameModeKey,
+          playerMatchTypeKey: startPayload.playerMatchTypeKey,
+          totalRounds: startPayload.totalRounds,
+          timeLimit: startPayload.timeLimit ?? null
+        }
+      );
+
+      console.log('✅ 게임 시작 요청 성공:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ 게임 시작 요청 실패:', error);
+      this._handleApiError(error, '게임 시작 요청에 실패했습니다.');
       throw error;
     }
   }

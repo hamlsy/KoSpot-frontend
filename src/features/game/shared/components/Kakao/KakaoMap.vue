@@ -467,11 +467,12 @@ export default {
           const position = new kakao.maps.LatLng(guess.position.lat, guess.position.lng);
           
           // 플레이어별 다른 색상의 마커 이미지 생성
-          const markerSize = new kakao.maps.Size(24, 35);
+          const markerSize = new kakao.maps.Size(35, 35);
           
-          // 기본 마커 이미지 사용
+          // 플레이어가 장착한 마커 이미지 사용 (없으면 기본 이미지)
+          const markerImageUrl = guess.markerImageUrl || 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png';
           const markerImage = new kakao.maps.MarkerImage(
-            'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
+            markerImageUrl,
             markerSize
           );
           
@@ -495,14 +496,17 @@ export default {
             distanceText = this.formatDistance(distance);
           }
           
+          // 색상 설정 (기본값: 파란색)
+          const overlayColor = guess.color || '#3b82f6';
+          
           // 커스텀 오버레이에 표출될 내용
           const content = `
-            <div class="custom-player-overlay" style="background-color: ${guess.color}">
+            <div class="custom-player-overlay" style="background-color: ${overlayColor}">
               <div class="overlay-content">
                 <span class="player-name">${guess.playerName || '플레이어 ' + (index+1)}</span>
                 ${distanceText ? `<span class="distance-info">${distanceText}</span>` : ''}
               </div>
-              <div class="overlay-arrow" style="border-top-color: ${guess.color}"></div>
+              <div class="overlay-arrow" style="border-top-color: ${overlayColor}"></div>
             </div>
           `;
           

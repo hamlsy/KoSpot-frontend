@@ -61,7 +61,6 @@ export function useRoomChat() {
    * { senderId, messageId, nickname, content, messageType, teamId, timestamp }
    */
   const handleRoomChatMessage = (chatEvent, currentUserId) => {
-    console.log('💬 방 채팅 메시지 수신:', chatEvent);
     
     if (!chatEvent || !chatEvent.content) {
       console.warn('⚠️ 잘못된 채팅 이벤트 형식:', chatEvent);

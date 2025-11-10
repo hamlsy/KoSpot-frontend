@@ -16,19 +16,6 @@
         <p>로드뷰 로딩 중...</p>
       </div>
     </div>
-    
-    <div class="error-overlay" v-if="hasError">
-      <div class="error-content">
-        <div class="error-icon">
-          <i class="fas fa-exclamation-triangle"></i>
-        </div>
-        <h3>로드뷰를 불러올 수 없습니다</h3>
-        <p>이 위치에 로드뷰 데이터가 없습니다. 다른 위치를 시도합니다.</p>
-        <button class="retry-btn" @click="retryLoading">
-          <i class="fas fa-redo"></i> 다시 시도
-        </button>
-      </div>
-    </div>
   </div>
 </template>
 

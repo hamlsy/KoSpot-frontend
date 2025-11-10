@@ -121,7 +121,14 @@ jobs:
         
         echo "Deployment completed successfully!"
         echo "Application URL: https://$BUCKET.s3-website.ap-northeast-2.amazonaws.com$DEPLOY_PATH"
-    
+        
+    - name: CloudFront Invalidation
+      env:
+        CLOUD_FRONT_ID: ${{ secrets.AWS_CLOUDFRONT_ID}}
+      run: |
+       aws cloudfront create-invalidation \
+         --distribution-id $CLOUD_FRONT_ID --paths "/*"
+
     - name: Notify deployment
       if: always()
       run: |

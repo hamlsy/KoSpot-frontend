@@ -458,7 +458,7 @@ async function loadMainPageData() {
           userProfile.value.isFirstVisited = true;
           // 닉네임 설정 모달 먼저 표시
           showNicknameModal.value = true;
-          console.log('🎉 첫 방문자입니다! 닉네임 설정을 진행합니다.');
+
         } else {
           isFirstVisited.value = false;
           userProfile.value.isFirstVisited = false;
@@ -644,7 +644,6 @@ function handleNicknameModalClose() {
 
 // 닉네임 설정 완료 핸들러
 function handleNicknameComplete(nickname) {
-  console.log('✅ 닉네임 설정 완료:', nickname);
   showNicknameModal.value = false;
   
   // 사이드바 닉네임 업데이트
@@ -660,7 +659,6 @@ function handleNicknameComplete(nickname) {
 
 // 튜토리얼 완료 핸들러
 function handleTutorialComplete() {
-  console.log('✅ 튜토리얼 완료!');
   // 필요 시 백엔드에 튜토리얼 완료 상태 전송 가능
   // await mainService.markTutorialComplete();
 }

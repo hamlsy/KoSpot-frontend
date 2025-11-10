@@ -22,6 +22,7 @@ import {
 
 // 글로벌 로비 구독 정보
 const globalLobbySubscriptions = ref(new Map());
+const LOBBY_TOPIC = '/topic/chat/lobby';
 
 /**
  * 글로벌 로비 WebSocket 서비스를 초기화하고 제공하는 컴포저블 함수
@@ -29,6 +30,9 @@ const globalLobbySubscriptions = ref(new Map());
  * @returns {Object} 글로벌 로비 WebSocket 서비스 관련 함수와 데이터를 포함하는 객체
  */
 export function useGlobalLobbyWebSocketService() {
+    const isTeardownInProgress = ref(false);
+    const isLobbyActive = ref(false);
+
     // 인증 컴포저블에서 사용자 정보 가져오기
     const { user: authUser, isAuthenticated } = useAuth();
     
@@ -38,44 +42,75 @@ export function useGlobalLobbyWebSocketService() {
      * 
      * @param {String} [endpoint='/ws'] - WebSocket 서버의 엔드포인트 URL
      */
-    const connectWebSocket = (endpoint = '/api/ws') => {
-        // 이미 연결된 경우에는 글로벌 로비 채널만 구독
-        if (webSocketManager.isConnected.value) {
-            subscribeToGlobalLobbyChat();
-            return;
-        }
-        
-        // 연결 성공 시 호출될 콜백 함수
-        const onConnectCallback = () => {
-            // 로비 전용 구독 설정 (게임 채팅, 플레이어 상태, 게임 상태 구독 제외)
+    const connectWebSocket = (endpoint = '/ws') => {
+        const bootstrapLobby = () => {
             webSocketManager.setupLobbySubscriptions();
-            
             subscribeToGlobalLobbyChat();
             joinGlobalLobby();
-            // 연결 성공 메시지 표시
+            isLobbyActive.value = true;
             createSystemMessage('채팅 서버에 연결되었습니다.', 'lobby');
         };
-        
-        // WebSocketManager를 통해 연결
-        webSocketManager.connect(endpoint, onConnectCallback);
+
+        if (webSocketManager.isConnected.value) {
+            bootstrapLobby();
+            return;
+        }
+
+        const onConnectCallback = () => {
+            bootstrapLobby();
+        };
+
+        try {
+            webSocketManager.connect(endpoint, onConnectCallback);
+        } catch (error) {
+            console.error('글로벌 로비 WebSocket 연결 중 오류:', error);
+        }
     };
     
     /**
      * 글로벌 로비 관련 WebSocket 구독을 해제합니다.
      * 컴포넌트가 언마운트되기 전에 호출되어야 합니다.
      */
-    const disconnectWebSocket = () => {
-        // 글로벌 로비 구독 해제
-        globalLobbySubscriptions.value.forEach((_, topic) => {
+    const unsubscribeFromGlobalLobbyChat = () => {
+        const topics = Array.from(globalLobbySubscriptions.value.keys());
+        topics.forEach((topic) => {
             try {
                 webSocketManager.unsubscribe(topic);
             } catch (error) {
                 console.error(`글로벌 로비 구독 해제 중 오류 (${topic}):`, error);
+            } finally {
+                globalLobbySubscriptions.value.delete(topic);
             }
         });
-        
-        // 구독 목록 초기화
-        globalLobbySubscriptions.value.clear();
+    };
+
+    const disconnectWebSocket = async ({ force = false } = {}) => {
+        if (isTeardownInProgress.value) {
+            return;
+        }
+
+        isTeardownInProgress.value = true;
+
+        try {
+            unsubscribeFromGlobalLobbyChat();
+
+            if (isLobbyActive.value) {
+                leaveGlobalLobby();
+            }
+
+            if (force) {
+                if (typeof webSocketManager.deactivate === 'function') {
+                    await webSocketManager.deactivate();
+                } else {
+                    webSocketManager.disconnect();
+                }
+            }
+        } catch (error) {
+            console.error('글로벌 로비 WebSocket 종료 처리 중 오류:', error);
+        } finally {
+            isLobbyActive.value = false;
+            isTeardownInProgress.value = false;
+        }
     };
     
     /**
@@ -90,10 +125,8 @@ export function useGlobalLobbyWebSocketService() {
         }
         
         try {
-            
-            // API 명세서에 따른 로비 채팅 구독 경로: /topic/lobby
-            const topic = '/topic/chat/lobby';
-            
+            const topic = LOBBY_TOPIC;
+
             // 이미 구독 중인지 확인
             if (globalLobbySubscriptions.value.has(topic)) {
                 return;
@@ -202,8 +235,8 @@ export function useGlobalLobbyWebSocketService() {
      * beforeunload 이벤트 핸들러
      * 브라우저 창 닫기 시에만 로비 퇴장 메시지 전송
      */
-    const handleBeforeUnload = () => {
-        leaveGlobalLobby();
+    const handleBeforeUnload = async () => {
+        await disconnectWebSocket({ force: true });
     };
     
     // 컴포넌트 마운트 시 이벤트 리스너 등록
@@ -213,12 +246,12 @@ export function useGlobalLobbyWebSocketService() {
     });
     
     // 컴포넌트 언마운트 시 정리 작업
-    onBeforeUnmount(() => {
+    onBeforeUnmount(async () => {
         // 이벤트 리스너 제거
         window.removeEventListener('beforeunload', handleBeforeUnload);
         
         // 구독 해제 (연결은 유지)
-        disconnectWebSocket();
+        await disconnectWebSocket();
     });
     
     // 반환할 객체

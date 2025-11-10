@@ -1,13 +1,6 @@
 <template>
   <div class="multiplayer-room-waiting">
-    <!-- 네비게이션 바 - Simple Mode -->
-    <NavigationBar
-      :simple-mode="true"
-      :show-back-button="true"
-      back-button-text="방 나가기"
-      @back="leaveRoom"
-    />
-
+  
     <!-- 배경 요소 -->
     <div class="mode-background"></div>
 
@@ -19,7 +12,9 @@
         <RoomHeader
           :room-data="localRoomData"
           :is-host="isHost"
-          :can-start-game="canStartGame"
+          :can-start-game="isRoomDummyMode ? true : canStartGame"
+          :is-starting="isStartingGame"
+          :is-dummy-mode="isRoomDummyMode"
           :unread-messages="unreadMessages"
           :is-team-mode="isTeamMode"
           :show-chat-toggle="isMobileView"
@@ -140,6 +135,8 @@
                 v-model="chatInput"
                 placeholder="메시지를 입력하세요..."
                 @keyup.enter="sendChatMessage"
+                @focus="handleChatInputFocus"
+                ref="chatInputFieldRef"
               />
               <button class="send-button" @click="sendChatMessage">
                 <i class="fas fa-paper-plane"></i>
@@ -178,12 +175,21 @@
 
     <!-- 실시간 알림 토스트 -->
     <ToastNotification ref="toastRef" />
+
+    <!-- 게임 시작 카운트다운 오버레이 -->
+    <CountdownOverlay
+      :is-active="isCountdownActive"
+      :countdown="countdownSeconds"
+      :message="countdownMessage"
+      :is-host="isHost"
+      :can-cancel="false"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 
 // Core Components
 import NavigationBar from '@/core/components/NavigationBar.vue';
@@ -202,6 +208,8 @@ import ChatMessage from 'src/features/game/multiplayer/chat/components/Room/Chat
 
 //notifications
 import ToastNotification from 'src/features/game/multiplayer/room/components/notifications/ToastNotification.vue'
+import CountdownOverlay from 'src/features/game/multiplayer/room/components/settings/CountdownOverlay.vue'
+import { soloTestData } from 'src/features/game/multiplayer/room/composables/MultiplayerGameTestData.js'
 
 // Composables
 import { useRoom } from '../composables/useRoom';
@@ -216,9 +224,20 @@ const props = defineProps({
 
 // Vue Router
 const router = useRouter();
+const route = useRoute();
 
 // 현재 사용자 ID (localStorage에서 가져오기)
-const currentUserId = localStorage.getItem('memberId') || '';
+let currentUserId = localStorage.getItem('memberId') || '';
+
+// 더미 모드: 오직 라우터 state에서만 활성화 가능 (개발자 전용)
+// URL 쿼리 파라미터나 기타 방법으로는 더미 모드를 활성화할 수 없음
+const shouldUseDummyMode = history.state?.dummyMode === true;
+
+if (shouldUseDummyMode && !currentUserId) {
+  currentUserId = soloTestData.currentUser?.id || 'dummy-host';
+}
+
+const normalizedCurrentUserId = currentUserId ? currentUserId.toString() : '';
 
 // Router state에서 전달받은 데이터 확인 (방 생성 시 LobbyView에서 전달)
 const routerState = history.state?.roomData || null;
@@ -236,7 +255,7 @@ const initialRoomData = routerState ? {
   timeLimit: routerState.timeLimit || 60,
   isPrivate: routerState.isPrivate || false,
   password: routerState.password || '',
-  hostId: routerState.hostId || '',
+  hostId: routerState.hostId || (shouldUseDummyMode ? currentUserId : ''),
   currentPlayerCount: routerState.currentPlayerCount || 0,
   createdAt: routerState.createdAt || new Date().toISOString(),
 } : {
@@ -249,13 +268,17 @@ const initialRoomData = routerState ? {
   timeLimit: 60,
   isPrivate: false,
   password: '',
-  hostId: '',
+  hostId: shouldUseDummyMode ? currentUserId : '',
   currentPlayerCount: 0,
   createdAt: new Date().toISOString(),
 };
 
+const initialHostId = routerState?.hostId != null
+  ? routerState.hostId.toString()
+  : (initialRoomData.hostId != null ? initialRoomData.hostId.toString() : '');
+
 // isHost 판단: routerState의 hostId와 현재 사용자 ID 비교
-const isHost = ref(routerState ? routerState.hostId === currentUserId : false);
+const isHost = ref(shouldUseDummyMode || (initialHostId !== '' && initialHostId === normalizedCurrentUserId));
 
 // 초기 players 빈 배열 (API에서 가져올 예정)
 const initialPlayers = [];
@@ -282,16 +305,97 @@ const emit = defineEmits([
 // 알림 시스템 - 반드시 useRoom 호출보다 먼저 선언되어야 함
 const toastRef = ref(null);
 
+// 게임 시작 카운트다운 상태
+const isCountdownActive = ref(false);
+const countdownSeconds = ref(3);
+const countdownMessage = ref('게임이 곧 시작됩니다!');
+const pendingGameStartPayload = ref(null);
+const hasNavigatedToGame = ref(false);
+let countdownIntervalId = null;
+
+const clearCountdownTimer = () => {
+  if (countdownIntervalId !== null) {
+    clearInterval(countdownIntervalId);
+    countdownIntervalId = null;
+  }
+};
+
+const navigateToSoloGame = (payload = {}) => {
+  if (hasNavigatedToGame.value) {
+    return;
+  }
+
+  clearCountdownTimer();
+  hasNavigatedToGame.value = true;
+  isCountdownActive.value = false;
+
+  const targetRoomId = payload?.roomId || localRoomData?.value?.id || props.roomId;
+
+  prepareForGameNavigation();
+
+  router.push({
+    name: 'SoloRoadViewGameView',
+    params: { roomId: targetRoomId },
+    state: {
+      expectedPlayers: localPlayers.value.length || localRoomData.value.currentPlayerCount || 1,
+      dummyMode: isRoomDummyMode.value,
+      timeLimit: localRoomData.value.timeLimit || 120
+    }
+  }).catch((error) => {
+    console.error('❌ 게임 화면 이동 중 오류:', error);
+    setDisconnectReason(null);
+    hasNavigatedToGame.value = false;
+    throw error;
+  });
+};
+
+function handleGameStartSignal(startEvent = {}) {
+  clearCountdownTimer();
+  hasNavigatedToGame.value = false;
+  pendingGameStartPayload.value = startEvent;
+
+  const rawCountdown = Number(
+    startEvent?.countdown ?? startEvent?.countDown ?? startEvent?.countdownSeconds ?? 3
+  );
+  const sanitizedCountdown = Number.isFinite(rawCountdown) && rawCountdown > 0
+    ? Math.floor(rawCountdown)
+    : 3;
+
+  countdownSeconds.value = sanitizedCountdown;
+  countdownMessage.value = startEvent?.message || '게임이 곧 시작됩니다!';
+  isCountdownActive.value = true;
+
+  if (typeof addSystemMessage === 'function') {
+    addSystemMessage(`게임이 ${countdownSeconds.value}초 후 시작됩니다.`);
+  }
+
+  if (sanitizedCountdown <= 0) {
+    navigateToSoloGame(startEvent);
+    return;
+  }
+
+  countdownIntervalId = window.setInterval(() => {
+    if (countdownSeconds.value > 1) {
+      countdownSeconds.value -= 1;
+      return;
+    }
+
+    countdownSeconds.value = 0;
+    clearCountdownTimer();
+    navigateToSoloGame(pendingGameStartPayload.value || {});
+  }, 1000);
+}
+
 // Room composable에 전달할 props 구성
 const roomProps = {
   roomData: initialRoomData,
   players: initialPlayers,
   isHost: isHost.value,
-  currentUserId: currentUserId
+  currentUserId: normalizedCurrentUserId
 };
 
 // Room composable 사용 - 알림 시스템과 연결
-const room = useRoom(roomProps, emit, { toastRef });
+const room = useRoom(roomProps, emit, { toastRef, onGameStartMessage: handleGameStartSignal, dummyMode: shouldUseDummyMode });
 
 // 템플릿에서 사용할 상태와 메서드 추출
 const {
@@ -299,6 +403,9 @@ const {
   localRoomData,
   isTeamMode,
   canStartGame,
+  isStartingGame,
+  isDummyMode: isRoomDummyMode,
+  
   
   // WebSocket 및 로딩 상태
   isWebSocketConnected,
@@ -354,7 +461,13 @@ const {
   getCurrentPlayerNickname,
   getCurrentPlayerTeam,
   canJoinTeam,
-  getTeamPlayerCount
+  getTeamPlayerCount,
+  prepareForGameNavigation,
+  setDisconnectReason,
+  disconnectWebSocket,
+  
+  // 초기화 메서드
+  initializeRoom
 } = room;
 
 // leaveRoom 래퍼: 방 퇴장 후 로비로 새로고침 리다이렉션
@@ -376,6 +489,7 @@ const leaveRoom = async () => {
 // 반응형 디자인 상태 관리
 const isMobileView = ref(false);
 const isChatVisible = ref(false);
+const chatInputFieldRef = ref(null);
 
 // 화면 크기 감지
 const checkScreenSize = () => {
@@ -396,14 +510,68 @@ const handleToggleChat = () => {
   toggleChat();
 };
 
-onMounted(() => {
+const handleChatInputFocus = () => {
+  if (!isMobileView.value) {
+    return;
+  }
+
+  nextTick(() => {
+    scrollChatToBottom();
+    if (chatInputFieldRef.value) {
+      chatInputFieldRef.value.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest'
+      });
+    }
+  });
+};
+
+onMounted(async () => {
   checkScreenSize();
   window.addEventListener('resize', checkScreenSize);
+  
+  // Room 초기화 (방 데이터 로딩 및 WebSocket 연결)
+  try {
+    await initializeRoom();
+  } catch (error) {
+    console.error('❌ RoomView 초기화 실패:', error);
+    
+    // 방 조회 실패 또는 인터넷 연결 문제 시 로비로 리다이렉트
+    const errorCode = error?.code || '';
+    const isRoomNotFound = errorCode === 'ROOM_NOT_FOUND' || errorCode === 'ROOM_LOAD_FAILED';
+    const isNetworkError = !navigator.onLine || error?.message?.includes('network') || error?.message?.includes('Network');
+    
+    if (isRoomNotFound || isNetworkError) {
+      console.warn('⚠️ 방을 조회할 수 없거나 인터넷 연결이 끊겼습니다. 로비로 이동합니다.');
+      alert('방을 조회할 수 없거나 인터넷 연결이 끊겼습니다. 로비로 이동합니다.');
+      window.location.href = '/lobby';
+      return;
+    }
+    
+    // 기타 에러는 사용자에게 알림
+    alert('방 정보를 불러오는 중 오류가 발생했습니다. 로비로 이동합니다.');
+    window.location.href = '/lobby';
+  }
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', checkScreenSize);
+  clearCountdownTimer();
+  disconnectWebSocket();
 });
+
+watch(
+  () => localRoomData.value?.hostId,
+  (newHostId) => {
+    const match = newHostId != null && newHostId.toString() === normalizedCurrentUserId;
+    const nextIsHost = shouldUseDummyMode || match;
+    if (nextIsHost !== isHost.value) {
+      isHost.value = nextIsHost;
+      roomProps.isHost = nextIsHost;
+    }
+  },
+  { immediate: true }
+);
 
 // 시간 포맷팅 유틸리티
 const formatUpdateTime = (timestamp) => {
@@ -454,7 +622,8 @@ const formatUpdateTime = (timestamp) => {
 }
 
 .left-panel {
-  flex: 1.2;
+  flex: 0 0 65%;
+  max-width: 65%;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -462,8 +631,9 @@ const formatUpdateTime = (timestamp) => {
 }
 
 .right-panel {
-  flex: 1;
-  min-width: 280px;
+  flex: 0 0 35%;
+  max-width: 35%;
+  min-width: 320px;
   display: flex;
   flex-direction: column;
 }
@@ -840,11 +1010,14 @@ const formatUpdateTime = (timestamp) => {
 /* Responsive design */
 @media (max-width: 1200px) {
   .left-panel {
-    flex: 1.4;
+    flex: 1;
+    max-width: 100%;
   }
   
   .right-panel {
-    min-width: 350px;
+    flex: 1;
+    max-width: 100%;
+    min-width: 280px;
   }
 }
 
@@ -856,12 +1029,14 @@ const formatUpdateTime = (timestamp) => {
 
   .left-panel {
     flex: none;
+    max-width: 100%;
     height: auto;
     min-height: 50vh;
   }
 
   .right-panel {
     flex: 1;
+    max-width: 100%;
     min-width: 0;
     min-height: 45vh;
   }

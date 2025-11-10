@@ -75,6 +75,7 @@ export default {
   
   computed: {
     formattedTime() {
+      // 소수점까지 저장된 시간을 초 단위로 표시 (내림)
       const totalSeconds = Math.max(0, Math.floor(this.currentTime));
       const minutes = Math.floor(totalSeconds / 60);
       const seconds = totalSeconds % 60;

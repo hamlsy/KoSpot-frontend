@@ -1,8 +1,8 @@
 <template>
   <div class="road-view">
     <div id="roadview-container" ref="roadviewContainer"></div>
-    
-    <div class="road-error" v-if="hasError">
+    <!-- 임시로 제거 -->
+    <!-- <div class="road-error" v-if="hasError && !suppressError">
       <div class="error-icon">
         <i class="fas fa-exclamation-triangle"></i>
       </div>
@@ -10,7 +10,7 @@
         <h3>로드뷰를 불러올 수 없습니다</h3>
         <p>이 위치에 로드뷰 데이터가 없습니다.</p>
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -37,6 +37,10 @@ export default {
       default: false
     },
     preventMouseEvents: {
+      type: Boolean,
+      default: false
+    },
+    suppressError: {
       type: Boolean,
       default: false
     }
@@ -102,9 +106,9 @@ export default {
       
       // position이 null인 경우 오류 처리
       if (!this.position || typeof this.position.lat === 'undefined' || typeof this.position.lng === 'undefined') {
-        console.error('유효한 위치 정보가 없습니다:', this.position);
+        console.error('[RoadView] 유효한 위치 정보가 없습니다:', this.position);
         this.hasError = true;
-        this.$emit('load-error');
+        this.$emit('load-error', { position: this.position, error: 'Invalid position' });
         return;
       }
       
@@ -115,9 +119,9 @@ export default {
         try {
           const container = this.$refs.roadviewContainer;
           if (!container) {
-            console.error('로드뷰 컨테이너를 찾을 수 없습니다.');
+            console.error('[RoadView] 로드뷰 컨테이너를 찾을 수 없습니다.');
             this.hasError = true;
-            this.$emit('load-error');
+            this.$emit('load-error', { position: this.position, error: 'Container not found' });
             return;
           }
           
@@ -131,9 +135,14 @@ export default {
           console.log('로드뷰 파노라마 ID 검색 중...');
           roadviewClient.getNearestPanoId(position, 100, (panoId) => {
             if (panoId === null) {
-              console.error('해당 위치에서 로드뷰를 찾을 수 없습니다.');
+              console.error('[RoadView] 해당 위치에서 로드뷰를 찾을 수 없습니다:', this.position);
+              console.log('[RoadView] load-error 이벤트 emit 시작 (suppressError:', this.suppressError, ')');
               this.hasError = true;
-              this.$emit('load-error');
+              
+              // suppressError가 true여도 재발급 요청을 위해 이벤트는 emit해야 함
+              // (에러 화면 표시만 막으면 됨)
+              this.$emit('load-error', { position: this.position });
+              console.log('[RoadView] load-error 이벤트 emit 완료');
               return;
             }
             
@@ -163,20 +172,20 @@ export default {
                 this.$emit('pano-changed', { panoId: this.roadview.getPanoId() });
               });
             } catch (error) {
-              console.error('로드뷰 설정 중 오류 발생:', error);
+              console.error('[RoadView] 로드뷰 설정 중 오류 발생:', error);
               this.hasError = true;
-              this.$emit('load-error');
+              this.$emit('load-error', { position: this.position, error });
             }
           });
         } catch (error) {
-          console.error('로드뷰 초기화 중 오류 발생:', error);
+          console.error('[RoadView] 로드뷰 초기화 중 오류 발생:', error);
           this.hasError = true;
-          this.$emit('load-error');
+          this.$emit('load-error', { position: this.position, error });
         }
       } else {
-        console.error('Kakao Maps SDK가 로드되지 않았습니다.');
+        console.error('[RoadView] Kakao Maps SDK가 로드되지 않았습니다.');
         this.hasError = true;
-        this.$emit('load-error');
+        this.$emit('load-error', { position: this.position, error: 'Kakao Maps SDK not loaded' });
       }
     },
     
@@ -197,9 +206,9 @@ export default {
           
           roadviewClient.getNearestPanoId(position, 100, (panoId) => {
             if (panoId === null) {
-              console.error('새 위치에서 로드뷰를 찾을 수 없습니다.');
+              console.error('[RoadView] 새 위치에서 로드뷰를 찾을 수 없습니다:', newPosition);
               this.hasError = true;
-              this.$emit('load-error');
+              this.$emit('load-error', { position: newPosition });
               return;
             }
             
@@ -207,14 +216,14 @@ export default {
             this.roadview.setPanoId(panoId, position);
           });
         } catch (error) {
-          console.error('로드뷰 위치 업데이트 중 오류 발생:', error);
+          console.error('[RoadView] 로드뷰 위치 업데이트 중 오류 발생:', error);
           this.hasError = true;
-          this.$emit('load-error');
+          this.$emit('load-error', { position: newPosition, error });
         }
       } else {
-        console.error('Kakao Maps SDK가 로드되지 않았습니다.');
+        console.error('[RoadView] Kakao Maps SDK가 로드되지 않았습니다.');
         this.hasError = true;
-        this.$emit('load-error');
+        this.$emit('load-error', { position: newPosition, error: 'Kakao Maps SDK not loaded' });
       }
     },
     

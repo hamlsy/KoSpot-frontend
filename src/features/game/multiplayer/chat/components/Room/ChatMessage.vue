@@ -26,14 +26,19 @@ const props = defineProps({
     required: true
   },
   currentUserId: {
-    type: String,
+    type: [String, Number],
     required: true
   }
 });
 
 // Computed properties
 const isOwnMessage = computed(() => {
-  return props.message.senderId === props.currentUserId;
+  const sender = props.message?.senderId;
+  if (sender === undefined || sender === null) {
+    return false;
+  }
+
+  return String(sender) === String(props.currentUserId);
 });
 
 const isSystemMessage = computed(() => {
@@ -60,47 +65,64 @@ const formattedTime = computed(() => {
   max-width: 80%;
   align-self: flex-start;
   margin-bottom: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .chat-message.own-message {
   align-self: flex-end;
+  text-align: right;
 }
 
 .message-sender {
   font-size: 0.8rem;
   color: #6b7280;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.1rem;
+}
+
+.chat-message.own-message .message-sender {
+  display: none;
 }
 
 .message-content {
+  display: inline-flex;
+  align-items: flex-start;
   background: #f3f4f6;
   padding: 0.75rem 1rem;
-  border-radius: 16px 16px 16px 0;
-  color: black;
-  font-size: 0.9rem;
+  border-radius: 16px 16px 16px 4px;
+  color: #111827;
+  font-size: 0.92rem;
+  line-height: 1.45;
   word-break: break-word;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  max-width: 100%;
 }
 
 .chat-message.own-message .message-content {
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-  color: #1e40af;
-  border-radius: 16px 16px 0 16px;
+  margin-left: auto;
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+  color: white;
+  border-radius: 16px 16px 4px 16px;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
 }
 
 .message-time {
   font-size: 0.7rem;
   color: #9ca3af;
-  margin-top: 0.25rem;
   text-align: right;
 }
 
-/* Add subtle hover effect */
-.chat-message:hover .message-content {
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+.chat-message.own-message .message-time {
+  text-align: left;
+  margin-left: auto;
+  color: rgba(255, 255, 255, 0.75);
 }
 
-/* Add subtle transition */
+.chat-message:hover .message-content {
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
 .chat-message .message-content {
   transition: all 0.2s ease;
 }
