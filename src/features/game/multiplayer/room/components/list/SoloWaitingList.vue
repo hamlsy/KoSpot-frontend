@@ -38,7 +38,7 @@
         <!-- 플레이어 정보 -->
         <div class="player-info">
           <div class="player-name">
-            {{ player.nickname }}
+            <span class="player-name-text">{{ player.nickname }}</span>
             <span v-if="player.id === currentUserId" class="you-badge">나</span>
           </div>
         </div>
@@ -103,10 +103,12 @@ const emptySlots = computed(() => {
 
 .players-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 1rem;
   width: 100%;
+  max-width: 100%;
   height: 100%;
+  box-sizing: border-box;
 }
 
 /* 플레이어 카드 */
@@ -115,6 +117,9 @@ const emptySlots = computed(() => {
   background: white;
   border-radius: 16px;
   padding: 1rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -223,6 +228,10 @@ const emptySlots = computed(() => {
 .player-info {
   text-align: center;
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
 }
 
 .player-name {
@@ -231,12 +240,22 @@ const emptySlots = computed(() => {
   color: #1e293b;
   margin-bottom: 0.25rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 0.25rem;
-  white-space: nowrap;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.player-name-text {
+  display: -webkit-box;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: normal;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.2;
 }
 
 .you-badge {

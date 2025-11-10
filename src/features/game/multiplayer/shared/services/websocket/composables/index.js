@@ -1,7 +1,8 @@
 import { 
     isConnected, 
     connect, 
-    disconnect, 
+    disconnect,
+    deactivate, 
     subscribe, 
     unsubscribe, 
     publish, 
@@ -77,6 +78,7 @@ const webSocketManager = {
     // 웹소켓 기본 기능
     connect,
     disconnect,
+    deactivate,
     subscribe,
     unsubscribe,
     publish,

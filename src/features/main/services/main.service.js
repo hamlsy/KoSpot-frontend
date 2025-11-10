@@ -63,11 +63,7 @@ class MainService {
    */
   async getMainPageData() {
     try {
-      console.log('📤 메인 페이지 데이터 조회 요청');
-      
       const response = await apiClient.get(API_ENDPOINTS.MAIN);
-      
-      console.log('✅ 메인 페이지 데이터 조회 성공:', response.data);
       return response.data;
     } catch (error) {
       console.error('❌ 메인 페이지 데이터 조회 실패:', error);

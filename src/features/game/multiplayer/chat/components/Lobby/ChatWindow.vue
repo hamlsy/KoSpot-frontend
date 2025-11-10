@@ -1,7 +1,7 @@
 <template>
   <div class="chat-window">
     <div class="chat-header">
-      <h3 class="chat-title">로비 채팅</h3>
+      <h3 class="chat-title">채팅방</h3>
       <!-- <div class="online-users">
         <span class="online-indicator"></span>
         <span>{{ onlineUsers }}명 접속중</span>

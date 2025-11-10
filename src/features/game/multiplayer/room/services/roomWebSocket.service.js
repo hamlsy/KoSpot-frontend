@@ -9,6 +9,7 @@ import {
   getGameRoomSettingsChannel,
   getGameRoomChatChannel,
   getGameRoomStatusChannel,
+  getGameStartChannel,
   GAME_ROOM_NOTIFICATION_TYPES
 } from '../constants/webSocketChannels.js';
 
@@ -39,6 +40,7 @@ class RoomWebSocketService {
    * @param {Function} eventHandlers.onGameRoomNotification - 게임 방 알림 통합 핸들러
    * @param {Function} eventHandlers.onChatMessage - 채팅 메시지 핸들러
    * @param {Function} eventHandlers.onGameStateChange - 게임 상태 변경 핸들러
+   * @param {Function} eventHandlers.onGameStartCountdown - 게임 시작 카운트다운 핸들러
    * @returns {Promise<boolean>} 연결 성공 여부
    */
   async connectToRoom(roomId, currentUserId, eventHandlers = {}) {
@@ -111,13 +113,15 @@ class RoomWebSocketService {
       subscriptions.push(
         this.webSocketManager.subscribe(playerListChannel, (message) => {
           try {
-            const notification = JSON.parse(message.body);
+            const notification =
+              message && typeof message === 'object' && 'body' in message
+                ? JSON.parse(message.body)
+                : message;
+
             console.log('📥 게임 방 알림 수신:', notification);
-            
-            // 알림 타입에 따라 처리
             this._handleGameRoomNotification(notification, eventHandlers);
           } catch (error) {
-            console.error('❌ 게임 방 알림 파싱 실패:', error);
+            console.error('❌ 게임 방 알림 파싱 실패:', error, message);
           }
         })
       );
@@ -130,10 +134,13 @@ class RoomWebSocketService {
       subscriptions.push(
         this.webSocketManager.subscribe(chatChannel, (message) => {
           try {
-            const chatEvent = JSON.parse(message.body);
+            const chatEvent =
+              message && typeof message === 'object' && 'body' in message
+                ? JSON.parse(message.body)
+                : message;
+
             console.log('📥 채팅 메시지 수신:', chatEvent);
             
-            // API 명세서 형식 처리: { senderId, messageId, nickname, content, messageType, teamId, timestamp }
             const processedChatEvent = {
               senderId: chatEvent.senderId,
               messageId: chatEvent.messageId,
@@ -146,7 +153,7 @@ class RoomWebSocketService {
             
             eventHandlers.onChatMessage(processedChatEvent);
           } catch (error) {
-            console.error('❌ 채팅 메시지 파싱 실패:', error);
+            console.error('❌ 채팅 메시지 파싱 실패:', error, message);
           }
         })
       );
@@ -158,11 +165,15 @@ class RoomWebSocketService {
       subscriptions.push(
         this.webSocketManager.subscribe(settingsChannel, (message) => {
           try {
-            const settingsUpdate = JSON.parse(message.body);
+            const settingsUpdate =
+              message && typeof message === 'object' && 'body' in message
+                ? JSON.parse(message.body)
+                : message;
+
             console.log('📥 게임 방 설정 업데이트 수신:', settingsUpdate);
             this._handleGameRoomSettingsUpdate(settingsUpdate, eventHandlers);
           } catch (error) {
-            console.error('❌ 게임 방 설정 업데이트 파싱 실패:', error);
+            console.error('❌ 게임 방 설정 업데이트 파싱 실패:', error, message);
           }
         })
       );
@@ -174,11 +185,35 @@ class RoomWebSocketService {
       subscriptions.push(
         this.webSocketManager.subscribe(statusChannel, (message) => {
           try {
-            const statusEvent = JSON.parse(message.body);
+            const statusEvent =
+              message && typeof message === 'object' && 'body' in message
+                ? JSON.parse(message.body)
+                : message;
+
             console.log('📥 게임 방 상태 변경 수신:', statusEvent);
             eventHandlers.onGameRoomStatusChange(statusEvent);
           } catch (error) {
-            console.error('❌ 게임 방 상태 이벤트 파싱 실패:', error);
+            console.error('❌ 게임 방 상태 이벤트 파싱 실패:', error, message);
+          }
+        })
+      );
+    }
+
+    // 게임 시작 카운트다운 채널 구독
+    if (eventHandlers.onGameStartCountdown) {
+      const gameStartChannel = getGameStartChannel(roomId);
+      subscriptions.push(
+        this.webSocketManager.subscribe(gameStartChannel, (message) => {
+          try {
+            const startEvent =
+              message && typeof message === 'object' && 'body' in message
+                ? JSON.parse(message.body)
+                : message;
+
+            console.log('📥 게임 시작 카운트다운 수신:', startEvent);
+            eventHandlers.onGameStartCountdown(startEvent);
+          } catch (error) {
+            console.error('❌ 게임 시작 카운트다운 파싱 실패:', error, message);
           }
         })
       );
@@ -706,7 +741,7 @@ class RoomWebSocketService {
    * @param {string} currentUserId - 현재 사용자 ID
    * @param {boolean} isHost - 방장 여부
    */
-  async disconnectFromRoom(roomId, currentUserId, isHost = false) {
+  async disconnectFromRoom(roomId, currentUserId, isHost = false, options = {}) {
     try {
       console.log('🔌 게임 방 WebSocket 연결 해제:', { roomId, currentUserId, isHost });
 
@@ -724,8 +759,12 @@ class RoomWebSocketService {
         this.connectionMonitorId = null;
       }
 
+      const reason = options?.reason || null;
+      const normalizedReason = typeof reason === 'string' ? reason.toLowerCase() : null;
+      const skipLeaveEvent = normalizedReason === 'navigate-room' || normalizedReason === 'navigate-game';
+
       // 방 퇴장 이벤트 발행 (방장이 아닌 경우만)
-      if (!isHost) {
+      if (!isHost && !skipLeaveEvent) {
         this.publishLeaveRoom(roomId, currentUserId);
       }
 
@@ -737,6 +776,24 @@ class RoomWebSocketService {
 
       // 재연결 상태 초기화
       this.reconnectAttempts = 0;
+
+      const shouldKeepConnection = skipLeaveEvent && this.webSocketManager.isConnected?.value;
+
+      if (shouldKeepConnection) {
+        this.isManualDisconnect = false;
+        console.log('🔄 방 전환을 위해 WebSocket 연결을 유지합니다.', { roomId, reason });
+      } else {
+        // STOMP 연결 비활성화 (서버에 DISCONNECT 프레임 전송)
+        if (typeof this.webSocketManager.deactivate === 'function') {
+          const disconnectHeaders = reason ? { reason } : undefined;
+          await this.webSocketManager.deactivate({
+            disconnectHeaders,
+            force: options?.force,
+          });
+        } else {
+          this.webSocketManager.disconnect();
+        }
+      }
 
       console.log('✅ 게임 방 WebSocket 연결 해제 완료:', roomId);
     } catch (error) {

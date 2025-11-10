@@ -3,7 +3,15 @@
     <!-- 게임 헤더 -->
     <div class="game-header row">
       <div class="header-left col-md-4">
-        <div class="room-info">
+        <button
+          v-if="showLeaveButton"
+          class="leave-game-button"
+          @click="$emit('leave-game')"
+          title="나가기"
+        >
+          <i class="fas fa-sign-out-alt"></i>
+        </button>
+        <div class="room-info" :class="{ 'without-button': !showLeaveButton }">
           <div class="room-name">{{ roomData?.name || "방 이름 없음" }}</div>
           <div class="game-mode">{{ gameMode === "team" ? "팀전" : "개인전" }}</div>
         </div>
@@ -44,10 +52,10 @@
         
         <game-timer
           :initialTime="gameStore.state.remainingTime"
-          :totalTime="120"
+          :totalTime="totalTime"
           :warning-threshold="30"
           :danger-threshold="10"
-          :is-running="!showIntroOverlay && !showNextRoundOverlay"
+          :is-running="!showIntroOverlay && !showNextRoundOverlay && !useCustomWebSocket"
         />
       </div>
     </div>
@@ -102,7 +110,9 @@
               "
               :show-controls="true"
               :prevent-mouse-events="gameStore.state.hasSubmittedGuess"
+              :suppress-error="suppressRoadviewError"
               @load-complete="onViewLoaded"
+              @load-error="onViewLoadError"
             />
           </slot>
 
@@ -120,6 +130,16 @@
           >
             <i class="fas fa-map-marked-alt"></i>
             지도
+          </button>
+
+          <!-- 지도 재로딩 버튼 (지도가 열려있을 때만 표시) -->
+          <button
+            v-if="isMapOpen && !gameStore.state.roundEnded"
+            class="map-reload-button"
+            @click="reloadPhoneMap"
+            title="지도 새로고침"
+          >
+            <i class="fas fa-sync-alt"></i>
           </button>
         </div>
       </div>
@@ -143,10 +163,12 @@
       :showHintCircles="false"
       :disabled="gameStore.state.roundEnded"
       :showDistance="false"
-      :showMarker="true"
-      :isTeamMode="false"
+      :showActionButton="false"
       :gameMode="'solo'"
+      :markerImageUrl="currentUserMarkerImageUrl"
+      :hasSubmitted="gameStore.state.hasSubmittedGuess"
       @spot-answer="handlePhoneMapGuess"
+      ref="phoneFrame"
     />
 
     <!-- 토스트 메시지 -->
@@ -203,8 +225,22 @@ export default {
     useCustomWebSocket: {
       type: Boolean,
       default: false
+    },
+    showLeaveButton: {
+      type: Boolean,
+      default: false
+    },
+    totalTime: {
+      type: Number,
+      default: 120
+    },
+    suppressRoadviewError: {
+      type: Boolean,
+      default: false
     }
   },
+
+  emits: ['leave-game', 'roadview-load-error'],
 
   provide() {
     return {
@@ -236,6 +272,7 @@ export default {
       mapCenter: null,
       isChatOpen: false,
       isResponsiveMode: false,
+      mapInitialized: false,
       showToastFlag: false,
       // UI 상태 관리
       isPlayerListOpen: window.innerWidth > 992, // 플레이어 리스트 표시 여부 (반응형에서는 기본 닫힘)
@@ -261,7 +298,27 @@ export default {
       serverStartTime: 0,
       // 라운드 타이머
       roundTimer: null,
+      // 라운드별 지도 초기화 플래그 (라운드당 최초 1번만 초기화)
+      mapInitializedForRound: null, // 현재 초기화된 라운드 번호
     };
+  },
+
+  watch: {
+    // 라운드가 변경될 때 지도 초기화 플래그 리셋
+    'gameStore.state.currentRound'(newRound, oldRound) {
+      if (newRound !== oldRound && oldRound != null) {
+        console.log(`[BaseGameView] 라운드 변경 감지: ${oldRound} -> ${newRound}, 지도 초기화 플래그 리셋`);
+        this.mapInitializedForRound = null;
+      }
+    },
+    // useCustomWebSocket prop 변경 감지 (디버깅용)
+    useCustomWebSocket(newVal, oldVal) {
+      console.log('[BaseGameView] useCustomWebSocket prop 변경:', {
+        oldVal,
+        newVal,
+        type: typeof newVal
+      })
+    }
   },
 
   computed: {
@@ -282,6 +339,15 @@ export default {
       if (!this.isNextRoundVoteActive) return "";
       return `${this.numPlayersReadyForNextRound} / ${this.totalPlayersInRoom}`;
     },
+    // 현재 사용자의 마커 이미지 URL
+    currentUserMarkerImageUrl() {
+      const currentUser = this.gameStore?.state?.currentUser
+      if (!currentUser) {
+        return null
+      }
+      // equippedMarker 또는 markerImageUrl 우선순위로 반환
+      return currentUser.equippedMarker || currentUser.markerImageUrl || null
+    },
     // WebSocket 연결 상태
     isWebSocketConnected() {
       return webSocketManager.isConnected.value;
@@ -295,10 +361,21 @@ export default {
   },
 
   created() {
+    // useCustomWebSocket prop 값 확인
+    console.log('[BaseGameView] created - useCustomWebSocket prop:', {
+      useCustomWebSocket: this.useCustomWebSocket,
+      type: typeof this.useCustomWebSocket,
+      parent: this.$parent?.$options?.name || '알 수 없음'
+    })
+    
     // 게임 중에도 WebSocket 연결 상태 확인 및 구독 설정
     // Solo 게임에서 useSoloGameFlow를 사용하는 경우 건너뜀
-    if (!this.useCustomWebSocket) {
+    // useCustomWebSocket이 명시적으로 false가 아니면 서버 모드로 간주
+    if (this.useCustomWebSocket !== true) {
+      console.log('[BaseGameView] useCustomWebSocket이 true가 아니므로 기본 WebSocket 초기화')
       this.initializeWebSocketConnection();
+    } else {
+      console.log('[BaseGameView] useCustomWebSocket이 true이므로 서버 모드 - 기본 WebSocket 초기화 스킵')
     }
   },
 
@@ -371,6 +448,13 @@ export default {
     startNextRound(userRank, totalPlayers) {
       this.userRank = userRank;
       this.totalPlayers = totalPlayers;
+      
+      // 새 라운드 시작 시 지도 초기화 플래그 리셋
+      // (다음 라운드 데이터가 오면 새로 초기화됨)
+      const nextRound = this.gameStore.state.currentRound + 1;
+      this.mapInitializedForRound = null;
+      console.log(`[BaseGameView] 라운드 ${nextRound} 시작 준비 - 지도 초기화 플래그 리셋`);
+      
       this.$nextTick(() => {
         setTimeout(() => {
           this.showNextRoundOverlay = true;
@@ -517,6 +601,30 @@ export default {
       console.log("로드뷰 로딩 완료");
     },
 
+    // 로드뷰 로딩 실패 처리
+    onViewLoadError(errorData) {
+      // useCustomWebSocket prop 값 확인 (반응형으로 최신 값 사용)
+      const useCustomWs = this.useCustomWebSocket
+      console.log('[BaseGameView] onViewLoadError 호출됨:', {
+        useCustomWebSocket: useCustomWs,
+        useCustomWebSocketType: typeof useCustomWs,
+        errorData,
+        parentComponent: this.$parent?.$options?.name || '알 수 없음'
+      })
+      
+      // Solo 게임에서 useSoloGameFlow를 사용하는 경우 (서버 모드) 재발급 요청
+      // 명시적으로 true인지 확인 (falsy 값 체크)
+      if (useCustomWs === true) {
+        console.error("[BaseGameView] 로드뷰 로딩 실패 - 서버 모드에서 재발급 요청:", errorData);
+        // 부모 컴포넌트(SoloGameView)에 로드 에러 이벤트 전달
+        this.$emit('roadview-load-error', errorData);
+        console.log('[BaseGameView] roadview-load-error 이벤트 emit 완료')
+      } else {
+        // 더미 모드에서는 로드뷰 에러를 무시 (로컬 테스트 데이터 사용)
+        console.warn('[BaseGameView] 더미 모드이므로 재발급 요청하지 않음 (useCustomWebSocket:', useCustomWs, ')')
+      }
+    },
+
     // 추측 위치 설정
     onGuessPlaced(position) {
       this.guessPosition = position;
@@ -538,7 +646,34 @@ export default {
         this.showResultMap = !this.showResultMap;
         this.initiateNextRoundVoting(); // Start voting when round results are shown
       } else {
+        const wasOpen = this.isMapOpen;
         this.isMapOpen = !this.isMapOpen;
+        
+        // 지도가 열릴 때 (false -> true)
+        // 라운드별로 최초 1번만 초기화하도록 변경
+        if (!wasOpen && this.isMapOpen) {
+          const currentRound = this.gameStore.state.currentRound;
+          
+          // 현재 라운드에서 지도가 아직 초기화되지 않은 경우에만 초기화
+          if (this.mapInitializedForRound !== currentRound) {
+            console.log(`[BaseGameView] 라운드 ${currentRound} 지도 최초 초기화`);
+            // PhoneFrame이 마운트된 후 재로딩 실행
+            this.$nextTick(() => {
+              // 약간의 딜레이를 주어 PhoneFrame이 완전히 렌더링된 후 재로딩
+              setTimeout(() => {
+                this.reloadPhoneMap(false);
+                // 초기화 플래그 설정
+                this.mapInitializedForRound = currentRound;
+              }, 100);
+            });
+          } else {
+            console.log(`[BaseGameView] 라운드 ${currentRound} 지도는 이미 초기화됨 - 재로딩하지 않음`);
+            // 지도는 이미 초기화되어 있으므로 크기만 조정
+            if (this.$refs.phoneFrame) {
+              this.$refs.phoneFrame.ensureMapInitialized();
+            }
+          }
+        }
       }
     },
 
@@ -561,6 +696,28 @@ export default {
           console.log("타이머 종료로 다음 라운드 시작", this.gameStore.state.currentRound);
         }
       }, 1000);
+    },
+
+    // PhoneFrame 내부 지도 재로딩
+    reloadPhoneMap(showToast = true) {
+      if (!this.$refs.phoneFrame) {
+        if (showToast) {
+          this.showToastMessage("지도가 준비되지 않았습니다.");
+        }
+        return;
+      }
+
+      try {
+        this.$refs.phoneFrame.reloadMap();
+        if (showToast) {
+          this.showToastMessage("지도를 재로딩합니다...");
+        }
+      } catch (error) {
+        console.error("지도 재로딩 실패:", error);
+        if (showToast) {
+          this.showToastMessage("지도 재로딩에 실패했습니다. 다시 시도해주세요.");
+        }
+      }
     },
 
     // ...
@@ -1140,42 +1297,55 @@ export default {
   align-items: center;
 }
 
+.leave-game-button {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18);
+}
+
+.leave-game-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.leave-game-button:active {
+  transform: translateY(0);
+}
+
+.leave-game-button i {
+  pointer-events: none;
+}
+
 .header-center {
   flex: 1;
   max-width: 400px;
   margin: 0 2rem;
 }
 
-.exit-button {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background-color: rgba(255, 255, 255, 0.1);
-  border: none;
-  border-radius: 8px;
-  color: white;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
 @media (max-width: 768px) {
-  .exit-text {
-    display: none;
+  .leave-game-button {
+    width: 38px;
+    height: 38px;
+    font-size: 0.95rem;
   }
-
-  .exit-button {
-    padding: 0.5rem;
-  }
-}
-
-.exit-button:hover {
-  background-color: rgba(255, 255, 255, 0.2);
 }
 
 .room-info {
   margin-left: 1rem;
+}
+
+.room-info.without-button {
+  margin-left: 0;
 }
 
 .room-name {
@@ -1723,6 +1893,46 @@ export default {
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
 }
 
+/* 지도 재로딩 버튼 */
+.map-reload-button {
+  position: fixed;
+  top: 80px;
+  right: 30px;
+  background: white;
+  border: none;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-size: 1.2rem;
+  color: #333;
+  transition: all 0.3s ease;
+  z-index: 16;
+}
+
+.map-reload-button:hover {
+  background: #f5f5f5;
+  transform: rotate(180deg) scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.map-reload-button:active {
+  transform: rotate(180deg) scale(0.95);
+}
+
+.map-reload-button i {
+  transition: transform 0.3s ease;
+  color: #3498db;
+}
+
+.map-reload-button:hover i {
+  color: #2980b9;
+}
+
 @media (max-width: 768px) {
   .phone-frame {
     width: 340px;
@@ -1741,6 +1951,14 @@ export default {
     font-size: 0.9rem;
     bottom: 20px;
     right: 20px;
+  }
+
+  .map-reload-button {
+    width: 45px;
+    height: 45px;
+    top: 70px;
+    right: 20px;
+    font-size: 1rem;
   }
 
   .phone-spot-button {

@@ -52,37 +52,26 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
     let wsUrl;
     if (process.env.NODE_ENV === "development") {
       // 개발 환경: localhost:8080 사용
-      wsUrl = `${window.location.protocol}//localhost:8080${endpoint}`;
+      wsUrl = `${process.env.VUE_APP_WS_URL}${endpoint}`;
+      console.log("🔵 개발 환경 WebSocket URL:", wsUrl);
+      console.log(process.env.VUE_APP_WS_URL)
     } else {
       // 프로덕션 환경: 환경 변수 또는 현재 호스트 사용
       if (process.env.VUE_APP_WS_URL) {
-        wsUrl = `${process.env.VUE_APP_WS_URL}/${endpoint}`;
+        wsUrl = `${process.env.VUE_APP_WS_URL}${endpoint}`;
       } else {
         // 환경 변수가 없으면 현재 페이지의 호스트 사용
         wsUrl = `${window.location.protocol}//${window.location.host}${endpoint}`;
       }
     }
 
-    console.log("🔵 WebSocket 연결 초기화:", {
-      endpoint: endpoint,
-      wsUrl: wsUrl,
-      nodeEnv: process.env.NODE_ENV,
-      protocol: window.location.protocol,
-      host: window.location.host,
-      timestamp: new Date().toISOString()
-    });
 
-    // SockJS 설정 옵션
+    // SockJS 설정 옵션 
     const sockjsOptions = {
       timeout: 10000, // 10초 타임아웃
       transports: ["websocket", "xhr-polling", "jsonp-polling"],
     };
 
-    console.log("📋 SockJS 옵션:", {
-      timeout: sockjsOptions.timeout,
-      transports: sockjsOptions.transports,
-      timestamp: new Date().toISOString()
-    });
 
     const socket = new SockJS(wsUrl, undefined, sockjsOptions);
     
@@ -171,13 +160,7 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
     
     // SockJS 연결 상태 변화 추적
     socket.onopen = function (event) {
-      console.log("🟢 SockJS onopen 이벤트 발생:", {
-        type: event.type,
-        target: event.target,
-        currentURL: event.target?.url || wsUrl,
-        readyState: event.target?.readyState,
-        timestamp: new Date().toISOString()
-      });
+      
     };
     
     // SockJS 메시지 이벤트 (디버깅용)
@@ -199,7 +182,7 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
     // STOMP 클라이언트 디버깅 비활성화 (프로덕션에서)
     if (process.env.NODE_ENV === "development") {
       stompClient.value.debug = function (str) {
-        console.log("STOMP:", str);
+        // console.log("STOMP:", str);
       };
     } else {
       stompClient.value.debug = function () {}; // 디버깅 비활성화
@@ -271,13 +254,7 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
         });
         
         isConnected.value = true;
-        
-        console.log("📊 연결 성공 후 상태:", {
-          isConnected: isConnected.value,
-          hasStompClient: !!stompClient.value,
-          connectionCallbacksCount: connectionCallbacks.value.size,
-          activeSubscriptionsCount: activeSubscriptions.value.size
-        });
+
         
         // 등록된 콜백들 실행
         connectionCallbacks.value.forEach((callback, index) => {
@@ -372,6 +349,49 @@ const disconnect = () => {
       isConnected.value = false;
       stompClient.value = null;
     });
+  }
+};
+
+/**
+ * STOMP 클라이언트 비동기 비활성화
+ * 서버로 DISCONNECT 프레임을 보장하고 소켓 리소스를 해제합니다.
+ */
+const deactivate = async (options = {}) => {
+  if (!stompClient.value) {
+    return;
+  }
+
+  const { disconnectHeaders, force } = options || {};
+
+  if (stompClient.value && disconnectHeaders && typeof disconnectHeaders === 'object') {
+    try {
+      stompClient.value.disconnectHeaders = disconnectHeaders;
+    } catch (error) {
+      console.warn('disconnectHeaders 설정 중 오류:', error);
+    }
+  }
+
+  try {
+    // STOMP 5.x deactivate는 Promise 반환
+    if (typeof stompClient.value.deactivate === "function") {
+      await stompClient.value.deactivate(force);
+    } else {
+      // 구버전 호환: disconnect 호출
+      await new Promise((resolve) => {
+        try {
+          stompClient.value.disconnect(() => resolve());
+        } catch (error) {
+          resolve();
+        }
+      });
+    }
+  } catch (error) {
+    console.error("STOMP 비활성화 중 오류:", error);
+  } finally {
+    activeSubscriptions.value.clear();
+    connectionCallbacks.value.clear();
+    isConnected.value = false;
+    stompClient.value = null;
   }
 };
 
@@ -508,6 +528,7 @@ export {
   // 메서드
   connect,
   disconnect,
+  deactivate,
   subscribe,
   unsubscribe,
   publish,

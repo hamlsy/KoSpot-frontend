@@ -90,7 +90,7 @@
       <ResultOverlay
         :show="showResult"
         :score="score"
-        :distance="distance"
+        :distance="answerDistance"
         :currentRankPoints="currentRankPoints"
         :rankPointChange="rankPointChange"
         :previousRatingScore="previousRatingScore"
@@ -105,7 +105,7 @@
         :poiName="poiName"
         :fullAddress="fullAddress"
         :markerImageUrl="markerImageUrl"
-        :userNickname="'플레이어'"
+        :userNickname="nickname"
         @restart="resetGame"
         @exit="exitGame"
       />
@@ -187,7 +187,8 @@ export default {
       fullAddress: null, // 전체 주소 (시도, 시군구, 동 포함)
 
       // 게임 점수 관련
-      distance: null,
+      answerDistance: null,
+      nickname: null,
       score: 0,
       elapsedTime: 0, // 게임 경과 시간 (초)
 
@@ -589,7 +590,7 @@ export default {
       const localScore = Math.max(0, Math.floor(100 - Math.sqrt(distance) * 10));
 
       // 게임 결과 저장 (백엔드 API 호출 전 임시 저장)
-      this.distance = distance;
+      this.answerDistance = distance;
       this.guessedLocation = position;
 
       try {
@@ -632,7 +633,9 @@ export default {
         
         if (response.isSuccess && response.result) {
           const { 
+            nickname,
             score,
+            answerDistance,
             previousRatingScore,
             currentRatingScore,
             ratingScoreChange,
@@ -645,7 +648,9 @@ export default {
           } = response.result;
           
           // 백엔드에서 계산된 점수와 랭킹 정보로 업데이트
+          this.nickname = nickname;
           this.score = score;
+          this.answerDistance = answerDistance;
           this.previousRatingScore = previousRatingScore;
           this.currentRatingScore = currentRatingScore;
           this.rankPointChange = ratingScoreChange;

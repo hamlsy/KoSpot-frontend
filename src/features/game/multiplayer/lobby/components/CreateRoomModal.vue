@@ -154,10 +154,10 @@ export default {
   data() {
     return {
       roomName: "",
-      gameMode: "로드뷰",
-      region: "전국",
+      gameMode: "roadview",
       maxPlayers: 4,
       gameType: "solo",
+      timeLimit: 180,
       password: "",
       gameSettings: {
         isPrivate: false,
@@ -182,6 +182,7 @@ export default {
         title: this.roomName,
         password: this.password || null,
         gameModeKey: this.gameMode,
+        timeLimit: this.timeLimit,
         playerMatchTypeKey: playerMatchTypeKey,
         maxPlayers: this.maxPlayers,
         privateRoom: this.gameSettings.isPrivate,

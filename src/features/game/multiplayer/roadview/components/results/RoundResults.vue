@@ -6,11 +6,17 @@
         <div class="header-left">
           <h2 class="round-title">
             라운드 {{ round }} 결과
-            <span class="location-name" v-if="locationName">- {{ locationName }}</span>
+            <span class="location-name" v-if="poiName || locationName">
+              - {{ poiName || locationName }}
+            </span>
           </h2>
           <div class="round-info">
             {{ round }} / {{ totalRounds }} 라운드 완료
             <span v-if="isLastRound" class="final-round-badge">최종 라운드!</span>
+          </div>
+          <div class="location-address" v-if="fullAddress">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>{{ fullAddress }}</span>
           </div>
         </div>
         <div class="results-summary">
@@ -197,6 +203,14 @@ export default {
       type: String,
       default: "",
     },
+    poiName: {
+      type: String,
+      default: "",
+    },
+    fullAddress: {
+      type: String,
+      default: "",
+    },
     playerGuesses: {
       type: Array,
       default: () => [],
@@ -313,11 +327,22 @@ export default {
     // 플레이어 추측 위치에 대한 마커 정보 계산
     playerMarkers() {
       if (!this.isTeamMode) {
-        return this.playerGuesses.map((guess) => ({
-          position: guess.position,
-          color: guess.color,
-          playerName: guess.playerName,
-        }));
+        return this.playerGuesses.map((guess) => {
+          // 플레이어 정보에서 마커 이미지 URL 가져오기
+          const player = this.players.find(p => p.id === guess.playerId);
+          const markerImageUrl = guess.markerImageUrl || 
+                                player?.equippedMarker || 
+                                player?.markerImageUrl || 
+                                null;
+          
+          return {
+            position: guess.position,
+            color: guess.color,
+            playerName: guess.playerName,
+            markerImageUrl: markerImageUrl, // 플레이어 마커 이미지 추가
+            playerId: guess.playerId
+          };
+        });
       } else {
         // 팀 모드일 때는 팀별로 대표 마커만 표시
         const teamGuesses = [];
@@ -332,7 +357,8 @@ export default {
               position: guess.position,
               color: team?.color || '#FF5722',
               playerName: team?.name || '팀',
-              teamId: playerTeam
+              teamId: playerTeam,
+              markerImageUrl: team?.representativeMarker || null // 팀 대표 마커
             });
           }
         });
@@ -478,8 +504,12 @@ export default {
 
     // 거리 포맷팅 메서드 (소수점 3자리에서 반올림)
     formatDistance(distance) {
-      if (!distance && distance !== 0) return "0";
-      return Math.round(distance * 1000) / 1000;
+      if (distance == null || (distance !== 0 && !distance)) return "0";
+      // 소수점 3자리에서 반올림: 소수점 4자리에서 반올림하여 소수점 3자리까지 표시
+      // 예: 1.23456 -> 1.235, 1.23444 -> 1.234
+      const rounded = Math.round(Number(distance) * 1000) / 1000;
+      // 소수점 3자리까지 표시 (불필요한 0은 자동 제거됨)
+      return parseFloat(rounded.toFixed(3));
     },
   },
 };
@@ -542,6 +572,24 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.location-address {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #888;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.location-address i {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.location-address span {
+  color: #666;
 }
 
 .final-round-badge {

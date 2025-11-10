@@ -27,6 +27,7 @@ function useWebSocketManager() {
         // 웹소켓 기본 기능
         connect: webSocketManager.connect,
         disconnect: webSocketManager.disconnect,
+        deactivate: webSocketManager.deactivate,
         subscribe: webSocketManager.subscribe,
         unsubscribe: webSocketManager.unsubscribe,
         publish: webSocketManager.publish,
