@@ -311,6 +311,53 @@ export default {
     this.initializePlayerLoadingState();
   },
 
+  // 강제 종료 시 탈퇴 처리
+  handleBeforeUnload() {
+    console.log('[Solo Game] 페이지 종료 감지 - 퇴장 처리 시도');
+    
+    try {
+      const roomId = this.roomId;
+      const currentUserId = this.currentUserId;
+      
+      if (!roomId || !currentUserId) {
+        console.warn('[Solo Game] roomId 또는 currentUserId가 없어 퇴장 처리를 건너뜁니다.');
+        return;
+      }
+      
+      // fetch with keepalive를 사용하여 비동기적으로 퇴장 요청
+      // keepalive 옵션은 페이지가 닫혀도 요청이 보장됨
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+      const leaveUrl = `${apiBaseUrl}/api/rooms/${roomId}/leave`;
+      
+      try {
+        fetch(leaveUrl, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ memberId: currentUserId }),
+          keepalive: true, // 페이지가 닫혀도 요청 보장
+          credentials: 'include', // 쿠키 포함
+        }).catch(() => {
+          // fetch 실패는 무시 (페이지가 닫히는 중이므로)
+        });
+        
+        console.log('[Solo Game] ✅ fetch keepalive로 퇴장 요청 전송 시도');
+      } catch (error) {
+        console.warn('[Solo Game] ⚠️ fetch keepalive 전송 실패:', error);
+      }
+      
+      // 구독 해제 시도 (동기적으로만 가능)
+      try {
+        this.cleanupSubscriptions();
+      } catch (error) {
+        console.error('[Solo Game] ❌ 구독 해제 실패:', error);
+      }
+    } catch (error) {
+      console.error('[Solo Game] ❌ beforeunload 퇴장 처리 중 오류:', error);
+    }
+  },
+
   async mounted() {
     // 게임 상태 명시적 초기화 (이전 게임 상태 완전 제거)
     // showGameResults 등이 true로 남아있으면 게임 완료 화면이 표시될 수 있음
@@ -323,6 +370,9 @@ export default {
     this.gameStore.state.playerGuesses = [];
     this.gameStore.state.remainingTime = 120;
     this.gameStore.state.finalGameResult = null; // 최종 게임 결과 초기화
+    
+    // 강제 종료 감지를 위한 beforeunload 이벤트 리스너 추가
+    window.addEventListener('beforeunload', this.handleBeforeUnload);
     
     // 개발자모드 파라미터만 확인
     // history.state?.dummyMode가 명시적으로 true인 경우에만 더미 모드
@@ -376,6 +426,9 @@ export default {
   },
 
   beforeUnmount() {
+    // 이벤트 리스너 정리
+    window.removeEventListener('beforeunload', this.handleBeforeUnload);
+    
     // 타이머 정리
     this.clearTimer()
     if (this.toastTimeout) {

@@ -181,7 +181,7 @@ export function useRoom(props, emit, options = {}) {
   };
 
   // 초기 방 데이터 로딩 핸들러
-  const loadInitialRoomData = async () => {
+  const loadInitialRoomData = async (preloadedRoomDetail = null) => {
     console.log('🏠 초기 방 데이터 로딩 시작:', localRoomData.value.id);
     
     try {
@@ -192,8 +192,15 @@ export function useRoom(props, emit, options = {}) {
         return;
       }
       
-      // 방 상세 정보 + 초기 플레이어 목록 조회
-      const roomDetail = await roomApiService.getRoomDetail(localRoomData.value.id);
+      // preloadedRoomDetail이 있으면 사용, 없으면 API 호출
+      let roomDetail = preloadedRoomDetail;
+      
+      if (!roomDetail) {
+        // 방 상세 정보 + 초기 플레이어 목록 조회
+        roomDetail = await roomApiService.getRoomDetail(localRoomData.value.id);
+      } else {
+        console.log('✅ 사전 로드된 방 상세 정보 사용 (접근 권한 확인에서 받음)');
+      }
       
       if (!roomDetail) {
         // 방이 존재하지 않는 경우
@@ -850,7 +857,7 @@ export function useRoom(props, emit, options = {}) {
   // Lifecycle hooks
   // Note: onMounted는 RoomView에서 직접 호출하므로 여기서는 제거
   // 대신 initializeRoom 함수를 export하여 RoomView에서 호출하도록 변경
-  const initializeRoom = async () => {
+  const initializeRoom = async (preloadedRoomDetail = null) => {
     try {
       console.log('🚀 RoomView 초기화 시작');
       
@@ -859,8 +866,9 @@ export function useRoom(props, emit, options = {}) {
       roomChat.scrollChatToBottom();
       
       // 2. 초기 방 데이터 로딩 (방 정보 + 초기 플레이어 목록)
+      // preloadedRoomDetail이 있으면 사용, 없으면 API 호출
       // 에러 발생 시 RoomView에서 처리하도록 throw
-      await loadInitialRoomData();
+      await loadInitialRoomData(preloadedRoomDetail);
 
       if (isDummyMode.value) {
         console.log('🧪 더미 모드로 실행 중이므로 WebSocket 연결을 생략합니다.');
