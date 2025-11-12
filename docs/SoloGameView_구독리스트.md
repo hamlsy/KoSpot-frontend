@@ -76,14 +76,7 @@ SoloGameView.vue 페이지에 접속할 때 구독하는 모든 WebSocket 채널
 ### 3. 로딩 상태 채널 구독 (RoomView에서 미리 구독)
 **호출 위치**: `RoomView.vue` → `useRoom.js` → `initializeRoom()` → `roomWebSocketService.connectToRoom()`
 
-#### 3.1 로딩 상태
-- **채널**: `/topic/game/{roomId}/loading/status`
-- **키**: `loadingStatus`
-- **설명**: 플레이어 로딩 상태 업데이트 (플레이어 도착 여부, 준비 상태 등)
-- **핸들러**: `handleLoadingStatus` → `SoloGameView.handleLoadingStatus`
-- **구독 시점**: **RoomView.vue에서 미리 구독** (타이밍 문제 방지)
-  - `useRoom.js` → `initializeRoom()` → `roomWebSocketService.connectToRoom()` 호출 시
-  - SoloGameView.vue에서는 핸들러만 설정 (`skipSubscribe = true`)
+
 
 ---
 

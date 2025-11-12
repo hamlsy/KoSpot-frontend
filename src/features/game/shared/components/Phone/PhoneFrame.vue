@@ -384,15 +384,15 @@ export default {
 /* 반응형 디자인 */
 @media (max-width: 768px) {
   .phone-frame {
-    width: 340px;
-    height: 640px;
+    width: 320px;
+    height: 600px;
   }
 }
 
 @media (max-width: 480px) {
   .phone-frame {
-    width: 300px;
-    height: 600px;
+    width: 280px;
+    height: 560px;
   }
 
   .phone-spot-button {
