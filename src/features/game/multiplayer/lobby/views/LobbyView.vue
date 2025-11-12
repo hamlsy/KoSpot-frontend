@@ -186,10 +186,17 @@ const formattedChatMessages = computed(() => {
 });
 
 // 메서드
-const checkMobileView = () => {
+const checkMobileView = (preserveChatState = false) => {
   windowWidth.value = window.innerWidth;
   isMobile.value = windowWidth.value <= 900;
-  isChatVisible.value = !isMobile.value;
+  
+  // 리사이즈 이벤트로 인한 호출이 아닌 경우에만 채팅창 상태 초기화
+  if (!preserveChatState) {
+    // 데스크톱에서는 항상 채팅창 표시, 모바일에서는 숨김
+    isChatVisible.value = !isMobile.value;
+  }
+  // preserveChatState가 true인 경우 (리사이즈 이벤트)에는 채팅창 상태를 변경하지 않음
+  // 이렇게 하면 모바일에서 키보드로 인한 뷰포트 변경 시에도 채팅창이 닫히지 않음
 };
 
 const getCurrentUserId = () => {
@@ -359,8 +366,8 @@ onMounted(async () => {
   
   checkAdminStatus();
   initializeData();
-  checkMobileView();
-  window.addEventListener('resize', checkMobileView);
+  checkMobileView(); // 초기화 시에는 상태 설정
+  window.addEventListener('resize', () => checkMobileView(true)); // 리사이즈 시에는 채팅창 상태 보존
 });
 
 onBeforeUnmount(async () => {

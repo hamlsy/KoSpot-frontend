@@ -118,6 +118,16 @@ export const getGameStartChannel = (roomId) => {
 };
 
 /**
+ * 게임 로딩 상태 채널 생성
+ * @param {string|number} roomId - 게임 방 ID
+ * @returns {string} WebSocket 채널 경로: /topic/game/{roomId}/loading/status
+ */
+export const getGameLoadingStatusChannel = (roomId) => {
+  const validatedRoomId = validateId(roomId, 'roomId');
+  return `/topic/game/${validatedRoomId}/loading/status`;
+};
+
+/**
  * 모든 게임 방 채널 생성
  * @param {string|number} roomId - 게임 방 ID
  * @returns {Object} 모든 채널 객체
@@ -184,6 +194,7 @@ export default {
   getGameRoomSettingsChannel,
   getGameRoomStatusChannel,
   getGameStartChannel,
+  getGameLoadingStatusChannel,
   getAllGameRoomChannels,
   isGameRoomChannel,
   extractRoomIdFromChannel,

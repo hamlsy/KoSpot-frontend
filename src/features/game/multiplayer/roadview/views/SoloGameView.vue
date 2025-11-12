@@ -429,7 +429,8 @@ export default {
       if (!this.roomId) {
         return
       }
-      soloGameWebSocket.setupLoadingSubscription(this.roomId, this.handleLoadingStatus)
+      // RoomView에서 이미 구독되어 있으므로, 핸들러만 설정 (skipSubscribe = true)
+      soloGameWebSocket.setupLoadingSubscription(this.roomId, this.handleLoadingStatus, true)
     },
 
     sendLoadingAcknowledge() {
@@ -1463,8 +1464,11 @@ export default {
         this.soloGameFlow.cleanup()
       }
 
-      // 로딩 구독 해제
-      soloGameWebSocket.removeLoadingSubscription()
+      // 로딩 핸들러만 해제 (구독은 RoomView에서 관리하므로 해제하지 않음)
+      if (soloGameWebSocket && soloGameWebSocket.handlers) {
+        soloGameWebSocket.handlers.onLoadingStatus = null
+        console.log('[Solo Game] 로딩 상태 핸들러 해제 완료 (구독은 RoomView에서 관리)')
+      }
 
       console.log('[Solo Game] 모든 구독 해제 완료')
     },

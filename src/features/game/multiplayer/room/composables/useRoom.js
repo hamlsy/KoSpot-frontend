@@ -6,6 +6,7 @@ import { useRoomPlayer } from './useRoomPlayer';
 import roomApiService from '../services/roomApi.service.js';
 import roomWebSocketService from '../services/roomWebSocket.service.js';
 import { soloTestData, testData } from '../composables/MultiplayerGameTestData.js';
+import soloGameWebSocket from '@/features/game/multiplayer/roadview/services/soloGameWebSocket';
 
 /**
  * Room 통합 관리 컴포저블
@@ -256,6 +257,18 @@ export function useRoom(props, emit, options = {}) {
       } catch (error) {
         console.error('❌ 게임 시작 콜백 처리 중 오류:', error);
       }
+    }
+  };
+
+  // 게임 로딩 상태 핸들러 (SoloGameView에서 사용)
+  // RoomView에서 미리 구독하여 타이밍 문제 방지
+  const handleLoadingStatus = (loadingStatusMessage) => {
+    console.log('📥 게임 로딩 상태 수신 (RoomView):', loadingStatusMessage);
+    
+    // soloGameWebSocket의 핸들러를 통해 SoloGameView로 전달
+    // soloGameWebSocket은 싱글톤이므로 핸들러가 설정되어 있으면 자동으로 전달됨
+    if (soloGameWebSocket && typeof soloGameWebSocket.handleLoadingStatus === 'function') {
+      soloGameWebSocket.handleLoadingStatus(loadingStatusMessage);
     }
   };
 
@@ -861,7 +874,8 @@ export function useRoom(props, emit, options = {}) {
         onGameRoomSettingsUpdate: handleGameRoomSettingsUpdate,  // 방 설정 변경 (GameRoomUpdateMessage)
         onGameRoomStatusChange: handleGameRoomStatusChange,      // 방 상태 변경 (게임 시작 등)
         onConnectionStatusChange: handleConnectionStatusChange,  // 연결 상태 변경 (재연결 등)
-        onGameStartCountdown: handleGameStartCountdown           // 게임 시작 카운트다운
+        onGameStartCountdown: handleGameStartCountdown,          // 게임 시작 카운트다운
+        onLoadingStatus: handleLoadingStatus                     // 게임 로딩 상태 (SoloGameView에서 사용)
       };
       
       // 4. WebSocket 연결 시도
