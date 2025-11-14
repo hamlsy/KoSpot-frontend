@@ -224,7 +224,7 @@ export default {
     // Solo 게임에서 useSoloGameFlow를 사용하는 경우
     useCustomWebSocket: {
       type: Boolean,
-      default: false
+      default: true
     },
     showLeaveButton: {
       type: Boolean,

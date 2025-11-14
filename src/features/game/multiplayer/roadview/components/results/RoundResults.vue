@@ -123,7 +123,7 @@
           </div>
 
           <button
-            v-if="isLastRound"
+            v-if="isLastRound && !isServerMode"
             class="action-button finish-button"
             @click="$emit('finish-game')"
           >
@@ -258,6 +258,10 @@ export default {
     serverCountdownSeconds: {
       type: Number,
       default: null,
+    },
+    isServerMode: {
+      type: Boolean,
+      default: false,
     },
   },
 

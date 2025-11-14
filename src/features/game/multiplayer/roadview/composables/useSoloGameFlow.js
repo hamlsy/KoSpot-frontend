@@ -42,6 +42,7 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     onTimerSync: null,
     onGamePlayersUpdate: null,
     onRoundResultUpdate: null, // 라운드 결과 업데이트 콜백
+    onPlayerSubmission: null, // 플레이어 제출 알림 콜백
     ...uiCallbacks
   }
 
@@ -389,13 +390,26 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
       }
     }
 
-    // 플레이어 찾기 및 제출 상태 업데이트
+    // 더미 모드용: gameStore.state.players 업데이트 (하위 호환성)
     const player = gameStore.state.players.find(p => p.id === playerId)
     if (player) {
       player.hasSubmitted = true
-      console.log(`[Solo Flow] 플레이어 ${player.nickname || playerId} 제출 완료`)
+      console.log(`[Solo Flow] 플레이어 ${player.nickname || playerId} 제출 완료 (더미 모드)`)
     } else {
-      console.warn(`[Solo Flow] 플레이어를 찾을 수 없음: ${playerId}`)
+      // 더미 모드에서 플레이어를 찾을 수 없는 경우 (정상, 서버 모드에서는 gamePlayers 사용)
+      if (gameStore.state.players && gameStore.state.players.length > 0) {
+        console.warn(`[Solo Flow] 플레이어를 찾을 수 없음: ${playerId}`)
+      }
+    }
+
+    // 서버 모드용: 콜백 호출하여 SoloGameView의 gamePlayers 업데이트
+    if (callbacks.onPlayerSubmission) {
+      callbacks.onPlayerSubmission({
+        playerId: playerId,
+        memberId: message?.memberId || null, // 선택적
+        roundId: messageRoundId || null,
+        timestamp: message?.timestamp || null
+      })
     }
   }
 
@@ -483,6 +497,17 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     // 타이머 정리
     clearTimerInterval()
 
+    // roundNumber 필드 처리 제거 (라운드 시작 시점에서 이미 currentRound가 업데이트되어야 함)
+    // 라운드 결과는 현재 라운드의 결과이므로, currentRound를 여기서 업데이트하는 것은 불필요함
+    // 라운드 스타트 채널에서 이미 currentRound를 업데이트하므로, 여기서는 업데이트하지 않음
+    // if (message.roundNumber != null) {
+    //   const parsedRoundNumber = Number(message.roundNumber)
+    //   if (!Number.isNaN(parsedRoundNumber) && parsedRoundNumber > 0) {
+    //     gameStore.state.currentRound = parsedRoundNumber
+    //     console.log('[Solo Flow] 라운드 번호 업데이트:', parsedRoundNumber)
+    //   }
+    // }
+
     // 정답 좌표 설정
     gameStore.state.actualLocation = {
       lat: message.targetLat,
@@ -533,12 +558,14 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
       
       return {
         playerId: player.playerId,
+        memberId: player.memberId != null ? Number(player.memberId) : player.playerId, // memberId 추가
         playerName: player.nickname,
         position: { lat: submission.lat, lng: submission.lng },
         color: '#3b82f6', // 기본값: 파란색
         markerImageUrl: markerImageUrl, // 플레이어 마커 이미지 (SoloGameView에서 gamePlayers로 업데이트됨)
         score: submission.earnedScore,
-        distance: submission.distance
+        distance: submission.distance,
+        timeToAnswer: submission.timeToAnswer != null ? Number(submission.timeToAnswer) : null // timeToAnswer 추가
       }
     })
     
@@ -698,6 +725,12 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     }
     
     // 라운드 정보 업데이트
+    // currentRound는 roundInfo 유무와 관계없이 항상 업데이트 (라운드 스타트 채널에서 받음)
+    if (message.currentRound != null) {
+      gameStore.state.currentRound = Number(message.currentRound)
+      console.log('[Solo Flow] 라운드 번호 업데이트 (라운드 스타트):', message.currentRound)
+    }
+    
     if (message.roundInfo) {
       // roundInfo가 있는 경우 (일반 라운드 시작)
       const nextRoundId = Number(message.roundInfo.roundId)
@@ -709,9 +742,7 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
       if (message.totalRounds != null) {
         gameStore.state.totalRounds = message.totalRounds
       }
-      if (message.currentRound != null) {
-        gameStore.state.currentRound = message.currentRound
-      }
+      // currentRound는 위에서 이미 업데이트했으므로 여기서는 중복 업데이트하지 않음
     } else if (messageRoundId != null) {
       // roundInfo가 없지만 roundId가 직접 있는 경우
       const parsedRoundId = Number(messageRoundId)
@@ -884,7 +915,8 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     clearTimerInterval()
     clearTransitionInterval()
 
-    // 백엔드에서 받은 최종 결과 데이터 저장
+    // 백엔드에서 받은 최종 결과 데이터 매핑 (gameStore에 저장하지 않고 콜백으로 전달)
+    let finalGameResult = null
     if (message.playerResults && Array.isArray(message.playerResults)) {
       // PlayerFinalResult를 게임 결과 형식에 맞게 매핑
       const playerResults = message.playerResults.map(player => ({
@@ -893,24 +925,20 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
         markerImageUrl: player.markerImageUrl || null,
         totalScore: player.totalScore != null ? Number(player.totalScore) : 0,
         finalRank: player.finalRank != null ? Number(player.finalRank) : 0,
-        earnedPoint: player.earnedPoint != null ? Number(player.earnedPoint) : 0,
-        score: player.totalScore != null ? Number(player.totalScore) : 0 // 호환성을 위해 score도 설정
+        earnedPoint: player.earnedPoint != null ? Number(player.earnedPoint) : 0
       }))
 
-      gameStore.state.finalGameResult = {
+      finalGameResult = {
         gameId: message.gameId != null ? Number(message.gameId) : null,
         message: message.message || '',
         timestamp: message.timestamp != null ? Number(message.timestamp) : Date.now(),
         playerResults: playerResults
       }
     }
-
-    // 최종 결과 표시
-    gameStore.state.showGameResults = true
     
-    // UI 콜백: 게임 종료 화면 표시
+    // UI 콜백: 게임 종료 화면 표시 (finalGameResult 데이터 전달)
     if (callbacks.onGameFinish) {
-      callbacks.onGameFinish()
+      callbacks.onGameFinish(finalGameResult)
     }
   }
 
@@ -1078,6 +1106,7 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     setCallbacks,
     submitAnswer,
     requestRoadviewReIssue,
+    isRetrying,
     onOverlayComplete,
     publishGlobalChatMessage,
     cleanup
