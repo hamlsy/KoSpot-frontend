@@ -823,9 +823,11 @@ watch(showInventoryModal, (newValue) => {
 <style scoped>
 .profile-page {
   min-height: 100vh;
+  height: auto;
   width: 100%;
   background: #f8f9fa;
-  overflow-y: auto;
+  overflow-y: scroll;
+  -webkit-overflow-scrolling: touch; /* iOS 부드러운 스크롤 */
 }
 
 .profile-content {

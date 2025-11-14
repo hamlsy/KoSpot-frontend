@@ -17,6 +17,7 @@ const ROOM_ENDPOINTS = {
   LEAVE_ROOM: (roomId) => `/rooms/${roomId}/leave`,    // 게임 방 퇴장
   KICK_PLAYER: (roomId) => `/rooms/${roomId}/kick`, // 플레이어 강퇴
   START_GAME: (roomId) => `/rooms/${roomId}/start`, // 게임 시작
+  CHECK_ACCESS: (roomId) => `/rooms/${roomId}/access`, // 게임 방 접근 권한 확인
 };
 
 /**
@@ -196,6 +197,30 @@ class RoomApiService {
     } catch (error) {
       console.error('❌ 게임 시작 요청 실패:', error);
       this._handleApiError(error, '게임 시작 요청에 실패했습니다.');
+      throw error;
+    }
+  }
+
+  /**
+   * 게임 방 접근 권한 확인
+   * URL로 강제 접근하는 것을 막기 위한 API
+   * @param {number|string} roomId - 게임 방 ID
+   * @returns {Promise<Object>} 접근 권한 확인 결과
+   * @returns {boolean} allowed - 접근 가능 여부
+   * @returns {string} message - 접근 불가 시 메시지
+   * @returns {Object} gameRoomDetailResponse - 접근 가능 시 방 상세 정보
+   */
+  async checkGameAccess(roomId) {
+    try {
+      console.log('📤 게임 방 접근 권한 확인 요청:', { roomId });
+      
+      const response = await apiClient.get(ROOM_ENDPOINTS.CHECK_ACCESS(roomId));
+      
+      console.log('✅ 게임 방 접근 권한 확인 성공:', response.data);
+      return response.data.result;
+    } catch (error) {
+      console.error('❌ 게임 방 접근 권한 확인 실패:', error);
+      this._handleApiError(error, '게임 방 접근 권한 확인에 실패했습니다.');
       throw error;
     }
   }

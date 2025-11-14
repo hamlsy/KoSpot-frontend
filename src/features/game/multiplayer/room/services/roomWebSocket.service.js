@@ -10,6 +10,7 @@ import {
   getGameRoomChatChannel,
   getGameRoomStatusChannel,
   getGameStartChannel,
+  getGameLoadingStatusChannel,
   GAME_ROOM_NOTIFICATION_TYPES
 } from '../constants/webSocketChannels.js';
 
@@ -214,6 +215,26 @@ class RoomWebSocketService {
             eventHandlers.onGameStartCountdown(startEvent);
           } catch (error) {
             console.error('❌ 게임 시작 카운트다운 파싱 실패:', error, message);
+          }
+        })
+      );
+    }
+
+    // 게임 로딩 상태 채널 구독 (SoloGameView에서 사용)
+    if (eventHandlers.onLoadingStatus) {
+      const loadingStatusChannel = getGameLoadingStatusChannel(roomId);
+      subscriptions.push(
+        this.webSocketManager.subscribe(loadingStatusChannel, (message) => {
+          try {
+            const loadingStatus =
+              message && typeof message === 'object' && 'body' in message
+                ? JSON.parse(message.body)
+                : message;
+
+            console.log('📥 게임 로딩 상태 수신:', loadingStatus);
+            eventHandlers.onLoadingStatus(loadingStatus);
+          } catch (error) {
+            console.error('❌ 게임 로딩 상태 파싱 실패:', error, message);
           }
         })
       );

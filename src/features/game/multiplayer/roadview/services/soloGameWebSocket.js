@@ -306,14 +306,26 @@ class SoloGameWebSocketService {
 
   /**
    * 로딩 상태 채널 구독
+   * @param {String} roomId - 게임방 ID
+   * @param {Function} handler - 로딩 상태 핸들러
+   * @param {Boolean} skipSubscribe - 구독은 건너뛰고 핸들러만 설정 (RoomView에서 이미 구독한 경우)
    */
-  setupLoadingSubscription(roomId, handler) {
+  setupLoadingSubscription(roomId, handler, skipSubscribe = false) {
     if (!this.isConnected) {
       console.warn('[Solo WebSocket] 연결되지 않아 로딩 채널을 구독할 수 없습니다.')
       return
     }
 
+    // 핸들러 설정
     this.handlers.onLoadingStatus = handler
+
+    // 구독은 건너뛰고 핸들러만 설정 (RoomView에서 이미 구독한 경우)
+    if (skipSubscribe) {
+      console.log(`[Solo WebSocket] 로딩 상태 핸들러만 설정 (구독은 RoomView에서 이미 완료): Room ${roomId}`)
+      return
+    }
+
+    // 구독 설정 (기존 동작)
     this.unsubscribe('loadingStatus')
 
     this.subscribe(

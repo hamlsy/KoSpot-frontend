@@ -6,6 +6,7 @@ import { useRoomPlayer } from './useRoomPlayer';
 import roomApiService from '../services/roomApi.service.js';
 import roomWebSocketService from '../services/roomWebSocket.service.js';
 import { soloTestData, testData } from '../composables/MultiplayerGameTestData.js';
+import soloGameWebSocket from '@/features/game/multiplayer/roadview/services/soloGameWebSocket';
 
 /**
  * Room 통합 관리 컴포저블
@@ -180,7 +181,7 @@ export function useRoom(props, emit, options = {}) {
   };
 
   // 초기 방 데이터 로딩 핸들러
-  const loadInitialRoomData = async () => {
+  const loadInitialRoomData = async (preloadedRoomDetail = null) => {
     console.log('🏠 초기 방 데이터 로딩 시작:', localRoomData.value.id);
     
     try {
@@ -191,8 +192,15 @@ export function useRoom(props, emit, options = {}) {
         return;
       }
       
-      // 방 상세 정보 + 초기 플레이어 목록 조회
-      const roomDetail = await roomApiService.getRoomDetail(localRoomData.value.id);
+      // preloadedRoomDetail이 있으면 사용, 없으면 API 호출
+      let roomDetail = preloadedRoomDetail;
+      
+      if (!roomDetail) {
+        // 방 상세 정보 + 초기 플레이어 목록 조회
+        roomDetail = await roomApiService.getRoomDetail(localRoomData.value.id);
+      } else {
+        console.log('✅ 사전 로드된 방 상세 정보 사용 (접근 권한 확인에서 받음)');
+      }
       
       if (!roomDetail) {
         // 방이 존재하지 않는 경우
@@ -256,6 +264,18 @@ export function useRoom(props, emit, options = {}) {
       } catch (error) {
         console.error('❌ 게임 시작 콜백 처리 중 오류:', error);
       }
+    }
+  };
+
+  // 게임 로딩 상태 핸들러 (SoloGameView에서 사용)
+  // RoomView에서 미리 구독하여 타이밍 문제 방지
+  const handleLoadingStatus = (loadingStatusMessage) => {
+    console.log('📥 게임 로딩 상태 수신 (RoomView):', loadingStatusMessage);
+    
+    // soloGameWebSocket의 핸들러를 통해 SoloGameView로 전달
+    // soloGameWebSocket은 싱글톤이므로 핸들러가 설정되어 있으면 자동으로 전달됨
+    if (soloGameWebSocket && typeof soloGameWebSocket.handleLoadingStatus === 'function') {
+      soloGameWebSocket.handleLoadingStatus(loadingStatusMessage);
     }
   };
 
@@ -837,7 +857,7 @@ export function useRoom(props, emit, options = {}) {
   // Lifecycle hooks
   // Note: onMounted는 RoomView에서 직접 호출하므로 여기서는 제거
   // 대신 initializeRoom 함수를 export하여 RoomView에서 호출하도록 변경
-  const initializeRoom = async () => {
+  const initializeRoom = async (preloadedRoomDetail = null) => {
     try {
       console.log('🚀 RoomView 초기화 시작');
       
@@ -846,8 +866,9 @@ export function useRoom(props, emit, options = {}) {
       roomChat.scrollChatToBottom();
       
       // 2. 초기 방 데이터 로딩 (방 정보 + 초기 플레이어 목록)
+      // preloadedRoomDetail이 있으면 사용, 없으면 API 호출
       // 에러 발생 시 RoomView에서 처리하도록 throw
-      await loadInitialRoomData();
+      await loadInitialRoomData(preloadedRoomDetail);
 
       if (isDummyMode.value) {
         console.log('🧪 더미 모드로 실행 중이므로 WebSocket 연결을 생략합니다.');
@@ -861,7 +882,8 @@ export function useRoom(props, emit, options = {}) {
         onGameRoomSettingsUpdate: handleGameRoomSettingsUpdate,  // 방 설정 변경 (GameRoomUpdateMessage)
         onGameRoomStatusChange: handleGameRoomStatusChange,      // 방 상태 변경 (게임 시작 등)
         onConnectionStatusChange: handleConnectionStatusChange,  // 연결 상태 변경 (재연결 등)
-        onGameStartCountdown: handleGameStartCountdown           // 게임 시작 카운트다운
+        onGameStartCountdown: handleGameStartCountdown,          // 게임 시작 카운트다운
+        onLoadingStatus: handleLoadingStatus                     // 게임 로딩 상태 (SoloGameView에서 사용)
       };
       
       // 4. WebSocket 연결 시도

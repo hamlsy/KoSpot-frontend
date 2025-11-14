@@ -189,7 +189,7 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRouter, useRoute, onBeforeRouteLeave } from 'vue-router';
 
 // Core Components
 import NavigationBar from '@/core/components/NavigationBar.vue';
@@ -213,6 +213,9 @@ import { soloTestData } from 'src/features/game/multiplayer/room/composables/Mul
 
 // Composables
 import { useRoom } from '../composables/useRoom';
+
+// Services
+import roomApiService from '../services/roomApi.service.js';
 
 // Props - route params에서 roomId 받기
 const props = defineProps({
@@ -386,7 +389,7 @@ function handleGameStartSignal(startEvent = {}) {
   }, 1000);
 }
 
-// Room composable에 전달할 props 구성
+// Room composable에 전달할 props 구성 (접근 권한 확인 후 업데이트될 수 있음)
 const roomProps = {
   roomData: initialRoomData,
   players: initialPlayers,
@@ -395,6 +398,7 @@ const roomProps = {
 };
 
 // Room composable 사용 - 알림 시스템과 연결
+// 주의: roomProps는 접근 권한 확인 후 업데이트될 수 있으므로, useRoom 내부에서 참조로 사용됨
 const room = useRoom(roomProps, emit, { toastRef, onGameStartMessage: handleGameStartSignal, dummyMode: shouldUseDummyMode });
 
 // 템플릿에서 사용할 상태와 메서드 추출
@@ -526,20 +530,126 @@ const handleChatInputFocus = () => {
   });
 };
 
+// 강제 종료 시 탈퇴 처리
+const handleBeforeUnload = (event) => {
+  // 브라우저가 닫히기 전에 퇴장 처리 시도
+  // 주의: beforeunload는 동기적으로만 작동하므로 async/await 사용 불가
+  console.log('🚪 페이지 종료 감지 - 퇴장 처리 시도');
+  
+  try {
+    const roomId = localRoomData.value?.id || props.roomId;
+    const currentUserId = normalizedCurrentUserId;
+    
+    if (!roomId || !currentUserId) {
+      console.warn('⚠️ roomId 또는 currentUserId가 없어 퇴장 처리를 건너뜁니다.');
+      return;
+    }
+    
+    // fetch with keepalive를 사용하여 비동기적으로 퇴장 요청
+    // keepalive 옵션은 페이지가 닫혀도 요청이 보장됨
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+    const leaveUrl = `${apiBaseUrl}/api/rooms/${roomId}/leave`;
+    
+    // fetch with keepalive로 DELETE 요청 시도 (비동기이지만 keepalive로 보장)
+    fetch(leaveUrl, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ memberId: currentUserId }),
+      keepalive: true, // 페이지가 닫혀도 요청 보장
+      credentials: 'include', // 쿠키 포함
+    }).catch(() => {
+      // fetch 실패는 무시 (페이지가 닫히는 중이므로)
+    });
+    
+    console.log('✅ fetch keepalive로 퇴장 요청 전송 시도');
+    
+    // WebSocket 연결 해제 시도 (동기적으로만 가능, 완료 보장 안 됨)
+    // disconnectWebSocket은 비동기이므로 완료를 기다릴 수 없음
+    disconnectWebSocket().catch(() => {
+      // 실패는 무시
+    });
+  } catch (error) {
+    console.error('❌ beforeunload 퇴장 처리 중 오류:', error);
+  }
+};
+
 onMounted(async () => {
   checkScreenSize();
   window.addEventListener('resize', checkScreenSize);
   
-  // Room 초기화 (방 데이터 로딩 및 WebSocket 연결)
+  // 강제 종료 감지를 위한 beforeunload 이벤트 리스너 추가
+  window.addEventListener('beforeunload', handleBeforeUnload);
+  
+  // Room 초기화 전에 접근 권한 확인
   try {
-    await initializeRoom();
+    // 더미 모드가 아닌 경우에만 접근 권한 확인
+    if (!shouldUseDummyMode) {
+      // 1. 접근 권한 확인 (URL로 강제 접근하는 것을 막기 위함)
+      const accessCheck = await roomApiService.checkGameAccess(props.roomId);
+      
+      if (!accessCheck.allowed) {
+        // 접근 불가: 메시지 표시 후 로비로 리다이렉트
+        const message = accessCheck.message || '이 방에 접근할 수 없습니다.';
+        console.warn('⚠️ 방 접근 권한 없음:', message);
+        alert(message);
+        window.location.href = '/lobby';
+        return;
+      }
+      
+      // 2. 접근 가능: gameRoomDetailResponse를 받아서 초기 방 데이터로 설정
+      let preloadedRoomDetail = null;
+      
+      if (accessCheck.gameRoomDetailResponse) {
+        const roomDetail = accessCheck.gameRoomDetailResponse;
+        preloadedRoomDetail = roomDetail; // initializeRoom에 전달
+        
+        // routerState가 없거나 덮어쓰기 가능한 경우에만 initialRoomData 업데이트
+        if (!routerState || routerState.allowOverride) {
+          // gameRoomDetailResponse를 초기 방 데이터 형식으로 변환
+          initialRoomData.id = roomDetail.roomId ?? props.roomId;
+          initialRoomData.title = roomDetail.title ?? initialRoomData.title;
+          initialRoomData.timeLimit = roomDetail.timeLimit ?? initialRoomData.timeLimit;
+          initialRoomData.gameMode = roomDetail.gameMode?.toLowerCase?.() ?? roomDetail.gameMode ?? initialRoomData.gameMode;
+          initialRoomData.isTeamMode = roomDetail.gameType ? roomDetail.gameType.toLowerCase() === 'team' : initialRoomData.isTeamMode;
+          initialRoomData.isPrivate = roomDetail.privateRoom ?? initialRoomData.isPrivate;
+          initialRoomData.maxPlayers = roomDetail.maxPlayers ?? initialRoomData.maxPlayers;
+          initialRoomData.hostId = roomDetail.hostId ?? initialRoomData.hostId;
+          initialRoomData.currentPlayerCount = roomDetail.currentPlayerCount ?? initialRoomData.currentPlayerCount;
+          
+          // roomProps도 업데이트
+          roomProps.roomData = { ...initialRoomData };
+          
+          console.log('✅ 접근 권한 확인 완료, 방 정보 업데이트:', initialRoomData);
+        }
+      }
+      
+      // 3. Room 초기화 (방 데이터 로딩 및 WebSocket 연결)
+      // preloadedRoomDetail을 전달하여 중복 API 호출 방지
+      await initializeRoom(preloadedRoomDetail);
+    } else {
+      console.log('🧪 더미 모드: 접근 권한 확인 건너뜀');
+      
+      // 3. Room 초기화 (더미 모드)
+      await initializeRoom();
+    }
   } catch (error) {
     console.error('❌ RoomView 초기화 실패:', error);
     
-    // 방 조회 실패 또는 인터넷 연결 문제 시 로비로 리다이렉트
+    // 접근 권한 확인 실패 또는 방 조회 실패 시 로비로 리다이렉트
     const errorCode = error?.code || '';
-    const isRoomNotFound = errorCode === 'ROOM_NOT_FOUND' || errorCode === 'ROOM_LOAD_FAILED';
+    const isAccessDenied = errorCode === 'ACCESS_DENIED' || error?.response?.status === 403;
+    const isRoomNotFound = errorCode === 'ROOM_NOT_FOUND' || errorCode === 'ROOM_LOAD_FAILED' || error?.response?.status === 404;
     const isNetworkError = !navigator.onLine || error?.message?.includes('network') || error?.message?.includes('Network');
+    
+    if (isAccessDenied) {
+      const message = error?.response?.data?.message || '이 방에 접근할 수 없습니다.';
+      console.warn('⚠️ 방 접근 권한 없음:', message);
+      alert(message);
+      window.location.href = '/lobby';
+      return;
+    }
     
     if (isRoomNotFound || isNetworkError) {
       console.warn('⚠️ 방을 조회할 수 없거나 인터넷 연결이 끊겼습니다. 로비로 이동합니다.');
@@ -554,8 +664,30 @@ onMounted(async () => {
   }
 });
 
+// 라우터 네비게이션 가드: 다른 페이지로 이동하기 전에 구독 해제
+onBeforeRouteLeave(async (to, from, next) => {
+  console.log('🚪 라우터 네비게이션 감지:', { to: to.path, from: from.path });
+  
+  // 구독 해제 및 정리 작업
+  try {
+    window.removeEventListener('resize', checkScreenSize);
+    clearCountdownTimer();
+    await disconnectWebSocket();
+    console.log('✅ 라우터 네비게이션 전 구독 해제 완료');
+  } catch (error) {
+    console.error('❌ 라우터 네비게이션 전 구독 해제 중 오류:', error);
+  } finally {
+    // 에러가 발생해도 네비게이션은 계속 진행
+    next();
+  }
+});
+
 onBeforeUnmount(() => {
+  // 이벤트 리스너 정리
   window.removeEventListener('resize', checkScreenSize);
+  window.removeEventListener('beforeunload', handleBeforeUnload);
+  
+  // onBeforeRouteLeave가 호출되지 않은 경우를 대비한 안전장치
   clearCountdownTimer();
   disconnectWebSocket();
 });

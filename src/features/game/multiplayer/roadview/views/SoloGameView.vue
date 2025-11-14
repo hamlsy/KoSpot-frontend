@@ -77,6 +77,7 @@
         :current-user-has-voted="false"
         :is-mobile="$refs.baseGame ? $refs.baseGame.isMobile : false"
         :server-countdown-seconds="soloGameFlow.transitionCountdown.value"
+        :is-server-mode="isServerMode"
         @close="closeRoundResults"
         @request-next-round="requestNextRound"
         @finish-game="finishGame"
@@ -88,12 +89,12 @@
     <!-- 게임 결과 모달 -->
     <template #results>
       <final-results
-        v-if="gameStore.state.showGameResults"
-        :player-results="gameStore.state.finalGameResult?.playerResults || []"
+        v-if="showGameResults"
+        :player-results="finalGameResult?.playerResults || []"
         :current-user-id="currentUserId"
         :total-rounds="gameStore.state.totalRounds"
         :total-game-time="totalGameTime"
-        :game-message="gameStore.state.finalGameResult?.message"
+        :game-message="finalGameResult?.message"
         @play-again="restartGame"
         @exit-to-lobby="exitToLobby"
       />
@@ -211,7 +212,11 @@ export default {
 
       // 서버에서 받은 게임 플레이어 정보 (처음 게임 시작할 때 받는 정보)
       // store에 담지 않고 SoloGameView에만 저장
-      gamePlayers: []
+      gamePlayers: [],
+
+      // 게임 최종 결과 (gameStore 사용하지 않고 로컬 데이터로 관리)
+      finalGameResult: null,
+      showGameResults: false
     };
   },
 
@@ -238,19 +243,27 @@ export default {
       }
       
       // 서버 모드: gamePlayers를 플레이어 리스트 형식으로 변환
-      return this.gamePlayers.map(player => ({
-        id: String(player.playerId),
-        memberId: String(player.playerId),
-        nickname: player.nickname || '알 수 없음',
-        markerImageUrl: player.markerImageUrl || null,
-        equippedMarker: player.markerImageUrl || null,
-        totalScore: player.totalScore != null ? Number(player.totalScore) : 0,
-        roundRank: player.roundRank != null ? Number(player.roundRank) : 0,
-        score: player.totalScore != null ? Number(player.totalScore) : 0,
-        hasSubmitted: false,
-        distanceToTarget: player.distanceToTarget || null,
-        lastRoundScore: player.lastRoundScore || 0
-      }))
+      return this.gamePlayers.map(player => {
+        // gamePlayerStatus를 기반으로 hasSubmitted 판단
+        // PLAYING 또는 FINISHED 상태면 제출 완료로 간주
+        const gamePlayerStatus = player.gamePlayerStatus || 'WAITING'
+        const hasSubmitted = gamePlayerStatus === 'PLAYING' || gamePlayerStatus === 'FINISHED'
+        
+        return {
+          id: String(player.playerId),
+          memberId: String(player.memberId != null ? player.memberId : player.playerId), // memberId가 있으면 사용, 없으면 playerId 사용
+          nickname: player.nickname || '알 수 없음',
+          markerImageUrl: player.markerImageUrl || null,
+          equippedMarker: player.markerImageUrl || null,
+          totalScore: player.totalScore != null ? Number(player.totalScore) : 0,
+          roundRank: player.roundRank != null ? Number(player.roundRank) : 0,
+          score: player.totalScore != null ? Number(player.totalScore) : 0,
+          hasSubmitted: hasSubmitted, // gamePlayerStatus 기반으로 판단
+          gamePlayerStatus: gamePlayerStatus, // 플레이어 상태 추가
+          distanceToTarget: player.distanceToTarget || null,
+          lastRoundScore: player.lastRoundScore || 0
+        }
+      })
     }
   },
 
@@ -311,10 +324,58 @@ export default {
     this.initializePlayerLoadingState();
   },
 
+  // 강제 종료 시 탈퇴 처리
+  handleBeforeUnload() {
+    console.log('[Solo Game] 페이지 종료 감지 - 퇴장 처리 시도');
+    
+    try {
+      const roomId = this.roomId;
+      const currentUserId = this.currentUserId;
+      
+      if (!roomId || !currentUserId) {
+        console.warn('[Solo Game] roomId 또는 currentUserId가 없어 퇴장 처리를 건너뜁니다.');
+        return;
+      }
+      
+      // fetch with keepalive를 사용하여 비동기적으로 퇴장 요청
+      // keepalive 옵션은 페이지가 닫혀도 요청이 보장됨
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+      const leaveUrl = `${apiBaseUrl}/api/rooms/${roomId}/leave`;
+      
+      try {
+        fetch(leaveUrl, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ memberId: currentUserId }),
+          keepalive: true, // 페이지가 닫혀도 요청 보장
+          credentials: 'include', // 쿠키 포함
+        }).catch(() => {
+          // fetch 실패는 무시 (페이지가 닫히는 중이므로)
+        });
+        
+        console.log('[Solo Game] ✅ fetch keepalive로 퇴장 요청 전송 시도');
+      } catch (error) {
+        console.warn('[Solo Game] ⚠️ fetch keepalive 전송 실패:', error);
+      }
+      
+      // 구독 해제 시도 (동기적으로만 가능)
+      try {
+        this.cleanupSubscriptions();
+      } catch (error) {
+        console.error('[Solo Game] ❌ 구독 해제 실패:', error);
+      }
+    } catch (error) {
+      console.error('[Solo Game] ❌ beforeunload 퇴장 처리 중 오류:', error);
+    }
+  },
+
   async mounted() {
     // 게임 상태 명시적 초기화 (이전 게임 상태 완전 제거)
     // showGameResults 등이 true로 남아있으면 게임 완료 화면이 표시될 수 있음
-    this.gameStore.state.showGameResults = false;
+    this.showGameResults = false; // 로컬 데이터 초기화
+    this.finalGameResult = null; // 로컬 데이터 초기화
     this.gameStore.state.roundEnded = false;
     this.gameStore.state.hasSubmittedGuess = false;
     this.gameStore.state.showRoundResults = false;
@@ -322,7 +383,9 @@ export default {
     this.gameStore.state.userGuess = null;
     this.gameStore.state.playerGuesses = [];
     this.gameStore.state.remainingTime = 120;
-    this.gameStore.state.finalGameResult = null; // 최종 게임 결과 초기화
+    
+    // 강제 종료 감지를 위한 beforeunload 이벤트 리스너 추가
+    window.addEventListener('beforeunload', this.handleBeforeUnload);
     
     // 개발자모드 파라미터만 확인
     // history.state?.dummyMode가 명시적으로 true인 경우에만 더미 모드
@@ -376,6 +439,9 @@ export default {
   },
 
   beforeUnmount() {
+    // 이벤트 리스너 정리
+    window.removeEventListener('beforeunload', this.handleBeforeUnload);
+    
     // 타이머 정리
     this.clearTimer()
     if (this.toastTimeout) {
@@ -429,7 +495,8 @@ export default {
       if (!this.roomId) {
         return
       }
-      soloGameWebSocket.setupLoadingSubscription(this.roomId, this.handleLoadingStatus)
+      // RoomView에서 이미 구독되어 있으므로, 핸들러만 설정 (skipSubscribe = true)
+      soloGameWebSocket.setupLoadingSubscription(this.roomId, this.handleLoadingStatus, true)
     },
 
     sendLoadingAcknowledge() {
@@ -573,6 +640,16 @@ export default {
           // 재시도 중 플래그 해제 (새로운 좌표를 받았으므로)
           this.isRetryingRoadview = false
           
+          // 서버 모드: 첫 라운드 시작 시 gamePlayers의 제출 상태 초기화
+          if (!this.isDummyRuntime && this.gamePlayers && this.gamePlayers.length > 0) {
+            this.gamePlayers.forEach(player => {
+              player.gamePlayerStatus = 'WAITING'
+              player.distanceToTarget = null
+              player.lastRoundScore = 0
+            })
+            console.log('[Solo Game] 첫 라운드 시작 - 플레이어 제출 상태 초기화: WAITING')
+          }
+          
           if (this.$refs.baseGame) {
             this.$refs.baseGame.showIntroOverlay = true
           }
@@ -586,6 +663,16 @@ export default {
           // 재시도 중 플래그 해제 (새로운 좌표를 받았으므로)
           this.isRetryingRoadview = false
           
+          // 서버 모드: 다음 라운드 시작 시 gamePlayers의 제출 상태 초기화
+          if (!this.isDummyRuntime && this.gamePlayers && this.gamePlayers.length > 0) {
+            this.gamePlayers.forEach(player => {
+              player.gamePlayerStatus = 'WAITING'
+              player.distanceToTarget = null
+              player.lastRoundScore = 0
+            })
+            console.log('[Solo Game] 다음 라운드 시작 - 플레이어 제출 상태 초기화: WAITING')
+          }
+          
           // 현재 사용자 등수 계산
           this.currentUserRank = this.calculateUserRank()
           const totalPlayers = this.isDummyRuntime ? this.gameStore.state.players.length : this.gamePlayers.length
@@ -595,8 +682,18 @@ export default {
             this.$refs.baseGame.startNextRound(this.currentUserRank, totalPlayers)
           }
         },
-        onGameFinish: () => {
-          console.log('[Solo Game] 게임 종료')
+        onGameFinish: (finalGameResult) => {
+          console.log('[Solo Game] 게임 종료 - WebSocket 메시지 수신:', finalGameResult)
+          
+          // WebSocket으로 받은 게임 종료 메시지 데이터를 로컬 데이터에 저장
+          if (finalGameResult) {
+            this.finalGameResult = finalGameResult
+            this.showGameResults = true
+            console.log('[Solo Game] 게임 결과 모달 표시:', finalGameResult)
+          } else {
+            console.warn('[Solo Game] 게임 종료 메시지에 finalGameResult 데이터가 없음')
+          }
+          
           // 총 게임 시간 계산
           if (this.gameStartTime) {
             this.totalGameTime = Math.floor((Date.now() - this.gameStartTime) / 1000)
@@ -604,8 +701,6 @@ export default {
           
           // 플레이어들의 평균 거리 계산
           this.calculatePlayerAverageDistances()
-          
-          // 최종 결과는 gameStore.state.showGameResults가 true가 되면 자동으로 표시됨
         },
         onTimerSync: (message) => {
           if (!this.gameStore) {
@@ -625,12 +720,14 @@ export default {
           // store에 담지 않음
           this.gamePlayers = gamePlayers.map(player => ({
             playerId: player.playerId,
+            memberId: player.memberId != null ? Number(player.memberId) : player.playerId, // memberId가 없으면 playerId 사용
             nickname: player.nickname || '알 수 없음',
             markerImageUrl: player.markerImageUrl || null,
             totalScore: player.totalScore != null ? Number(player.totalScore) : 0,
             roundRank: player.roundRank != null ? Number(player.roundRank) : 0,
             distanceToTarget: player.distanceToTarget || null,
-            lastRoundScore: player.lastRoundScore || 0
+            lastRoundScore: player.lastRoundScore || 0,
+            gamePlayerStatus: player.gamePlayerStatus || 'WAITING' // 기본값: WAITING
           }))
           
           // currentUser 초기화 및 markerImageUrl 업데이트
@@ -647,7 +744,13 @@ export default {
             }
             
             // 자신의 정보를 gamePlayers에서 찾아서 markerImageUrl 및 nickname 업데이트
-            const currentPlayerInfo = gamePlayers.find(p => String(p.playerId) === String(memberId))
+            // memberId로 먼저 찾고, 없으면 playerId로 찾기
+            const currentPlayerInfo = gamePlayers.find(p => {
+              const playerMemberId = p.memberId != null ? String(p.memberId) : null
+              const playerPlayerId = p.playerId != null ? String(p.playerId) : null
+              return (playerMemberId && String(memberId) === playerMemberId) || 
+                     (playerPlayerId && String(memberId) === playerPlayerId)
+            })
             if (currentPlayerInfo) {
               if (currentPlayerInfo.markerImageUrl) {
                 this.gameStore.state.currentUser.markerImageUrl = currentPlayerInfo.markerImageUrl
@@ -663,8 +766,30 @@ export default {
           // 라운드 결과에서 받은 플레이어 점수 정보로 gamePlayers 업데이트
           if (roundResultData.playerTotalResults && Array.isArray(roundResultData.playerTotalResults)) {
             roundResultData.playerTotalResults.forEach((result, index) => {
-              const player = this.gamePlayers.find(p => p.playerId === result.playerId)
+              // 플레이어 매칭: playerId와 memberId 모두 고려
+              const player = this.gamePlayers.find(p => {
+                const resultPlayerId = result.playerId != null ? String(result.playerId) : null
+                const resultMemberId = result.memberId != null ? String(result.memberId) : null
+                const pPlayerId = p.playerId != null ? String(p.playerId) : null
+                const pMemberId = p.memberId != null ? String(p.memberId) : null
+                
+                // playerId로 먼저 매칭, 없으면 memberId로 매칭
+                return (resultPlayerId && pPlayerId && resultPlayerId === pPlayerId) ||
+                       (resultMemberId && pMemberId && resultMemberId === pMemberId) ||
+                       (resultPlayerId && pMemberId && resultPlayerId === pMemberId) ||
+                       (resultMemberId && pPlayerId && resultMemberId === pPlayerId)
+              })
+              
               if (player) {
+                // memberId 업데이트
+                if (result.memberId != null) {
+                  player.memberId = Number(result.memberId)
+                }
+                // gamePlayerStatus 업데이트
+                if (result.gamePlayerStatus != null) {
+                  player.gamePlayerStatus = result.gamePlayerStatus
+                }
+                // 점수 정보 업데이트
                 player.totalScore = result.totalScore != null ? Number(result.totalScore) : player.totalScore
                 player.roundRank = result.roundRank != null ? Number(result.roundRank) : player.roundRank
                 
@@ -673,6 +798,10 @@ export default {
                 if (submission) {
                   player.distanceToTarget = submission.distance != null ? Number(submission.distance) : player.distanceToTarget
                   player.lastRoundScore = submission.earnedScore != null ? Number(submission.earnedScore) : player.lastRoundScore
+                  // timeToAnswer 필드 저장 (필요 시 사용)
+                  if (submission.timeToAnswer != null) {
+                    player.timeToAnswer = Number(submission.timeToAnswer)
+                  }
                 }
               }
             })
@@ -682,7 +811,19 @@ export default {
           // (처음 게임 시작할 때 받은 정보 사용)
           if (roundResultData.playerGuesses && Array.isArray(roundResultData.playerGuesses)) {
             const updatedPlayerGuesses = roundResultData.playerGuesses.map(guess => {
-              const player = this.gamePlayers.find(p => String(p.playerId) === String(guess.playerId))
+              // 플레이어 매칭: playerId와 memberId 모두 고려
+              const player = this.gamePlayers.find(p => {
+                const guessPlayerId = guess.playerId != null ? String(guess.playerId) : null
+                const guessMemberId = guess.memberId != null ? String(guess.memberId) : null
+                const pPlayerId = p.playerId != null ? String(p.playerId) : null
+                const pMemberId = p.memberId != null ? String(p.memberId) : null
+                
+                return (guessPlayerId && pPlayerId && guessPlayerId === pPlayerId) ||
+                       (guessMemberId && pMemberId && guessMemberId === pMemberId) ||
+                       (guessPlayerId && pMemberId && guessPlayerId === pMemberId) ||
+                       (guessMemberId && pPlayerId && guessMemberId === pPlayerId)
+              })
+              
               if (player && player.markerImageUrl) {
                 return {
                   ...guess,
@@ -696,6 +837,56 @@ export default {
             if (this.gameStore && this.gameStore.state) {
               this.gameStore.state.playerGuesses = updatedPlayerGuesses
             }
+          }
+        },
+        onPlayerSubmission: (submissionData) => {
+          console.log('[Solo Game] 플레이어 제출 알림 수신:', submissionData)
+          
+          // gamePlayers 배열에서 해당 플레이어 찾기
+          const playerId = submissionData.playerId
+          const memberId = submissionData.memberId
+          
+          if (!playerId) {
+            console.warn('[Solo Game] 플레이어 제출 알림에 playerId가 없음:', submissionData)
+            return
+          }
+          
+          // 플레이어 매칭: playerId로 먼저 매칭, 없으면 memberId로 매칭
+          const player = this.gamePlayers.find(p => {
+            const pPlayerId = p.playerId != null ? String(p.playerId) : null
+            const pMemberId = p.memberId != null ? String(p.memberId) : null
+            const submissionPlayerId = playerId != null ? String(playerId) : null
+            const submissionMemberId = memberId != null ? String(memberId) : null
+            
+            // playerId로 먼저 매칭
+            if (submissionPlayerId && pPlayerId && submissionPlayerId === pPlayerId) {
+              return true
+            }
+            // memberId로 매칭 (둘 다 있는 경우)
+            if (submissionMemberId && pMemberId && submissionMemberId === pMemberId) {
+              return true
+            }
+            // playerId와 memberId 교차 매칭
+            if (submissionPlayerId && pMemberId && submissionPlayerId === pMemberId) {
+              return true
+            }
+            if (submissionMemberId && pPlayerId && submissionMemberId === pPlayerId) {
+              return true
+            }
+            return false
+          })
+          
+          if (player) {
+            // 플레이어 상태를 'PLAYING'으로 업데이트 (제출 완료 상태)
+            player.gamePlayerStatus = 'PLAYING'
+            console.log(`[Solo Game] 플레이어 ${player.nickname || playerId} 제출 완료 - 상태 업데이트: PLAYING`)
+            
+            // memberId 업데이트 (있는 경우)
+            if (memberId != null && player.memberId === undefined) {
+              player.memberId = Number(memberId)
+            }
+          } else {
+            console.warn(`[Solo Game] 플레이어를 찾을 수 없음: playerId=${playerId}, memberId=${memberId}`)
           }
         },
       })
@@ -892,8 +1083,8 @@ export default {
       // 플레이어들의 평균 거리 계산
       this.calculatePlayerAverageDistances();
       
-      // 최종 결과 표시
-      this.gameStore.state.showGameResults = true;
+      // 더미 모드 게임 종료 시뮬레이션 호출 (로컬 데이터로 직접 설정)
+      this.simulateGameEnd();
       
       console.log('개인전 게임 완전 종료, 총 게임 시간:', this.totalGameTime, '초');
     },
@@ -1383,30 +1574,43 @@ export default {
       // 라운드 종료 처리
       this.endRound()
       
-      // 마지막 라운드 확인
-      if (this.gameStore.state.currentRound >= this.gameStore.state.totalRounds) {
-        console.log('[Solo Game] 마지막 라운드 완료 - 게임 종료')
-        setTimeout(() => {
-          this.simulateGameEnd()
-        }, 2000)
-      }
+      // 더미 모드에서는 라운드 횟수로 게임 종료를 판단하지 않음
+      // WebSocket 게임 종료 메시지를 받을 때만 게임 종료 처리
+      // (더미 모드에서는 simulateGameEnd()를 직접 호출하여 게임 종료 시뮬레이션)
     },
 
     /**
      * 더미 게임 종료 시뮬레이션
+     * 더미 모드에서는 WebSocket 메시지를 받지 않으므로, 로컬 데이터로 직접 설정
      */
     simulateGameEnd() {
       console.log('[Solo Game] 더미 게임 종료 시뮬레이션')
       
-      const gameEndMessage = {
-        finalResults: {
-          rankings: this.gameStore.state.players.sort((a, b) => (b.score || 0) - (a.score || 0))
-        }
+      // 플레이어들을 점수 순으로 정렬
+      const sortedPlayers = [...this.gameStore.state.players].sort((a, b) => (b.score || 0) - (a.score || 0))
+      
+      // PlayerFinalResult 형식으로 매핑
+      const playerResults = sortedPlayers.map((player, index) => ({
+        playerId: player.id,
+        nickname: player.nickname || '알 수 없음',
+        markerImageUrl: player.markerImageUrl || player.equippedMarker || null,
+        totalScore: player.totalScore || player.score || 0,
+        finalRank: index + 1, // 순위는 1부터 시작
+        earnedPoint: Math.floor((player.totalScore || player.score || 0) / 10) // 점수에 비례한 포인트 (예시)
+      }))
+      
+      // 로컬 데이터에 게임 결과 저장
+      this.finalGameResult = {
+        gameId: null,
+        message: '게임이 종료되었습니다.',
+        timestamp: Date.now(),
+        playerResults: playerResults
       }
       
-      if (this.$refs.baseGame) {
-        this.$refs.baseGame.handleGameEnd(gameEndMessage)
-      }
+      // 게임 결과 모달 표시
+      this.showGameResults = true
+      
+      console.log('[Solo Game] 더미 모드 게임 결과 모달 표시:', this.finalGameResult)
     },
 
     finishGame() {
@@ -1427,16 +1631,35 @@ export default {
       // 플레이어들의 평균 거리 계산
       this.calculatePlayerAverageDistances();
       
-      // 게임 스토어의 게임 종료 처리 (더미 모드만)
-      this.gameStore.finishGame();
+      // 더미 모드 게임 종료 시뮬레이션 호출 (로컬 데이터로 직접 설정)
+      this.simulateGameEnd();
       
       console.log('[Solo Game] 더미 모드 게임 완료, 최종 결과 표시');
     },
 
     restartGame() {
-      this.gameStore.state.showGameResults = false;
-      this.initGame();
-      this.simulateOtherPlayersGuesses();
+      console.log('[Solo Game] 게임 방으로 복귀')
+      
+      // 로컬 데이터 초기화
+      this.showGameResults = false;
+      this.finalGameResult = null;
+      
+      // 모든 구독 해제
+      this.cleanupSubscriptions();
+      
+      // 게임 방으로 돌아가기
+      const roomId = this.roomId || this.$route?.params?.roomId;
+      if (roomId) {
+        console.log('[Solo Game] RoomView로 이동:', roomId);
+        this.$router.push({
+          name: 'RoomView',
+          params: { roomId: roomId }
+        });
+      } else {
+        console.warn('[Solo Game] roomId가 없어 로비로 이동합니다.');
+        // roomId가 없으면 로비로 이동
+        this.$router.push('/lobby');
+      }
     },
 
     exitToLobby() {
@@ -1463,8 +1686,11 @@ export default {
         this.soloGameFlow.cleanup()
       }
 
-      // 로딩 구독 해제
-      soloGameWebSocket.removeLoadingSubscription()
+      // 로딩 핸들러만 해제 (구독은 RoomView에서 관리하므로 해제하지 않음)
+      if (soloGameWebSocket && soloGameWebSocket.handlers) {
+        soloGameWebSocket.handlers.onLoadingStatus = null
+        console.log('[Solo Game] 로딩 상태 핸들러 해제 완료 (구독은 RoomView에서 관리)')
+      }
 
       console.log('[Solo Game] 모든 구독 해제 완료')
     },
@@ -1497,12 +1723,24 @@ export default {
       this.simulationTriggered = false;
       this.allPlayersSubmitted = false;
       
-      // 플레이어 제출 상태 초기화
-      this.gameStore.state.players.forEach(player => {
-        player.hasSubmitted = false;
-        player.distanceToTarget = null;
-        player.lastRoundScore = 0;
-      });
+      // 플레이어 제출 상태 초기화 (더미 모드)
+      if (this.isDummyRuntime) {
+        this.gameStore.state.players.forEach(player => {
+          player.hasSubmitted = false;
+          player.distanceToTarget = null;
+          player.lastRoundScore = 0;
+        });
+      } else {
+        // 서버 모드: gamePlayers의 제출 상태 초기화
+        if (this.gamePlayers && this.gamePlayers.length > 0) {
+          this.gamePlayers.forEach(player => {
+            player.gamePlayerStatus = 'WAITING'
+            player.distanceToTarget = null
+            player.lastRoundScore = 0
+          })
+          console.log('[Solo Game] 다음 라운드 준비 - 플레이어 제출 상태 초기화: WAITING')
+        }
+      }
       
       // 다음 라운드로 진행
       this.gameStore.startNextRound();

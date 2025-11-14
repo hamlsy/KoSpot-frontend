@@ -282,17 +282,20 @@ export default {
       // 상태 변경
       this.isMapOpen = !this.isMapOpen;
       
-      // 지도가 열릴 때 (false -> true) 자동으로 재로딩
-      if (!wasOpen && this.isMapOpen) {
-        // PhoneFrame이 마운트된 후 재로딩 실행
+      // 지도가 열릴 때 (false -> true) 최초 한 번만 초기화
+      if (!wasOpen && this.isMapOpen && !this.mapInitialized) {
+        // PhoneFrame이 마운트된 후 초기화 실행
         this.$nextTick(() => {
-          // 약간의 딜레이를 주어 PhoneFrame이 완전히 렌더링된 후 재로딩
-          // 자동 재로딩이므로 토스트 메시지 표시 안 함
+          // 약간의 딜레이를 주어 PhoneFrame이 완전히 렌더링된 후 초기화
           setTimeout(() => {
-            this.reloadPhoneMap(false);
+            if (this.$refs.phoneFrame) {
+              this.$refs.phoneFrame.ensureMapInitialized();
+              this.mapInitialized = true; // 초기화 완료 플래그 설정
+            }
           }, 100);
         });
       }
+      // 이후 열고 닫기는 z-index만 변경 (지도 초기화 없음)
     },
 
     // 랭크 모드 타이머 시작
@@ -382,6 +385,7 @@ export default {
             if (this.$refs.phoneFrame) {
               // 지도가 열려있으면 리사이즈, 닫혀있으면 초기화만 보장
               this.$refs.phoneFrame.ensureMapInitialized();
+              this.mapInitialized = true; // 초기화 완료 플래그 설정
               
               // 지도가 열려있으면 리사이즈
               if (this.isMapOpen) {
@@ -438,6 +442,7 @@ export default {
         if (this.$refs.phoneFrame) {
           // 지도가 열려있으면 리사이즈, 닫혀있으면 초기화만 보장
           this.$refs.phoneFrame.ensureMapInitialized();
+          this.mapInitialized = true; // 초기화 완료 플래그 설정
           
           // 지도가 열려있으면 리사이즈
           if (this.isMapOpen) {
