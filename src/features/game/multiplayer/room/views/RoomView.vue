@@ -496,14 +496,20 @@ const isChatVisible = ref(false);
 const chatInputFieldRef = ref(null);
 
 // 화면 크기 감지
-const checkScreenSize = () => {
+const checkScreenSize = (preserveChatState = false) => {
   isMobileView.value = window.innerWidth <= 1024;
-  if (!isMobileView.value) {
-    isChatVisible.value = true; // 데스크톱에서는 항상 채팅 표시
-  } else {
-    // 반응형 전환 시 기본은 플레이어 리스트 화면이 먼저 보이도록 채팅 숨김
-    isChatVisible.value = false;
+  
+  // 리사이즈 이벤트로 인한 호출이 아닌 경우에만 채팅창 상태 초기화
+  if (!preserveChatState) {
+    if (!isMobileView.value) {
+      isChatVisible.value = true; // 데스크톱에서는 항상 채팅 표시
+    } else {
+      // 반응형 전환 시 기본은 플레이어 리스트 화면이 먼저 보이도록 채팅 숨김
+      isChatVisible.value = false;
+    }
   }
+  // preserveChatState가 true인 경우 (리사이즈 이벤트)에는 채팅창 상태를 변경하지 않음
+  // 이렇게 하면 모바일에서 키보드로 인한 뷰포트 변경 시에도 채팅창이 닫히지 않음
 };
 
 // 채팅 토글 래퍼 함수
@@ -520,13 +526,9 @@ const handleChatInputFocus = () => {
   }
 
   nextTick(() => {
+    // 채팅 메시지 영역의 스크롤만 조정 (레이아웃 재계산 방지)
     scrollChatToBottom();
-    if (chatInputFieldRef.value) {
-      chatInputFieldRef.value.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest'
-      });
-    }
+    // scrollIntoView 제거: 키보드 포커스 시 모달 위치 변경 방지
   });
 };
 
@@ -577,7 +579,7 @@ const handleBeforeUnload = (event) => {
 
 onMounted(async () => {
   checkScreenSize();
-  window.addEventListener('resize', checkScreenSize);
+  window.addEventListener('resize', () => checkScreenSize(true));
   
   // 강제 종료 감지를 위한 beforeunload 이벤트 리스너 추가
   window.addEventListener('beforeunload', handleBeforeUnload);
@@ -1157,6 +1159,7 @@ const formatUpdateTime = (timestamp) => {
   .room-content {
     flex-direction: column;
     gap: 1rem;
+    position: relative;
   }
 
   .left-panel {
@@ -1182,21 +1185,22 @@ const formatUpdateTime = (timestamp) => {
 
   /* 모바일에서 채팅이 표시될 때 전체 화면 */
   .right-panel:not(.hidden-mobile) {
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    bottom: 0;
+    height: 100%;
     z-index: 1000;
     background: rgba(0, 0, 0, 0.5);
     padding: 1rem;
-    min-height: 100vh;
+    transform: translateX(0);
   }
 
   .right-panel:not(.hidden-mobile) .chat-panel {
     max-width: 500px;
-    margin: 0 auto;
+    width: 100%;
     height: 100%;
+    margin: 0 auto;
   }
 }
 

@@ -62,7 +62,11 @@
           type="text" 
           v-model="newMessage" 
           placeholder="메시지를 입력하세요..." 
-          @keyup.enter="sendMessage"
+          @keydown.stop
+          @keydown.enter="sendMessage"
+          @focus="handleInputFocus"
+          @blur="handleInputBlur"
+          ref="chatInput"
         />
         <button 
           class="send-button" 
@@ -109,7 +113,8 @@ export default {
     return {
       newMessage: '',
       onlineUsers: 37, // 테스트 데이터, 실제로는 서버에서 받아와야 함
-      currentMemberId: null
+      currentMemberId: null,
+      isInputFocused: false
     };
   },
   
@@ -157,6 +162,14 @@ export default {
       
       this.$emit('send-message', this.newMessage);
       this.newMessage = '';
+    },
+    
+    handleInputFocus() {
+      this.isInputFocused = true;
+    },
+    
+    handleInputBlur() {
+      this.isInputFocused = false;
     },
     
     closeChat() {

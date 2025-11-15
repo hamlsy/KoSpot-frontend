@@ -685,14 +685,22 @@ export default {
         onGameFinish: (finalGameResult) => {
           console.log('[Solo Game] 게임 종료 - WebSocket 메시지 수신:', finalGameResult)
           
-          // WebSocket으로 받은 게임 종료 메시지 데이터를 로컬 데이터에 저장
-          if (finalGameResult) {
-            this.finalGameResult = finalGameResult
-            this.showGameResults = true
-            console.log('[Solo Game] 게임 결과 모달 표시:', finalGameResult)
-          } else {
+          // finalGameResult가 null이거나 빈 객체인 경우 무시
+          if (!finalGameResult || typeof finalGameResult !== 'object') {
             console.warn('[Solo Game] 게임 종료 메시지에 finalGameResult 데이터가 없음')
+            return
           }
+          
+          // playerResults가 없거나 빈 배열이면 무시
+          if (!finalGameResult.playerResults || !Array.isArray(finalGameResult.playerResults) || finalGameResult.playerResults.length === 0) {
+            console.warn('[Solo Game] 게임 종료 메시지에 playerResults가 없거나 빈 배열임')
+            return
+          }
+          
+          // WebSocket으로 받은 게임 종료 메시지 데이터를 로컬 데이터에 저장
+          this.finalGameResult = finalGameResult
+          this.showGameResults = true
+          console.log('[Solo Game] 게임 결과 모달 표시:', finalGameResult)
           
           // 총 게임 시간 계산
           if (this.gameStartTime) {

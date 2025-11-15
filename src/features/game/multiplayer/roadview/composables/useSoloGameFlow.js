@@ -911,33 +911,37 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
 
     if (!gameStore) return
 
+    // playerResults가 없거나 빈 배열이면 콜백을 호출하지 않음
+    if (!message.playerResults || !Array.isArray(message.playerResults) || message.playerResults.length === 0) {
+      console.warn('[Solo Flow] 게임 종료 메시지에 playerResults가 없거나 빈 배열임, 콜백 호출하지 않음')
+      return
+    }
+
     // 모든 타이머 정리
     clearTimerInterval()
     clearTransitionInterval()
 
     // 백엔드에서 받은 최종 결과 데이터 매핑 (gameStore에 저장하지 않고 콜백으로 전달)
-    let finalGameResult = null
-    if (message.playerResults && Array.isArray(message.playerResults)) {
-      // PlayerFinalResult를 게임 결과 형식에 맞게 매핑
-      const playerResults = message.playerResults.map(player => ({
-        playerId: player.playerId,
-        nickname: player.nickname || '알 수 없음',
-        markerImageUrl: player.markerImageUrl || null,
-        totalScore: player.totalScore != null ? Number(player.totalScore) : 0,
-        finalRank: player.finalRank != null ? Number(player.finalRank) : 0,
-        earnedPoint: player.earnedPoint != null ? Number(player.earnedPoint) : 0
-      }))
+    // playerResults가 유효한 경우에만 finalGameResult 생성
+    const playerResults = message.playerResults.map(player => ({
+      playerId: player.playerId,
+      nickname: player.nickname || '알 수 없음',
+      markerImageUrl: player.markerImageUrl || null,
+      totalScore: player.totalScore != null ? Number(player.totalScore) : 0,
+      finalRank: player.finalRank != null ? Number(player.finalRank) : 0,
+      earnedPoint: player.earnedPoint != null ? Number(player.earnedPoint) : 0
+    }))
 
-      finalGameResult = {
-        gameId: message.gameId != null ? Number(message.gameId) : null,
-        message: message.message || '',
-        timestamp: message.timestamp != null ? Number(message.timestamp) : Date.now(),
-        playerResults: playerResults
-      }
+    const finalGameResult = {
+      gameId: message.gameId != null ? Number(message.gameId) : null,
+      message: message.message || '',
+      timestamp: message.timestamp != null ? Number(message.timestamp) : Date.now(),
+      playerResults: playerResults
     }
     
     // UI 콜백: 게임 종료 화면 표시 (finalGameResult 데이터 전달)
-    if (callbacks.onGameFinish) {
+    // finalGameResult가 null이 아니고 playerResults가 있는 경우에만 호출
+    if (callbacks.onGameFinish && finalGameResult) {
       callbacks.onGameFinish(finalGameResult)
     }
   }
