@@ -46,6 +46,17 @@
       </button>
 
     </div>
+
+    <!-- 공통 지도 재로딩 버튼 (우측 상단) - phone-content 외부로 이동 -->
+    <button
+      v-if="showReloadButton"
+      class="phone-reload-button"
+      @click="reloadMap"
+      title="지도 새로고침"
+    >
+      <i class="fas fa-sync-alt"></i>
+    </button>
+
     <div class="phone-footer">
       <div class="home-button" @click="$emit('close')"></div>
     </div>
@@ -100,6 +111,10 @@ export default {
       default: null,
     },
     hasSubmitted: {
+      type: Boolean,
+      default: false,
+    },
+    showReloadButton: {
       type: Boolean,
       default: false,
     },
@@ -397,6 +412,39 @@ export default {
 
 .phone-spot-button i {
   font-size: 0.9rem;
+}
+
+/* 공통 지도 재로딩 버튼 (우측 상단) */
+.phone-reload-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 31;
+  transition: transform 0.25s ease, background-color 0.25s ease;
+}
+
+.phone-reload-button:hover {
+  background: #f5f5f5;
+  transform: rotate(180deg) scale(1.06);
+}
+
+.phone-reload-button:active {
+  transform: rotate(180deg) scale(0.95);
+}
+
+.phone-reload-button i {
+  color: #3498db;
 }
 
 /* 반응형 디자인 */
