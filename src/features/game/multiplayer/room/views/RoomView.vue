@@ -342,7 +342,11 @@ const navigateToSoloGame = (payload = {}) => {
     state: {
       expectedPlayers: localPlayers.value.length || localRoomData.value.currentPlayerCount || 1,
       dummyMode: isRoomDummyMode.value,
-      timeLimit: localRoomData.value.timeLimit || 120
+      timeLimit: localRoomData.value.timeLimit || 120,
+      roomData: {
+        ...localRoomData.value,
+        isPoiNameVisible: localRoomData.value?.isPoiNameVisible !== false
+      }
     }
   }).catch((error) => {
     console.error('❌ 게임 화면 이동 중 오류:', error);

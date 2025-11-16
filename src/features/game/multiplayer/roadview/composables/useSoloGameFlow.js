@@ -515,7 +515,9 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     }
 
     // 지역 정보 업데이트 (poiName, fullAddress)
-    if (message.poiName != null || message.fullAddress != null) {
+    // poiName은 message.poiName 우선, 없으면 roundInfo.poiName으로 폴백
+    const resolvedPoiName = (message && message.poiName != null) ? message.poiName : (message && message.roundInfo && message.roundInfo.poiName != null ? message.roundInfo.poiName : null)
+    if (resolvedPoiName != null || message.fullAddress != null) {
       if (!gameStore.state.locationInfo) {
         gameStore.state.locationInfo = {
           name: '',
@@ -526,13 +528,13 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
           fullAddress: ''
         }
       }
-      
+
       // poiName (지역이름) 업데이트
-      if (message.poiName != null) {
-        gameStore.state.locationInfo.poiName = message.poiName
+      if (resolvedPoiName != null) {
+        gameStore.state.locationInfo.poiName = resolvedPoiName
         // name이 없으면 poiName을 name으로도 사용
         if (!gameStore.state.locationInfo.name) {
-          gameStore.state.locationInfo.name = message.poiName
+          gameStore.state.locationInfo.name = resolvedPoiName
         }
       }
       
@@ -743,6 +745,18 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
         gameStore.state.totalRounds = message.totalRounds
       }
       // currentRound는 위에서 이미 업데이트했으므로 여기서는 중복 업데이트하지 않음
+
+      // 헤더 지명 표시용 poiName 반영 (라운드 시작 시점부터 노출)
+      const nextPoiName = message.roundInfo && message.roundInfo.poiName != null ? message.roundInfo.poiName : null
+      if (nextPoiName != null) {
+        if (!gameStore.state.locationInfo) {
+          gameStore.state.locationInfo = { name: '', description: '', image: '', fact: '', poiName: '', fullAddress: '' }
+        }
+        gameStore.state.locationInfo.poiName = nextPoiName
+        if (!gameStore.state.locationInfo.name) {
+          gameStore.state.locationInfo.name = nextPoiName
+        }
+      }
     } else if (messageRoundId != null) {
       // roundInfo가 없지만 roundId가 직접 있는 경우
       const parsedRoundId = Number(messageRoundId)

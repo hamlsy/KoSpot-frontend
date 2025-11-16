@@ -135,15 +135,7 @@
             지도
           </button>
 
-          <!-- 지도 재로딩 버튼 (지도가 열려있을 때만 표시) -->
-          <button
-            v-if="isMapOpen && !gameStore.state.roundEnded"
-            class="map-reload-button"
-            @click="reloadPhoneMap"
-            title="지도 새로고침"
-          >
-            <i class="fas fa-sync-alt"></i>
-          </button>
+          
         </div>
       </div>
 
@@ -170,6 +162,7 @@
       :gameMode="'solo'"
       :markerImageUrl="currentUserMarkerImageUrl"
       :hasSubmitted="gameStore.state.hasSubmittedGuess"
+      :showReloadButton="isMapOpen && !gameStore.state.roundEnded"
       @spot-answer="handlePhoneMapGuess"
       ref="phoneFrame"
     />
@@ -1946,45 +1939,6 @@ export default {
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
 }
 
-/* 지도 재로딩 버튼 */
-.map-reload-button {
-  position: fixed;
-  top: 80px;
-  right: 30px;
-  background: white;
-  border: none;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  font-size: 1.2rem;
-  color: #333;
-  transition: all 0.3s ease;
-  z-index: 16;
-}
-
-.map-reload-button:hover {
-  background: #f5f5f5;
-  transform: rotate(180deg) scale(1.1);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-}
-
-.map-reload-button:active {
-  transform: rotate(180deg) scale(0.95);
-}
-
-.map-reload-button i {
-  transition: transform 0.3s ease;
-  color: #3498db;
-}
-
-.map-reload-button:hover i {
-  color: #2980b9;
-}
 
 @media (max-width: 768px) {
   .phone-frame {
@@ -2004,14 +1958,6 @@ export default {
     font-size: 0.9rem;
     bottom: 20px;
     right: 20px;
-  }
-
-  .map-reload-button {
-    width: 45px;
-    height: 45px;
-    top: 70px;
-    right: 20px;
-    font-size: 1rem;
   }
 
   .phone-spot-button {

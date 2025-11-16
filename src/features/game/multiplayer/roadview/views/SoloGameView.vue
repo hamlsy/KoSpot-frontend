@@ -1060,6 +1060,7 @@ export default {
       // roundInfo.poiName을 로컬 상태에 반영 (스토어 사용하지 않음)
       try {
         const poi = message?.roundInfo?.poiName || message?.locationInfo?.poiName || ''
+        console.log(poi)
         this.currentPoiName = typeof poi === 'string' ? poi : ''
       } catch (e) {
         this.currentPoiName = ''
