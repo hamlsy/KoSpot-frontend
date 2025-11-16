@@ -215,15 +215,33 @@ export default {
   position: fixed;
   top: 50%;
   left: 50%;
+  /* 항상 수직/수평 중앙 정렬 */
   transform: translate(-50%, -50%);
-  width: 360px;
-  height: 680px;
+  /* Responsive sizing */
+  width: clamp(260px, 42vw, 420px);
+  aspect-ratio: 9 / 16;
+  /* 상/하 안전 여백을 고려한 최대 높이 */
+  max-height: calc(100svh - var(--frame-top-safe) - var(--frame-bottom-safe));
+  height: auto;
   background-color: #111;
   border-radius: 40px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5),
     inset 0 0 10px rgba(255, 255, 255, 0.1), 0 0 0 8px #333;
   z-index: 15;
+  /* Scalable parts */
+  --header-h: clamp(36px, 6.5%, 56px);
+  --footer-h: clamp(36px, 6.5%, 56px);
+  --notch-w: clamp(120px, 40%, 160px);
+  --notch-h: clamp(22px, 4.5%, 30px);
+  --home-btn: clamp(32px, 6.5%, 44px);
+  --spot-btn-bottom: clamp(12px, 3.2vh, 22px);
+  --spot-btn-pad-v: clamp(8px, 1.6vh, 12px);
+  --spot-btn-pad-h: clamp(12px, 2.2vw, 20px);
+  --spot-btn-font: clamp(0.8rem, 1.8vw, 0.95rem);
+  /* 안전 여백(상/하) */
+  --frame-top-safe: clamp(16px, 6vh, 56px);
+  --frame-bottom-safe: clamp(24px, 7vh, 64px);
 }
 
 .phone-header {
@@ -231,7 +249,7 @@ export default {
   top: 0;
   left: 0;
   right: 0;
-  height: 50px;
+  height: var(--header-h);
   background-color: #000;
   z-index: 16;
   display: flex;
@@ -242,8 +260,8 @@ export default {
 .phone-notch {
   position: relative;
   top: 0;
-  width: 150px;
-  height: 30px;
+  width: var(--notch-w);
+  height: var(--notch-h);
   background-color: #000;
   border-radius: 0 0 15px 15px;
   z-index: 17;
@@ -255,31 +273,31 @@ export default {
 .phone-notch:before {
   content: "";
   position: absolute;
-  width: 8px;
-  height: 8px;
+  width: clamp(6px, 1.2vw, 8px);
+  height: clamp(6px, 1.2vw, 8px);
   background-color: #444;
   border-radius: 50%;
-  left: 40px;
-  top: 10px;
+  left: clamp(28px, 10%, 40px);
+  top: clamp(8px, 2.2vh, 10px);
 }
 
 .phone-notch:after {
   content: "";
   position: absolute;
-  width: 50px;
-  height: 6px;
+  width: clamp(36px, 15%, 50px);
+  height: clamp(4px, 0.8vh, 6px);
   background-color: #444;
   border-radius: 3px;
-  right: 40px;
-  top: 11px;
+  right: clamp(28px, 10%, 40px);
+  top: clamp(9px, 2.2vh, 11px);
 }
 
 .phone-content {
   position: absolute;
-  top: 50px;
+  top: var(--header-h);
   left: 0;
   right: 0;
-  bottom: 50px;
+  bottom: var(--footer-h);
   z-index: 15;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -290,7 +308,7 @@ export default {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 50px;
+  height: var(--footer-h);
   background-color: #000;
   z-index: 16;
   display: flex;
@@ -299,8 +317,8 @@ export default {
 }
 
 .home-button {
-  width: 40px;
-  height: 40px;
+  width: var(--home-btn);
+  height: var(--home-btn);
   background: linear-gradient(135deg, #333, #222);
   border-radius: 50%;
   border: 2px solid #444;
@@ -315,8 +333,8 @@ export default {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 15px;
-  height: 15px;
+  width: clamp(11px, 2.6vw, 15px);
+  height: clamp(11px, 2.6vw, 15px);
   border: 2px solid #666;
   border-radius: 3px;
 }
@@ -335,16 +353,16 @@ export default {
 /* 휴대폰 내부 Spot 버튼 */
 .phone-spot-button {
   position: absolute;
-  bottom: 20px;
+  bottom: var(--spot-btn-bottom);
   left: 50%;
   transform: translateX(-50%);
   background: linear-gradient(135deg, #27ae60, #2ecc71);
   color: white;
   border: none;
-  padding: 10px 20px;
+  padding: var(--spot-btn-pad-v) var(--spot-btn-pad-h);
   border-radius: 25px;
   font-weight: bold;
-  font-size: 0.9rem;
+  font-size: var(--spot-btn-font);
   cursor: pointer;
   box-shadow: 0 4px 10px rgba(46, 204, 113, 0.4);
   transition: all 0.3s ease;
@@ -384,20 +402,20 @@ export default {
 /* 반응형 디자인 */
 @media (max-width: 768px) {
   .phone-frame {
-    width: 320px;
-    height: 600px;
+    width: clamp(240px, 88vw, 360px);
+    /* 모바일에서도 중앙 정렬 유지, 안전 여백 기반으로 축소 */
+    max-height: calc(100svh - var(--frame-top-safe) - var(--frame-bottom-safe));
   }
 }
 
 @media (max-width: 480px) {
   .phone-frame {
-    width: 280px;
-    height: 560px;
+    width: clamp(220px, 92vw, 340px);
+    max-height: calc(100svh - var(--frame-top-safe) - var(--frame-bottom-safe));
   }
-
   .phone-spot-button {
-    padding: 8px 16px;
-    font-size: 0.85rem;
+    /* values already scale via vars; keep a small tweak for very small screens */
+    border-radius: 22px;
   }
 }
 </style>

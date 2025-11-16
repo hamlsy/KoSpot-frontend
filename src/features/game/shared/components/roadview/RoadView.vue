@@ -1,5 +1,13 @@
 <template>
   <div class="road-view">
+    <div
+      v-if="initialPosition"
+      class="road-reset-btn"
+      @click="resetToInitial"
+      title="초기 위치로 돌아가기"
+    >
+      <i class="fas fa-rotate-right"></i>
+    </div>
     <div id="roadview-container" ref="roadviewContainer"></div>
     <!-- 임시로 제거 -->
     <!-- <div class="road-error" v-if="hasError && !suppressError">
@@ -52,6 +60,7 @@ export default {
       viewpoint: null,
       isLoading: false,
       hasError: false,
+      initialPosition: null,
       compassHeading: 0,
       panAmount: 30, // 이동 단위 (도)
       zoomLevel: 0
@@ -149,6 +158,10 @@ export default {
             console.log('로드뷰 파노라마 ID 찾음:', panoId);
             
             try {
+              // 초기 좌표 저장 (최초 성공 시 1회만)
+              if (!this.initialPosition && this.position && typeof this.position.lat === 'number' && typeof this.position.lng === 'number') {
+                this.initialPosition = { lat: this.position.lat, lng: this.position.lng };
+              }
               // 로드뷰 표시
               this.roadview.setPanoId(panoId, position);
               
@@ -225,6 +238,23 @@ export default {
         this.hasError = true;
         this.$emit('load-error', { position: newPosition, error: 'Kakao Maps SDK not loaded' });
       }
+    },
+    
+    resetToInitial() {
+      if (!this.initialPosition) {
+        return;
+      }
+      this.hasError = false;
+      if (!this.roadview) {
+        // 로드뷰가 없으면 초기화 시도 후 업데이트
+        this.initRoadview();
+        // initRoadview가 비동기이므로 잠시 대기 후 업데이트 시도
+        setTimeout(() => {
+          this.updateRoadview(this.initialPosition);
+        }, 200);
+        return;
+      }
+      this.updateRoadview(this.initialPosition);
     },
     
     disableMouseEvents() {
@@ -314,5 +344,32 @@ export default {
 .error-message p {
   margin: 0;
   color: #666;
+}
+
+.road-reset-btn {
+  position: absolute;
+  top: 70px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  cursor: pointer;
+  z-index: 19;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.road-reset-btn:hover {
+  transform: translateY(-1px);
+  background: rgba(0, 0, 0, 0.6);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+}
+
+.road-reset-btn i {
+  font-size: 1rem;
 }
 </style> 

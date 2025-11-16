@@ -280,6 +280,9 @@ const openRankTestModal = (prevTier, prevLevel, currTier, currLevel) => {
 <style scoped>
 .admin-page {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  /* 전체 페이지 스크롤 가능 및 모바일 주소창 대응 */
+  min-height: 100dvh;
+  overflow-y: auto;
 }
 
 .dashboard-title {
@@ -287,6 +290,11 @@ const openRankTestModal = (prevTier, prevLevel, currTier, currLevel) => {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* 고정 헤더 보정: 콘텐츠 상단 여백 */
+.admin-content {
+  padding-top: 80px;
 }
 
 .admin-nav button {

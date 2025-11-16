@@ -35,6 +35,9 @@
               }"
             ></div>
           </div>
+          <div class="poi-name" v-if="isPoiNameVisible && poiName">
+            지명: <span class="poi-text" :title="poiName">{{ poiName }}</span>
+          </div>
         </div>
       </div>
 
@@ -237,6 +240,16 @@ export default {
     suppressRoadviewError: {
       type: Boolean,
       default: false
+    },
+    // 지명 공개 제어
+    isPoiNameVisible: {
+      type: Boolean,
+      default: true
+    },
+    // 현재 라운드의 지명 (roundInfo.poiName)
+    poiName: {
+      type: String,
+      default: ''
     }
   },
 
@@ -1273,7 +1286,10 @@ export default {
 .multiplayer-roadview-game {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  /* 모바일 브라우저 주소창 변동 대응 */
+  min-height: 100svh;
+  min-height: 100dvh;
+  height: 100dvh;
   background-color: #f5f7fa;
   overflow: hidden;
 }
@@ -1330,6 +1346,8 @@ export default {
   flex: 1;
   max-width: 400px;
   margin: 0 2rem;
+  /* 플렉스 수축 허용 */
+  min-width: 0;
 }
 
 @media (max-width: 768px) {
@@ -1352,6 +1370,9 @@ export default {
   font-size: 1.125rem;
   font-weight: 600;
   margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .game-mode {
@@ -1373,6 +1394,8 @@ export default {
   font-weight: 500;
   margin-bottom: 0.25rem;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .round-progress {
@@ -1387,6 +1410,22 @@ export default {
   background: linear-gradient(90deg, #4f46e5, #3b82f6);
   border-radius: 4px;
   transition: width 0.5s ease-out;
+}
+
+/* 지명 표시 */
+.poi-name {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.poi-text {
+  font-weight: 600;
+  color: #fff;
 }
 
 /* 게임 컨텐츠 스타일 */
@@ -1560,7 +1599,7 @@ export default {
 @media (max-width: 992px) {
   .game-content {
     flex-direction: row; /* 다시 row로 변경 */
-    height: calc(100vh - 80px);
+    height: calc(100dvh - 80px);
     position: relative;
   }
 
@@ -1654,6 +1693,10 @@ export default {
   .chat-toggle {
     display: flex; /* 태블릿에서도 표시 */
   }
+
+  /* 헤더 텍스트 폰트 소폭 축소 */
+  .room-name { font-size: 1rem; }
+  .round-number { font-size: 0.8rem; }
 }
 
 @media (max-width: 768px) {
@@ -1665,6 +1708,11 @@ export default {
     align-items: center;
     min-height: 70px; /* 모바일에서 약간 작은 높이 */
     overflow: hidden; /* 넘치는 요소 숨김 */
+  }
+
+  /* 전역 고정 헤더와의 겹침 방지 */
+  .multiplayer-roadview-game {
+    padding-top: 64px;
   }
 
   .header-left {
@@ -1800,6 +1848,11 @@ export default {
     max-width: 90vw;
     max-height: 75vh;
   }
+}
+
+/* 초소형 화면에서 토글 텍스트 숨김 */
+@media (max-width: 360px) {
+  .player-list-toggle-btn .toggle-text { display: none; }
 }
 
 .home-button {
@@ -1985,7 +2038,7 @@ export default {
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  z-index: 50;
+  z-index: 15001;
   transform: scale(1);
 }
 

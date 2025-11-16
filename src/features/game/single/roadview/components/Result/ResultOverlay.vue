@@ -29,10 +29,10 @@
             </div>
 
             <!-- 티어 변화 섹션 -->
-            <div class="rank-change-section compact">
+            <div class="rank-change-section compact" v-if="hasRankChange" :class="{ downgrade: isDowngrade }">
                 <div class="rank-change-header">
-                  <i class="fas fa-medal"></i>
-                  <span>랭크 변화</span>
+                  <i :class="isDowngrade ? 'fas fa-arrow-down' : 'fas fa-arrow-up'"></i>
+                  <span>{{ isDowngrade ? '랭크 하락' : '랭크 상승' }}</span>
                 </div>
                 <div class="rank-change-content">
                   <div class="rank-badge previous">
@@ -263,6 +263,29 @@ export default {
              (this.previousRankTier !== this.currentRankTier ||
               this.previousRankLevel !== this.currentRankLevel);
     },
+    isDowngrade() {
+      if (!this.hasRankChange) return false;
+
+      const tierOrder = ['BRONZE','SILVER','GOLD','PLATINUM','DIAMOND','MASTER','GRANDMASTER','CHALLENGER'];
+      const prevTier = this.previousRankTier || '';
+      const currTier = this.currentRankTier || '';
+
+      if (prevTier && currTier && prevTier !== currTier) {
+        return tierOrder.indexOf(currTier) < tierOrder.indexOf(prevTier);
+      }
+
+      // 같은 티어에서는 레벨 숫자 비교 (레벨 값이 로마숫자/문자일 수 있으므로 맵핑 시도)
+      const levelMap = { ONE: 1, TWO: 2, THREE: 3, FOUR: 4, FIVE: 5, I: 1, II: 2, III: 3, IV: 4, V: 5 };
+      const prevLevelNum = levelMap[this.previousRankLevel] ?? Number(this.previousRankLevel);
+      const currLevelNum = levelMap[this.currentRankLevel] ?? Number(this.currentRankLevel);
+      if (Number.isFinite(prevLevelNum) && Number.isFinite(currLevelNum)) {
+        // 숫자가 클수록 하위 레벨로 가정 (예: 1이 상위, 5가 하위)
+        return currLevelNum > prevLevelNum;
+      }
+
+      // 보조 판단: 포인트 감소면 하락으로 간주
+      return (this.rankPointChange ?? 0) < 0;
+    }
   },
   watch: {
     show(newVal) {
@@ -1152,5 +1175,22 @@ export default {
   .rank-points-value {
     font-size: 1.2rem;
   }
+}
+
+/* Downgrade visual theme */
+.rank-change-section.downgrade {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border: 2px solid #cbd5e1;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+.rank-change-section.downgrade .rank-change-header {
+  color: #475569;
+}
+.rank-change-section.downgrade .rank-change-header i {
+  color: #64748b;
+}
+.rank-change-section.downgrade .rank-badge.current {
+  border-color: #94a3b8;
+  box-shadow: 0 4px 16px rgba(100, 116, 139, 0.2);
 }
 </style>

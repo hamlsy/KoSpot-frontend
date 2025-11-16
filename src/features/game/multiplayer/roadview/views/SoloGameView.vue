@@ -15,6 +15,8 @@
       :show-leave-button="true"
       :total-time="timeLimit"
       :suppress-roadview-error="isRetryingRoadview"
+      :is-poi-name-visible="isPoiNameVisibleLocal"
+      :poi-name="currentPoiName"
       @leave-game="exitToLobby"
     @guess-submitted="handleGuessSubmission"
     @round-ended="handleRoundEnded"
@@ -216,7 +218,15 @@ export default {
 
       // 게임 최종 결과 (gameStore 사용하지 않고 로컬 데이터로 관리)
       finalGameResult: null,
-      showGameResults: false
+      showGameResults: false,
+
+      // 자동 로비 이동 상태
+      autoExitTimerId: null,
+      autoExitRemaining: 0,
+
+      // 지명 공개 관련 로컬 상태
+      isPoiNameVisibleLocal: true,
+      currentPoiName: ''
     };
   },
 
@@ -297,6 +307,15 @@ export default {
       roomId: this.roomId
     });
     
+    // isPoiNameVisible 초기화 (네비게이션 상태에서 가져오기, 기본 true)
+    try {
+      const navState = typeof history !== 'undefined' ? history.state : null
+      const roomData = navState?.roomData || {}
+      this.isPoiNameVisibleLocal = roomData.isPoiNameVisible !== false
+    } catch (e) {
+      this.isPoiNameVisibleLocal = true
+    }
+
     // 더미 모드에서만 테스트 데이터 로드 (서버 모드에서는 서버에서 플레이어 데이터를 받음)
     if (isExplicitlyDummyMode) {
       console.log('[Solo Game] 더미 모드로 초기화');
@@ -447,6 +466,8 @@ export default {
     if (this.toastTimeout) {
       clearTimeout(this.toastTimeout)
     }
+    // 자동 퇴장 카운트다운 정리
+    this.cancelAutoExitCountdown()
     
     // 채팅 말풍선 정리
     Object.values(this.playerChatMessages).forEach(chatData => {
@@ -709,6 +730,9 @@ export default {
           
           // 플레이어들의 평균 거리 계산
           this.calculatePlayerAverageDistances()
+
+          // 30초 후 자동 로비 이동 카운트다운 시작 (서버 모드)
+          this.startAutoExitCountdown(30)
         },
         onTimerSync: (message) => {
           if (!this.gameStore) {
@@ -1029,11 +1053,17 @@ export default {
       console.log('[Dummy Mode] 개인전 게임 준비 완료 - 인트로 오버레이 표시');
     },
 
-    // 라운드 데이터 수신 이벤트 처리 (더미 모드 전용)
+    // 라운드 데이터 수신 이벤트 처리 (서버/더미 공통: roundInfo.poiName 사용)
     handleRoundDataReceived(message) {
-      if (this.isServerMode) return; // 서버 모드에서는 무시
-      
-      console.log('[Dummy Mode] 개인전 라운드 데이터 수신:', message);
+      console.log('[Solo Game] 라운드 데이터 수신:', message);
+
+      // roundInfo.poiName을 로컬 상태에 반영 (스토어 사용하지 않음)
+      try {
+        const poi = message?.roundInfo?.poiName || message?.locationInfo?.poiName || ''
+        this.currentPoiName = typeof poi === 'string' ? poi : ''
+      } catch (e) {
+        this.currentPoiName = ''
+      }
       
       // 라운드 상태 초기화
       this.simulationTriggered = false;
@@ -1093,6 +1123,9 @@ export default {
       
       // 더미 모드 게임 종료 시뮬레이션 호출 (로컬 데이터로 직접 설정)
       this.simulateGameEnd();
+
+      // 30초 후 자동 로비 이동 카운트다운 시작 (더미 모드)
+      this.startAutoExitCountdown(30);
       
       console.log('개인전 게임 완전 종료, 총 게임 시간:', this.totalGameTime, '초');
     },
@@ -1553,7 +1586,10 @@ export default {
           lng: 126.978 + (Math.random() - 0.5) * 0.1
         },
         locationInfo: this.gameStore.state.locationInfo,
-        roundTime: 120
+        roundTime: 120,
+        roundInfo: {
+          poiName: (this.gameStore.state.locationInfo && this.gameStore.state.locationInfo.name) ? this.gameStore.state.locationInfo.name : '더미 지명'
+        }
       }
       
       // BaseGameView의 라운드 데이터 핸들러 호출
@@ -1641,6 +1677,9 @@ export default {
       
       // 더미 모드 게임 종료 시뮬레이션 호출 (로컬 데이터로 직접 설정)
       this.simulateGameEnd();
+
+      // 30초 후 자동 로비 이동 카운트다운 시작
+      this.startAutoExitCountdown(30);
       
       console.log('[Solo Game] 더미 모드 게임 완료, 최종 결과 표시');
     },
@@ -1651,6 +1690,8 @@ export default {
       // 로컬 데이터 초기화
       this.showGameResults = false;
       this.finalGameResult = null;
+      // 자동 퇴장 카운트다운 취소
+      this.cancelAutoExitCountdown();
       
       // 모든 구독 해제
       this.cleanupSubscriptions();
@@ -1675,6 +1716,9 @@ export default {
       if (!confirm('정말 게임을 나가시겠습니까? 진행 중인 게임은 저장되지 않습니다.')) {
         return
       }
+
+      // 자동 퇴장 카운트다운 취소
+      this.cancelAutoExitCountdown()
 
       // 모든 구독 해제
       this.cleanupSubscriptions()
@@ -1853,6 +1897,44 @@ export default {
         color: color,
       })
     },
+
+    // ===== 자동 로비 이동 유틸 =====
+    startAutoExitCountdown(seconds = 30) {
+      try {
+        // 중복 방지
+        this.cancelAutoExitCountdown();
+        this.autoExitRemaining = Number(seconds) > 0 ? Number(seconds) : 30;
+        this.autoExitTimerId = setInterval(() => {
+          this.autoExitRemaining = Math.max(0, this.autoExitRemaining - 1);
+          if (this.autoExitRemaining <= 0) {
+            this.cancelAutoExitCountdown();
+            this.redirectToLobby();
+          }
+        }, 1000);
+        console.log(`[Solo Game] 자동 로비 이동 카운트다운 시작: ${this.autoExitRemaining}초`);
+      } catch (e) {
+        console.warn('[Solo Game] 자동 퇴장 카운트다운 시작 오류:', e);
+      }
+    },
+
+    cancelAutoExitCountdown() {
+      if (this.autoExitTimerId) {
+        clearInterval(this.autoExitTimerId);
+        this.autoExitTimerId = null;
+      }
+      this.autoExitRemaining = 0;
+    },
+
+    redirectToLobby() {
+      try {
+        console.log('[Solo Game] 30초 경과 - 로비로 자동 이동');
+        // 이동 전 정리
+        this.cleanupSubscriptions();
+        this.$router.replace('/lobby');
+      } catch (e) {
+        console.error('[Solo Game] 로비 이동 중 오류:', e);
+      }
+    }
   },
 };
 </script>

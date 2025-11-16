@@ -822,11 +822,12 @@ watch(showInventoryModal, (newValue) => {
 
 <style scoped>
 .profile-page {
-  min-height: 100vh;
+  /* 모바일 브라우저 주소창 변동 대응 및 전체 스크롤 허용 */
+  min-height: 100dvh;
   height: auto;
   width: 100%;
   background: #f8f9fa;
-  overflow-y: scroll;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch; /* iOS 부드러운 스크롤 */
 }
 

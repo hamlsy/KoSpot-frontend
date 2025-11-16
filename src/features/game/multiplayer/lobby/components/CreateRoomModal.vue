@@ -113,6 +113,10 @@
               <input type="checkbox" v-model="gameSettings.isPrivate" />
               <span> 비공개 방 (비밀번호로 입장 가능)</span>
             </label>
+            <label class="checkbox-option">
+              <input type="checkbox" v-model="gameSettings.isPoiNameVisible" />
+              <span> 지명 공개</span>
+            </label>
             <!-- <label class="checkbox-option">
               <input type="checkbox" v-model="gameSettings.allowSpectators" />
               <span>관전자 허용</span>
@@ -163,6 +167,7 @@ export default {
         isPrivate: false,
         allowSpectators: true,
         useVoiceChat: false,
+        isPoiNameVisible: true,
       },
     };
   },
@@ -186,6 +191,7 @@ export default {
         playerMatchTypeKey: playerMatchTypeKey,
         maxPlayers: this.maxPlayers,
         privateRoom: this.gameSettings.isPrivate,
+        isPoiNameVisible: this.gameSettings.isPoiNameVisible === false ? false : true
       };
 
       this.$emit("create-room", roomData);
