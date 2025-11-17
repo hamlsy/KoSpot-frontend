@@ -38,6 +38,7 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     onIntroShow: null,
     onRoundResultShow: null,
     onNextRoundShow: null,
+    onNextRound: null, // 새로 추가 - 라운드 데이터 처리용
     onGameFinish: null,
     onTimerSync: null,
     onGamePlayersUpdate: null,
@@ -653,8 +654,6 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
 
     ensureSubmissionSubscription(message?.gameId)
 
-    if (!gameStore) return
-
     // 좌표 추출 (roundInfo가 있으면 roundInfo에서, 없으면 직접 메시지에서)
     const targetLat = message.roundInfo?.targetLat ?? message.targetLat
     const targetLng = message.roundInfo?.targetLng ?? message.targetLng
@@ -670,6 +669,19 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
                              (!message.roundInfo && message.targetLat != null && message.targetLng != null) ||
                              (messageRoundId != null && Number(messageRoundId) === roundId.value && isRetryingRoadview.value)
 
+    // 내부 상태 관리: gameId, roundId 업데이트
+    if (message.gameId != null) {
+      gameId.value = message.gameId
+    }
+    
+    if (messageRoundId != null) {
+      const parsedRoundId = Number(messageRoundId)
+      if (!Number.isNaN(parsedRoundId)) {
+        roundId.value = parsedRoundId
+      }
+    }
+
+    // 재발급 메시지 처리
     if (isReIssueMessage) {
       // 재발급 후 메시지: 좌표만 업데이트 (타이머, 라운드 정보는 변경하지 않음)
       console.log('[Solo Flow] 재발급 후 새로운 좌표 수신 - 로드뷰만 다시 로드')
@@ -681,28 +693,11 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
         console.log('[Solo Flow] 재발급 성공 - 재시도 플래그 해제')
       }
 
-      // 게임 ID 및 라운드 ID 업데이트 (있는 경우)
-      if (message.gameId != null) {
-        gameId.value = message.gameId
+      // 재발급 메시지도 콜백으로 전달 (gameStore 업데이트는 컴포넌트에서)
+      if (callbacks.onNextRound) {
+        callbacks.onNextRound({ ...message, isReIssue: true })
       }
-      if (messageRoundId != null) {
-        const parsedRoundId = Number(messageRoundId)
-        if (!Number.isNaN(parsedRoundId)) {
-          roundId.value = parsedRoundId
-        }
-      }
-
-      // 좌표 정보만 업데이트 (로드뷰 자동 재로드됨)
-      gameStore.state.currentLocation = {
-        lat: Number(targetLat),
-        lng: Number(targetLng)
-      }
-      gameStore.state.actualLocation = {
-        lat: Number(targetLat),
-        lng: Number(targetLng)
-      }
-
-      return // 재발급 메시지는 여기서 종료 (타이머, 라운드 상태는 변경하지 않음)
+      return
     }
 
     // 일반 라운드 시작 메시지 처리
@@ -718,49 +713,6 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
       reIssueAttempts.value = 0
     }
 
-    // 게임 ID 업데이트
-    if (message.gameId != null) {
-      gameId.value = message.gameId
-    }
-    
-    // 라운드 정보 업데이트
-    // currentRound는 roundInfo 유무와 관계없이 항상 업데이트 (라운드 스타트 채널에서 받음)
-    if (message.currentRound != null) {
-      gameStore.state.currentRound = Number(message.currentRound)
-    }
-    
-    if (message.roundInfo) {
-      // roundInfo가 있는 경우 (일반 라운드 시작)
-      const nextRoundId = Number(message.roundInfo.roundId)
-      if (!Number.isNaN(nextRoundId)) {
-        roundId.value = nextRoundId
-      }
-      
-      // 게임 설정 업데이트
-      if (message.totalRounds != null) {
-        gameStore.state.totalRounds = message.totalRounds
-      }
-      // currentRound는 위에서 이미 업데이트했으므로 여기서는 중복 업데이트하지 않음
-
-      // 헤더 지명 표시용 poiName 반영 (라운드 시작 시점부터 노출)
-      const nextPoiName = message.roundInfo && message.roundInfo.poiName != null ? message.roundInfo.poiName : null
-      if (nextPoiName != null) {
-        if (!gameStore.state.locationInfo) {
-          gameStore.state.locationInfo = { name: '', description: '', image: '', fact: '', poiName: '', fullAddress: '' }
-        }
-        gameStore.state.locationInfo.poiName = nextPoiName
-        if (!gameStore.state.locationInfo.name) {
-          gameStore.state.locationInfo.name = nextPoiName
-        }
-      }
-    } else if (messageRoundId != null) {
-      // roundInfo가 없지만 roundId가 직접 있는 경우
-      const parsedRoundId = Number(messageRoundId)
-      if (!Number.isNaN(parsedRoundId)) {
-        roundId.value = parsedRoundId
-      }
-    }
-
     // 재시도 중이었다면 플래그 해제
     if (isRetryingRoadview.value) {
       console.log('[Solo Flow] 재시도 중 새로운 좌표 수신 - 로드뷰 다시 로드')
@@ -768,47 +720,9 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
       reIssueAttempts.value = 0
     }
 
-    // 라운드 좌표 정보 업데이트
-    gameStore.state.currentLocation = {
-      lat: Number(targetLat),
-      lng: Number(targetLng)
-    }
-    gameStore.state.actualLocation = {
-      lat: Number(targetLat),
-      lng: Number(targetLng)
-    }
-
-    // 플레이어 정보 업데이트 (gamePlayers가 있는 경우)
-    // 처음 게임 시작할 때 받는 정보를 SoloGameView의 gamePlayers에만 저장 (store에 저장하지 않음)
-    if (message.gamePlayers && Array.isArray(message.gamePlayers)) {
-      
-      // 플레이어 정보를 콜백으로 전달 (SoloGameView의 gamePlayers에 저장)
-      // store에 담지 않음
-      if (callbacks.onGamePlayersUpdate) {
-        callbacks.onGamePlayersUpdate(message.gamePlayers)
-      }
-    }
-
-    // 라운드 상태 초기화
-    gameStore.state.roundEnded = false
-    gameStore.state.hasSubmittedGuess = false
-    gameStore.state.userGuess = null
-    gameStore.state.playerGuesses = []
-    gameStore.state.showRoundResults = false
-
-    // 플레이어 제출 상태 초기화는 SoloGameView의 gamePlayers에서 처리
-    // (서버 모드에서는 store에 플레이어 정보를 저장하지 않음)
-
-    // 라운드 시작 시간 초기화 (새 라운드 시작 전에 초기화)
+    // 타이머 관련 내부 상태만 초기화 (gameStore는 컴포넌트에서 업데이트)
     roundStartTime.value = null
-    
-    // 타이머 총 시간 초기화
     timerDurationMs.value = 120000
-    
-    // 타이머 값 초기화 (서버에서 타이머 시작 메시지를 받을 때까지 대기)
-    if (gameStore.state) {
-      gameStore.state.remainingTime = 0
-    }
     
     // 첫 번째 라운드인지 확인 (currentRound === 1)
     const isFirstRound = message.currentRound === 1
@@ -816,7 +730,7 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     // 오버레이 시작 플래그 설정
     isOverlayActive.value = true
     
-    // UI 콜백: 첫 번째 라운드면 IntroOverlay, 아니면 NextRoundOverlay
+    // UI 콜백: 오버레이 표시 (첫 번째 라운드면 IntroOverlay, 아니면 NextRoundOverlay)
     if (isFirstRound) {
       if (callbacks.onIntroShow) {
         callbacks.onIntroShow()
@@ -825,6 +739,21 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
       if (callbacks.onNextRoundShow) {
         callbacks.onNextRoundShow()
       }
+    }
+
+    // 플레이어 정보 업데이트 (gamePlayers가 있는 경우)
+    // 처음 게임 시작할 때 받는 정보를 SoloGameView의 gamePlayers에만 저장 (store에 저장하지 않음)
+    if (message.gamePlayers && Array.isArray(message.gamePlayers)) {
+      // 플레이어 정보를 콜백으로 전달 (SoloGameView의 gamePlayers에 저장)
+      // store에 담지 않음
+      if (callbacks.onGamePlayersUpdate) {
+        callbacks.onGamePlayersUpdate(message.gamePlayers)
+      }
+    }
+    
+    // 라운드 데이터는 콜백으로 전달 (gameStore 업데이트는 컴포넌트에서 처리)
+    if (callbacks.onNextRound) {
+      callbacks.onNextRound({ ...message, isReIssue: false })
     }
   }
 

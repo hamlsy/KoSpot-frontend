@@ -539,6 +539,12 @@ export default {
         return
       }
 
+      // 로드뷰 재발급 중에는 로딩 상태 메시지를 무시
+      if (this.isRetryingRoadview) {
+        console.log('[Solo Game] 로드뷰 재발급 중 - 로딩 상태 메시지 무시')
+        return
+      }
+
       const players = Array.isArray(statusMessage.players) ? statusMessage.players : []
       const transformedPlayers = players.map(player => {
         const storePlayer = this.gameStore?.state?.players?.find(p => p.id === player.memberId)
@@ -702,6 +708,11 @@ export default {
           if (this.$refs.baseGame) {
             this.$refs.baseGame.startNextRound(this.currentUserRank, totalPlayers)
           }
+        },
+        onNextRound: (message) => {
+          console.log('[Solo Game] 라운드 데이터 수신 (서버 모드):', message)
+          // 통합 라운드 데이터 처리 함수 호출
+          this.processRoundData(message, message.isReIssue || false)
         },
         onGameFinish: (finalGameResult) => {
           console.log('[Solo Game] 게임 종료 - WebSocket 메시지 수신:', finalGameResult)
@@ -1053,43 +1064,100 @@ export default {
       console.log('[Dummy Mode] 개인전 게임 준비 완료 - 인트로 오버레이 표시');
     },
 
-    // 라운드 데이터 수신 이벤트 처리 (서버/더미 공통: roundInfo.poiName 사용)
-    handleRoundDataReceived(message) {
-      console.log('[Solo Game] 라운드 데이터 수신:', message);
+    // 통합 라운드 데이터 처리 함수 (서버/더미 모드 공통)
+    processRoundData(message, isReIssue = false) {
+      console.log('[Solo Game] 라운드 데이터 처리:', { message, isReIssue });
 
-      // roundInfo.poiName을 로컬 상태에 반영 (스토어 사용하지 않음)
-      try {
-        const poi = message?.roundInfo?.poiName || message?.locationInfo?.poiName || ''
-        console.log(poi)
-        this.currentPoiName = typeof poi === 'string' ? poi : ''
-      } catch (e) {
-        this.currentPoiName = ''
+      // gameStore 업데이트
+      if (message.currentRound != null) {
+        this.gameStore.state.currentRound = Number(message.currentRound);
       }
       
-      // 라운드 상태 초기화
-      this.simulationTriggered = false;
-      this.allPlayersSubmitted = false;
-      this.gameStore.state.hasSubmittedGuess = false;
-      this.gameStore.state.userGuess = null;
-      this.gameStore.state.playerGuesses = [];
-      
-      // 플레이어 제출 상태 초기화
-      this.gameStore.state.players.forEach(player => {
-        player.hasSubmitted = false;
-      });
-      
-      // 라운드 타이머는 IntroOverlay 완료 후 시작
-      
-      // 더미 모드에서는 다른 플레이어 시뮬레이션 트리거
-      const isDummyMode = this.$route.query.test === 'true' || !this.$refs.baseGame?.isWebSocketConnected;
-      if (isDummyMode) {
-        console.log('더미 모드: 다른 플레이어 시뮬레이션 트리거');
-        // 시뮬레이션 트리거를 확실히 설정
-        this.simulationTriggered = true;
-        console.log('시뮬레이션 트리거 설정됨:', this.simulationTriggered);
+      if (message.totalRounds != null) {
+        this.gameStore.state.totalRounds = message.totalRounds;
       }
       
-      console.log(`라운드 ${this.gameStore.state.currentRound} 데이터 준비 완료`);
+      // 좌표 정보 추출 및 업데이트
+      const targetLat = message.roundInfo?.targetLat ?? message.targetLat ?? message.location?.lat;
+      const targetLng = message.roundInfo?.targetLng ?? message.targetLng ?? message.location?.lng;
+      
+      if (targetLat != null && targetLng != null) {
+        this.gameStore.state.currentLocation = {
+          lat: Number(targetLat),
+          lng: Number(targetLng)
+        };
+        this.gameStore.state.actualLocation = {
+          lat: Number(targetLat),
+          lng: Number(targetLng)
+        };
+      }
+      
+      // locationInfo 업데이트
+      if (message.locationInfo) {
+        this.gameStore.state.locationInfo = message.locationInfo;
+      }
+      
+      // poiName 처리 (roundInfo.poiName 우선, 직접 메시지의 poiName, locationInfo.poiName 폴백)
+      const poiName = message.roundInfo?.poiName || message.poiName || message.locationInfo?.poiName || '';
+      if (poiName) {
+        if (!this.gameStore.state.locationInfo) {
+          this.gameStore.state.locationInfo = { 
+            name: '', 
+            description: '', 
+            image: '', 
+            fact: '', 
+            poiName: '', 
+            fullAddress: '' 
+          };
+        }
+        this.gameStore.state.locationInfo.poiName = poiName;
+        // BaseGameView prop용 currentPoiName 업데이트
+        this.currentPoiName = poiName;
+      } else {
+        // poiName이 없으면 빈 문자열로 초기화
+        this.currentPoiName = '';
+      }
+      
+      // 라운드 시간 설정
+      if (message.roundTime != null) {
+        this.gameStore.state.remainingTime = message.roundTime;
+      }
+      
+      // 라운드 상태 초기화 (재발급 메시지가 아닌 경우에만)
+      if (!isReIssue) {
+        this.gameStore.state.roundEnded = false;
+        this.gameStore.state.hasSubmittedGuess = false;
+        this.gameStore.state.userGuess = null;
+        this.gameStore.state.playerGuesses = [];
+        this.gameStore.state.showRoundResults = false;
+        
+        // 시뮬레이션 상태 초기화
+        this.simulationTriggered = false;
+        this.allPlayersSubmitted = false;
+        
+        // 플레이어 제출 상태 초기화 (더미 모드)
+        if (this.isDummyRuntime) {
+          this.gameStore.state.players.forEach(player => {
+            player.hasSubmitted = false;
+          });
+        }
+        
+        // 더미 모드에서는 다른 플레이어 시뮬레이션 트리거
+        if (this.isDummyRuntime) {
+          console.log('더미 모드: 다른 플레이어 시뮬레이션 트리거');
+          this.simulationTriggered = true;
+          console.log('시뮬레이션 트리거 설정됨:', this.simulationTriggered);
+        }
+      }
+      
+      console.log(`라운드 ${this.gameStore.state.currentRound} 데이터 처리 완료`);
+    },
+
+    // 라운드 데이터 수신 이벤트 처리 (더미 모드 전용, processRoundData로 위임)
+    handleRoundDataReceived(message) {
+      console.log('[Solo Game] 라운드 데이터 수신 (더미 모드):', message);
+      // processRoundData로 통합 처리
+      this.processRoundData(message, false);
     },
 
     // 플레이어 제출 이벤트 처리 (더미 모드 전용)
@@ -1593,16 +1661,13 @@ export default {
         }
       }
       
-      // BaseGameView의 라운드 데이터 핸들러 호출
-      if (this.$refs.baseGame) {
-        this.$refs.baseGame.handleRoundData(roundDataMessage)
-      }
+      // 통합 라운드 데이터 처리 함수 사용 (더미 모드)
+      this.processRoundData(roundDataMessage, false)
       
       // 라운드 데이터 가져오기
       this.fetchRoundData()
       
-      // 시뮬레이션 트리거 설정
-      this.simulationTriggered = true
+      // 시뮬레이션 트리거는 processRoundData에서 설정됨
     },
 
     /**
@@ -1724,8 +1789,8 @@ export default {
       // 모든 구독 해제
       this.cleanupSubscriptions()
 
-      // 로비로 이동
-      this.$router.push("/lobby")
+      // 로비로 새로고침 이동
+      window.location.href = "/lobby"
     },
 
     /**

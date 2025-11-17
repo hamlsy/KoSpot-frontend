@@ -35,9 +35,6 @@
               }"
             ></div>
           </div>
-          <div class="poi-name" v-if="isPoiNameVisible && poiName">
-            지명: <span class="poi-text" :title="poiName">{{ poiName }}</span>
-          </div>
         </div>
       </div>
 
@@ -53,14 +50,23 @@
           <span class="toggle-text">{{ isPlayerListOpen ? '목록 닫기' : '플레이어' }}</span>
         </button>
         
-        <game-timer
-          :initialTime="gameStore.state.remainingTime"
-          :totalTime="totalTime"
-          :warning-threshold="30"
-          :danger-threshold="10"
-          :is-running="!showIntroOverlay && !showNextRoundOverlay && !useCustomWebSocket"
-        />
+        <!-- poiName 표시 (타이머 자리) -->
+        <div class="poi-name-display" v-if="isPoiNameVisible && poiName">
+          <span class="poi-label">지명:</span>
+          <span class="poi-text" :title="poiName">{{ poiName }}</span>
+        </div>
       </div>
+    </div>
+
+    <!-- 타이머 컨테이너 (헤더 밑) -->
+    <div class="timer-container" v-if="!showIntroOverlay && !showNextRoundOverlay">
+      <game-timer
+        :initialTime="gameStore.state.remainingTime"
+        :totalTime="totalTime"
+        :warning-threshold="30"
+        :danger-threshold="10"
+        :is-running="!showIntroOverlay && !showNextRoundOverlay && !useCustomWebSocket"
+      />
     </div>
 
     <!-- 게임 메인 영역 -->
@@ -1289,6 +1295,7 @@ export default {
 
 /* 게임 헤더 스타일 */
 .game-header {
+  position: relative; /* 타이머 컨테이너의 기준점 */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1405,20 +1412,37 @@ export default {
   transition: width 0.5s ease-out;
 }
 
-/* 지명 표시 */
-.poi-name {
-  margin-top: 6px;
-  font-size: 0.8rem;
+/* 타이머 컨테이너 (헤더 밑) */
+.timer-container {
+  position: absolute;
+  top: 100%; /* 헤더의 실제 높이 기준 (동적) */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  margin-top: 4px; /* 헤더와 타이머 사이 간격 */
+}
+
+/* header-right poiName 표시 */
+.poi-name-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
   color: rgba(255, 255, 255, 0.95);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
+  margin-left: 1rem;
+}
+
+.poi-label {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .poi-text {
   font-weight: 600;
   color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
 }
 
 /* 게임 컨텐츠 스타일 */
@@ -1690,6 +1714,18 @@ export default {
   /* 헤더 텍스트 폰트 소폭 축소 */
   .room-name { font-size: 1rem; }
   .round-number { font-size: 0.8rem; }
+  
+  /* 타이머 컨테이너는 헤더의 실제 높이에 맞춰 자동 조정됨 (top: 100% 사용) */
+  
+  /* poiName 표시 최적화 (태블릿) */
+  .poi-name-display {
+    font-size: 0.8rem;
+    margin-left: 0.8rem;
+  }
+  
+  .poi-text {
+    max-width: 150px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -1767,6 +1803,19 @@ export default {
   .chat-toggle {
     display: flex;
   }
+  
+  /* 타이머 컨테이너는 헤더의 실제 높이에 맞춰 자동 조정됨 (top: 100% 사용) */
+  
+  /* poiName 표시 최적화 (모바일) */
+  .poi-name-display {
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+    gap: 0.3rem;
+  }
+  
+  .poi-text {
+    max-width: 120px;
+  }
 }
 
 
@@ -1821,6 +1870,19 @@ export default {
 
   .game-mode {
     font-size: 0.7rem;
+  }
+  
+  /* 타이머 컨테이너는 헤더의 실제 높이에 맞춰 자동 조정됨 (top: 100% 사용) */
+  
+  /* poiName 표시 최적화 (작은 모바일) */
+  .poi-name-display {
+    font-size: 0.7rem;
+    margin-left: 0.3rem;
+    gap: 0.2rem;
+  }
+  
+  .poi-text {
+    max-width: 100px;
   }
 
   .player-list-toggle-btn {
