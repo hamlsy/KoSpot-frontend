@@ -550,7 +550,7 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     }
 
     // 플레이어 추측 위치 설정 (지도 표시용)
-    // playerTotalResults에서 직접 플레이어 정보 가져오기
+    // playerSubmissionResults에서 nickname을 직접 가져오고, playerTotalResults에서 다른 정보 가져오기
     const playerGuessesData = message.playerSubmissionResults.map((submission, index) => {
       const player = message.playerTotalResults[index]
       
@@ -561,7 +561,7 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
       return {
         playerId: player.playerId,
         memberId: player.memberId != null ? Number(player.memberId) : player.playerId, // memberId 추가
-        playerName: player.nickname,
+        playerName: submission.nickname || player.nickname, // playerSubmissionResults의 nickname 우선 사용, 없으면 playerTotalResults에서 가져오기
         position: { lat: submission.lat, lng: submission.lng },
         color: '#3b82f6', // 기본값: 파란색
         markerImageUrl: markerImageUrl, // 플레이어 마커 이미지 (SoloGameView에서 gamePlayers로 업데이트됨)
@@ -613,7 +613,6 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
    * 라운드 전환 처리
    */
   const handleRoundTransition = (message) => {
-    console.log('[Solo Flow] 라운드 전환:', message)
 
     if (!gameStore) return
 
@@ -703,12 +702,10 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
         lng: Number(targetLng)
       }
 
-      console.log('[Solo Flow] 재발급 좌표로 로드뷰 업데이트 완료:', gameStore.state.currentLocation)
       return // 재발급 메시지는 여기서 종료 (타이머, 라운드 상태는 변경하지 않음)
     }
 
     // 일반 라운드 시작 메시지 처리
-    console.log('[Solo Flow] 새로운 라운드 시작')
     
     // 기존 타이머 정리 (라운드 전환 시 반드시 정리)
     clearTimerInterval()
@@ -730,7 +727,6 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     // currentRound는 roundInfo 유무와 관계없이 항상 업데이트 (라운드 스타트 채널에서 받음)
     if (message.currentRound != null) {
       gameStore.state.currentRound = Number(message.currentRound)
-      console.log('[Solo Flow] 라운드 번호 업데이트 (라운드 스타트):', message.currentRound)
     }
     
     if (message.roundInfo) {
@@ -785,7 +781,6 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     // 플레이어 정보 업데이트 (gamePlayers가 있는 경우)
     // 처음 게임 시작할 때 받는 정보를 SoloGameView의 gamePlayers에만 저장 (store에 저장하지 않음)
     if (message.gamePlayers && Array.isArray(message.gamePlayers)) {
-      console.log('[Solo Flow] 플레이어 정보 업데이트 (처음 게임 시작할 때 받는 정보):', message.gamePlayers)
       
       // 플레이어 정보를 콜백으로 전달 (SoloGameView의 gamePlayers에 저장)
       // store에 담지 않음
@@ -837,21 +832,17 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
    * 오버레이 완료 처리 (타이머 시작)
    */
   const onOverlayComplete = () => {
-    console.log('[Solo Flow] 오버레이 완료 - 타이머 시작 가능')
     isOverlayActive.value = false
     
     // 저장된 타이머 시작 메시지가 있으면 지금 처리
     if (pendingTimerStartMessage.value) {
-      console.log('[Solo Flow] 저장된 타이머 시작 메시지 처리')
       const message = pendingTimerStartMessage.value
       pendingTimerStartMessage.value = null
       startTimer(message)
     } else if (!roundStartTime.value) {
       // 타이머 시작 메시지를 아직 받지 못한 경우 대기
-      console.log('[Solo Flow] 타이머 시작 메시지 대기 중...')
     } else {
       // 이미 roundStartTime이 설정되어 있다면 타이머는 이미 시작된 상태
-      console.log('[Solo Flow] 타이머는 이미 시작됨')
     }
   }
 
@@ -859,13 +850,6 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
    * 로드뷰 표시 실패 시 재발급 요청
    */
   const requestRoadviewReIssue = async () => {
-    console.log('[Solo Flow] requestRoadviewReIssue 호출됨:', {
-      roomId: roomId.value,
-      gameId: gameId.value,
-      roundId: roundId.value,
-      reIssueAttempts: reIssueAttempts.value,
-      maxReIssueAttempts: maxReIssueAttempts
-    })
     
     if (!roomId.value || !gameId.value || !roundId.value) {
       console.error('[Solo Flow] 재발급 불가: 게임 정보 없음', {
@@ -886,15 +870,8 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     try {
       reIssueAttempts.value++
       isRetryingRoadview.value = true
-      console.log(`[Solo Flow] 로드뷰 재발급 요청 시작 (${reIssueAttempts.value}/${maxReIssueAttempts}):`, {
-        roomId: roomId.value,
-        gameId: gameId.value,
-        roundId: roundId.value
-      })
 
       const result = await soloGameApi.reIssueRoadview(roomId.value, gameId.value, roundId.value)
-      console.log('[Solo Flow] 로드뷰 재발급 API 응답:', result)
-      console.log('[Solo Flow] 로드뷰 재발급 요청 완료. 서버에서 새로운 좌표 브로드캐스트 대기 중...')
       // 새로운 좌표를 받으면 handleNextRound에서 자동으로 로드뷰를 다시 로드함
       return true
     } catch (error) {
@@ -919,7 +896,6 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
    * PlayerFinalResult: { playerId, nickname, markerImageUrl, totalScore, finalRank, earnedPoint }
    */
   const handleGameFinished = (message) => {
-    console.log('[Solo Flow] 게임 종료:', message)
 
     ensureSubmissionSubscription(message?.gameId)
 
@@ -994,7 +970,6 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
         
         // pendingTimerStartMessage가 있으면 지금 처리 시도
         if (pendingTimerStartMessage.value) {
-          console.log('[Solo Flow] 🔄 pendingTimerStartMessage 처리 시도')
           const message = pendingTimerStartMessage.value
           pendingTimerStartMessage.value = null
           isOverlayActive.value = false
@@ -1005,26 +980,12 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
             // 서버 시간 기준으로 현재 시간 계산 (timeDiff 적용)
             const serverTimeNow = Date.now() - timeDiff.value
             timeToAnswerMs = serverTimeNow - roundStartTime.value
-            console.log('[Solo Flow] ✅ 처리 후 roundStartTime 사용:', {
-              roundStartTime: roundStartTime.value,
-              clientTime: Date.now(),
-              serverTimeNow: serverTimeNow,
-              timeDiff: timeDiff.value,
-              timeToAnswerMs: timeToAnswerMs
-            })
           }
         }
       }
 
       // 밀리초를 초로 변환하고 소수점 3자리까지 반올림
       const timeToAnswer = Number((timeToAnswerMs / 1000).toFixed(3))
-
-      console.log('[Solo Flow] 📤 정답 제출:', { 
-        position, 
-        timeToAnswer, 
-        timeToAnswerMs,
-        roundStartTime: roundStartTime.value
-      })
 
       // API 호출
       await soloGameApi.submitSoloAnswer(roomId.value, gameId.value, roundId.value, {
@@ -1045,7 +1006,6 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
         currentPlayer.hasSubmitted = true
       }
 
-      console.log('[Solo Flow] 정답 제출 완료')
     } catch (error) {
       console.error('[Solo Flow] 정답 제출 오류:', error)
       throw error
@@ -1093,7 +1053,6 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
    * 게임 정리
    */
   const cleanup = () => {
-    console.log('[Solo Flow] 게임 정리 시작')
 
     clearTimerInterval()
     clearTransitionInterval()
@@ -1106,7 +1065,6 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     timerDurationMs.value = 120000
     timeDiff.value = 0
 
-    console.log('[Solo Flow] 게임 정리 완료')
   }
 
   return {
