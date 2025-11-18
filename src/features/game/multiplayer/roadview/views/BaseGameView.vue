@@ -2046,7 +2046,7 @@ export default {
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  z-index: 15001;
+  z-index: 2100;
   transform: scale(1);
 }
 
