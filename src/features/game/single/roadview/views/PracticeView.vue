@@ -6,7 +6,15 @@
         <i class="fas fa-arrow-left"></i>
       </button>
       <h2 v-if="!gameStarted">{{ selectedRegion.name }} 연습 모드</h2>
-      <div v-else class="game-status">
+      <div class="poi-header" v-if="poiName">
+        <i class="fas fa-map-marker-alt"></i>
+        <span class="poi-text" :title="poiName">{{ poiName }}</span>
+      </div>
+      <div v-else class="poi-header placeholder">
+        <i class="fas fa-map-marker-alt"></i>
+        <span class="poi-text">지명 불러오는 중...</span>
+      </div>
+      <div v-if="gameStarted" class="game-status">
         <!-- 랭크 모드 타이머 -->
         <div
           v-if="isRankMode"
@@ -57,20 +65,13 @@
           {{ isMapOpen ? "로드뷰로 돌아가기" : "지도 열기" }}
         </button>
 
-        <!-- 지도 재로딩 버튼 (지도가 열려있을 때만 표시) -->
-        <button
-          v-if="isMapOpen && !showResult"
-          class="map-reload-button"
-          @click="reloadPhoneMap"
-          title="지도 새로고침"
-        >
-          <i class="fas fa-sync-alt"></i>
-        </button>
+        
 
       </div>
 
       <!-- 휴대폰 프레임 -->
       <PhoneFrame
+        :showReloadButton="isMapOpen && !showResult"
         :style="{ zIndex: isMapOpen ? 15 : -1 }"
         :centerLocation="{ lat: 36.5, lng: 127.5 }"
         :showHintCircles="false"
@@ -677,7 +678,7 @@ export default {
           // gameId를 숫자로 변환하여 저장 (백엔드 Long 타입)
           this.gameId = roadViewApiService.convertGameIdToNumber(gameId);
           this.markerImageUrl = markerImageUrl;
-          this.poiName = poiName || null;
+          this.poiName = poiName || this.poiName || '';
           this.fullAddress = fullAddress || null;
           
           // 암호화된 좌표를 복호화
@@ -736,16 +737,16 @@ export default {
       
       // 더미 데이터: 로드뷰가 있는 것으로 확인된 좌표들
       const knownLocations = [
-        { lat: 37.566826, lng: 126.978656 }, // 서울시청
-        { lat: 37.551229, lng: 126.988205 }, // 남산타워
-        { lat: 37.570975, lng: 126.976999 }, // 광화문
-        { lat: 37.512809, lng: 127.058984 }, // 삼성역
-        { lat: 35.179682, lng: 129.075087 }, // 부산 해운대
-        { lat: 35.158831, lng: 129.160007 }, // 부산 광안리
-        { lat: 35.10146, lng: 129.032364 }, // 부산 서면
-        { lat: 37.456769, lng: 126.705528 }, // 인천 송도
-        { lat: 33.249293, lng: 126.560693 }, // 제주 올레길
-        { lat: 33.4507, lng: 126.570667 }, // 제주 시내
+        { lat: 37.566826, lng: 126.978656, name: '서울시청' },
+        { lat: 37.551229, lng: 126.988205, name: '남산타워' },
+        { lat: 37.570975, lng: 126.976999, name: '광화문' },
+        { lat: 37.512809, lng: 127.058984, name: '삼성역' },
+        { lat: 35.179682, lng: 129.075087, name: '부산 해운대' },
+        { lat: 35.158831, lng: 129.160007, name: '부산 광안리' },
+        { lat: 35.10146, lng: 129.032364, name: '부산 서면' },
+        { lat: 37.456769, lng: 126.705528, name: '인천 송도' },
+        { lat: 33.249293, lng: 126.560693, name: '제주 올레길' },
+        { lat: 33.4507, lng: 126.570667, name: '제주 시내' },
       ];
 
       // 지역에 맞는 위치 선택
@@ -760,7 +761,9 @@ export default {
 
       // 필터링된 위치에서 랜덤으로 선택
       const randomIndex = Math.floor(Math.random() * filteredLocations.length);
-      this.currentLocation = filteredLocations[randomIndex];
+      const chosen = filteredLocations[randomIndex];
+      this.currentLocation = { lat: chosen.lat, lng: chosen.lng };
+      this.poiName = chosen.name || this.poiName || '';
       
       // 더미 게임 ID 생성 (Number 타입)
       this.gameId = Date.now();
@@ -1249,6 +1252,33 @@ export default {
   backdrop-filter: blur(5px);
 }
 
+.poi-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 6px 10px;
+  border-radius: 12px;
+}
+
+.poi-header.placeholder {
+  opacity: 0.8;
+}
+
+.poi-header i {
+  color: #ff6b6b;
+}
+
+.poi-text {
+  color: #fff;
+  font-weight: 600;
+  max-width: 40vw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .back-btn {
   background: none;
   border: none;
@@ -1382,46 +1412,6 @@ export default {
 
 .map-toggle i {
   font-size: 1.1rem;
-}
-
-/* 지도 재로딩 버튼 */
-.map-reload-button {
-  position: fixed;
-  top: 80px;
-  right: 30px;
-  background: white;
-  border: none;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  font-size: 1.2rem;
-  color: #333;
-  transition: all 0.3s ease;
-  z-index: 16;
-}
-
-.map-reload-button:hover {
-  background: #f5f5f5;
-  transform: rotate(180deg) scale(1.1);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-}
-
-.map-reload-button:active {
-  transform: rotate(180deg) scale(0.95);
-}
-
-.map-reload-button i {
-  transition: transform 0.3s ease;
-  color: #3498db;
-}
-
-.map-reload-button:hover i {
-  color: #2980b9;
 }
 
 /* 결과 화면 */
@@ -1677,14 +1667,6 @@ export default {
     font-size: 0.9rem;
     bottom: 20px;
     right: 20px;
-  }
-
-  .map-reload-button {
-    width: 45px;
-    height: 45px;
-    top: 70px;
-    right: 20px;
-    font-size: 1rem;
   }
 }
 

@@ -704,6 +704,8 @@ async function handleLogout() {
   width: 100%;
   background-color: #f5f7fa;
   overflow-x: hidden;
+  /* 세로 스크롤 허용 */
+  overflow-y: auto;
 }
 
 .main-content {

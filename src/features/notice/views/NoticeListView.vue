@@ -4,6 +4,7 @@
       :is-logged-in="hasToken"
       :user-info="userProfile"
       @open-tutorial="handleOpenTutorial"
+      @logout="handleLogout"
     />
     
     <main class="main-content">
@@ -155,10 +156,12 @@ import { mainService } from '@/features/main/services/main.service.js'
 import { useRouter, useRoute } from 'vue-router'
 import NavigationBar from 'src/core/components/NavigationBar.vue'
 import { noticeService } from '@/features/notice/services/notice.service.js'
+import { useAuth } from '@/core/composables/useAuth.js'
 
 // 라우터 설정
 const router = useRouter()
 const route = useRoute()
+const { logout: logoutAuth } = useAuth()
 
 // 반응형 상태
 const loading = ref(false)
@@ -294,6 +297,20 @@ const goToPage = (page) => {
 const handleOpenTutorial = () => {
   // 튜토리얼 열기 로직 (필요시 구현)
   console.log('튜토리얼 열기 요청')
+}
+
+// MainView와 동일한 로그아웃 처리
+async function handleLogout() {
+  try {
+    await logoutAuth()
+    window.location.reload()
+  } catch (error) {
+    console.error('❌ 로그아웃 처리 중 오류:', error)
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
+    localStorage.removeItem('memberId')
+    window.location.reload()
+  }
 }
 
 // 사용자 정보 로드 (기존 함수 제거, loadUserProfileFromMain 사용)

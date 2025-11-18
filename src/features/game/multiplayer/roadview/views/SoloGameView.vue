@@ -15,6 +15,8 @@
       :show-leave-button="true"
       :total-time="timeLimit"
       :suppress-roadview-error="isRetryingRoadview"
+      :is-poi-name-visible="isPoiNameVisibleLocal"
+      :poi-name="currentPoiName"
       @leave-game="exitToLobby"
     @guess-submitted="handleGuessSubmission"
     @round-ended="handleRoundEnded"
@@ -216,7 +218,15 @@ export default {
 
       // 게임 최종 결과 (gameStore 사용하지 않고 로컬 데이터로 관리)
       finalGameResult: null,
-      showGameResults: false
+      showGameResults: false,
+
+      // 자동 로비 이동 상태
+      autoExitTimerId: null,
+      autoExitRemaining: 0,
+
+      // 지명 공개 관련 로컬 상태
+      isPoiNameVisibleLocal: true,
+      currentPoiName: ''
     };
   },
 
@@ -297,6 +307,15 @@ export default {
       roomId: this.roomId
     });
     
+    // isPoiNameVisible 초기화 (네비게이션 상태에서 가져오기, 기본 true)
+    try {
+      const navState = typeof history !== 'undefined' ? history.state : null
+      const roomData = navState?.roomData || {}
+      this.isPoiNameVisibleLocal = roomData.isPoiNameVisible !== false
+    } catch (e) {
+      this.isPoiNameVisibleLocal = true
+    }
+
     // 더미 모드에서만 테스트 데이터 로드 (서버 모드에서는 서버에서 플레이어 데이터를 받음)
     if (isExplicitlyDummyMode) {
       console.log('[Solo Game] 더미 모드로 초기화');
@@ -447,6 +466,8 @@ export default {
     if (this.toastTimeout) {
       clearTimeout(this.toastTimeout)
     }
+    // 자동 퇴장 카운트다운 정리
+    this.cancelAutoExitCountdown()
     
     // 채팅 말풍선 정리
     Object.values(this.playerChatMessages).forEach(chatData => {
@@ -515,6 +536,12 @@ export default {
 
     handleLoadingStatus(statusMessage) {
       if (!statusMessage) {
+        return
+      }
+
+      // 로드뷰 재발급 중에는 로딩 상태 메시지를 무시
+      if (this.isRetryingRoadview) {
+        console.log('[Solo Game] 로드뷰 재발급 중 - 로딩 상태 메시지 무시')
         return
       }
 
@@ -682,6 +709,11 @@ export default {
             this.$refs.baseGame.startNextRound(this.currentUserRank, totalPlayers)
           }
         },
+        onNextRound: (message) => {
+          console.log('[Solo Game] 라운드 데이터 수신 (서버 모드):', message)
+          // 통합 라운드 데이터 처리 함수 호출
+          this.processRoundData(message, message.isReIssue || false)
+        },
         onGameFinish: (finalGameResult) => {
           console.log('[Solo Game] 게임 종료 - WebSocket 메시지 수신:', finalGameResult)
           
@@ -709,6 +741,9 @@ export default {
           
           // 플레이어들의 평균 거리 계산
           this.calculatePlayerAverageDistances()
+
+          // 30초 후 자동 로비 이동 카운트다운 시작 (서버 모드)
+          this.startAutoExitCountdown(30)
         },
         onTimerSync: (message) => {
           if (!this.gameStore) {
@@ -1029,36 +1064,100 @@ export default {
       console.log('[Dummy Mode] 개인전 게임 준비 완료 - 인트로 오버레이 표시');
     },
 
-    // 라운드 데이터 수신 이벤트 처리 (더미 모드 전용)
-    handleRoundDataReceived(message) {
-      if (this.isServerMode) return; // 서버 모드에서는 무시
-      
-      console.log('[Dummy Mode] 개인전 라운드 데이터 수신:', message);
-      
-      // 라운드 상태 초기화
-      this.simulationTriggered = false;
-      this.allPlayersSubmitted = false;
-      this.gameStore.state.hasSubmittedGuess = false;
-      this.gameStore.state.userGuess = null;
-      this.gameStore.state.playerGuesses = [];
-      
-      // 플레이어 제출 상태 초기화
-      this.gameStore.state.players.forEach(player => {
-        player.hasSubmitted = false;
-      });
-      
-      // 라운드 타이머는 IntroOverlay 완료 후 시작
-      
-      // 더미 모드에서는 다른 플레이어 시뮬레이션 트리거
-      const isDummyMode = this.$route.query.test === 'true' || !this.$refs.baseGame?.isWebSocketConnected;
-      if (isDummyMode) {
-        console.log('더미 모드: 다른 플레이어 시뮬레이션 트리거');
-        // 시뮬레이션 트리거를 확실히 설정
-        this.simulationTriggered = true;
-        console.log('시뮬레이션 트리거 설정됨:', this.simulationTriggered);
+    // 통합 라운드 데이터 처리 함수 (서버/더미 모드 공통)
+    processRoundData(message, isReIssue = false) {
+      console.log('[Solo Game] 라운드 데이터 처리:', { message, isReIssue });
+
+      // gameStore 업데이트
+      if (message.currentRound != null) {
+        this.gameStore.state.currentRound = Number(message.currentRound);
       }
       
-      console.log(`라운드 ${this.gameStore.state.currentRound} 데이터 준비 완료`);
+      if (message.totalRounds != null) {
+        this.gameStore.state.totalRounds = message.totalRounds;
+      }
+      
+      // 좌표 정보 추출 및 업데이트
+      const targetLat = message.roundInfo?.targetLat ?? message.targetLat ?? message.location?.lat;
+      const targetLng = message.roundInfo?.targetLng ?? message.targetLng ?? message.location?.lng;
+      
+      if (targetLat != null && targetLng != null) {
+        this.gameStore.state.currentLocation = {
+          lat: Number(targetLat),
+          lng: Number(targetLng)
+        };
+        this.gameStore.state.actualLocation = {
+          lat: Number(targetLat),
+          lng: Number(targetLng)
+        };
+      }
+      
+      // locationInfo 업데이트
+      if (message.locationInfo) {
+        this.gameStore.state.locationInfo = message.locationInfo;
+      }
+      
+      // poiName 처리 (roundInfo.poiName 우선, 직접 메시지의 poiName, locationInfo.poiName 폴백)
+      const poiName = message.roundInfo?.poiName || message.poiName || message.locationInfo?.poiName || '';
+      if (poiName) {
+        if (!this.gameStore.state.locationInfo) {
+          this.gameStore.state.locationInfo = { 
+            name: '', 
+            description: '', 
+            image: '', 
+            fact: '', 
+            poiName: '', 
+            fullAddress: '' 
+          };
+        }
+        this.gameStore.state.locationInfo.poiName = poiName;
+        // BaseGameView prop용 currentPoiName 업데이트
+        this.currentPoiName = poiName;
+      } else {
+        // poiName이 없으면 빈 문자열로 초기화
+        this.currentPoiName = '';
+      }
+      
+      // 라운드 시간 설정
+      if (message.roundTime != null) {
+        this.gameStore.state.remainingTime = message.roundTime;
+      }
+      
+      // 라운드 상태 초기화 (재발급 메시지가 아닌 경우에만)
+      if (!isReIssue) {
+        this.gameStore.state.roundEnded = false;
+        this.gameStore.state.hasSubmittedGuess = false;
+        this.gameStore.state.userGuess = null;
+        this.gameStore.state.playerGuesses = [];
+        this.gameStore.state.showRoundResults = false;
+        
+        // 시뮬레이션 상태 초기화
+        this.simulationTriggered = false;
+        this.allPlayersSubmitted = false;
+        
+        // 플레이어 제출 상태 초기화 (더미 모드)
+        if (this.isDummyRuntime) {
+          this.gameStore.state.players.forEach(player => {
+            player.hasSubmitted = false;
+          });
+        }
+        
+        // 더미 모드에서는 다른 플레이어 시뮬레이션 트리거
+        if (this.isDummyRuntime) {
+          console.log('더미 모드: 다른 플레이어 시뮬레이션 트리거');
+          this.simulationTriggered = true;
+          console.log('시뮬레이션 트리거 설정됨:', this.simulationTriggered);
+        }
+      }
+      
+      console.log(`라운드 ${this.gameStore.state.currentRound} 데이터 처리 완료`);
+    },
+
+    // 라운드 데이터 수신 이벤트 처리 (더미 모드 전용, processRoundData로 위임)
+    handleRoundDataReceived(message) {
+      console.log('[Solo Game] 라운드 데이터 수신 (더미 모드):', message);
+      // processRoundData로 통합 처리
+      this.processRoundData(message, false);
     },
 
     // 플레이어 제출 이벤트 처리 (더미 모드 전용)
@@ -1093,6 +1192,9 @@ export default {
       
       // 더미 모드 게임 종료 시뮬레이션 호출 (로컬 데이터로 직접 설정)
       this.simulateGameEnd();
+
+      // 30초 후 자동 로비 이동 카운트다운 시작 (더미 모드)
+      this.startAutoExitCountdown(30);
       
       console.log('개인전 게임 완전 종료, 총 게임 시간:', this.totalGameTime, '초');
     },
@@ -1553,19 +1655,19 @@ export default {
           lng: 126.978 + (Math.random() - 0.5) * 0.1
         },
         locationInfo: this.gameStore.state.locationInfo,
-        roundTime: 120
+        roundTime: 120,
+        roundInfo: {
+          poiName: (this.gameStore.state.locationInfo && this.gameStore.state.locationInfo.name) ? this.gameStore.state.locationInfo.name : '더미 지명'
+        }
       }
       
-      // BaseGameView의 라운드 데이터 핸들러 호출
-      if (this.$refs.baseGame) {
-        this.$refs.baseGame.handleRoundData(roundDataMessage)
-      }
+      // 통합 라운드 데이터 처리 함수 사용 (더미 모드)
+      this.processRoundData(roundDataMessage, false)
       
       // 라운드 데이터 가져오기
       this.fetchRoundData()
       
-      // 시뮬레이션 트리거 설정
-      this.simulationTriggered = true
+      // 시뮬레이션 트리거는 processRoundData에서 설정됨
     },
 
     /**
@@ -1641,6 +1743,9 @@ export default {
       
       // 더미 모드 게임 종료 시뮬레이션 호출 (로컬 데이터로 직접 설정)
       this.simulateGameEnd();
+
+      // 30초 후 자동 로비 이동 카운트다운 시작
+      this.startAutoExitCountdown(30);
       
       console.log('[Solo Game] 더미 모드 게임 완료, 최종 결과 표시');
     },
@@ -1651,6 +1756,8 @@ export default {
       // 로컬 데이터 초기화
       this.showGameResults = false;
       this.finalGameResult = null;
+      // 자동 퇴장 카운트다운 취소
+      this.cancelAutoExitCountdown();
       
       // 모든 구독 해제
       this.cleanupSubscriptions();
@@ -1676,11 +1783,14 @@ export default {
         return
       }
 
+      // 자동 퇴장 카운트다운 취소
+      this.cancelAutoExitCountdown()
+
       // 모든 구독 해제
       this.cleanupSubscriptions()
 
-      // 로비로 이동
-      this.$router.push("/lobby")
+      // 로비로 새로고침 이동
+      window.location.href = "/lobby"
     },
 
     /**
@@ -1853,6 +1963,44 @@ export default {
         color: color,
       })
     },
+
+    // ===== 자동 로비 이동 유틸 =====
+    startAutoExitCountdown(seconds = 30) {
+      try {
+        // 중복 방지
+        this.cancelAutoExitCountdown();
+        this.autoExitRemaining = Number(seconds) > 0 ? Number(seconds) : 30;
+        this.autoExitTimerId = setInterval(() => {
+          this.autoExitRemaining = Math.max(0, this.autoExitRemaining - 1);
+          if (this.autoExitRemaining <= 0) {
+            this.cancelAutoExitCountdown();
+            this.redirectToLobby();
+          }
+        }, 1000);
+        console.log(`[Solo Game] 자동 로비 이동 카운트다운 시작: ${this.autoExitRemaining}초`);
+      } catch (e) {
+        console.warn('[Solo Game] 자동 퇴장 카운트다운 시작 오류:', e);
+      }
+    },
+
+    cancelAutoExitCountdown() {
+      if (this.autoExitTimerId) {
+        clearInterval(this.autoExitTimerId);
+        this.autoExitTimerId = null;
+      }
+      this.autoExitRemaining = 0;
+    },
+
+    redirectToLobby() {
+      try {
+        console.log('[Solo Game] 30초 경과 - 로비로 자동 이동');
+        // 이동 전 정리
+        this.cleanupSubscriptions();
+        this.$router.replace('/lobby');
+      } catch (e) {
+        console.error('[Solo Game] 로비 이동 중 오류:', e);
+      }
+    }
   },
 };
 </script>

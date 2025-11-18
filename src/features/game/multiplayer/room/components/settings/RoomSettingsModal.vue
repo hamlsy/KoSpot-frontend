@@ -144,6 +144,24 @@
               <span class="toggle-text">{{ formData.isPrivate ? '비공개' : '공개' }}</span>
             </div>
           </div>
+
+          <!-- 지명 공개 설정 -->
+          <div class="form-group">
+            <label>지명 공개</label>
+            <div class="toggle-switch">
+              <input 
+                type="checkbox" 
+                id="isPoiNameVisible" 
+                v-model="formData.isPoiNameVisible"
+                class="toggle-input"
+              />
+              <label for="isPoiNameVisible" class="toggle-label">
+                <span class="toggle-inner"></span>
+                <span class="toggle-switch-handle"></span>
+              </label>
+              <span class="toggle-text">{{ formData.isPoiNameVisible ? '표시' : '비표시' }}</span>
+            </div>
+          </div>
           
           <!-- 비밀번호 (비공개 방인 경우) -->
           <div class="form-group" v-if="formData.isPrivate">
@@ -218,7 +236,8 @@ const formData = ref({
   timeLimit: 60,
   maxPlayers: 8,
   region: '',
-  isPrivate: false
+  isPrivate: false,
+  isPoiNameVisible: true
 });
 
 // 방 설정 저장
@@ -238,7 +257,8 @@ onMounted(() => {
       timeLimit: props.roomData.timeLimit || 60,
       maxPlayers: props.roomData.maxPlayers || 8,
       region: props.roomData.region || '',
-      isPrivate: props.roomData.isPrivate || false
+      isPrivate: props.roomData.isPrivate || false,
+      isPoiNameVisible: props.roomData.isPoiNameVisible !== false
     };
   }
 });

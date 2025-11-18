@@ -196,6 +196,7 @@ function close() {
 
 // 포맷팅 함수들
 function formatDistance(distance) {
+  distance = distance*1000;
   if (distance < 1000) {
     return `${Math.round(distance)}m`;
   }

@@ -50,14 +50,23 @@
           <span class="toggle-text">{{ isPlayerListOpen ? '목록 닫기' : '플레이어' }}</span>
         </button>
         
-        <game-timer
-          :initialTime="gameStore.state.remainingTime"
-          :totalTime="totalTime"
-          :warning-threshold="30"
-          :danger-threshold="10"
-          :is-running="!showIntroOverlay && !showNextRoundOverlay && !useCustomWebSocket"
-        />
+        <!-- poiName 표시 (타이머 자리) -->
+        <div class="poi-name-display" v-if="isPoiNameVisible && poiName">
+          <span class="poi-label">지명:</span>
+          <span class="poi-text" :title="poiName">{{ poiName }}</span>
+        </div>
       </div>
+    </div>
+
+    <!-- 타이머 컨테이너 (헤더 밑) -->
+    <div class="timer-container" v-if="!showIntroOverlay && !showNextRoundOverlay">
+      <game-timer
+        :initialTime="gameStore.state.remainingTime"
+        :totalTime="totalTime"
+        :warning-threshold="30"
+        :danger-threshold="10"
+        :is-running="!showIntroOverlay && !showNextRoundOverlay && !useCustomWebSocket"
+      />
     </div>
 
     <!-- 게임 메인 영역 -->
@@ -132,15 +141,7 @@
             지도
           </button>
 
-          <!-- 지도 재로딩 버튼 (지도가 열려있을 때만 표시) -->
-          <button
-            v-if="isMapOpen && !gameStore.state.roundEnded"
-            class="map-reload-button"
-            @click="reloadPhoneMap"
-            title="지도 새로고침"
-          >
-            <i class="fas fa-sync-alt"></i>
-          </button>
+          
         </div>
       </div>
 
@@ -167,6 +168,7 @@
       :gameMode="'solo'"
       :markerImageUrl="currentUserMarkerImageUrl"
       :hasSubmitted="gameStore.state.hasSubmittedGuess"
+      :showReloadButton="isMapOpen && !gameStore.state.roundEnded"
       @spot-answer="handlePhoneMapGuess"
       ref="phoneFrame"
     />
@@ -237,6 +239,16 @@ export default {
     suppressRoadviewError: {
       type: Boolean,
       default: false
+    },
+    // 지명 공개 제어
+    isPoiNameVisible: {
+      type: Boolean,
+      default: true
+    },
+    // 현재 라운드의 지명 (roundInfo.poiName)
+    poiName: {
+      type: String,
+      default: ''
     }
   },
 
@@ -1273,13 +1285,17 @@ export default {
 .multiplayer-roadview-game {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  /* 모바일 브라우저 주소창 변동 대응 */
+  min-height: 100svh;
+  min-height: 100dvh;
+  height: 100dvh;
   background-color: #f5f7fa;
   overflow: hidden;
 }
 
 /* 게임 헤더 스타일 */
 .game-header {
+  position: relative; /* 타이머 컨테이너의 기준점 */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1330,6 +1346,8 @@ export default {
   flex: 1;
   max-width: 400px;
   margin: 0 2rem;
+  /* 플렉스 수축 허용 */
+  min-width: 0;
 }
 
 @media (max-width: 768px) {
@@ -1352,6 +1370,9 @@ export default {
   font-size: 1.125rem;
   font-weight: 600;
   margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .game-mode {
@@ -1373,6 +1394,8 @@ export default {
   font-weight: 500;
   margin-bottom: 0.25rem;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .round-progress {
@@ -1387,6 +1410,39 @@ export default {
   background: linear-gradient(90deg, #4f46e5, #3b82f6);
   border-radius: 4px;
   transition: width 0.5s ease-out;
+}
+
+/* 타이머 컨테이너 (헤더 밑) */
+.timer-container {
+  position: absolute;
+  top: 100%; /* 헤더의 실제 높이 기준 (동적) */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  margin-top: 4px; /* 헤더와 타이머 사이 간격 */
+}
+
+/* header-right poiName 표시 */
+.poi-name-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.95);
+  margin-left: 1rem;
+}
+
+.poi-label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.poi-text {
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
 }
 
 /* 게임 컨텐츠 스타일 */
@@ -1560,7 +1616,7 @@ export default {
 @media (max-width: 992px) {
   .game-content {
     flex-direction: row; /* 다시 row로 변경 */
-    height: calc(100vh - 80px);
+    height: calc(100dvh - 80px);
     position: relative;
   }
 
@@ -1654,6 +1710,22 @@ export default {
   .chat-toggle {
     display: flex; /* 태블릿에서도 표시 */
   }
+
+  /* 헤더 텍스트 폰트 소폭 축소 */
+  .room-name { font-size: 1rem; }
+  .round-number { font-size: 0.8rem; }
+  
+  /* 타이머 컨테이너는 헤더의 실제 높이에 맞춰 자동 조정됨 (top: 100% 사용) */
+  
+  /* poiName 표시 최적화 (태블릿) */
+  .poi-name-display {
+    font-size: 0.8rem;
+    margin-left: 0.8rem;
+  }
+  
+  .poi-text {
+    max-width: 150px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -1665,6 +1737,11 @@ export default {
     align-items: center;
     min-height: 70px; /* 모바일에서 약간 작은 높이 */
     overflow: hidden; /* 넘치는 요소 숨김 */
+  }
+
+  /* 전역 고정 헤더와의 겹침 방지 */
+  .multiplayer-roadview-game {
+    padding-top: 64px;
   }
 
   .header-left {
@@ -1726,6 +1803,19 @@ export default {
   .chat-toggle {
     display: flex;
   }
+  
+  /* 타이머 컨테이너는 헤더의 실제 높이에 맞춰 자동 조정됨 (top: 100% 사용) */
+  
+  /* poiName 표시 최적화 (모바일) */
+  .poi-name-display {
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+    gap: 0.3rem;
+  }
+  
+  .poi-text {
+    max-width: 120px;
+  }
 }
 
 
@@ -1781,6 +1871,19 @@ export default {
   .game-mode {
     font-size: 0.7rem;
   }
+  
+  /* 타이머 컨테이너는 헤더의 실제 높이에 맞춰 자동 조정됨 (top: 100% 사용) */
+  
+  /* poiName 표시 최적화 (작은 모바일) */
+  .poi-name-display {
+    font-size: 0.7rem;
+    margin-left: 0.3rem;
+    gap: 0.2rem;
+  }
+  
+  .poi-text {
+    max-width: 100px;
+  }
 
   .player-list-toggle-btn {
     padding: 0.25rem 0.5rem;
@@ -1800,6 +1903,11 @@ export default {
     max-width: 90vw;
     max-height: 75vh;
   }
+}
+
+/* 초소형 화면에서 토글 텍스트 숨김 */
+@media (max-width: 360px) {
+  .player-list-toggle-btn .toggle-text { display: none; }
 }
 
 .home-button {
@@ -1893,45 +2001,6 @@ export default {
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
 }
 
-/* 지도 재로딩 버튼 */
-.map-reload-button {
-  position: fixed;
-  top: 80px;
-  right: 30px;
-  background: white;
-  border: none;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  font-size: 1.2rem;
-  color: #333;
-  transition: all 0.3s ease;
-  z-index: 16;
-}
-
-.map-reload-button:hover {
-  background: #f5f5f5;
-  transform: rotate(180deg) scale(1.1);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-}
-
-.map-reload-button:active {
-  transform: rotate(180deg) scale(0.95);
-}
-
-.map-reload-button i {
-  transition: transform 0.3s ease;
-  color: #3498db;
-}
-
-.map-reload-button:hover i {
-  color: #2980b9;
-}
 
 @media (max-width: 768px) {
   .phone-frame {
@@ -1951,14 +2020,6 @@ export default {
     font-size: 0.9rem;
     bottom: 20px;
     right: 20px;
-  }
-
-  .map-reload-button {
-    width: 45px;
-    height: 45px;
-    top: 70px;
-    right: 20px;
-    font-size: 1rem;
   }
 
   .phone-spot-button {
@@ -1985,7 +2046,7 @@ export default {
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  z-index: 50;
+  z-index: 2100;
   transform: scale(1);
 }
 

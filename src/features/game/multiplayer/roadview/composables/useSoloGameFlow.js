@@ -38,6 +38,7 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     onIntroShow: null,
     onRoundResultShow: null,
     onNextRoundShow: null,
+    onNextRound: null, // 새로 추가 - 라운드 데이터 처리용
     onGameFinish: null,
     onTimerSync: null,
     onGamePlayersUpdate: null,
@@ -515,7 +516,9 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     }
 
     // 지역 정보 업데이트 (poiName, fullAddress)
-    if (message.poiName != null || message.fullAddress != null) {
+    // poiName은 message.poiName 우선, 없으면 roundInfo.poiName으로 폴백
+    const resolvedPoiName = (message && message.poiName != null) ? message.poiName : (message && message.roundInfo && message.roundInfo.poiName != null ? message.roundInfo.poiName : null)
+    if (resolvedPoiName != null || message.fullAddress != null) {
       if (!gameStore.state.locationInfo) {
         gameStore.state.locationInfo = {
           name: '',
@@ -526,13 +529,13 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
           fullAddress: ''
         }
       }
-      
+
       // poiName (지역이름) 업데이트
-      if (message.poiName != null) {
-        gameStore.state.locationInfo.poiName = message.poiName
+      if (resolvedPoiName != null) {
+        gameStore.state.locationInfo.poiName = resolvedPoiName
         // name이 없으면 poiName을 name으로도 사용
         if (!gameStore.state.locationInfo.name) {
-          gameStore.state.locationInfo.name = message.poiName
+          gameStore.state.locationInfo.name = resolvedPoiName
         }
       }
       
@@ -548,7 +551,7 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     }
 
     // 플레이어 추측 위치 설정 (지도 표시용)
-    // playerTotalResults에서 직접 플레이어 정보 가져오기
+    // playerSubmissionResults에서 nickname을 직접 가져오고, playerTotalResults에서 다른 정보 가져오기
     const playerGuessesData = message.playerSubmissionResults.map((submission, index) => {
       const player = message.playerTotalResults[index]
       
@@ -559,7 +562,7 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
       return {
         playerId: player.playerId,
         memberId: player.memberId != null ? Number(player.memberId) : player.playerId, // memberId 추가
-        playerName: player.nickname,
+        playerName: submission.nickname || player.nickname, // playerSubmissionResults의 nickname 우선 사용, 없으면 playerTotalResults에서 가져오기
         position: { lat: submission.lat, lng: submission.lng },
         color: '#3b82f6', // 기본값: 파란색
         markerImageUrl: markerImageUrl, // 플레이어 마커 이미지 (SoloGameView에서 gamePlayers로 업데이트됨)
@@ -611,7 +614,6 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
    * 라운드 전환 처리
    */
   const handleRoundTransition = (message) => {
-    console.log('[Solo Flow] 라운드 전환:', message)
 
     if (!gameStore) return
 
@@ -652,8 +654,6 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
 
     ensureSubmissionSubscription(message?.gameId)
 
-    if (!gameStore) return
-
     // 좌표 추출 (roundInfo가 있으면 roundInfo에서, 없으면 직접 메시지에서)
     const targetLat = message.roundInfo?.targetLat ?? message.targetLat
     const targetLng = message.roundInfo?.targetLng ?? message.targetLng
@@ -669,6 +669,19 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
                              (!message.roundInfo && message.targetLat != null && message.targetLng != null) ||
                              (messageRoundId != null && Number(messageRoundId) === roundId.value && isRetryingRoadview.value)
 
+    // 내부 상태 관리: gameId, roundId 업데이트
+    if (message.gameId != null) {
+      gameId.value = message.gameId
+    }
+    
+    if (messageRoundId != null) {
+      const parsedRoundId = Number(messageRoundId)
+      if (!Number.isNaN(parsedRoundId)) {
+        roundId.value = parsedRoundId
+      }
+    }
+
+    // 재발급 메시지 처리
     if (isReIssueMessage) {
       // 재발급 후 메시지: 좌표만 업데이트 (타이머, 라운드 정보는 변경하지 않음)
       console.log('[Solo Flow] 재발급 후 새로운 좌표 수신 - 로드뷰만 다시 로드')
@@ -680,33 +693,14 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
         console.log('[Solo Flow] 재발급 성공 - 재시도 플래그 해제')
       }
 
-      // 게임 ID 및 라운드 ID 업데이트 (있는 경우)
-      if (message.gameId != null) {
-        gameId.value = message.gameId
+      // 재발급 메시지도 콜백으로 전달 (gameStore 업데이트는 컴포넌트에서)
+      if (callbacks.onNextRound) {
+        callbacks.onNextRound({ ...message, isReIssue: true })
       }
-      if (messageRoundId != null) {
-        const parsedRoundId = Number(messageRoundId)
-        if (!Number.isNaN(parsedRoundId)) {
-          roundId.value = parsedRoundId
-        }
-      }
-
-      // 좌표 정보만 업데이트 (로드뷰 자동 재로드됨)
-      gameStore.state.currentLocation = {
-        lat: Number(targetLat),
-        lng: Number(targetLng)
-      }
-      gameStore.state.actualLocation = {
-        lat: Number(targetLat),
-        lng: Number(targetLng)
-      }
-
-      console.log('[Solo Flow] 재발급 좌표로 로드뷰 업데이트 완료:', gameStore.state.currentLocation)
-      return // 재발급 메시지는 여기서 종료 (타이머, 라운드 상태는 변경하지 않음)
+      return
     }
 
     // 일반 라운드 시작 메시지 처리
-    console.log('[Solo Flow] 새로운 라운드 시작')
     
     // 기존 타이머 정리 (라운드 전환 시 반드시 정리)
     clearTimerInterval()
@@ -719,38 +713,6 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
       reIssueAttempts.value = 0
     }
 
-    // 게임 ID 업데이트
-    if (message.gameId != null) {
-      gameId.value = message.gameId
-    }
-    
-    // 라운드 정보 업데이트
-    // currentRound는 roundInfo 유무와 관계없이 항상 업데이트 (라운드 스타트 채널에서 받음)
-    if (message.currentRound != null) {
-      gameStore.state.currentRound = Number(message.currentRound)
-      console.log('[Solo Flow] 라운드 번호 업데이트 (라운드 스타트):', message.currentRound)
-    }
-    
-    if (message.roundInfo) {
-      // roundInfo가 있는 경우 (일반 라운드 시작)
-      const nextRoundId = Number(message.roundInfo.roundId)
-      if (!Number.isNaN(nextRoundId)) {
-        roundId.value = nextRoundId
-      }
-      
-      // 게임 설정 업데이트
-      if (message.totalRounds != null) {
-        gameStore.state.totalRounds = message.totalRounds
-      }
-      // currentRound는 위에서 이미 업데이트했으므로 여기서는 중복 업데이트하지 않음
-    } else if (messageRoundId != null) {
-      // roundInfo가 없지만 roundId가 직접 있는 경우
-      const parsedRoundId = Number(messageRoundId)
-      if (!Number.isNaN(parsedRoundId)) {
-        roundId.value = parsedRoundId
-      }
-    }
-
     // 재시도 중이었다면 플래그 해제
     if (isRetryingRoadview.value) {
       console.log('[Solo Flow] 재시도 중 새로운 좌표 수신 - 로드뷰 다시 로드')
@@ -758,48 +720,9 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
       reIssueAttempts.value = 0
     }
 
-    // 라운드 좌표 정보 업데이트
-    gameStore.state.currentLocation = {
-      lat: Number(targetLat),
-      lng: Number(targetLng)
-    }
-    gameStore.state.actualLocation = {
-      lat: Number(targetLat),
-      lng: Number(targetLng)
-    }
-
-    // 플레이어 정보 업데이트 (gamePlayers가 있는 경우)
-    // 처음 게임 시작할 때 받는 정보를 SoloGameView의 gamePlayers에만 저장 (store에 저장하지 않음)
-    if (message.gamePlayers && Array.isArray(message.gamePlayers)) {
-      console.log('[Solo Flow] 플레이어 정보 업데이트 (처음 게임 시작할 때 받는 정보):', message.gamePlayers)
-      
-      // 플레이어 정보를 콜백으로 전달 (SoloGameView의 gamePlayers에 저장)
-      // store에 담지 않음
-      if (callbacks.onGamePlayersUpdate) {
-        callbacks.onGamePlayersUpdate(message.gamePlayers)
-      }
-    }
-
-    // 라운드 상태 초기화
-    gameStore.state.roundEnded = false
-    gameStore.state.hasSubmittedGuess = false
-    gameStore.state.userGuess = null
-    gameStore.state.playerGuesses = []
-    gameStore.state.showRoundResults = false
-
-    // 플레이어 제출 상태 초기화는 SoloGameView의 gamePlayers에서 처리
-    // (서버 모드에서는 store에 플레이어 정보를 저장하지 않음)
-
-    // 라운드 시작 시간 초기화 (새 라운드 시작 전에 초기화)
+    // 타이머 관련 내부 상태만 초기화 (gameStore는 컴포넌트에서 업데이트)
     roundStartTime.value = null
-    
-    // 타이머 총 시간 초기화
     timerDurationMs.value = 120000
-    
-    // 타이머 값 초기화 (서버에서 타이머 시작 메시지를 받을 때까지 대기)
-    if (gameStore.state) {
-      gameStore.state.remainingTime = 0
-    }
     
     // 첫 번째 라운드인지 확인 (currentRound === 1)
     const isFirstRound = message.currentRound === 1
@@ -807,7 +730,7 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     // 오버레이 시작 플래그 설정
     isOverlayActive.value = true
     
-    // UI 콜백: 첫 번째 라운드면 IntroOverlay, 아니면 NextRoundOverlay
+    // UI 콜백: 오버레이 표시 (첫 번째 라운드면 IntroOverlay, 아니면 NextRoundOverlay)
     if (isFirstRound) {
       if (callbacks.onIntroShow) {
         callbacks.onIntroShow()
@@ -817,27 +740,38 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
         callbacks.onNextRoundShow()
       }
     }
+
+    // 플레이어 정보 업데이트 (gamePlayers가 있는 경우)
+    // 처음 게임 시작할 때 받는 정보를 SoloGameView의 gamePlayers에만 저장 (store에 저장하지 않음)
+    if (message.gamePlayers && Array.isArray(message.gamePlayers)) {
+      // 플레이어 정보를 콜백으로 전달 (SoloGameView의 gamePlayers에 저장)
+      // store에 담지 않음
+      if (callbacks.onGamePlayersUpdate) {
+        callbacks.onGamePlayersUpdate(message.gamePlayers)
+      }
+    }
+    
+    // 라운드 데이터는 콜백으로 전달 (gameStore 업데이트는 컴포넌트에서 처리)
+    if (callbacks.onNextRound) {
+      callbacks.onNextRound({ ...message, isReIssue: false })
+    }
   }
 
   /**
    * 오버레이 완료 처리 (타이머 시작)
    */
   const onOverlayComplete = () => {
-    console.log('[Solo Flow] 오버레이 완료 - 타이머 시작 가능')
     isOverlayActive.value = false
     
     // 저장된 타이머 시작 메시지가 있으면 지금 처리
     if (pendingTimerStartMessage.value) {
-      console.log('[Solo Flow] 저장된 타이머 시작 메시지 처리')
       const message = pendingTimerStartMessage.value
       pendingTimerStartMessage.value = null
       startTimer(message)
     } else if (!roundStartTime.value) {
       // 타이머 시작 메시지를 아직 받지 못한 경우 대기
-      console.log('[Solo Flow] 타이머 시작 메시지 대기 중...')
     } else {
       // 이미 roundStartTime이 설정되어 있다면 타이머는 이미 시작된 상태
-      console.log('[Solo Flow] 타이머는 이미 시작됨')
     }
   }
 
@@ -845,13 +779,6 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
    * 로드뷰 표시 실패 시 재발급 요청
    */
   const requestRoadviewReIssue = async () => {
-    console.log('[Solo Flow] requestRoadviewReIssue 호출됨:', {
-      roomId: roomId.value,
-      gameId: gameId.value,
-      roundId: roundId.value,
-      reIssueAttempts: reIssueAttempts.value,
-      maxReIssueAttempts: maxReIssueAttempts
-    })
     
     if (!roomId.value || !gameId.value || !roundId.value) {
       console.error('[Solo Flow] 재발급 불가: 게임 정보 없음', {
@@ -872,15 +799,8 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     try {
       reIssueAttempts.value++
       isRetryingRoadview.value = true
-      console.log(`[Solo Flow] 로드뷰 재발급 요청 시작 (${reIssueAttempts.value}/${maxReIssueAttempts}):`, {
-        roomId: roomId.value,
-        gameId: gameId.value,
-        roundId: roundId.value
-      })
 
       const result = await soloGameApi.reIssueRoadview(roomId.value, gameId.value, roundId.value)
-      console.log('[Solo Flow] 로드뷰 재발급 API 응답:', result)
-      console.log('[Solo Flow] 로드뷰 재발급 요청 완료. 서버에서 새로운 좌표 브로드캐스트 대기 중...')
       // 새로운 좌표를 받으면 handleNextRound에서 자동으로 로드뷰를 다시 로드함
       return true
     } catch (error) {
@@ -905,7 +825,6 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
    * PlayerFinalResult: { playerId, nickname, markerImageUrl, totalScore, finalRank, earnedPoint }
    */
   const handleGameFinished = (message) => {
-    console.log('[Solo Flow] 게임 종료:', message)
 
     ensureSubmissionSubscription(message?.gameId)
 
@@ -980,7 +899,6 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
         
         // pendingTimerStartMessage가 있으면 지금 처리 시도
         if (pendingTimerStartMessage.value) {
-          console.log('[Solo Flow] 🔄 pendingTimerStartMessage 처리 시도')
           const message = pendingTimerStartMessage.value
           pendingTimerStartMessage.value = null
           isOverlayActive.value = false
@@ -991,26 +909,12 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
             // 서버 시간 기준으로 현재 시간 계산 (timeDiff 적용)
             const serverTimeNow = Date.now() - timeDiff.value
             timeToAnswerMs = serverTimeNow - roundStartTime.value
-            console.log('[Solo Flow] ✅ 처리 후 roundStartTime 사용:', {
-              roundStartTime: roundStartTime.value,
-              clientTime: Date.now(),
-              serverTimeNow: serverTimeNow,
-              timeDiff: timeDiff.value,
-              timeToAnswerMs: timeToAnswerMs
-            })
           }
         }
       }
 
       // 밀리초를 초로 변환하고 소수점 3자리까지 반올림
       const timeToAnswer = Number((timeToAnswerMs / 1000).toFixed(3))
-
-      console.log('[Solo Flow] 📤 정답 제출:', { 
-        position, 
-        timeToAnswer, 
-        timeToAnswerMs,
-        roundStartTime: roundStartTime.value
-      })
 
       // API 호출
       await soloGameApi.submitSoloAnswer(roomId.value, gameId.value, roundId.value, {
@@ -1031,7 +935,6 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
         currentPlayer.hasSubmitted = true
       }
 
-      console.log('[Solo Flow] 정답 제출 완료')
     } catch (error) {
       console.error('[Solo Flow] 정답 제출 오류:', error)
       throw error
@@ -1079,7 +982,6 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
    * 게임 정리
    */
   const cleanup = () => {
-    console.log('[Solo Flow] 게임 정리 시작')
 
     clearTimerInterval()
     clearTransitionInterval()
@@ -1092,7 +994,6 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     timerDurationMs.value = 120000
     timeDiff.value = 0
 
-    console.log('[Solo Flow] 게임 정리 완료')
   }
 
   return {
