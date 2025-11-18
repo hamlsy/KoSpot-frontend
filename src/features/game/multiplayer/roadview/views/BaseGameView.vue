@@ -70,7 +70,7 @@
     </div>
 
     <!-- 게임 메인 영역 -->
-    <div class="game-content">
+    <div class="game-content" :class="{ 'chat-open': isChatOpen }">
       <!-- 왼쪽 패널: 플레이어 목록 (토글 가능) -->
       <div class="left-panel" :class="{ 
         'hidden': !isPlayerListOpen,

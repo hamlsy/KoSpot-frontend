@@ -348,7 +348,8 @@ export default {
 
 .road-reset-btn {
   position: absolute;
-  top: 70px;
+  /* 헤더(80px) + 타이머(42px) = 122px 아래에 위치 */
+  top: 122px;
   right: 12px;
   width: 40px;
   height: 40px;
@@ -359,8 +360,49 @@ export default {
   background: rgba(0, 0, 0, 0.5);
   color: #fff;
   cursor: pointer;
-  z-index: 19;
+  /* 다른 요소들 위에 표시되도록 z-index 증가 */
+  z-index: 100;
   transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+/* 채팅창이 열려있을 때 버튼 위치 조정 */
+/* 데스크톱에서만 적용 (반응형이 아닌 상태) */
+@media (min-width: 993px) {
+  /* BaseGameView의 .game-content.chat-open 클래스가 있을 때 */
+  .multiplayer-roadview-game .game-content.chat-open .main-panel .road-view .road-reset-btn {
+    /* 채팅창이 열려있을 때는 오른쪽 여백을 더 줌 (채팅창 300px + 여백 20px) */
+    right: 320px;
+  }
+}
+
+/* 반응형: 태블릿 (992px 이하) */
+@media (max-width: 992px) {
+  .road-reset-btn {
+    /* 헤더(80px) + 타이머(42px) = 122px 유지 */
+    top: 122px;
+    right: 12px;
+  }
+  
+  /* 태블릿에서는 채팅창이 모달로 표시되므로 원래 위치 유지 */
+  .multiplayer-roadview-game .right-panel:not(.chat-open) ~ .game-content .main-panel .road-reset-btn,
+  .multiplayer-roadview-game .game-content .main-panel .road-reset-btn {
+    right: 12px;
+  }
+}
+
+/* 반응형: 모바일 (768px 이하) */
+@media (max-width: 768px) {
+  .road-reset-btn {
+    /* 헤더(70px) + 타이머(38px) = 108px 아래에 위치 */
+    top: 108px;
+    right: 12px;
+  }
+  
+  /* 모바일에서는 채팅창이 모달로 표시되므로 원래 위치 유지 */
+  .multiplayer-roadview-game .right-panel:not(.chat-open) ~ .game-content .main-panel .road-reset-btn,
+  .multiplayer-roadview-game .game-content .main-panel .road-reset-btn {
+    right: 12px;
+  }
 }
 
 .road-reset-btn:hover {
