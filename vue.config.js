@@ -81,6 +81,11 @@ module.exports = defineConfig({
       },
       extensions: ['.js', '.vue', '.json']
     },
+    // 파일명에 contenthash를 명시적으로 포함하여 캐시 무효화 보장
+    output: {
+      filename: 'js/[name].[contenthash:8].js',
+      chunkFilename: 'js/[name].[contenthash:8].js'
+    },
     plugins: [
       new (require('html-webpack-plugin'))({
         template: 'public/index.html',
@@ -89,5 +94,12 @@ module.exports = defineConfig({
         }
       })
     ]
+  },
+  // CSS 파일도 해시 포함
+  css: {
+    extract: {
+      filename: 'css/[name].[contenthash:8].css',
+      chunkFilename: 'css/[name].[contenthash:8].css'
+    }
   }
 })

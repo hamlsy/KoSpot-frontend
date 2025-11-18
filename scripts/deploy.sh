@@ -65,6 +65,15 @@ if ! node scripts/setup-env.js $ENVIRONMENT validate; then
     exit 1
 fi
 
+# 빌드 전 dist 폴더 완전 삭제 (캐시 무효화 보장)
+log_info "Cleaning dist folder..."
+if [[ -d "dist" ]]; then
+    rm -rf dist
+    log_success "Dist folder cleaned"
+else
+    log_info "Dist folder does not exist, skipping cleanup"
+fi
+
 # 빌드
 log_info "Building application..."
 case $ENVIRONMENT in
@@ -129,11 +138,54 @@ if [[ -f "dist/manifest.json" ]]; then
         --cache-control "no-cache, no-store, must-revalidate"
 fi
 
-# CloudFront 캐시 무효화
+# CloudFront 캐시 무효화 및 완료 대기
 if [[ -n "$CLOUDFRONT_ID" ]]; then
     log_info "Invalidating CloudFront cache..."
-    aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_ID --paths "/*"
-    log_success "CloudFront cache invalidation initiated"
+    
+    # 무효화 요청 생성
+    INVALIDATION_OUTPUT=$(aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_ID --paths "/*" 2>&1)
+    
+    if [[ $? -eq 0 ]]; then
+        # 무효화 ID 추출
+        INVALIDATION_ID=$(echo "$INVALIDATION_OUTPUT" | grep -oP '"Id"\s*:\s*"\K[^"]+' | head -1)
+        
+        if [[ -n "$INVALIDATION_ID" ]]; then
+            log_success "CloudFront cache invalidation initiated: $INVALIDATION_ID"
+            
+            # 무효화 완료까지 대기 (최대 15분)
+            log_info "Waiting for invalidation to complete (this may take up to 15 minutes)..."
+            MAX_WAIT_TIME=900  # 15분 (초)
+            WAIT_INTERVAL=10   # 10초마다 확인
+            ELAPSED_TIME=0
+            
+            while [[ $ELAPSED_TIME -lt $MAX_WAIT_TIME ]]; do
+                sleep $WAIT_INTERVAL
+                ELAPSED_TIME=$((ELAPSED_TIME + WAIT_INTERVAL))
+                
+                STATUS_OUTPUT=$(aws cloudfront get-invalidation --distribution-id $CLOUDFRONT_ID --id $INVALIDATION_ID 2>&1)
+                
+                if [[ $? -eq 0 ]]; then
+                    STATUS=$(echo "$STATUS_OUTPUT" | grep -oP '"Status"\s*:\s*"\K[^"]+' | head -1)
+                    
+                    if [[ "$STATUS" == "Completed" ]]; then
+                        log_success "CloudFront cache invalidation completed!"
+                        break
+                    elif [[ "$STATUS" == "InProgress" ]]; then
+                        PROGRESS=$((ELAPSED_TIME * 100 / MAX_WAIT_TIME))
+                        log_info "Invalidation in progress... (${PROGRESS}% of max wait time elapsed)"
+                    fi
+                fi
+            done
+            
+            if [[ $ELAPSED_TIME -ge $MAX_WAIT_TIME ]]; then
+                log_warning "Invalidation is still in progress after maximum wait time. It will continue in the background."
+            fi
+        else
+            log_warning "Failed to extract invalidation ID from response"
+        fi
+    else
+        log_warning "Failed to invalidate CloudFront cache"
+    fi
 fi
 
 log_success "Deployment completed successfully!"

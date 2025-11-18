@@ -114,10 +114,21 @@ jobs:
         echo "Deploy Path: $DEPLOY_PATH"
         
         # S3에 파일 업로드 (경로별 배포)
-        aws s3 sync dist/ s3://$BUCKET$DEPLOY_PATH --delete --cache-control "public, max-age=31536000"
+        # 정적 파일들 업로드 (캐시 설정, HTML/JSON 제외)
+        aws s3 sync dist/ s3://$BUCKET$DEPLOY_PATH --delete \
+          --cache-control "public, max-age=31536000" \
+          --exclude "*.html" \
+          --exclude "*.json"
         
         # HTML 파일은 캐시하지 않음
-        aws s3 cp dist/index.html s3://$BUCKET$DEPLOY_PATH/index.html --cache-control "no-cache, no-store, must-revalidate"
+        aws s3 cp dist/index.html s3://$BUCKET$DEPLOY_PATH/index.html \
+          --cache-control "no-cache, no-store, must-revalidate"
+        
+        # manifest.json 파일이 있으면 업로드
+        if [ -f "dist/manifest.json" ]; then
+          aws s3 cp dist/manifest.json s3://$BUCKET$DEPLOY_PATH/manifest.json \
+            --cache-control "no-cache, no-store, must-revalidate"
+        fi
         
         echo "Deployment completed successfully!"
         echo "Application URL: https://$BUCKET.s3-website.ap-northeast-2.amazonaws.com$DEPLOY_PATH"
@@ -126,8 +137,60 @@ jobs:
       env:
         CLOUD_FRONT_ID: ${{ secrets.AWS_CLOUDFRONT_ID}}
       run: |
-       aws cloudfront create-invalidation \
-         --distribution-id $CLOUD_FRONT_ID --paths "/*"
+        if [ -n "$CLOUD_FRONT_ID" ]; then
+          echo "Invalidating CloudFront cache..."
+          
+          # 무효화 요청 생성
+          INVALIDATION_OUTPUT=$(aws cloudfront create-invalidation \
+            --distribution-id $CLOUD_FRONT_ID \
+            --paths "/*")
+          
+          if [ $? -eq 0 ]; then
+            # 무효화 ID 추출
+            INVALIDATION_ID=$(echo "$INVALIDATION_OUTPUT" | grep -oP '"Id"\s*:\s*"\K[^"]+' | head -1)
+            
+            if [ -n "$INVALIDATION_ID" ]; then
+              echo "✅ CloudFront cache invalidation initiated: $INVALIDATION_ID"
+              
+              # 무효화 완료까지 대기 (최대 15분)
+              echo "Waiting for invalidation to complete (this may take up to 15 minutes)..."
+              MAX_WAIT_TIME=900  # 15분 (초)
+              WAIT_INTERVAL=10   # 10초마다 확인
+              ELAPSED_TIME=0
+              
+              while [ $ELAPSED_TIME -lt $MAX_WAIT_TIME ]; do
+                sleep $WAIT_INTERVAL
+                ELAPSED_TIME=$((ELAPSED_TIME + WAIT_INTERVAL))
+                
+                STATUS_OUTPUT=$(aws cloudfront get-invalidation \
+                  --distribution-id $CLOUD_FRONT_ID \
+                  --id $INVALIDATION_ID 2>&1)
+                
+                if [ $? -eq 0 ]; then
+                  STATUS=$(echo "$STATUS_OUTPUT" | grep -oP '"Status"\s*:\s*"\K[^"]+' | head -1)
+                  
+                  if [ "$STATUS" == "Completed" ]; then
+                    echo "✅ CloudFront cache invalidation completed!"
+                    break
+                  elif [ "$STATUS" == "InProgress" ]; then
+                    PROGRESS=$((ELAPSED_TIME * 100 / MAX_WAIT_TIME))
+                    echo "Invalidation in progress... (${PROGRESS}% of max wait time elapsed)"
+                  fi
+                fi
+              done
+              
+              if [ $ELAPSED_TIME -ge $MAX_WAIT_TIME ]; then
+                echo "⚠️ Invalidation is still in progress after maximum wait time. It will continue in the background."
+              fi
+            else
+              echo "⚠️ Failed to extract invalidation ID from response"
+            fi
+          else
+            echo "⚠️ Failed to invalidate CloudFront cache"
+          fi
+        else
+          echo "⚠️ CloudFront ID not configured, skipping invalidation"
+        fi
 
     - name: Notify deployment
       if: always()

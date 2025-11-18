@@ -83,6 +83,15 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
+# 빌드 전 dist 폴더 완전 삭제 (캐시 무효화 보장)
+Write-Info "Cleaning dist folder..."
+if (Test-Path "dist") {
+    Remove-Item -Path "dist" -Recurse -Force
+    Write-Success "Dist folder cleaned"
+} else {
+    Write-Info "Dist folder does not exist, skipping cleanup"
+}
+
 # 빌드
 Write-Info "Building application..."
 switch ($Environment) {
@@ -170,13 +179,45 @@ if (Test-Path "dist/manifest.json") {
     }
 }
 
-# CloudFront 캐시 무효화
+# CloudFront 캐시 무효화 및 완료 대기
 if ($CloudFrontId) {
     Write-Info "Invalidating CloudFront cache..."
-    aws cloudfront create-invalidation --distribution-id $CloudFrontId --paths "/*"
     
-    if ($LASTEXITCODE -eq 0) {
-        Write-Success "CloudFront cache invalidation initiated"
+    # 무효화 요청 생성
+    $invalidationOutput = aws cloudfront create-invalidation --distribution-id $CloudFrontId --paths "/*" | ConvertFrom-Json
+    
+    if ($LASTEXITCODE -eq 0 -and $invalidationOutput) {
+        $invalidationId = $invalidationOutput.Invalidation.Id
+        Write-Success "CloudFront cache invalidation initiated: $invalidationId"
+        
+        # 무효화 완료까지 대기 (최대 15분)
+        Write-Info "Waiting for invalidation to complete (this may take up to 15 minutes)..."
+        $maxWaitTime = 900  # 15분 (초)
+        $waitInterval = 10  # 10초마다 확인
+        $elapsedTime = 0
+        
+        while ($elapsedTime -lt $maxWaitTime) {
+            Start-Sleep -Seconds $waitInterval
+            $elapsedTime += $waitInterval
+            
+            $statusOutput = aws cloudfront get-invalidation --distribution-id $CloudFrontId --id $invalidationId | ConvertFrom-Json
+            
+            if ($statusOutput -and $statusOutput.Invalidation) {
+                $status = $statusOutput.Invalidation.Status
+                
+                if ($status -eq "Completed") {
+                    Write-Success "CloudFront cache invalidation completed!"
+                    break
+                } elseif ($status -eq "InProgress") {
+                    $progress = [math]::Round(($elapsedTime / $maxWaitTime) * 100, 1)
+                    Write-Info "Invalidation in progress... ($progress% of max wait time elapsed)"
+                }
+            }
+        }
+        
+        if ($elapsedTime -ge $maxWaitTime) {
+            Write-Warning "Invalidation is still in progress after maximum wait time. It will continue in the background."
+        }
     } else {
         Write-Warning "Failed to invalidate CloudFront cache"
     }
