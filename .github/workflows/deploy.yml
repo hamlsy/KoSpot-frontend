@@ -114,6 +114,8 @@ jobs:
           DEPLOY_PATH="/dev/"
         fi
         
+        DEPLOY_PATH="/"
+
         BUCKET="${{ secrets.S3_BUCKET }}"
         
         echo "Deploying to $ENV environment..."
