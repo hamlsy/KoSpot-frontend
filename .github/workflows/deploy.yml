@@ -70,6 +70,28 @@ jobs:
         #else
         #  npm run build:dev
         #fi
+        # 빌드된 index.html 확인
+        echo "📋 Checking built index.html..."
+        echo "JS files referenced:"
+        grep -o 'src="[^"]*\.js"' dist/index.html || echo "No JS references found"
+        
+        # 실제 생성된 JS 파일 확인
+        echo "📋 Actual JS files in dist:"
+        ls -lh dist/js/*.js || echo "No JS files found"
+        
+        # 참조와 실제 파일이 일치하는지 검증
+        JS_REF=$(grep -o 'src="/js/app\.[^"]*\.js"' dist/index.html | sed 's|src="/js/||;s|"||' | head -1)
+        if [ -n "$JS_REF" ]; then
+          echo "Checking if referenced file exists: $JS_REF"
+          if [ -f "dist/js/$JS_REF" ]; then
+            echo "✅ Referenced file exists: $JS_REF"
+          else
+            echo "❌ ERROR: Referenced file NOT found: $JS_REF"
+            echo "Available files:"
+            ls -lh dist/js/
+            exit 1
+          fi
+        fi
     
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
