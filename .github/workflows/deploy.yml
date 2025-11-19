@@ -36,11 +36,11 @@ jobs:
     - name: Setup environment
       run: |
         # 환경 결정 (개발/프로덕션만)
-        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-          ENV="production"
-        else
-          ENV="development"
-        fi
+        #if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+        ENV="production"
+        #else
+        #  ENV="development"
+        #fi
         
         # 환경변수 설정
         node scripts/setup-env.js $ENV setup
@@ -64,11 +64,12 @@ jobs:
       
     - name: Build application
       run: |
-        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-          npm run build:prod
-        else
-          npm run build:dev
-        fi
+        #if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+        #  npm run build:prod
+        npm run build
+        #else
+        #  npm run build:dev
+        #fi
     
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
@@ -106,13 +107,13 @@ jobs:
     - name: Deploy to S3
       run: |
         # 환경 결정
-        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-          ENV="production"
-          DEPLOY_PATH="/"
-        else
-          ENV="development"
-          DEPLOY_PATH="/dev/"
-        fi
+        #if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+        ENV="production"
+        DEPLOY_PATH="/"
+        #else
+        #  ENV="development"
+        #  DEPLOY_PATH="/dev/"
+        #fi
         
         DEPLOY_PATH="/"
 
