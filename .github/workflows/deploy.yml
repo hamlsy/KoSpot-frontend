@@ -35,14 +35,7 @@ jobs:
     
     - name: Setup environment
       run: |
-        # 환경 결정 (개발/프로덕션만)
-        #if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
         ENV="production"
-        #else
-        #  ENV="development"
-        #fi
-        
-        # 환경변수 설정
         node scripts/setup-env.js $ENV setup
         echo "ENVIRONMENT=$ENV" >> $GITHUB_ENV
     
@@ -63,13 +56,7 @@ jobs:
         echo "✅ Cleanup completed!"
       
     - name: Build application
-      run: |
-        #if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-        #  npm run build:prod
-        npm run build
-        #else
-        #  npm run build:dev
-        #fi
+      run: npm run build
     
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
@@ -106,54 +93,51 @@ jobs:
     
     - name: Deploy to S3
       run: |
-        # 환경 결정
-        #if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-        ENV="production"
-        DEPLOY_PATH="/"
-        #else
-        #  ENV="development"
-        #  DEPLOY_PATH="/dev/"
-        #fi
-        
-        DEPLOY_PATH="/"
-
         BUCKET="${{ secrets.S3_BUCKET }}"
         
-        echo "Deploying to $ENV environment..."
+        echo "🚀 Starting deployment..."
         echo "S3 Bucket: $BUCKET"
-        echo "Deploy Path: $DEPLOY_PATH"
         
-        # S3에 파일 업로드 (경로별 배포)
-        # 정적 파일들 업로드 (캐시 설정, HTML/JSON 제외)
-        aws s3 sync dist/ s3://$BUCKET$DEPLOY_PATH --delete \
-          --cache-control "no-cache, no-store, must-revalidate" \
+        # 1. 정적 에셋 업로드 (HTML/JSON 제외, 장기 캐시)
+        echo "📦 Uploading static assets (JS, CSS, images) with long-term cache..."
+        aws s3 sync dist/ s3://$BUCKET/ \
+          --delete \
+          --cache-control "public, max-age=31536000, immutable" \
           --exclude "*.html" \
           --exclude "*.json"
         
-        # HTML 파일은 캐시하지 않음
-        aws s3 cp dist/index.html s3://$BUCKET$DEPLOY_PATH/index.html \
-          --cache-control "no-cache, no-store, must-revalidate"
+        # 2. JSON 파일 업로드 (no-cache)
+        echo "📋 Uploading JSON files with no-cache..."
+        find dist -name "*.json" -type f 2>/dev/null | while read file; do
+          if [ -f "$file" ]; then
+            RELATIVE_PATH="${file#dist/}"
+            aws s3 cp "$file" s3://$BUCKET/$RELATIVE_PATH \
+              --cache-control "no-cache, no-store, must-revalidate" \
+              --content-type "application/json"
+            echo "  ✓ Uploaded: $RELATIVE_PATH"
+          fi
+        done
         
-        # manifest.json 파일이 있으면 업로드
-        if [ -f "dist/manifest.json" ]; then
-          aws s3 cp dist/manifest.json s3://$BUCKET$DEPLOY_PATH/manifest.json \
-            --cache-control "no-cache, no-store, must-revalidate"
-        fi
+        # 3. HTML 파일 업로드 (no-cache) - 반드시 마지막!
+        echo "📄 Uploading HTML files with no-cache..."
+        aws s3 cp dist/index.html s3://$BUCKET/index.html \
+          --cache-control "no-cache, no-store, must-revalidate" \
+          --content-type "text/html"
         
-        echo "Deployment completed successfully!"
-        echo "Application URL: https://$BUCKET.s3-website.ap-northeast-2.amazonaws.com$DEPLOY_PATH"
+        echo "✅ Deployment completed successfully!"
+        echo "🌐 Application URL: https://$BUCKET/"
         
     - name: CloudFront Invalidation
       env:
         CLOUD_FRONT_ID: ${{ secrets.AWS_CLOUDFRONT_ID}}
       run: |
         if [ -n "$CLOUD_FRONT_ID" ]; then
-          echo "Invalidating CloudFront cache..."
+          echo "🔄 Invalidating CloudFront cache..."
           
           # 무효화 요청 생성
           INVALIDATION_OUTPUT=$(aws cloudfront create-invalidation \
             --distribution-id $CLOUD_FRONT_ID \
-            --paths "/*")
+            --paths "/*" 2>&1)
           
           if [ $? -eq 0 ]; then
             # 무효화 ID 추출
@@ -163,9 +147,9 @@ jobs:
               echo "✅ CloudFront cache invalidation initiated: $INVALIDATION_ID"
               
               # 무효화 완료까지 대기 (최대 15분)
-              echo "Waiting for invalidation to complete (this may take up to 15 minutes)..."
-              MAX_WAIT_TIME=900  # 15분 (초)
-              WAIT_INTERVAL=10   # 10초마다 확인
+              echo "⏳ Waiting for invalidation to complete..."
+              MAX_WAIT_TIME=900  # 15분
+              WAIT_INTERVAL=30   # 30초마다 확인
               ELAPSED_TIME=0
               
               while [ $ELAPSED_TIME -lt $MAX_WAIT_TIME ]; do
@@ -183,30 +167,65 @@ jobs:
                     echo "✅ CloudFront cache invalidation completed!"
                     break
                   elif [ "$STATUS" == "InProgress" ]; then
-                    PROGRESS=$((ELAPSED_TIME * 100 / MAX_WAIT_TIME))
-                    echo "Invalidation in progress... (${PROGRESS}% of max wait time elapsed)"
+                    MINUTES_ELAPSED=$((ELAPSED_TIME / 60))
+                    echo "  ⏳ Still in progress... (${MINUTES_ELAPSED} minutes elapsed)"
                   fi
                 fi
               done
               
               if [ $ELAPSED_TIME -ge $MAX_WAIT_TIME ]; then
-                echo "⚠️ Invalidation is still in progress after maximum wait time. It will continue in the background."
+                echo "⚠️ Invalidation is still in progress after 15 minutes."
+                echo "   It will continue in the background and complete soon."
               fi
             else
-              echo "⚠️ Failed to extract invalidation ID from response"
+              echo "⚠️ Failed to extract invalidation ID"
+              echo "Response: $INVALIDATION_OUTPUT"
             fi
           else
-            echo "⚠️ Failed to invalidate CloudFront cache"
+            echo "❌ Failed to create CloudFront invalidation"
+            echo "Error: $INVALIDATION_OUTPUT"
           fi
         else
-          echo "⚠️ CloudFront ID not configured, skipping invalidation"
+          echo "⚠️ CloudFront distribution ID not configured"
+          echo "   Skipping cache invalidation"
         fi
+
+    - name: Verify deployment
+      run: |
+        BUCKET="${{ secrets.S3_BUCKET }}"
+        
+        echo "🔍 Verifying deployment..."
+        
+        # index.html 헤더 확인
+        echo "Checking index.html cache headers..."
+        aws s3api head-object \
+          --bucket $BUCKET \
+          --key index.html \
+          --query 'CacheControl' \
+          --output text || echo "Failed to check index.html"
+        
+        # JS 파일 확인 (첫 번째 JS 파일)
+        FIRST_JS=$(aws s3 ls s3://$BUCKET/js/ | grep ".js" | head -1 | awk '{print $4}')
+        if [ -n "$FIRST_JS" ]; then
+          echo "Checking JS file cache headers..."
+          aws s3api head-object \
+            --bucket $BUCKET \
+            --key "js/$FIRST_JS" \
+            --query 'CacheControl' \
+            --output text || echo "Failed to check JS file"
+        fi
+        
+        echo "✅ Verification completed!"
 
     - name: Notify deployment
       if: always()
       run: |
         if [[ "${{ job.status }}" == "success" ]]; then
-          echo "✅ Deployment successful!"
+          echo "✅ 🎉 Deployment successful!"
+          echo ""
+          echo "Your application is now live!"
+          echo "Users may need to hard refresh (Ctrl+Shift+R) to see changes."
         else
           echo "❌ Deployment failed!"
+          echo "Please check the logs above for details."
         fi
