@@ -52,8 +52,15 @@ jobs:
     - name: Lint code
       run: npm run lint
       
-    - name: Clean dist folder
-      run: rm -rf dist
+    - name: Clean build artifacts and cache
+      run: |
+        echo "🧹 Cleaning dist folder..."
+        rm -rf dist
+        echo "🧹 Cleaning node_modules cache..."
+        rm -rf node_modules/.cache
+        echo "🧹 Cleaning npm cache..."
+        npm cache clean --force
+        echo "✅ Cleanup completed!"
       
     - name: Build application
       run: |
