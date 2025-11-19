@@ -147,10 +147,9 @@ jobs:
         
         # S3에 파일 업로드 (경로별 배포)
         # 정적 파일들 업로드 (캐시 설정, HTML/JSON 제외)
-        aws s3 sync dist/ s3://$BUCKET$DEPLOY_PATH --delete \
-          --cache-control "no-cache, no-store, must-revalidate" \
-          --exclude "*.html" \
-          --exclude "*.json"
+        aws s3 sync dist/ s3://$BUCKET$DEPLOY_PATH \
+          --cache-control "public, max-age=31536000, immutable" \
+          --exclude "*.html" --exclude "*.json"
         
         # HTML 파일은 캐시하지 않음
         aws s3 cp dist/index.html s3://$BUCKET$DEPLOY_PATH/index.html \
