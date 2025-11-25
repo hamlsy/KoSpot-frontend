@@ -14,7 +14,7 @@
         </div>
         <div class="info-body">
           <p class="winner-distance" v-if="topPlayer && topPlayer.distance">
-            정답과의 거리: <strong>{{ topPlayer.distance }}km</strong>
+            정답과의 거리: <strong>{{ topPlayer.distance.toFixed(3) }}km</strong>
           </p>
         </div>
       </div>

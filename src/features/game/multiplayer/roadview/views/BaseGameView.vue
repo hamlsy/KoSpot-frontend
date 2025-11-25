@@ -177,6 +177,49 @@
     <div class="toast-message" :class="{ show: showToastFlag }">
       {{ toastMessage }}
     </div>
+
+    <!-- 모바일 하단바 (반응형) -->
+    <div class="mobile-bottom-nav" v-if="isMobile || isResponsiveMode">
+      <button
+        class="bottom-nav-btn"
+        :class="{ 'active': isPlayerListOpen }"
+        @click="togglePlayerList"
+        title="플레이어 목록"
+      >
+        <div class="btn-icon">
+          <i class="fas fa-users"></i>
+        </div>
+        <span class="btn-label">플레이어</span>
+        <div class="active-indicator" v-if="isPlayerListOpen"></div>
+      </button>
+
+      <button
+        class="bottom-nav-btn"
+        :class="{ 'active': isMapOpen }"
+        @click="toggleMap"
+        v-if="!gameStore.state.roundEnded"
+        title="지도"
+      >
+        <div class="btn-icon">
+          <i class="fas" :class="isMapOpen ? 'fa-street-view' : 'fa-map-marked-alt'"></i>
+        </div>
+        <span class="btn-label">지도</span>
+        <div class="active-indicator" v-if="isMapOpen"></div>
+      </button>
+
+      <button
+        class="bottom-nav-btn"
+        :class="{ 'active': isChatOpen }"
+        @click="toggleChat"
+        title="채팅"
+      >
+        <div class="btn-icon">
+          <i class="fas" :class="isChatOpen ? 'fa-times' : 'fa-comments'"></i>
+        </div>
+        <span class="btn-label">채팅</span>
+        <div class="active-indicator" v-if="isChatOpen"></div>
+      </button>
+    </div>
   </div>
 </template>
 
@@ -1413,13 +1456,13 @@ export default {
 }
 
 /* 타이머 컨테이너 (헤더 밑) */
+
 .timer-container {
   position: absolute;
-  top: 100%; /* 헤더의 실제 높이 기준 (동적) */
+  top: 70px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 20;
-  margin-top: 4px; /* 헤더와 타이머 사이 간격 */
 }
 
 /* header-right poiName 표시 */
@@ -1450,6 +1493,20 @@ export default {
   display: flex;
   flex: 1;
   overflow: hidden;
+  padding-bottom: 0; /* 데스크톱에서는 하단바 없음 */
+}
+
+/* 모바일에서 하단바 공간 확보 */
+@media (max-width: 992px) {
+  .game-content {
+    padding-bottom: 64px; /* 하단바 높이만큼 여백 */
+  }
+}
+
+@media (max-width: 480px) {
+  .game-content {
+    padding-bottom: 60px; /* 작은 모바일 하단바 높이 */
+  }
 }
 
 /* 왼쪽 패널: 플레이어 목록 */
@@ -1494,6 +1551,7 @@ export default {
       opacity 0.15s ease-in,
       box-shadow 0.1s ease-in;
   }
+
 }
 
 .main-panel {
@@ -1805,7 +1863,13 @@ export default {
   }
   
   /* 타이머 컨테이너는 헤더의 실제 높이에 맞춰 자동 조정됨 (top: 100% 사용) */
-  
+  .timer-container {
+    position: absolute;
+    top: 180px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+  }
   /* poiName 표시 최적화 (모바일) */
   .poi-name-display {
     font-size: 0.75rem;
@@ -2061,12 +2125,19 @@ export default {
 }
 
 @media (max-width: 992px) {
+  /* 모바일에서 기존 채팅 버튼 숨김 (하단바로 대체) */
   .chat-toggle {
-    display: flex;
-    padding: 10px 15px;
-    font-size: 0.9rem;
-    bottom: 20px;
-    left: 20px;
+    display: none !important;
+  }
+  
+  /* 모바일에서 기존 지도 버튼 숨김 (하단바로 대체) */
+  .map-toggle {
+    display: none !important;
+  }
+  
+  /* 모바일에서 헤더의 플레이어 리스트 버튼 숨김 (하단바로 대체) */
+  .header-right .player-list-toggle-btn {
+    display: none !important;
   }
 }
 
@@ -2200,5 +2271,139 @@ export default {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* ==================== 모바일 하단바 (TOSS 디자인 철학) ==================== */
+.mobile-bottom-nav {
+  display: none; /* 기본적으로 숨김 (데스크톱) */
+}
+
+@media (max-width: 992px) {
+  .mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    height: 64px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    padding: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .bottom-nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 100%;
+    border: none;
+    background: transparent;
+    color: #8e8e93;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    padding: 8px 12px;
+    min-width: 0;
+  }
+
+  .bottom-nav-btn:active {
+    transform: scale(0.95);
+    transition: all 0.1s ease;
+  }
+
+  .btn-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    font-size: 20px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+  }
+
+  /* 활성 상태 */
+  .bottom-nav-btn.active {
+    color: #3182f6;
+  }
+
+  .bottom-nav-btn.active .btn-icon {
+    transform: scale(1.1);
+  }
+
+  .bottom-nav-btn.active .btn-label {
+    font-weight: 600;
+  }
+
+  /* 활성 인디케이터 (상단 선) */
+  .active-indicator {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 32px;
+    height: 3px;
+    background: #3182f6;
+    border-radius: 0 0 3px 3px;
+    animation: indicatorAppear 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes indicatorAppear {
+    0% {
+      width: 0;
+      opacity: 0;
+    }
+    100% {
+      width: 32px;
+      opacity: 1;
+    }
+  }
+
+  /* 호버 효과 (터치 디바이스에서는 제한적) */
+  @media (hover: hover) {
+    .bottom-nav-btn:hover:not(.active) {
+      color: #5a5a5a;
+      background: rgba(0, 0, 0, 0.02);
+    }
+  }
+}
+
+/* 더 작은 모바일 화면 최적화 */
+@media (max-width: 480px) {
+  .mobile-bottom-nav {
+    height: 60px;
+  }
+
+  .btn-icon {
+    width: 22px;
+    height: 22px;
+    font-size: 18px;
+  }
+
+  .btn-label {
+    font-size: 10px;
+  }
+
+  .active-indicator {
+    width: 28px;
+    height: 2.5px;
+  }
 }
 </style>
