@@ -286,13 +286,6 @@ const isHost = ref(shouldUseDummyMode || (initialHostId !== '' && initialHostId 
 // 초기 players 빈 배열 (API에서 가져올 예정)
 const initialPlayers = [];
 
-console.log('🏠 RoomView 초기화:', {
-  roomId: props.roomId,
-  hasRouterState: !!routerState,
-  initialRoomData,
-  isHost: isHost.value,
-  currentUserId
-});
 
 const emit = defineEmits([
   'leave-room',

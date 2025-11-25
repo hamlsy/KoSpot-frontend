@@ -12,7 +12,7 @@
           <i class="fas fa-sign-out-alt"></i>
         </button>
         <div class="room-info" :class="{ 'without-button': !showLeaveButton }">
-          <div class="room-name">{{ roomData?.name || "방 이름 없음" }}</div>
+          <div class="room-name">{{ roomData?.title || "방 이름 없음" }}</div>
           <div class="game-mode">{{ gameMode === "team" ? "팀전" : "개인전" }}</div>
         </div>
       </div>
@@ -292,7 +292,11 @@ export default {
     poiName: {
       type: String,
       default: ''
-    }
+    },
+    roomData: {
+      type: Object,
+      default: null
+    },
   },
 
   emits: ['leave-game', 'roadview-load-error'],
@@ -321,7 +325,6 @@ export default {
   data() {
     return {
       //room
-      roomData: null,
       gameStore,
       isMapOpen: false,
       mapCenter: null,
@@ -1459,7 +1462,7 @@ export default {
 
 .timer-container {
   position: absolute;
-  top: 70px;
+  top: 80px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 20;
@@ -1865,7 +1868,7 @@ export default {
   /* 타이머 컨테이너는 헤더의 실제 높이에 맞춰 자동 조정됨 (top: 100% 사용) */
   .timer-container {
     position: absolute;
-    top: 180px;
+    top: 160px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 20;

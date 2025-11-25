@@ -233,11 +233,7 @@ class RoomApiService {
    */
   async getRoomDetail(roomId) {
     try {
-      console.log('📤 게임 방 상세 정보 조회 요청:', { roomId });
-      
       const response = await apiClient.get(ROOM_ENDPOINTS.GET_ROOM_DETAIL(roomId));
-      
-      console.log('✅ 게임 방 상세 정보 조회 성공:', response.data);
       return response.data.result;
     } catch (error) {
       console.error('❌ 게임 방 상세 정보 조회 실패:', error);

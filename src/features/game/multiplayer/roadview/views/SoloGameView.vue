@@ -17,6 +17,7 @@
       :suppress-roadview-error="isRetryingRoadview"
       :is-poi-name-visible="isPoiNameVisibleLocal"
       :poi-name="currentPoiName"
+      :room-data="roomDataFromHistory"
       @leave-game="exitToLobby"
     @guess-submitted="handleGuessSubmission"
     @round-ended="handleRoundEnded"
@@ -198,6 +199,14 @@ export default {
           return 120
         }
       })(),
+      roomDataFromHistory: (() => {
+      try {
+        const navState = typeof history !== 'undefined' ? history.state : null
+        return navState?.roomData || null
+      } catch (error) {
+        return null
+      }
+    })(),
 
       // 로드뷰 재시도 중 여부
       isRetryingRoadview: false,

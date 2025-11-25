@@ -182,7 +182,6 @@ export function useRoom(props, emit, options = {}) {
 
   // 초기 방 데이터 로딩 핸들러
   const loadInitialRoomData = async (preloadedRoomDetail = null) => {
-    console.log('🏠 초기 방 데이터 로딩 시작:', localRoomData.value.id);
     
     try {
       isLoadingPlayerList.value = true;
