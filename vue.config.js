@@ -81,10 +81,11 @@ module.exports = defineConfig({
       },
       extensions: ['.js', '.vue', '.json']
     },
-    // 파일명에 contenthash를 명시적으로 포함하여 캐시 무효화 보장
+    cache: false,
+    // 파일명에 hash를 명시적으로 포함하여 캐시 무효화 보장
     output: {
-      filename: 'js/[name].[contenthash:8].js',
-      chunkFilename: 'js/[name].[contenthash:8].js'
+      filename: 'js/[name].[hash:8].js',
+      chunkFilename: 'js/[name].[hash:8].js'
     },
     plugins: [
       new (require('html-webpack-plugin'))({

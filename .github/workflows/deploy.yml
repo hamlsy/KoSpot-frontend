@@ -28,7 +28,7 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: 18
-        cache: 'npm'
+        # cache: 'npm'
     
     - name: Install dependencies
       run: npm ci
@@ -36,11 +36,11 @@ jobs:
     - name: Setup environment
       run: |
         # 환경 결정 (개발/프로덕션만)
-        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-          ENV="production"
-        else
-          ENV="development"
-        fi
+        #if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+        ENV="production"
+        #else
+        #  ENV="development"
+        #fi
         
         # 환경변수 설정
         node scripts/setup-env.js $ENV setup
@@ -52,15 +52,45 @@ jobs:
     - name: Lint code
       run: npm run lint
       
-    - name: Clean dist folder
-      run: rm -rf dist
+    - name: Clean build artifacts and cache
+      run: |
+        echo "🧹 Cleaning dist folder..."
+        rm -rf dist
+        echo "🧹 Cleaning node_modules cache..."
+        rm -rf node_modules/.cache
+        echo "🧹 Cleaning npm cache..."
+        npm cache clean --force
+        echo "✅ Cleanup completed!"
       
     - name: Build application
       run: |
-        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-          npm run build:prod
-        else
-          npm run build:dev
+        #if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+        #  npm run build:prod
+        npm run build:prod
+        #else
+        #  npm run build:dev
+        #fi
+        # 빌드된 index.html 확인
+        echo "📋 Checking built index.html..."
+        echo "JS files referenced:"
+        grep -o 'src="[^"]*\.js"' dist/index.html || echo "No JS references found"
+        
+        # 실제 생성된 JS 파일 확인
+        echo "📋 Actual JS files in dist:"
+        ls -lh dist/js/*.js || echo "No JS files found"
+        
+        # 참조와 실제 파일이 일치하는지 검증
+        JS_REF=$(grep -o 'src="/js/app\.[^"]*\.js"' dist/index.html | sed 's|src="/js/||;s|"||' | head -1)
+        if [ -n "$JS_REF" ]; then
+          echo "Checking if referenced file exists: $JS_REF"
+          if [ -f "dist/js/$JS_REF" ]; then
+            echo "✅ Referenced file exists: $JS_REF"
+          else
+            echo "❌ ERROR: Referenced file NOT found: $JS_REF"
+            echo "Available files:"
+            ls -lh dist/js/
+            exit 1
+          fi
         fi
     
     - name: Upload build artifacts
@@ -99,14 +129,16 @@ jobs:
     - name: Deploy to S3
       run: |
         # 환경 결정
-        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-          ENV="production"
-          DEPLOY_PATH="/"
-        else
-          ENV="development"
-          DEPLOY_PATH="/dev/"
-        fi
+        #if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+        ENV="production"
+        DEPLOY_PATH="/"
+        #else
+        #  ENV="development"
+        #  DEPLOY_PATH="/dev/"
+        #fi
         
+        DEPLOY_PATH=""
+
         BUCKET="${{ secrets.S3_BUCKET }}"
         
         echo "Deploying to $ENV environment..."
@@ -115,10 +147,9 @@ jobs:
         
         # S3에 파일 업로드 (경로별 배포)
         # 정적 파일들 업로드 (캐시 설정, HTML/JSON 제외)
-        aws s3 sync dist/ s3://$BUCKET$DEPLOY_PATH --delete \
-          --cache-control "public, max-age=31536000" \
-          --exclude "*.html" \
-          --exclude "*.json"
+        aws s3 sync dist/ s3://$BUCKET$DEPLOY_PATH \
+          --cache-control "public, max-age=31536000, immutable" \
+          --exclude "*.html" --exclude "*.json"
         
         # HTML 파일은 캐시하지 않음
         aws s3 cp dist/index.html s3://$BUCKET$DEPLOY_PATH/index.html \
