@@ -61,146 +61,148 @@ const closeHero = () => {
 <style scoped>
 .hero-section {
   position: relative;
-  padding: 30px 20px;
-  margin: 0 0 20px;
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  border: 1px solid #bfdbfe;
-  border-radius: 16px;
+  padding: var(--spacing-2xl) var(--spacing-xl);
+  margin: 0 0 var(--spacing-xl);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
-  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
-  will-change: transform;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+  opacity: 0.8;
 }
 
 .hero-section:hover {
-  transform: translate3d(0, -2px, 0);
-  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .hero-close {
   position: absolute;
-  top: 15px;
-  right: 15px;
-  width: 32px;
-  height: 32px;
-  background: rgba(255, 255, 255, 0.8);
-  border: none;
-  border-radius: 50%;
-  color: #3b82f6;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  width: 36px;
+  height: 36px;
+  background: var(--color-surface-hover);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  color: var(--color-text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  transition: all var(--transition-normal);
   z-index: 10;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
-}
-
-.hero-close {
-  will-change: transform;
 }
 
 .hero-close:hover {
-  background: white;
-  color: #2563eb;
-  transform: scale3d(1.1, 1.1, 1) rotate(90deg);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+  transform: rotate(90deg);
 }
 
 .hero-content {
-  max-width: 900px;
+  max-width: 800px;
   margin: 0 auto;
   text-align: center;
-  color: #111827;
 }
 
 .hero-title {
-  font-size: 2rem;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-display);
   font-weight: 700;
-  margin-bottom: 12px;
-  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  margin-bottom: var(--spacing-md);
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
 }
 
 .hero-description {
-  font-size: 1rem;
-  line-height: 1.6;
-  color: #3b82f6;
-  margin-bottom: 24px;
+  font-size: var(--font-size-h3);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-xl);
 }
 
 .hero-actions {
   display: flex;
   justify-content: center;
-  gap: 12px;
+  gap: var(--spacing-md);
 }
 
 .hero-button {
-  padding: 12px 24px;
-  border-radius: 12px;
-  border: none;
-  font-size: 1rem;
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-body);
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, background 0.2s ease-out;
+  transition: all var(--transition-normal);
   display: flex;
   align-items: center;
-  gap: 8px;
-  will-change: transform;
-  position: relative;
-  overflow: hidden;
+  gap: var(--spacing-sm);
 }
 
 .hero-button.primary {
-  background: white;
-  color: #111827;
-  border: 2px solid #e5e7eb;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  box-shadow: var(--shadow-sm);
 }
 
 .hero-button.primary:hover {
-  background: #f9fafb;
-  border-color: #d1d5db;
-  transform: translate3d(0, -1px, 0);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  background: var(--color-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .hero-button.secondary {
-  background: white;
-  color: #3b82f6;
-  border: 2px solid #3b82f6;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+  box-shadow: none;
 }
 
 .hero-button.secondary:hover {
-  background: #eff6ff;
-  transform: translate3d(0, -2px, 0);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+  background: var(--color-primary);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
 }
 
 /* 반응형 */
 @media (max-width: 768px) {
   .hero-section {
-    padding: 24px 16px;
+    padding: var(--spacing-xl) var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
   }
 
   .hero-title {
-    font-size: 1.5rem;
+    font-size: var(--font-size-h1);
   }
 
   .hero-description {
-    font-size: 0.9rem;
-    margin-bottom: 20px;
+    font-size: var(--font-size-body);
+    margin-bottom: var(--spacing-lg);
   }
 
   .hero-actions {
     flex-direction: column;
+    gap: var(--spacing-sm);
   }
 
   .hero-button {
     justify-content: center;
+    width: 100%;
   }
 }
 </style>

@@ -100,14 +100,14 @@
                 </span> -->
               </div>
             </div>
-            <div v-if="!gameModeStatus.roadviewEnabled" class="mode-overlay">
+            <!-- <div v-if="!gameModeStatus.roadviewEnabled" class="mode-overlay">
               <i class="fas fa-lock"></i>
               <span>준비 중</span>
-            </div>
+            </div> -->
           </div>
 
           <!-- 포토 모드 -->
-          <div 
+          <!-- <div 
             class="mode-card photo"
             :class="{ locked: !gameModeStatus.photoEnabled }"
             @click="handleModeClick('photo/main', gameModeStatus.photoEnabled)"
@@ -120,21 +120,21 @@
               <h3>포토 모드</h3>
               <p>관광지 사진으로 지역을 맞혀보세요</p>
               <div class="mode-stats">
-                <span class="active-players">
+                <span class="active-players"> -->
                   <!-- <i class="fas fa-user"></i> 
                   {{ gameModeStatus.photoEnabled ? '156명 플레이 중' : '곧 오픈 예정' }} -->
-                </span>
+                <!-- </span> -->
                 <!-- <span class="difficulty">
                   <i class="fas fa-star"></i>
                   <i class="fas fa-star"></i>
                 </span> -->
-              </div>
+              <!-- </div>
             </div>
             <div v-if="!gameModeStatus.photoEnabled" class="mode-overlay">
               <i class="fas fa-lock"></i>
               <span>준비 중</span>
             </div>
-          </div>
+          </div> -->
 
           <!-- 멀티플레이어 모드 -->
           <div
@@ -702,56 +702,59 @@ async function handleLogout() {
 .app-container {
   min-height: 100vh;
   width: 100%;
-  background-color: #f5f7fa;
+  background-color: var(--color-background);
   overflow-x: hidden;
-  /* 세로 스크롤 허용 */
   overflow-y: auto;
+  transition: background-color var(--transition-slow);
 }
 
 .main-content {
-  padding-top: 80px; /* 네비게이션바 높이만큼 여백 추가 */
-  max-width: 1200px;
+  padding-top: 80px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding-left: var(--spacing-lg);
+  padding-right: var(--spacing-lg);
 }
 
 /* 배너 클릭 가능 스타일 */
 .main-banner.clickable {
   cursor: pointer;
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  transition: all var(--transition-normal);
 }
 
 .main-banner.clickable:hover {
-  transform: scale(1.02);
-  opacity: 0.95;
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
 }
 
 .stats-container {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
-  margin-bottom: 24px;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
 }
 
 .stat-card {
-  background-color: #ffffff;
-  border-radius: 16px;
-  padding: 16px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
   display: flex;
   align-items: center;
-  gap: 12px;
-  transition: transform 0.3s ease;
-  border: 1px solid #e7e7e7;
+  gap: var(--spacing-md);
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-sm);
 }
 
 .stat-card:hover {
-  transform: translateY(-5px);
-  /* box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08); */
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
 }
 
 .stat-icon {
-  font-size: 24px;
+  font-size: 1.5rem;
+  color: var(--color-primary);
 }
 
 .stat-info {
@@ -760,65 +763,68 @@ async function handleLogout() {
 }
 
 .stat-value {
-  font-size: 18px;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h3);
   font-weight: 700;
-  color: #1f2937;
+  color: var(--color-text-primary);
 }
 
 .stat-label {
-  font-size: 12px;
-  color: #6b7280;
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
 }
 
 .section-title {
-  font-size: 20px;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h2);
   font-weight: 700;
-  color: #1f2937;
-  margin-bottom: 16px;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-lg);
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: var(--spacing-lg);
 }
 
 .view-all {
-  font-size: 14px;
-  color: #4b5563;
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
   text-decoration: none;
   display: flex;
   align-items: center;
-  gap: 4px;
-  transition: color 0.2s;
+  gap: var(--spacing-xs);
+  transition: color var(--transition-normal);
+  font-weight: 500;
 }
 
 .view-all:hover {
-  color: #2563eb;
+  color: var(--color-primary);
 }
 
 .modes-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  margin-bottom: 32px;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-2xl);
 }
 
 .mode-card {
-  background: white;
-  border-radius: 20px;
-  padding: 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
   cursor: pointer;
-  /* transition: transform 0.2s, box-shadow 0.2s; */
-  transition: transform 0.2s;
-  border: 1px solid #eeeeee;
-  /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04); */
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-sm);
 }
 
 .mode-card:hover {
   transform: translateY(-4px);
-  /* box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); */
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
 }
 
 .mode-background {
@@ -827,27 +833,26 @@ async function handleLogout() {
   left: 0;
   right: 0;
   bottom: 0;
-  opacity: 0.1;
+  opacity: 0.05;
   z-index: 0;
   background-size: cover;
   background-position: center;
-  transition: opacity 0.3s;
+  transition: opacity var(--transition-normal);
 }
 
 .mode-card:hover .mode-background {
-  opacity: 0.2;
+  opacity: 0.1;
 }
-
-/* 로드뷰 및 포토 모드 배경 이미지는 필요시 추가 */
 
 .mode-card.locked {
   position: relative;
   cursor: not-allowed;
-  opacity: 0.9;
+  opacity: 0.6;
 }
 
 .mode-card.locked:hover {
   transform: none;
+  box-shadow: var(--shadow-sm);
 }
 
 .mode-overlay {
@@ -856,179 +861,118 @@ async function handleLogout() {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--color-surface);
+  opacity: 0.95;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   z-index: 10;
-  color: white;
-  font-weight: 700;
-  border-radius: 20px;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  border-radius: var(--radius-xl);
 }
 
 .mode-overlay i {
-  font-size: 32px;
-  margin-bottom: 10px;
+  font-size: 2rem;
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-text-tertiary);
 }
+
 .mode-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 16px;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
-  font-size: 24px;
+  margin-bottom: var(--spacing-lg);
+  font-size: 1.75rem;
   z-index: 1;
+  transition: all var(--transition-normal);
 }
 
 .roadview .mode-icon {
-  background: #dbeafe;
-  color: #2563eb;
+  background: var(--color-primary);
+  color: white;
 }
 
 .photo .mode-icon {
-  background: #dcfce7;
-  color: #16a34a;
+  background: var(--color-success);
+  color: white;
+}
+
+.multiplayer .mode-icon {
+  background: var(--color-secondary);
+  color: white;
+}
+
+.mode-card:hover .mode-icon {
+  transform: scale(1.1);
 }
 
 .mode-info h3 {
-  font-size: 18px;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h3);
   font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 8px;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-sm);
 }
 
 .mode-info p {
-  font-size: 14px;
-  color: #6b7280;
-  margin-bottom: 12px;
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-md);
+  line-height: var(--line-height-relaxed);
 }
 
 .mode-stats {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 12px;
-  color: #6b7280;
+  font-size: var(--font-size-small);
+  color: var(--color-text-tertiary);
 }
 
 .active-players i {
-  color: #2563eb;
-  margin-right: 4px;
+  color: var(--color-primary);
+  margin-right: var(--spacing-xs);
 }
 
 .difficulty i {
-  color: #fbbf24;
+  color: var(--color-warning);
   margin-left: 2px;
 }
 
-/* 수정: 오버레이 스타일 추가 */
-.overlay {
+/* 토스트 알림 */
+.toast-notification {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 9998;
+  bottom: var(--spacing-xl);
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-border);
+  z-index: 1000;
+  animation: slideUp 0.3s ease-out;
+  font-size: var(--font-size-small);
+  font-weight: 500;
+  max-width: 90%;
+  text-align: center;
 }
 
-/* 수정: 프로필 메뉴 스타일 추가 */
-.profile-menu {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 300px;
-  background: white;
-  z-index: 9999;
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
-  padding: 24px;
-  overflow-y: auto;
-}
-
-.profile-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: start;
-  margin-bottom: 24px;
-}
-
-.profile-info {
-  display: flex;
-  gap: 12px;
-}
-
-.profile-info img {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-}
-
-.profile-text h3 {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 4px;
-}
-
-.profile-text p {
-  font-size: 14px;
-  color: #6b7280;
-}
-
-.close-menu {
-  background: none;
-  border: none;
-  font-size: 20px;
-  color: #6b7280;
-  cursor: pointer;
-}
-
-.profile-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.profile-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.menu-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  color: #1f2937;
-  text-decoration: none;
-  border-radius: 12px;
-  transition: background-color 0.2s;
-}
-
-.menu-item:hover {
-  background: #f3f4f6;
-}
-
-.menu-item i {
-  width: 20px;
-  color: #6b7280;
-}
-
-/* Transitions */
-.slide-menu-enter-active,
-.slide-menu-leave-active {
-  transition: transform 0.3s ease;
-}
-
-.slide-menu-enter,
-.slide-menu-leave-to {
-  transform: translateX(100%);
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 /* Media Queries */

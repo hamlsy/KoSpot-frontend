@@ -593,13 +593,13 @@ function startThemeGame(gameData) {
 .practice-mode-options {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--spacing-lg);
 }
 
 .region-selector {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
+  gap: var(--spacing-md);
   width: 100%;
 }
 
@@ -621,20 +621,20 @@ function startThemeGame(gameData) {
 
 /* Google Ads 공간 스타일 */
 .google-ads-space {
-  margin: 20px 0;
-  padding: 0 20px;
+  margin: var(--spacing-xl) 0;
+  padding: 0 var(--spacing-xl);
 }
 
 .ads-container {
   width: 100%;
   min-height: 120px;
-  background-color: #f8f9fa;
-  border-radius: 12px;
+  background-color: var(--color-surface-hover);
+  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border: 2px dashed #dee2e6;
+  border: 2px dashed var(--color-border);
 }
 
 .ads-placeholder {
@@ -643,7 +643,7 @@ function startThemeGame(gameData) {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: var(--spacing-xl);
 }
 
 .ads-placeholder p {

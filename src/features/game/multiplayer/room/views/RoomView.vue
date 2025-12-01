@@ -730,7 +730,7 @@ const formatUpdateTime = (timestamp) => {
   flex-direction: column;
   height: 100vh;
   position: relative;
-  padding: 1rem;
+  padding: var(--spacing-md);
   padding-top: 5rem;
   overflow: hidden;
 }
@@ -741,13 +741,14 @@ const formatUpdateTime = (timestamp) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  background: var(--color-background);
   z-index: -1;
+  transition: background-color var(--transition-slow);
 }
 
 .room-content {
   display: flex;
-  gap: 1rem;
+  gap: var(--spacing-lg);
   flex: 1;
   min-height: 0;
 }
@@ -758,7 +759,7 @@ const formatUpdateTime = (timestamp) => {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--spacing-lg);
 }
 
 .right-panel {
@@ -770,32 +771,33 @@ const formatUpdateTime = (timestamp) => {
 }
 
 .panel-section {
-  background: white;
-  border-radius: 16px;
-  padding: 1.25rem;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
-  /* 데스크톱에서는 자연스러운 레이아웃 유지 */
   overflow: visible;
+  transition: all var(--transition-normal);
 }
 
 .section-title {
-  font-size: 1.1rem;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h3);
   font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 1rem;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-lg);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
 }
 
 .section-title i {
-  color: #667eea;
-  font-size: 1rem;
+  color: var(--color-primary);
+  font-size: 1.1rem;
 }
 
 /* 연결 상태 표시 */
@@ -914,10 +916,10 @@ const formatUpdateTime = (timestamp) => {
 
 /* 채팅 패널 전체 높이 */
 .chat-panel {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -925,14 +927,13 @@ const formatUpdateTime = (timestamp) => {
 }
 
 .chat-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--color-primary);
   color: white;
-  padding: 1rem 1.25rem;
+  padding: var(--spacing-lg) var(--spacing-xl);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-radius: 16px 16px 0 0;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .chat-controls {
@@ -962,45 +963,45 @@ const formatUpdateTime = (timestamp) => {
 }
 
 .chat-title {
+  font-family: var(--font-heading);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 1.1rem;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-h3);
   font-weight: 700;
   position: relative;
 }
 
 .chat-title i {
-  font-size: 1.2rem;
+  font-size: 1.25rem;
 }
 
 .chat-notification {
-  background: #ef4444;
+  background: var(--color-error);
   color: white;
-  border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  font-size: 0.7rem;
+  border-radius: var(--radius-full);
+  width: 20px;
+  height: 20px;
+  font-size: var(--font-size-tiny);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  margin-left: 0.5rem;
-  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+  margin-left: var(--spacing-xs);
+  box-shadow: var(--shadow-sm);
 }
 
 .chat-status {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.85rem;
-  opacity: 0.9;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-small);
+  opacity: 0.95;
 }
 
 .online-indicator {
-  color: #22c55e;
+  color: var(--color-success);
   font-size: 0.6rem;
-  text-shadow: 0 0 4px rgba(34, 197, 94, 0.5);
 }
 
 /* 채팅 컨테이너 */
@@ -1076,53 +1077,53 @@ const formatUpdateTime = (timestamp) => {
 
 .chat-input-container {
   display: flex;
-  gap: 0.75rem;
-  padding: 1rem 1.25rem;
-  border-top: 1px solid #f1f5f9;
-  background: #fafbfc;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface-hover);
 }
 
 .chat-input {
   flex: 1;
-  padding: 0.75rem 1rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 24px;
-  font-size: 0.9rem;
-  color: #1e293b;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-body);
+  color: var(--color-text-primary);
   outline: none;
-  transition: all 0.2s ease;
-  background: white;
+  transition: all var(--transition-normal);
+  background: var(--color-surface);
 }
 
 .chat-input:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
 }
 
 .chat-input::placeholder {
-  color: #94a3b8;
+  color: var(--color-text-tertiary);
   font-weight: 400;
 }
 
 .send-button {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
   color: white;
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-sm);
 }
 
 .send-button:hover {
-  background: linear-gradient(135deg, #5a67d8 0%, #553c9a 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+  background: var(--color-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .send-button:active {
@@ -1130,7 +1131,7 @@ const formatUpdateTime = (timestamp) => {
 }
 
 .send-button i {
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 /* 모바일에서 채팅 숨김 */

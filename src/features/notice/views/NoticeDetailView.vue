@@ -274,19 +274,20 @@ const noticeServiceRef = noticeService
 <style scoped>
 .notice-detail-page {
   min-height: 100vh;
-  background-color: #f5f7fa;
+  background-color: var(--color-background);
+  transition: background-color var(--transition-slow);
 }
 
 .main-content {
   padding-top: 80px;
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding-left: var(--spacing-lg);
+  padding-right: var(--spacing-lg);
 }
 
 .notice-container {
-  padding: 2rem 0;
+  padding: var(--spacing-2xl) 0;
 }
 
 /* 로딩 상태 */
@@ -294,20 +295,20 @@ const noticeServiceRef = noticeService
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 4rem 2rem;
+  padding: var(--spacing-2xl);
 }
 
 .loading-spinner {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  color: #6b7280;
+  gap: var(--spacing-lg);
+  color: var(--color-text-secondary);
 }
 
 .loading-spinner i {
   font-size: 2rem;
-  color: #667eea;
+  color: var(--color-primary);
 }
 
 /* 에러 상태 */
@@ -315,7 +316,7 @@ const noticeServiceRef = noticeService
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 4rem 2rem;
+  padding: var(--spacing-2xl);
 }
 
 .error-content {
@@ -325,45 +326,50 @@ const noticeServiceRef = noticeService
 
 .error-icon {
   font-size: 4rem;
-  color: #ef4444;
-  margin-bottom: 1rem;
+  color: var(--color-error);
+  margin-bottom: var(--spacing-lg);
 }
 
 .error-content h3 {
-  font-size: 1.25rem;
-  color: #374151;
-  margin-bottom: 0.5rem;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h3);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-sm);
 }
 
 .error-content p {
-  color: #6b7280;
-  margin-bottom: 1.5rem;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-xl);
 }
 
 .retry-button {
-  background: #667eea;
+  background: var(--color-primary);
   color: white;
   border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-radius: var(--radius-md);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
+  box-shadow: var(--shadow-sm);
 }
 
 .retry-button:hover {
-  background: #5a67d8;
+  background: var(--color-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 /* 공지사항 상세 */
 .notice-detail {
-  background: white;
-  border-radius: 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
 }
 
 /* 네비게이션 */
@@ -371,129 +377,140 @@ const noticeServiceRef = noticeService
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-  background: #f9fafb;
+  padding: var(--spacing-xl);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-hover);
 }
 
 .back-button {
   background: none;
-  border: none;
-  color: #6b7280;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
 }
 
 .back-button:hover {
-  background: #e5e7eb;
-  color: #374151;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border-color: var(--color-primary);
 }
 
 .admin-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
 }
 
 .edit-button,
 .delete-button {
-  padding: 0.5rem 1rem;
+  padding: var(--spacing-sm) var(--spacing-lg);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
+  box-shadow: var(--shadow-sm);
 }
 
 .edit-button {
-  background: #3b82f6;
+  background: var(--color-info);
   color: white;
 }
 
 .edit-button:hover {
-  background: #2563eb;
+  background: var(--color-info);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  filter: brightness(0.9);
 }
 
 .delete-button {
-  background: #ef4444;
+  background: var(--color-error);
   color: white;
 }
 
 .delete-button:hover {
-  background: #dc2626;
+  background: var(--color-error);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  filter: brightness(0.9);
 }
 
 /* 공지사항 헤더 */
 .notice-header {
-  padding: 2rem;
-  border-bottom: 1px solid #e5e7eb;
+  padding: var(--spacing-2xl);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .notice-meta {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
 }
 
 .notice-category {
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-small);
   font-weight: 600;
 }
 
 .notice-category.공지 {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--color-info);
+  color: white;
 }
 
 .notice-category.이벤트 {
-  background: #fef3c7;
-  color: #d97706;
+  background: var(--color-warning);
+  color: white;
 }
 
 .notice-category.업데이트 {
-  background: #d1fae5;
-  color: #065f46;
+  background: var(--color-success);
+  color: white;
 }
 
 .notice-category.일반 {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--color-surface-hover);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
 }
 
 .notice-date {
-  color: #9ca3af;
-  font-size: 0.9rem;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-small);
 }
 
 .notice-title {
-  font-size: 1.75rem;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-display);
   font-weight: 700;
-  color: #1f2937;
-  line-height: 1.3;
+  color: var(--color-text-primary);
+  line-height: var(--line-height-tight);
   margin: 0;
+  letter-spacing: -0.02em;
 }
 
 /* 공지사항 내용 */
 .notice-content {
-  padding: 2rem;
+  padding: var(--spacing-2xl);
 }
 
 .content-body {
-  color: #374151;
-  line-height: 1.7;
-  font-size: 1rem;
-  margin-bottom: 2rem;
+  color: var(--color-text-primary);
+  line-height: var(--line-height-relaxed);
+  font-size: var(--font-size-body);
+  margin-bottom: var(--spacing-2xl);
 }
 
 .content-body ::v-deep(p) {
@@ -545,17 +562,17 @@ const noticeServiceRef = noticeService
 
 /* 공지사항 푸터 */
 .notice-footer {
-  padding: 1.5rem 2rem;
-  background: #f9fafb;
-  border-top: 1px solid #e5e7eb;
+  padding: var(--spacing-xl) var(--spacing-2xl);
+  background: var(--color-surface-hover);
+  border-top: 1px solid var(--color-border);
 }
 
 .notice-info {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: #6b7280;
-  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-small);
 }
 
 /* 모달 스타일 */
@@ -565,7 +582,9 @@ const noticeServiceRef = noticeService
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -573,85 +592,102 @@ const noticeServiceRef = noticeService
 }
 
 .modal-container {
-  background: white;
-  border-radius: 12px;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
   width: 90%;
   max-width: 400px;
   overflow: hidden;
+  box-shadow: var(--shadow-xl);
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
+  padding: var(--spacing-xl);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .modal-header h3 {
   margin: 0;
-  font-size: 1.25rem;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h3);
   font-weight: 600;
-  color: #1f2937;
+  color: var(--color-text-primary);
 }
 
 .modal-close {
   background: none;
   border: none;
-  font-size: 1.25rem;
-  color: #6b7280;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
   cursor: pointer;
-  padding: 0.25rem;
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
 }
 
 .modal-content {
-  padding: 1.5rem;
+  padding: var(--spacing-xl);
 }
 
 .modal-content p {
-  margin: 0 0 1rem 0;
-  color: #374151;
+  margin: 0 0 var(--spacing-md) 0;
+  color: var(--color-text-primary);
 }
 
 .warning-text {
-  color: #ef4444;
+  color: var(--color-error);
   font-weight: 500;
 }
 
 .modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 1rem;
-  padding: 1.5rem;
-  border-top: 1px solid #e5e7eb;
+  gap: var(--spacing-md);
+  padding: var(--spacing-xl);
+  border-top: 1px solid var(--color-border);
 }
 
 .cancel-button,
 .confirm-delete-button {
-  padding: 0.75rem 1.5rem;
+  padding: var(--spacing-md) var(--spacing-xl);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
 }
 
 .cancel-button {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
 }
 
 .cancel-button:hover {
-  background: #e5e7eb;
+  background: var(--color-border-light);
 }
 
 .confirm-delete-button {
-  background: #ef4444;
+  background: var(--color-error);
   color: white;
+  box-shadow: var(--shadow-sm);
 }
 
 .confirm-delete-button:hover {
-  background: #dc2626;
+  background: var(--color-error);
+  filter: brightness(0.9);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 /* 이미지 모달 */

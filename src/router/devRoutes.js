@@ -10,63 +10,63 @@ import DevTestPage from '@/dummy/DevTestPage.vue'
 import ResultOverlay from '@/features/game/single/roadview/components/Result/ResultOverlay.vue'
 
 const devRoutes = [
-    {
-        path: '/dev/test',
-        name: "DevTestPage",
-        component: DevTestPage,
-        meta: {
-            title: '개발자 테스트 페이지'
-        }
-    },
-    {
-        path: '/tempPage',
-        name: "TempPage",
-        component: tempPage
-    },
-    {
-        path: '/coordData',
-        name: "CoordData",
-        component: CoordData
-    },
-    {
-        path: '/kakaoMapTest',
-        name: "KakaoMapTest",
-        component: kakaoMapTest
-    },
-    {
-        path: '/encryptTest',
-        name: "EncryptTest",
-        component: EncryptTest
-    },
-    {
-        path: '/componentTest',
-        name: "ComponentTest",
-        component: ComponentTest
-    },
-    {
-        path: '/temp-login',
-        name: "TempLogin",
-        component: TempLoginView
-    },
-    {
-        path: '/test/roadview-solo',
-        name: "TestRoadviewSolo",
-        component: SoloGameView,
-        meta: {
-            title: '로드뷰 개인전 테스트'
-        }
-    },
-    {
-        path: '/test/room-start',
-        name: "TestRoomStartCountdown",
-        component: RoomView,
-        props: {
-            roomId: 'dev-room-start'
-        },
-        meta: {
-            title: '멀티플레이어 방 시작 테스트'
-        }
-    },
+    // {
+    //     path: '/dev/test',
+    //     name: "DevTestPage",
+    //     component: DevTestPage,
+    //     meta: {
+    //         title: '개발자 테스트 페이지'
+    //     }
+    // },
+    // {
+    //     path: '/tempPage',
+    //     name: "TempPage",
+    //     component: tempPage
+    // },
+    // {
+    //     path: '/coordData',
+    //     name: "CoordData",
+    //     component: CoordData
+    // },
+    // {
+    //     path: '/kakaoMapTest',
+    //     name: "KakaoMapTest",
+    //     component: kakaoMapTest
+    // },
+    // {
+    //     path: '/encryptTest',
+    //     name: "EncryptTest",
+    //     component: EncryptTest
+    // },
+    // {
+    //     path: '/componentTest',
+    //     name: "ComponentTest",
+    //     component: ComponentTest
+    // },
+    // {
+    //     path: '/temp-login',
+    //     name: "TempLogin",
+    //     component: TempLoginView
+    // },
+    // {
+    //     path: '/test/roadview-solo',
+    //     name: "TestRoadviewSolo",
+    //     component: SoloGameView,
+    //     meta: {
+    //         title: '로드뷰 개인전 테스트'
+    //     }
+    // },
+    // {
+    //     path: '/test/room-start',
+    //     name: "TestRoomStartCountdown",
+    //     component: RoomView,
+    //     props: {
+    //         roomId: 'dev-room-start'
+    //     },
+    //     meta: {
+    //         title: '멀티플레이어 방 시작 테스트'
+    //     }
+    // },
     {
         path: '/devRoute',
         name: "DevRoundTest",
