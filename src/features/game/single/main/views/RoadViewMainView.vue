@@ -126,14 +126,6 @@
             <p>{{ selectedGameMode.fullDescription }}</p>
           </div>
 
-          <!-- 연습 게임 튜토리얼 모달 -->
-          <practice-tutorial-modal
-            v-if="selectedGameMode.id === 'practice'"
-            :show="showPracticeTutorial"
-            @close="showPracticeTutorial = false"
-            @complete="handleTutorialComplete"
-          />
-
           <div
             v-if="selectedGameMode.id === 'practice' && !showPracticeTutorial"
             class="practice-mode-options"
@@ -156,23 +148,36 @@
             class="rank-mode-options"
           >
             <div class="rank-info-card">
-              <div class="rank-info-header">
-                <span class="rank-label">현재 랭크</span>
-                <div class="rank-icon" v-if="rankInfo">
-                  <i :class="getRankIcon(userRank)"></i>
+              <div v-if="rankInfo" class="rank-info-content">
+                <!-- 랭크 아이콘 (중앙 배치) -->
+                <div class="rank-icon-container">
+                  <div class="rank-icon">
+                    <i :class="getRankIcon(userRank)"></i>
+                  </div>
+                </div>
+                
+                <!-- 랭크 티어 정보 -->
+                <div class="rank-tier-info">
+                  <span class="rank-label">현재 랭크</span>
+                  <h3 class="rank-value">{{ userRank }}</h3>
+                </div>
+                
+                <!-- 레이팅 정보 -->
+                <div class="rank-rating-info">
+                  <div class="rating-item">
+                    <span class="rating-label">레이팅 점수</span>
+                    <span class="rating-value">{{ formatNumber(rankInfo.ratingScore) }}</span>
+                  </div>
+                  <div class="rating-item">
+                    <span class="rating-label">상위 순위</span>
+                    <span class="rating-value">{{ rankInfo.rankPercentage }}%</span>
+                  </div>
                 </div>
               </div>
-              <div class="rank-info-content">
-                <div class="rank-tier-level" v-if="rankInfo">
-                  <span class="rank-value">{{ userRank }}</span>
-                </div>
-                <div class="rank-rating" v-if="rankInfo">
-                  <span class="rating-label">레이팅</span>
-                  <span class="rating-value">{{ formatNumber(rankInfo.ratingScore) }}</span>
-                </div>
-                <div v-else class="rank-loading">
-                  <p>랭크 정보를 불러오는 중...</p>
-                </div>
+              
+              <div v-else class="rank-loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>랭크 정보를 불러오는 중...</p>
               </div>
             </div>
           </div>
@@ -189,6 +194,17 @@
         </div>
       </div>
     </transition>
+
+    <!-- 연습 게임 튜토리얼 모달 (독립 오버레이) -->
+    <transition name="tutorial-fade">
+      <practice-tutorial-modal
+        v-if="selectedGameMode?.id === 'practice' && showPracticeTutorial"
+        :show="showPracticeTutorial"
+        @close="showPracticeTutorial = false"
+        @complete="handleTutorialComplete"
+      />
+    </transition>
+
     <!-- Theme Mode Popup -->
     <transition name="popup-slide">
       <theme-mode-popup
