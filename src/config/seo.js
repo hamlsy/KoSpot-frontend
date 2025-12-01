@@ -35,7 +35,7 @@ export const seoConfig = {
     type: 'website',
     title: 'KoSpot - 한국판 GeoGuessr',
     description: '로드뷰로 한국 관광지 위치를 맞추는 지리 게임',
-    image: '/og-image.jpg', // 1200x630 권장
+    image: '/images/logo/kospot_logo_1-removebg.png',
     imageAlt: 'KoSpot - 한국 지리 게임',
     locale: 'ko_KR',
   },
@@ -45,7 +45,7 @@ export const seoConfig = {
     card: 'summary_large_image',
     title: 'KoSpot - 한국판 GeoGuessr',
     description: '로드뷰로 한국 관광지를 탐험하는 지리 게임',
-    image: '/og-image.jpg',
+    image: '/images/logo/kospot_logo_1-removebg.png',
     site: '@kospot', // 실제 트위터 계정으로 변경
   },
   

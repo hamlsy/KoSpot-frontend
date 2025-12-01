@@ -4,10 +4,7 @@
       <div class="header-content">
         <div class="header-left">
           <div class="home-link" @click="goToMain">
-            <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="currentColor"/>
-            </svg>
-            <h1 class="logo">KoSpot</h1>
+            <img src="/images/logo/kospot_logo_1-removebg.png" alt="KoSpot" class="logo-image">
             <span class="badge">Beta</span>
           </div>
         </div>
@@ -389,20 +386,11 @@ export default {
   opacity: 0.8;
 }
 
-.logo-icon {
-  width: 24px;
-  height: 24px;
-  color: var(--color-primary);
-  transition: color var(--transition-normal);
-}
-
-.logo {
-  font-family: var(--font-heading);
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--color-primary);
-  margin: 0;
-  letter-spacing: -0.02em;
+.logo-image {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+  transition: opacity var(--transition-normal);
 }
 
 .badge {

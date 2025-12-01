@@ -35,14 +35,17 @@
 ## 🎯 필수 작업: 이미지 설정
 
 ### 로고 이미지
-웰컴 페이지 히어로 섹션에 표시되는 메인 로고
+웰컴 페이지 히어로 섹션 및 네비게이션 바에 표시되는 메인 로고
 
-**요구사항:**
-- 파일명: `logo.png`
-- 위치: `public/logo.png`
-- 크기: **800 x 200 픽셀** (가로형) 또는 **400 x 400 픽셀** (정사각형)
-- 형식: PNG (투명 배경 권장)
-- 용량: 100KB 이하 권장
+**현재 사용 중:**
+- 파일명: `kospot_logo_1-removebg.png`
+- 위치: `public/images/logo/kospot_logo_1-removebg.png`
+- 형식: PNG (투명 배경)
+
+**사용 위치:**
+- 웰컴 페이지: 히어로 섹션 상단
+- 전체 사이트: 네비게이션 바 좌측 상단
+- 소셜 미디어: OG 이미지로도 활용
 
 **디자인 가이드:**
 - 브랜드 컬러 사용: #0ea5e9 (Primary Blue)
@@ -57,18 +60,16 @@
 ### OG (Open Graph) 이미지
 소셜 미디어 공유 시 표시되는 이미지
 
-**요구사항:**
-- 파일명: `og-image.jpg`
-- 위치: `public/og-image.jpg`
+**현재 사용 중:**
+- 파일명: `kospot_logo_1-removebg.png` (로고와 동일)
+- 위치: `public/images/logo/kospot_logo_1-removebg.png`
+- 형식: PNG
+
+**향후 개선 시:**
 - 크기: **1200 x 630 픽셀** (권장)
 - 형식: JPG 또는 PNG
 - 용량: 300KB 이하 권장
-
-**이미지 내용 추천:**
-- KoSpot 로고
-- "로드뷰로 떠나는 한국 여행" 텍스트
-- 한국 지도 실루엣
-- 로드뷰 이미지 예시
+- 내용: KoSpot 로고 + 게임 스크린샷 + "로드뷰로 떠나는 한국 여행" 텍스트
 - ❌ "GeoGuessr" 텍스트 사용 금지
 
 **생성 도구:**
@@ -79,7 +80,13 @@
 ### 파비콘 (Favicon)
 브라우저 탭에 표시되는 작은 아이콘
 
-**필요한 파일:**
+**현재 사용 중:**
+- 파일명: `kospot_icon_1-removebg.png`
+- 위치: `public/images/icon/kospot_icon_1-removebg.png`
+- 형식: PNG
+
+**향후 개선 시 권장:**
+다양한 크기의 파비콘 생성:
 ```
 public/
 ├── favicon.ico          (32x32, 다중 크기)
@@ -183,9 +190,11 @@ https://kospot.com/welcome/
 배포 전 확인:
 
 ### 이미지 및 아이콘
-- [ ] 로고 이미지 생성 및 업로드 (`public/logo.png`)
-- [ ] OG 이미지 생성 및 업로드 (`public/og-image.jpg`)
-- [ ] 파비콘 생성 및 업로드 (favicon.ico, favicon-16x16.png, favicon-32x32.png, apple-touch-icon.png)
+- [x] 로고 이미지 적용 (`public/images/logo/kospot_logo_1-removebg.png`)
+- [x] 파비콘 적용 (`public/images/icon/kospot_icon_1-removebg.png`)
+- [x] OG 이미지 임시 적용 (로고 이미지로 대체)
+- [ ] 전용 OG 이미지 생성 (1200x630, 로고 + 게임 스크린샷 + 텍스트)
+- [ ] 다양한 크기의 파비콘 생성 (최적화)
 
 ### SEO 설정
 - [ ] `welcome/index.html`에서 URL을 실제 도메인으로 수정

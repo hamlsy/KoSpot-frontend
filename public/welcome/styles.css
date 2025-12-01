@@ -145,8 +145,8 @@ body {
 
 /* Logo */
 .alt-hero-logo {
-  margin-bottom: var(--alt-space-md);
-  max-width: 200px;
+  margin-bottom: var(--alt-space-lg);
+  max-width: 280px;
 }
 
 .hero-logo-image {
@@ -154,6 +154,7 @@ body {
   height: auto;
   object-fit: contain;
   display: block;
+  filter: drop-shadow(0 2px 8px rgba(14, 165, 233, 0.2));
 }
 
 .alt-hero-badge {
@@ -639,7 +640,7 @@ body {
   }
   
   .alt-hero-logo {
-    max-width: 150px;
+    max-width: 200px;
   }
   
   .game-screenshots-slider {

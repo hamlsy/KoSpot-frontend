@@ -3,10 +3,12 @@
     <!-- Header -->
     <header class="header">
       <div class="header-content">
-        <button class="back-button" @click="$router.push('/')">
+        <button class="back-button" @click="$router.push('/main')">
           <i class="fas fa-arrow-left"></i>
         </button>
-        <app-logo class="home-link" to="/" />
+        <div class="logo-container">
+          <img src="/images/logo/kospot_logo_1-removebg.png" alt="KoSpot" class="header-logo" />
+        </div>
         <div class="header-right">
           <h3>로드뷰 모드</h3>
         </div>
@@ -209,7 +211,6 @@
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
-import AppLogo from "@/core/components/AppLogo.vue";
 import ThemeModePopup from 'src/features/game/single/main/components/Theme/ThemeModePopup.vue'
 import GameModeCard from "@/features/game/shared/components/Common/GameModeCard.vue";
 import HistoryModal from "@/features/game/single/main/components/HistoryModal.vue";
@@ -585,10 +586,85 @@ function startThemeGame(gameData) {
 </script>
 
 <style scoped>
-@import url("@/shared/assets/styles/common/header.css");
-@import url("@/shared/assets/styles/common/footer.css");
-@import url("@/shared/assets/styles/common/slide-menu/slide-menu.css");
 @import url("@/shared/assets/styles/game/roadView/roadview-main.css");
+
+/* 헤더 스타일 */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--color-border);
+  z-index: 100;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
+  transition: all var(--transition-normal);
+}
+
+.header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  height: 100%;
+  padding: 0 var(--spacing-xl);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.back-button {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: rgba(37, 99, 235, 0.05);
+  border: 1px solid rgba(37, 99, 235, 0.1);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.back-button:hover {
+  background: var(--color-primary);
+  color: white;
+  transform: translateX(-4px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.logo-container {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.header-logo {
+  height: 50px;
+  width: auto;
+  filter: drop-shadow(0 2px 8px rgba(37, 99, 235, 0.15));
+  transition: transform var(--transition-normal);
+}
+
+.header-logo:hover {
+  transform: scale(1.05);
+}
+
+.header-right {
+  margin-left: auto;
+}
+
+.header-right h3 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h3);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.01em;
+}
 
 .practice-mode-options {
   display: flex;
