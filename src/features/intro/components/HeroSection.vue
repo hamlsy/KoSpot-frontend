@@ -1,5 +1,5 @@
 <template>
-  <section v-if="!isClosed" class="hero-section">
+  <section v-if="!isClosed && !isLoggedIn" class="hero-section">
     <button class="hero-close" @click="closeHero" title="닫기">
       <i class="fas fa-times"></i>
     </button>

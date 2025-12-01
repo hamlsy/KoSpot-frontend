@@ -29,9 +29,9 @@
             </button>
             
             <!-- 다크모드 토글 버튼 (웹에만 표시) -->
-            <button class="theme-toggle desktop-only" @click="toggleTheme" :title="isDarkMode ? '라이트 모드로 전환' : '다크 모드로 전환'">
+            <!-- <button class="theme-toggle desktop-only" @click="toggleTheme" :title="isDarkMode ? '라이트 모드로 전환' : '다크 모드로 전환'">
               <i class="fas" :class="isDarkMode ? 'fa-sun' : 'fa-moon'"></i>
-            </button>
+            </button> -->
             
             <div class="user-profile" @click="toggleProfileMenu">
               <div class="user-avatar" :class="{ 'guest-avatar': !actualIsLoggedIn }">
@@ -261,7 +261,9 @@ export default {
     },
     goToMain() {
       // 메인 페이지로 새로고침 이동
-      window.location.href = '/main';
+      // window.location.href = '/main';
+      
+      this.$router.push('/main');
     },
     // 개발 모드 확인 (API 연결 실패 시)
     async checkDevMode() {

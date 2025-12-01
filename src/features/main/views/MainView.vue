@@ -25,7 +25,7 @@
     <!-- Main Content -->
     <main class="main-content">
       <!-- 히어로 섹션 -->
-      <HeroSection @open-tutorial="showTutorial = true" />
+      <HeroSection @open-tutorial="!isLoggedIn" />
 
       <!-- Featured Challenge Banner Carousel -->
       <div v-if="displayBanners && displayBanners.length > 0" class="banner-carousel">
@@ -806,7 +806,7 @@ async function handleLogout() {
 
 .modes-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--spacing-lg);
   margin-bottom: var(--spacing-2xl);
 }
