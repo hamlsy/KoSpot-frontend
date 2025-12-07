@@ -173,8 +173,6 @@ export function useRoomWebSocket() {
       ...data
     };
     
-    console.log(`📤 방 이벤트 발행: ${eventType}`, eventData);
-    
     if (!webSocketManager.isConnected.value) {
       console.warn('⚠️ WebSocket 연결이 없어 이벤트를 발행할 수 없습니다.');
       return false;

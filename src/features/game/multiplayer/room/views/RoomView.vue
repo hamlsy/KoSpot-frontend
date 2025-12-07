@@ -478,12 +478,13 @@ const leaveRoom = async () => {
     await leaveRoomOriginal();
     
     // 로비로 새로고침 리다이렉션 (페이지 전체 리로드)
-    window.location.href = '/lobby';
+    // window.location.href = '/lobby';
+    router.push('/lobby');
     console.log('✅ 로비로 이동 완료');
   } catch (error) {
     console.error('❌ 방 퇴장 중 오류 발생:', error);
     // 에러가 발생해도 로비로 이동
-    window.location.href = '/lobby';
+    router.push('/lobby');
   }
 };
 
