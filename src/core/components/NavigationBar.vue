@@ -95,13 +95,13 @@
 
         <!-- 모바일용 내비게이션 메뉴 추가 -->
         <nav class="mobile-nav" v-if="actualIsLoggedIn">
-          <!-- 다크모드 토글 (모바일용) -->
-          <div class="menu-item theme-menu-item" @click="toggleTheme">
+          <!-- 다크모드 토글 비활성화 -->
+          <!-- <div class="menu-item theme-menu-item" @click="toggleTheme">
             <i class="fas" :class="isDarkMode ? 'fa-sun' : 'fa-moon'"></i>
             {{ isDarkMode ? '라이트 모드' : '다크 모드' }}
           </div>
           
-          <div class="menu-divider"></div>
+          <div class="menu-divider"></div> -->
           
           <router-link :to="{ name: 'NoticeListView' }" class="menu-item">
             <i class="fas fa-bullhorn"></i>
