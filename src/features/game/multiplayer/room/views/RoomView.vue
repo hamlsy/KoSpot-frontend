@@ -254,7 +254,7 @@ const initialRoomData = routerState ? {
   gameMode: routerState.gameMode || 'roadview',
   isTeamMode: routerState.isTeamMode || false,
   maxPlayers: routerState.maxPlayers || 8,
-  rounds: routerState.rounds || 5,
+  totalRounds: routerState.totalRounds || 5,
   timeLimit: routerState.timeLimit || 60,
   isPrivate: routerState.isPrivate || false,
   password: routerState.password || '',

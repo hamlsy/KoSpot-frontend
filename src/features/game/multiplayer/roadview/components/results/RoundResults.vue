@@ -1,137 +1,139 @@
 <template>
   <div class="round-results">
-    <div class="results-container">
-      <!-- 헤더 -->
-      <div class="results-header">
-        <div class="header-left">
-          <h2 class="round-title">
-            라운드 {{ round }} 결과
-            <span class="location-name" v-if="poiName || locationName">
-              - {{ poiName || locationName }}
-            </span>
-          </h2>
-          <div class="round-info">
-            {{ round }} / {{ totalRounds }} 라운드 완료
-            <span v-if="isLastRound" class="final-round-badge">최종 라운드!</span>
+    <!-- 배경 효과 (라이트 버전) -->
+    <div class="bg-effects">
+      <div class="bg-orb orb-1"></div>
+      <div class="bg-orb orb-2"></div>
+      <div class="bg-pattern"></div>
+    </div>
+
+    <div class="game-container">
+      <!-- 스코어보드 스타일 헤더 -->
+      <header class="scoreboard-header">
+        <div class="round-indicator">
+          <div class="round-progress-ring">
+            <svg viewBox="0 0 100 100">
+              <circle class="ring-bg" cx="50" cy="50" r="45" />
+              <circle 
+                class="ring-fill" 
+                cx="50" cy="50" r="45"
+                :stroke-dasharray="`${(round / totalRounds) * 283} 283`"
+              />
+            </svg>
+            <div class="round-number">
+              <span class="current">{{ round }}</span>
+              <span class="separator">/</span>
+              <span class="total">{{ totalRounds }}</span>
+            </div>
           </div>
-          <div class="location-address" v-if="fullAddress">
+          <span v-if="isLastRound" class="final-indicator">
+            <i class="fas fa-flag-checkered"></i> FINAL
+          </span>
+        </div>
+
+        <div class="location-display">
+          <div class="location-icon">
             <i class="fas fa-map-marker-alt"></i>
-            <span>{{ fullAddress }}</span>
+          </div>
+          <div class="location-text">
+            <h2>{{ poiName || locationName || '알 수 없는 위치' }}</h2>
+            <p v-if="fullAddress">{{ fullAddress }}</p>
           </div>
         </div>
-        <div class="results-summary">
-          <div class="top-player-info" v-if="topPlayer && topPlayer.playerName">
+
+        <!-- 우승자 하이라이트 -->
+        <div class="winner-highlight" v-if="topPlayer && topPlayer.playerName">
+          <div class="crown-animation">
             <i class="fas fa-crown"></i>
-            <span class="top-player-name">{{ topPlayer.playerName }}</span>
-            <span class="top-player-distance">{{ formatDistance(topPlayer.distance) }}km</span>
+          </div>
+          <div class="winner-details">
+            <span class="label">CLOSEST</span>
+            <span class="name">{{ topPlayer.playerName }}</span>
+            <span class="score">{{ formatDistance(topPlayer.distance) }} km</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- 메인 게임 영역 -->
+      <div class="game-arena">
+        <!-- 지도 -->
+        <div class="map-wrapper">
+          <kakao-map
+            :center="actualLocation"
+            :marker-position="null"
+            :actual-position="actualLocation"
+            :prevent-interaction="false"
+            :show-marker-hint="false"
+            :zoom-level="5"
+            :player-guesses="playerMarkers"
+            :show-distance-lines="true"
+            :fitAllMarkers="true"
+            :top-player="topPlayer"
+            :is-team-mode="isTeamMode"
+            ref="resultMap"
+          />
+          <div class="map-overlay-border"></div>
+          
+          <!-- 모바일 우승자 오버레이 -->
+          <div class="mobile-winner-overlay" v-if="topPlayer && topPlayer.playerName">
+            <i class="fas fa-crown"></i>
+            <span class="winner-name">{{ topPlayer.playerName }}</span>
+            <span class="winner-dist">{{ formatDistance(topPlayer.distance) }}km</span>
           </div>
         </div>
 
+        <!-- 사이드 플레이어 랭킹 (데스크톱) -->
+        <aside class="player-ranking" v-if="sortedPlayers.length > 0">
+          <h3 class="ranking-title">
+            <i class="fas fa-medal"></i> 순위
+          </h3>
+          <div class="ranking-list">
+            <div 
+              v-for="(player, index) in sortedPlayers.slice(0, 5)" 
+              :key="player.id"
+              class="ranking-item"
+              :class="{ 'top-three': index < 3, 'is-me': player.id === currentUserId }"
+            >
+              <div class="rank-badge" :class="`rank-${index + 1}`">
+                {{ index + 1 }}
+              </div>
+              <div 
+                class="player-avatar"
+                :style="{ backgroundImage: player.equippedMarker ? `url(${player.equippedMarker})` : 'none' }"
+              ></div>
+              <div class="player-info">
+                <span class="player-name">{{ player.nickname || player.playerName }}</span>
+                <span class="player-score">{{ player.lastRoundScore || 0 }} pts</span>
+              </div>
+            </div>
+          </div>
+        </aside>
       </div>
 
-      <!-- 지도 영역 -->
-      <div class="map-container">
-        <kakao-map
-          :center="actualLocation"
-          :marker-position="null"
-          :actual-position="actualLocation"
-          :prevent-interaction="false"
-          :show-marker-hint="false"
-          :zoom-level="5"
-          :player-guesses="playerMarkers"
-          :show-distance-lines="true"
-          :fitAllMarkers="true"
-          :top-player="topPlayer"
-          :is-team-mode="isTeamMode"
-          ref="resultMap"
-        />
-      </div>
-
-      <!-- 하단 버튼 -->
-      <div class="results-footer">
-        <div class="next-button-container">
-          <!-- 플레이어 마커 표시 영역 -->
-          <div class="player-markers-container">
-            <!-- 팀 모드일 때 -->
-            <template v-if="isTeamMode">
-              <div 
-                v-for="(team, index) in teamsReadyDetails" 
-                :key="team.id"
-                class="team-marker-wrapper"
-              >
-                <div 
-                  class="team-marker" 
-                  :style="{ 
-                    backgroundColor: team.color || getTeamColor(index),
-                    backgroundImage: team.representativeMarker ? `url(${team.representativeMarker})` : 'none',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center'
-                  }"
-                  :title="team.name"
-                >
-                  <span class="marker-tooltip team-tooltip">{{ team.name }}</span>
-                </div>
-                <div v-if="teamMessages[team.id]" class="team-chat-bubble">
-                  {{ teamMessages[team.id] }}
-                </div>
-              </div>
-            </template>
-            <!-- 개인 모드일 때 -->
-            <template v-else>
-              <div 
-                v-for="(player) in playersReadyDetails" 
-                :key="player.id"
-                class="player-marker-wrapper"
-              >
-                <div 
-                  class="player-marker" 
-                  :style="{ 
-                    backgroundImage: player.equippedMarker ? `url(${player.equippedMarker})` : 'none',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center'
-                  }"
-                  :title="player.nickname"
-                >
-                  <span class="marker-tooltip">{{ player.nickname }}</span>
-                </div>
-              </div>
-            </template>
+      <!-- 하단 컨트롤 -->
+      <footer class="game-controls">
+        <div class="action-area">
+          <div v-if="!isLastRound || isServerMode" class="countdown-display">
+            <div class="countdown-bar">
+              <div class="countdown-fill" :style="{ width: `${100 - progressPercentage}%` }"></div>
+            </div>
+            <div class="countdown-info">
+              <span class="countdown-number">{{ countdownSeconds }}</span>
+              <span class="countdown-text">초 후 다음 라운드</span>
+            </div>
           </div>
-
-          <!-- 투표 현황 텍스트 -->
-          <div class="vote-info-text" v-if="isVoteTimerActive">
-            {{ numPlayersReady }} / {{ totalPlayersInRoom }} (과반수: {{ majorityThreshold }})
-          </div>
-
-          <!-- 카운트다운 바 -->
-          <div class="countdown-bar" v-if="isVoteTimerActive">
-            <div
-              class="countdown-progress"
-              :style="{ width: voteCountdownProgressPercentage + '%' }"
-            ></div>
-          </div>
-
+          
           <button
             v-if="isLastRound && !isServerMode"
-            class="action-button finish-button"
+            class="final-button"
             @click="$emit('finish-game')"
           >
+            <span class="btn-bg"></span>
             <i class="fas fa-trophy"></i>
-            <span>최종 결과 보기</span>
-            <div class="button-shine"></div>
+            <span class="btn-text">최종 결과</span>
           </button>
-          <!-- 자동 진행 타이머 -->
-          <div v-else class="auto-progress-container">
-            <div class="progress-info">
-              <i class="fas fa-clock"></i>
-              <span class="countdown-text">{{ countdownSeconds }}초 후 다음 라운드</span>
-            </div>
-            <div class="progress-bar-container">
-              <div class="progress-bar" :style="{ width: progressPercentage + '%' }"></div>
-            </div>
-          </div>
         </div>
-      </div>
+      </footer>
     </div>
   </div>
 </template>
@@ -220,7 +222,7 @@ export default {
       type: Number,
       default: 0,
     },
-    playersReadyDetails: { // Array of players who clicked next { id, nickname, equippedMarker }
+    playersReadyDetails: {
       type: Array,
       default: () => [],
     },
@@ -228,7 +230,7 @@ export default {
       type: Boolean,
       default: false,
     },
-    voteTimeRemaining: { // In milliseconds
+    voteTimeRemaining: {
       type: Number,
       default: 15000, 
     },
@@ -256,15 +258,13 @@ export default {
 
   computed: {
     sortedPlayers() {
-      return [...this.players].sort((a, b) => b.score - a.score);
+      return [...this.players].sort((a, b) => (b.score || 0) - (a.score || 0));
     },
     
-    // 카운트다운 초 (서버 값 우선 사용)
     countdownSeconds() {
       return this.serverCountdownSeconds !== null ? this.serverCountdownSeconds : this.localCountdownSeconds;
     },
     
-    // 진행바 퍼센테이지 계산
     progressPercentage() {
       return ((this.totalCountdownTime - this.countdownSeconds) / this.totalCountdownTime) * 100;
     },
@@ -273,15 +273,12 @@ export default {
       return this.round === this.totalRounds;
     },
 
-    // 팀 모드에서 준비된 팀 정보 계산
     teamsReadyDetails() {
       if (!this.isTeamMode || !this.teams.length) return [];
       
-      // 팀별로 준비된 플레이어 정보 그룹화
       const teamsReady = [];
       const teamMap = new Map();
       
-      // 팀 정보 초기화
       this.teams.forEach(team => {
         teamMap.set(team.id, {
           id: team.id,
@@ -293,21 +290,18 @@ export default {
         });
       });
       
-      // 준비된 플레이어 정보로 팀 정보 업데이트
       this.playersReadyDetails.forEach(player => {
         const playerTeam = this.players.find(p => p.id === player.id)?.teamId;
         if (playerTeam && teamMap.has(playerTeam)) {
           const team = teamMap.get(playerTeam);
           team.members.push(player);
           team.isReady = true;
-          // 첫 번째 준비된 플레이어의 마커를 팀 대표 마커로 사용
           if (!team.representativeMarker && player.equippedMarker) {
             team.representativeMarker = player.equippedMarker;
           }
         }
       });
       
-      // 준비된 팀만 필터링하여 반환
       teamMap.forEach(team => {
         if (team.isReady) {
           teamsReady.push(team);
@@ -317,11 +311,9 @@ export default {
       return teamsReady;
     },
 
-    // 플레이어 추측 위치에 대한 마커 정보 계산
     playerMarkers() {
       if (!this.isTeamMode) {
         return this.playerGuesses.map((guess) => {
-          // 플레이어 정보에서 마커 이미지 URL 가져오기
           const player = this.players.find(p => p.id === guess.playerId);
           const markerImageUrl = guess.markerImageUrl || 
                                 player?.equippedMarker || 
@@ -332,12 +324,11 @@ export default {
             position: guess.position,
             color: guess.color,
             playerName: guess.playerName,
-            markerImageUrl: markerImageUrl, // 플레이어 마커 이미지 추가
+            markerImageUrl: markerImageUrl,
             playerId: guess.playerId
           };
         });
       } else {
-        // 팀 모드일 때는 팀별로 대표 마커만 표시
         const teamGuesses = [];
         const teamMap = new Map();
         
@@ -351,7 +342,7 @@ export default {
               color: team?.color || '#FF5722',
               playerName: team?.name || '팀',
               teamId: playerTeam,
-              markerImageUrl: team?.representativeMarker || null // 팀 대표 마커
+              markerImageUrl: team?.representativeMarker || null
             });
           }
         });
@@ -362,14 +353,13 @@ export default {
     
     voteCountdownProgressPercentage() {
       if (!this.isVoteTimerActive || this.voteTimeRemaining === null) return 0;
-      const totalTime = 15000; // TODO: Make this configurable or pass as prop if different from base
+      const totalTime = 15000;
       const progress = Math.max(0, (this.voteTimeRemaining / totalTime) * 100);
       return progress;
     },
   },
 
   watch: {
-    // actualLocation이 변경될 때도 지도 초기화
     actualLocation: {
       handler(newVal) {
         if (newVal && this.visible) {
@@ -383,7 +373,6 @@ export default {
       deep: true,
     },
 
-    // playerGuesses가 변경될 때도 지도 초기화
     playerGuesses: {
       handler(newVal) {
         if (newVal && newVal.length > 0 && this.visible) {
@@ -406,7 +395,6 @@ export default {
       countdownInterval: null,
       showLocationInfoModal: false,
       currentLocationInfo: {},
-      // 자동 진행 타이머 관련
       localCountdownSeconds: 10,
       totalCountdownTime: 10,
       countdownTimer: null,
@@ -414,22 +402,18 @@ export default {
   },
 
   mounted() {
-    // 컴포넌트가 마운트될 때 지도 초기화
     this.$nextTick(() => {
-      // 지도 초기화 전 약간의 지연을 주어 DOM이 완전히 렌더링되도록 함
       setTimeout(() => {
         this.initMap();
       }, 300);
     });
     
-    // 마지막 라운드가 아니고, 서버 카운트다운 값이 없을 때만 로컬 타이머 시작
     if (!this.isLastRound && this.serverCountdownSeconds === null) {
       this.startCountdown();
     }
   },
   
   beforeUnmount() {
-    // 컴포넌트 해제 시 타이머 정리
     if (this.countdownTimer) {
       clearInterval(this.countdownTimer);
       this.countdownTimer = null;
@@ -441,7 +425,6 @@ export default {
       this.$emit("close");
     },
     
-    // 카운트다운 시작 (로컬 타이머용)
     startCountdown() {
       this.countdownTimer = setInterval(() => {
         this.localCountdownSeconds--;
@@ -449,22 +432,17 @@ export default {
         if (this.localCountdownSeconds <= 0) {
           clearInterval(this.countdownTimer);
           this.countdownTimer = null;
-          
-          // 다음 라운드로 자동 진행
           this.$emit('request-next-round');
         }
       }, 1000);
     },
 
     initMap() {
-      // 지도 초기화 메서드
       if (this.$refs.resultMap) {
         console.log("지도 초기화 시작");
 
-        // 지도 렌더링 완료 후 플레이어 추측 표시
         setTimeout(() => {
           if (this.$refs.resultMap) {
-            // 모든 마커가 보이도록 지도 범위 조정
             setTimeout(() => {
               if (this.$refs.resultMap) {
                 this.$refs.resultMap.fitMapToAllMarkers();
@@ -475,33 +453,21 @@ export default {
       }
     },
 
-    // 팀 색상 가져오기 - 팀 색상이 없을 때 기본 색상 배열에서 선택
     getTeamColor(index) {
       const colors = [
-        '#FF5722', // 주황색
-        '#2196F3', // 파랑
-        '#4CAF50', // 초록
-        '#9C27B0', // 보라
-        '#FFC107', // 노랑
-        '#795548', // 갈색
-        '#607D8B', // 청회색
-        '#E91E63'  // 핑크
+        '#FF5722', '#2196F3', '#4CAF50', '#9C27B0',
+        '#FFC107', '#795548', '#607D8B', '#E91E63'
       ];
       return colors[index % colors.length];
     },
 
     finishGame() {
-      // this.stopCountdown(); // stopCountdown is removed
       this.$emit("finish-game");
     },
 
-    // 거리 포맷팅 메서드 (소수점 3자리에서 반올림)
     formatDistance(distance) {
       if (distance == null || (distance !== 0 && !distance)) return "0.000";
-      // 소수점 3자리에서 반올림: 소수점 4자리에서 반올림하여 소수점 3자리까지 표시
-      // 예: 1.23456 -> 1.235, 1.23444 -> 1.234
       const rounded = Math.round(Number(distance) * 1000) / 1000;
-      // 소수점 3자리까지 항상 표시 (toFixed(3) 사용)
       return rounded.toFixed(3);
     },
   },
@@ -512,495 +478,713 @@ export default {
 .round-results {
   width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  position: relative;
   overflow: hidden;
 }
 
-.results-container {
+/* 배경 효과 (라이트 버전) */
+.bg-effects {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.bg-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.35;
+}
+
+.orb-1 {
+  width: 500px;
+  height: 500px;
+  background: linear-gradient(135deg, #93c5fd, #60a5fa);
+  top: -150px;
+  left: -150px;
+  animation: float 10s ease-in-out infinite;
+}
+
+.orb-2 {
+  width: 400px;
+  height: 400px;
+  background: linear-gradient(135deg, #fde68a, #fcd34d);
+  bottom: -100px;
+  right: -100px;
+  animation: float 8s ease-in-out infinite reverse;
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(30px, 30px); }
+}
+
+.bg-pattern {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* 게임 컨테이너 */
+.game-container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  height: 100%; /* 컨테이너가 전체 높이를 차지하도록 설정 */
+  padding: 1rem;
 }
 
-.results-container {
-  animation: slideUp 0.4s ease;
-}
-
-/* 헤더 */
-.results-header {
+/* 스코어보드 헤더 */
+.scoreboard-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 1.5rem;
-  border-bottom: 1px solid #eee;
-  background: linear-gradient(135deg, #f8f9fa, #ffffff);
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  margin-bottom: 1rem;
+  flex-shrink: 0;
 }
 
-.header-left {
+.round-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.round-progress-ring {
+  width: 60px;
+  height: 60px;
+  position: relative;
+}
+
+.round-progress-ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.ring-bg {
+  fill: none;
+  stroke: #e2e8f0;
+  stroke-width: 6;
+}
+
+.ring-fill {
+  fill: none;
+  stroke: #2563eb;
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.5s ease;
+}
+
+.round-number {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: baseline;
+  color: #0f172a;
+}
+
+.round-number .current {
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.round-number .separator {
+  font-size: 0.8rem;
+  margin: 0 2px;
+  color: #94a3b8;
+}
+
+.round-number .total {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.final-indicator {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  color: #422006;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  animation: glow 2s ease-in-out infinite;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3); }
+  50% { box-shadow: 0 4px 16px rgba(245, 158, 11, 0.5); }
+}
+
+.location-display {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.location-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2563eb;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.location-text {
+  min-width: 0;
   flex: 1;
 }
 
-.round-title {
+.location-text h2 {
   margin: 0;
-  font-size: 1.6rem;
-  color: #333;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.location-name {
-  font-size: 1.2rem;
-  color: #666;
-  font-weight: 500;
-}
-
-.round-info {
-  margin-top: 0.5rem;
-  font-size: 0.9rem;
-  color: #666;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.location-address {
-  margin-top: 0.5rem;
-  font-size: 0.85rem;
-  color: #888;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.location-address i {
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.location-address span {
-  color: #666;
-}
-
-.final-round-badge {
-  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
-  color: white;
-  padding: 0.2rem 0.6rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  animation: pulse 2s infinite;
-}
-
-.results-summary {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.5rem;
-}
-
-.top-player-info {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: linear-gradient(135deg, #ffd700, #ffed4e);
-  color: #333;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
-}
-
-.top-player-info i {
-  color: #ff6b35;
-  font-size: 1.1rem;
-}
-
-.top-player-name {
-  font-size: 0.9rem;
-}
-
-.top-player-distance {
-  font-size: 0.8rem;
-  color: #666;
-  background: white;
-  padding: 0.2rem 0.5rem;
-  border-radius: 8px;
-}
-
-.close-button {
-  background: none;
-  border: none;
-  font-size: 1.2rem;
-  color: #999;
-  cursor: pointer;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-}
-
-.close-button:hover {
-  background: #f5f5f5;
-  color: #333;
-}
-
-/* 위치 정보 */
-.location-info {
-  display: flex;
-  padding: 1.5rem;
-  gap: 1.5rem;
-  border-bottom: 1px solid #eee;
-}
-
-.location-details {
-  width: 100%;
-}
-
-.location-name {
-  font-size: 1.4rem;
-  margin: 0 0 0.5rem 0;
-  color: #333;
-}
-
-.location-description {
-  color: #555;
-  margin-bottom: 1rem;
-  line-height: 1.5;
-}
-
-/* 팀 마커 스타일 */
-.team-marker-wrapper {
-  position: relative;
-  margin: 0 5px;
-  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.team-marker {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  cursor: pointer;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  border: 2px solid white;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  z-index: 1001;
-}
-
-.team-marker:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-
-.team-tooltip {
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  position: absolute;
-  bottom: 45px;
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  opacity: 0;
-  transition: all 0.2s ease;
-  z-index: 1000;
-}
-
-.team-marker:hover .team-tooltip {
-  opacity: 1;
-}
-
-.team-chat-bubble {
-  position: absolute;
-  top: -40px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  border-radius: 15px;
-  padding: 5px 10px;
-  font-size: 12px;
-  max-width: 150px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  z-index: 900;
 }
 
-.team-chat-bubble:after {
-  content: '';
-  position: absolute;
-  bottom: -5px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 5px solid white;
-}
-
-/* 확장된 지도 컨테이너 */
-.map-container {
-  flex: 1;
-  width: 100%;
-  height: calc(100% - 120px); /* 헤더와 푸터를 제외한 모든 공간 차지 */
-  min-height: 500px; /* 최소 높이 설정 */
-  position: relative;
+.location-text p {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: #64748b;
+  white-space: nowrap;
   overflow: hidden;
-  border-radius: 8px;
-  margin-bottom: 0;
+  text-overflow: ellipsis;
 }
 
-.interesting-fact {
-  background: #f8f9fa;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-}
-
-.interesting-fact h4 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1rem;
-  color: #333;
-}
-
-.interesting-fact p {
-  margin: 0;
-  color: #555;
-  font-size: 0.95rem;
-}
-
-.location-image {
-  margin-top: 1rem;
-}
-
-.location-image img {
-  max-width: 100%;
-  max-height: 200px;
-  border-radius: 8px;
-  object-fit: cover;
-}
-
-/* 푸터 */
-.results-footer {
-  padding: 1rem;
-  display: flex;
-  justify-content: center;
-  height: 80px; /* 푸터 높이 고정 */
-}
-
-.action-button {
-  padding: 1rem 2rem;
-  border-radius: 12px;
-  border: none;
-  font-size: 1.1rem;
-  font-weight: 600;
+/* 우승자 하이라이트 */
+.winner-highlight {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  min-width: 160px;
-  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-radius: 12px;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  flex-shrink: 0;
 }
 
-.next-button {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+.crown-animation {
+  color: #f59e0b;
+  font-size: 1.25rem;
+  animation: bounce 1s ease infinite;
 }
 
-.next-button:hover:not(:disabled) {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
 }
 
-.next-button:disabled {
-  background: linear-gradient(135deg, #a5b4fc, #8b5cf6);
-  opacity: 0.8;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
-}
-
-.finish-button {
-  background: linear-gradient(135deg, #ff9800, #f57c00);
-  color: white;
-  box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
-}
-
-.finish-button:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(255, 152, 0, 0.4);
-}
-
-/* 버튼 반짝임 효과 */
-.button-shine {
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  );
-  transition: left 0.6s;
-}
-
-.action-button:hover .button-shine {
-  left: 100%;
-}
-
-.action-button i {
-  font-size: 1.2rem;
-}
-
-.action-button span {
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-/* 플레이어 마커 스타일 */
-.next-button-container {
-  position: relative;
+.winner-details {
   display: flex;
   flex-direction: column;
-  align-items: center;
 }
 
-.player-markers-container {
-  position: absolute;
-  top: -40px;
-  left: 50%;
-  transform: translateX(-50%);
-  height: 40px;
+.winner-details .label {
+  font-size: 0.6rem;
+  color: #92400e;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.winner-details .name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.winner-details .score {
+  font-size: 0.8rem;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+/* 게임 영역 */
+.game-arena {
+  flex: 1;
   display: flex;
-  justify-content: center;
-  z-index: 1000; /* 지도보다 높은 z-index 값 */
-  width: 100%;
+  gap: 1rem;
+  min-height: 0;
+  overflow: hidden;
 }
 
-.player-marker-wrapper {
+.map-wrapper {
+  flex: 1;
   position: relative;
-  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
-.player-marker {
+.map-overlay-border {
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(0, 0, 0, 0.06);
+  border-radius: 20px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* 모바일 우승자 오버레이 (데스크톱에서 숨김) */
+.mobile-winner-overlay {
+  display: none;
+}
+
+/* 플레이어 랭킹 사이드바 */
+.player-ranking {
+  width: 260px;
+  background: white;
+  border-radius: 16px;
+  padding: 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+  overflow-y: auto;
+}
+
+.ranking-title {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ranking-title i {
+  color: #f59e0b;
+}
+
+.ranking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ranking-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+}
+
+.ranking-item:hover {
+  background: #f1f5f9;
+}
+
+.ranking-item.top-three {
+  background: #fefce8;
+}
+
+.ranking-item.is-me {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+}
+
+.rank-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #64748b;
+  background: #e2e8f0;
+  flex-shrink: 0;
+}
+
+.rank-badge.rank-1 {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: #422006;
+}
+
+.rank-badge.rank-2 {
+  background: linear-gradient(135deg, #cbd5e1, #94a3b8);
+  color: white;
+}
+
+.rank-badge.rank-3 {
+  background: linear-gradient(135deg, #fdba74, #f97316);
+  color: white;
+}
+
+.player-avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: white;
-  font-weight: bold;
-  font-size: 12px;
-  position: relative;
-  cursor: pointer;
-  z-index: 1001; /* 지도보다 높은 z-index 값 */
-  background-size: contain !important;
-  background-repeat: no-repeat !important;
+  background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
 }
 
-.player-marker:hover .marker-tooltip {
-  opacity: 1;
-  transform: translateY(0);
+.player-info {
+  flex: 1;
+  min-width: 0;
 }
 
-.marker-tooltip {
-  position: relative;
-  top: -30px;
-  transform: translateX(0%) translateY(5px);
-  background-color: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
+.player-name {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #0f172a;
   white-space: nowrap;
-  opacity: 0;
-  transition: all 0.2s ease;
-  pointer-events: none;
-}
-
-.marker-tooltip:after {
-  content: '';
-  position: absolute;
-  bottom: -5px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 5px solid rgba(0, 0, 0, 0.8);
-}
-
-/* 카운트다운 바 스타일 */
-.countdown-bar {
-  width: 100%;
-  height: 4px;
-  background-color: #e0e0e0;
-  border-radius: 2px;
   overflow: hidden;
-  margin-bottom: 10px;
+  text-overflow: ellipsis;
 }
 
-.countdown-progress {
+.player-score {
+  display: block;
+  font-size: 0.75rem;
+  color: #2563eb;
+  font-weight: 500;
+}
+
+/* 하단 컨트롤 */
+.game-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 1.5rem;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  margin-top: 1rem;
+  flex-shrink: 0;
+}
+
+.action-area {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.countdown-display {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.countdown-bar {
+  width: 140px;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.countdown-fill {
   height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #60a5fa);
-  transition: width 0.05s linear;
+  background: linear-gradient(90deg, #2563eb, #3b82f6);
+  border-radius: 4px;
+  transition: width 1s linear;
 }
 
-@keyframes popIn {
-  0% {
-    transform: scale(0) translateY(10px);
-    opacity: 0;
-  }
-  70% {
-    transform: scale(1.2) translateY(-5px);
-  }
-  100% {
-    transform: scale(1) translateY(0);
-    opacity: 1;
-  }
+.countdown-info {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
 }
 
-.finish-button:hover {
+.countdown-number {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.countdown-text {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.final-button {
+  position: relative;
+  background: transparent;
+  border: none;
+  padding: 0.875rem 1.75rem;
+  border-radius: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  overflow: hidden;
+  transition: transform 0.2s ease;
+}
+
+.final-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(255, 152, 0, 0.4);
+}
+
+.final-button .btn-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  transition: transform 0.3s ease;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.35);
+}
+
+.final-button:hover .btn-bg {
+  transform: scale(1.02);
+}
+
+.final-button i,
+.final-button .btn-text {
+  position: relative;
+  z-index: 1;
+  color: #422006;
+  font-weight: 700;
+}
+
+.final-button i {
+  font-size: 1.1rem;
+}
+
+/* 반응형 - 태블릿 */
+@media (max-width: 992px) {
+  .player-ranking {
+    display: none;
+  }
+}
+
+/* 반응형 - 태블릿/모바일 공통 - 하단바 공간 확보 */
+@media (max-width: 992px) {
+  .round-results {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .game-container {
+    padding-bottom: 80px; /* 하단바 높이 + 여유 공간 */
+  }
+}
+
+/* 반응형 - 모바일 */
+@media (max-width: 768px) {
+  .game-container {
+    padding: 0.75rem;
+    padding-bottom: 80px; /* 하단바 공간 유지 */
+  }
+
+  .scoreboard-header {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1rem;
+    gap: 0.875rem;
+  }
+
+  /* 모바일에서 위치 정보 우선 표시 */
+  .location-display {
+    order: -1;
+    width: 100%;
+  }
+
+  .location-text h2 {
+    font-size: 1.1rem;
+  }
+
+  .location-text p {
+    font-size: 0.8rem;
+  }
+
+  .location-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+  }
+
+  .round-indicator {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .round-progress-ring {
+    width: 50px;
+    height: 50px;
+  }
+
+  .round-number .current {
+    font-size: 1.1rem;
+  }
+
+  /* 헤더에서 우승자 숨기고 지도 위에 표시 */
+  .winner-highlight {
+    display: none;
+  }
+
+  .mobile-winner-overlay {
+    display: flex;
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    align-items: center;
+    gap: 0.5rem;
+    background: white;
+    padding: 0.6rem 1rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  }
+
+  .mobile-winner-overlay i {
+    color: #f59e0b;
+    font-size: 1rem;
+  }
+
+  .mobile-winner-overlay .winner-name {
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 0.9rem;
+  }
+
+  .mobile-winner-overlay .winner-dist {
+    font-size: 0.8rem;
+    color: #2563eb;
+    font-weight: 600;
+  }
+
+  /* 지도 영역 확장 */
+  .game-arena {
+    min-height: 50vh;
+  }
+
+  .map-wrapper {
+    border-radius: 16px;
+  }
+
+  /* 푸터 컴팩트 */
+  .game-controls {
+    padding: 0.875rem 1rem;
+  }
+
+  .countdown-bar {
+    width: 100px;
+  }
+
+  .countdown-number {
+    font-size: 1.25rem;
+  }
+
+  .countdown-text {
+    font-size: 0.75rem;
+  }
+
+  .final-button {
+    padding: 0.75rem 1.25rem;
+  }
+}
+
+/* 반응형 - 소형 모바일 */
+@media (max-width: 480px) {
+  .game-container {
+    padding: 0.5rem;
+    padding-bottom: 76px; /* 하단바 공간 */
+  }
+
+  .scoreboard-header {
+    padding: 0.875rem;
+    gap: 0.75rem;
+    border-radius: 14px;
+  }
+
+  .location-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+
+  .location-text h2 {
+    font-size: 1rem;
+  }
+
+  .round-progress-ring {
+    width: 44px;
+    height: 44px;
+  }
+
+  .round-number .current {
+    font-size: 1rem;
+  }
+
+  .final-indicator {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.7rem;
+  }
+
+  /* 지도 최대 활용 */
+  .game-arena {
+    min-height: 55vh;
+  }
+
+  .map-wrapper {
+    border-radius: 14px;
+  }
+
+  .mobile-winner-overlay {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.85rem;
+  }
+
+  .game-controls {
+    padding: 0.75rem;
+    border-radius: 14px;
+    margin-top: 0.75rem;
+  }
+
+  .countdown-bar {
+    width: 80px;
+    height: 6px;
+  }
+
+  .countdown-number {
+    font-size: 1.1rem;
+  }
+
+  .final-button {
+    padding: 0.65rem 1rem;
+    font-size: 0.9rem;
+  }
 }
 
 /* 애니메이션 */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
 @keyframes slideUp {
   from {
-    transform: translateY(50px);
+    transform: translateY(20px);
     opacity: 0;
   }
   to {
@@ -1009,241 +1193,7 @@ export default {
   }
 }
 
-/* 모바일 액션 버튼 스타일 */
-/* 제거됨: RoundResults 내부 모바일 액션 버튼 관련 스타일 */
-
-/* 반응형 디자인 */
-@media (max-width: 768px) {
-  .round-results {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 2000;
-    overflow-y: auto;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-  }
-
-  .results-container {
-    width: 100%;
-    max-width: 95vw;
-    height: auto;
-    max-height: 90vh;
-    border-radius: 16px;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .results-header {
-    position: sticky;
-    top: 0;
-    background: white;
-    z-index: 10;
-    border-bottom: 1px solid #eee;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-    padding: 1.25rem;
-  }
-
-  .results-summary {
-    align-items: flex-start;
-    width: 100%;
-  }
-
-  .top-player-info {
-    font-size: 0.8rem;
-    padding: 0.4rem 0.8rem;
-  }
-  
-  .mobile-actions {
-    width: 100%;
-    justify-content: center;
-    margin-top: 0.75rem;
-  }
-  
-  .mobile-action-btn {
-    flex: 1;
-    max-width: 120px;
-  }
-
-  .map-container {
-    height: 300px;
-    min-height: 300px;
-  }
-
-  .results-footer {
-    position: sticky;
-    bottom: 0;
-    background: white;
-    border-top: 1px solid #eee;
-    z-index: 10;
-    padding: 1rem;
-  }
-
-  .location-info {
-    flex-direction: column;
-    padding: 1rem;
-  }
-
-  .location-map {
-    width: 100%;
-  }
-
-  .score-details {
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.4rem;
-  }
-
-  .rank {
-    width: 25px;
-    height: 25px;
-    font-size: 0.9rem;
-  }
-
-  .avatar-image {
-    width: 35px;
-    height: 35px;
-  }
+.game-container {
+  animation: slideUp 0.4s ease;
 }
-
-@media (max-width: 480px) {
-  .results-container {
-    width: 100%;
-    height: 100%;
-    max-height: 100vh;
-    border-radius: 0;
-  }
-
-  .results-header,
-  .location-info,
-  .score-board,
-  .results-footer {
-    padding: 0.8rem;
-  }
-
-  .round-title {
-    font-size: 1.3rem;
-  }
-
-  .player-score-row {
-    padding: 0.6rem;
-  }
-
-  .player-info {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.3rem;
-  }
-
-  .player-avatar {
-    margin-right: 0;
-  }
-
-  .map-container {
-    height: 250px;
-    min-height: 250px;
-  }
-
-  .auto-progress-container {
-    padding: 0.6rem 0.8rem;
-    gap: 0.5rem;
-    max-width: 280px;
-    border-radius: 10px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .progress-info {
-    font-size: 0.8rem;
-  }
-
-  .countdown-text {
-    font-size: 0.75rem;
-  }
-
-  .progress-bar-container {
-    height: 5px;
-    min-width: 80px;
-    width: 100%;
-  }
-}
-
-/* 자동 진행 타이머 스타일 */
-.auto-progress-container {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.8rem 1rem;
-  background: linear-gradient(135deg, rgba(46, 204, 113, 0.08), rgba(39, 174, 96, 0.08));
-  border-radius: 12px;
-  border: 1px solid rgba(46, 204, 113, 0.2);
-  max-width: 300px;
-  margin: 0 auto;
-}
-
-.progress-info {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #2ecc71;
-  white-space: nowrap;
-}
-
-.progress-info i {
-  font-size: 1rem;
-  animation: pulse-clock 1s infinite;
-}
-
-.countdown-text {
-  color: #27ae60;
-  font-size: 0.85rem;
-}
-
-.progress-bar-container {
-  flex: 1;
-  height: 6px;
-  background-color: rgba(46, 204, 113, 0.2);
-  border-radius: 3px;
-  overflow: hidden;
-  min-width: 80px;
-}
-
-.progress-bar {
-  height: 100%;
-  background: linear-gradient(90deg, #2ecc71, #27ae60);
-  border-radius: 3px;
-  transition: width 1s linear;
-  position: relative;
-}
-
-.progress-bar::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 15px;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3));
-  animation: progress-shine 2s infinite;
-}
-
-@keyframes pulse-clock {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-}
-
-@keyframes progress-shine {
-  0% { transform: translateX(-20px); }
-  100% { transform: translateX(20px); }
-}
-</style> 
+</style>

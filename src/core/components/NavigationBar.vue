@@ -803,6 +803,16 @@ export default {
     padding: var(--spacing-md) var(--spacing-md);
   }
   
+  /* 모바일에서 로고 크기 축소 */
+  .logo-image {
+    height: 24px;
+  }
+  
+  .badge {
+    font-size: 0.5rem;
+    padding: 2px 5px;
+  }
+  
   .main-nav {
     margin-left: var(--spacing-lg);
     gap: var(--spacing-lg);

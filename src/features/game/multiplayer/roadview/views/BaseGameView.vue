@@ -58,8 +58,8 @@
       </div>
     </div>
 
-    <!-- 타이머 컨테이너 (헤더 밑) -->
-    <div class="timer-container" v-if="!showIntroOverlay && !showNextRoundOverlay">
+    <!-- 타이머 컨테이너 (헤더 밑) - 라운드 종료 시 숨김 -->
+    <div class="timer-container" v-if="!showIntroOverlay && !showNextRoundOverlay && !gameStore.state.roundEnded">
       <game-timer
         :initialTime="gameStore.state.remainingTime"
         :totalTime="totalTime"
@@ -215,6 +215,9 @@
       >
         <div class="btn-icon">
           <i class="fas" :class="isChatOpen ? 'fa-times' : 'fa-comments'"></i>
+          <div class="chat-notification-badge" v-if="!isChatOpen && unreadChatMessages > 0">
+            {{ unreadChatMessages > 9 ? '9+' : unreadChatMessages }}
+          </div>
         </div>
         <span class="btn-label">채팅</span>
         <div class="active-indicator" v-if="isChatOpen"></div>
@@ -297,9 +300,14 @@ export default {
       type: Object,
       default: null
     },
+    // 채팅 알림 카운트 (부모 컴포넌트에서 전달)
+    unreadChatMessages: {
+      type: Number,
+      default: 0
+    },
   },
 
-  emits: ['leave-game', 'roadview-load-error'],
+  emits: ['leave-game', 'roadview-load-error', 'reset-chat-unread'],
 
   provide() {
     return {
@@ -615,6 +623,11 @@ export default {
     // 채팅 패널 토글 (모바일에서만 사용)
     toggleChat() {
       this.isChatOpen = !this.isChatOpen;
+      
+      // 채팅창이 열릴 때 읽지 않은 메시지 카운트 리셋
+      if (this.isChatOpen) {
+        this.$emit('reset-chat-unread');
+      }
       
       // CSS 클래스 기반으로 애니메이션 처리
       const rightPanel = document.querySelector(".right-panel");
@@ -1800,10 +1813,7 @@ export default {
     overflow: hidden; /* 넘치는 요소 숨김 */
   }
 
-  /* 전역 고정 헤더와의 겹침 방지 */
-  .multiplayer-roadview-game {
-    padding-top: 64px;
-  }
+  /* 게임 화면에서는 자체 헤더만 사용하므로 padding-top 불필요 */
 
   .header-left {
     flex: 0 0 auto; /* 고정 크기 */
@@ -2408,5 +2418,43 @@ export default {
     width: 28px;
     height: 2.5px;
   }
+}
+
+/* 채팅 알림 배지 스타일 */
+.chat-notification-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  border-radius: 9px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+  border: 2px solid white;
+  animation: badgePulse 2s ease-in-out infinite;
+  z-index: 10;
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.6);
+  }
+}
+
+/* btn-icon에 position relative 추가 */
+.btn-icon {
+  position: relative;
 }
 </style>

@@ -295,7 +295,7 @@ const createRoom = async (roomData) => {
       );
       
       // 생성된 방으로 자동 입장 및 RoomView로 이동
-      // newRoom 구조: { gameRoomId, title, gameModeKey, playerMatchTypeKey, maxPlayers }
+      // newRoom 구조: { gameRoomId, title, gameModeKey, playerMatchTypeKey, maxPlayers, totalRounds, timeLimit }
       await router.push({
         name: 'RoomView',
         params: { roomId: newRoom.gameRoomId.toString() },
@@ -308,6 +308,8 @@ const createRoom = async (roomData) => {
             maxPlayers: newRoom.maxPlayers,
             isPrivate: newRoom.privateRoom || false,
             hostId: getCurrentUserId(),
+            totalRounds: newRoom.totalRounds,
+            timeLimit: newRoom.timeLimit,
             currentPlayerCount: 1
           }
         }
@@ -838,18 +840,29 @@ onBeforeUnmount(async () => {
 
 @media (max-width: 640px) {
   .header-content {
-    padding: 0.8rem 1rem;
+    padding: 0.6rem 0.8rem;
+  }
+  
+  /* 모바일에서 로고 크기 축소 */
+  .header-logo {
+    height: 32px;
+  }
+  
+  .logo-container {
+    position: static;
+    transform: none;
   }
   
   .header-right {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 0.5rem;
+    gap: 0.3rem;
   }
   
   .header-right h3 {
-    font-size: 1rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
   }
   
   .dev-mode-toggle {

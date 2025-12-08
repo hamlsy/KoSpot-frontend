@@ -149,9 +149,13 @@ export function useLobbyRoom() {
       console.error('❌ 방 입장 실패:', err);
       
       // Spring에서 발생할 수 있는 구체적인 에러 처리
+      // 서버에서 제공하는 메시지를 우선 사용 (예: "틀린 비밀번호 입니다.")
       let errorMessage = '방에 입장할 수 없습니다.';
       
-      if (err.response?.status === 400) {
+      if (err.response?.data?.message) {
+        // 서버에서 제공하는 구체적인 메시지 우선 사용
+        errorMessage = err.response.data.message;
+      } else if (err.response?.status === 400) {
         errorMessage = '잘못된 요청입니다. 방 정보를 확인해주세요.';
       } else if (err.response?.status === 403) {
         errorMessage = '비밀번호가 일치하지 않습니다.';
@@ -159,8 +163,6 @@ export function useLobbyRoom() {
         errorMessage = '존재하지 않는 방입니다.';
       } else if (err.response?.status === 409) {
         errorMessage = '이미 다른 방에 참여 중이거나 방이 가득 찼습니다.';
-      } else if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
       }
       
       error.value = errorMessage;
@@ -221,7 +223,6 @@ export function useLobbyRoom() {
       
       if (response.data && response.data.isSuccess) {
         const newRoom = response.data.result;
-        console.log('✅ 방 생성 성공:', newRoom);
         
         // 방 생성 성공 시 newRoom 반환
         // 반환 형식: { gameRoomId, title, gameModeKey, playerMatchTypeKey, maxPlayers }

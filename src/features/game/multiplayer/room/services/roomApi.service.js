@@ -31,13 +31,13 @@ class RoomApiService {
    */
   async getRoomList(page = 0) {
     try {
-      console.log('📤 게임 방 목록 조회 요청:', { page });
+      
       
       const response = await apiClient.get(ROOM_ENDPOINTS.GET_ROOMS, {
         params: { page }
       });
       
-      console.log('✅ 게임 방 목록 조회 성공:', response.data);
+    
       return this._transformRoomListData(response.data.data || []);
     } catch (error) {
       console.error('❌ 게임 방 목록 조회 실패:', error);
@@ -54,17 +54,18 @@ class RoomApiService {
    * @param {string} roomData.gameModeKey - 게임 모드 (ROADVIEW, PHOTO)
    * @param {string} roomData.playerMatchTypeKey - 매치 타입 (SOLO, TEAM)
    * @param {number} roomData.maxPlayers - 최대 플레이어 수 (2~8)
-   * @param {number} roomData.timeLimit - 시간 제한 (초 단위)
+   * @param {number} roomData.timeLimit - 시간 제한 (초 단위, 30~300, 30초 단위)
+   * @param {number} roomData.totalRounds - 총 라운드 수 (2~10)
    * @param {boolean} roomData.privateRoom - 비공개 방 여부
    * @returns {Promise<Object>} 생성된 게임 방 정보
    */
   async createGameRoom(roomData) {
     try {
-      console.log('📤 게임 방 생성 요청:', roomData);
+    
       
       const response = await apiClient.post(ROOM_ENDPOINTS.CREATE_ROOM, roomData);
       
-      console.log('✅ 게임 방 생성 성공:', response.data);
+      
       // response.data.result에서 방 정보 반환
       return response.data.result;
     } catch (error) {
@@ -82,12 +83,12 @@ class RoomApiService {
    */
   async joinGameRoom(roomId, password = '') {
     try {
-      console.log('📤 게임 방 참여 요청:', { roomId, hasPassword: !!password });
+      
       
       const requestData = password ? { password } : {};
       const response = await apiClient.post(ROOM_ENDPOINTS.JOIN_ROOM(roomId), requestData);
       
-      console.log('✅ 게임 방 참여 성공:', response.data);
+      
       return response.data;
     } catch (error) {
       console.error('❌ 게임 방 참여 실패:', error);
@@ -106,6 +107,8 @@ class RoomApiService {
    * @param {string} updateData.playerMatchTypeKey - 플레이어 매치 타입 키
    * @param {boolean} updateData.privateRoom - 비공개 방 여부
    * @param {number} updateData.teamCount - 팀 수
+   * @param {number} updateData.timeLimit - 시간 제한 (초 단위, 30~300, 30초 단위)
+   * @param {number} updateData.totalRounds - 총 라운드 수 (2~10)
    * @returns {Promise<Object>} API 응답 데이터
    */
   async updateGameRoom(roomId, updateData) {
@@ -172,27 +175,17 @@ class RoomApiService {
 
   /**
    * 게임 시작 요청
+   * 서버에서 방 설정(gameMode, playerMatchType, totalRounds, timeLimit 등)을 가져와 처리
    * @param {number|string} roomId - 게임 방 ID
    * @returns {Promise<Object>} API 응답 데이터
    */
-  async startGame(roomId, startPayload = {}) {
+  async startGame(roomId) {
     try {
+      console.log('📤 게임 시작 요청:', { roomId });
+      
+      const response = await apiClient.post(ROOM_ENDPOINTS.START_GAME(roomId));
 
-      if (!startPayload.gameModeKey || !startPayload.playerMatchTypeKey || typeof startPayload.totalRounds !== 'number') {
-        throw new Error('startGame 요청에 필요한 필드가 누락되었습니다.');
-      }
-
-      const response = await apiClient.post(
-        ROOM_ENDPOINTS.START_GAME(roomId),
-        {
-          gameModeKey: startPayload.gameModeKey,
-          playerMatchTypeKey: startPayload.playerMatchTypeKey,
-          totalRounds: startPayload.totalRounds,
-          timeLimit: startPayload.timeLimit ?? null
-        }
-      );
-
-      console.log('✅ 게임 시작 요청 성공:', response.data);
+      
       return response.data;
     } catch (error) {
       console.error('❌ 게임 시작 요청 실패:', error);
