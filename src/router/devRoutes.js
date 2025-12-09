@@ -16,7 +16,6 @@ import RoomViewHUD from '@/features/game/multiplayer/room/views/RoomViewHUD.vue'
 import DesignFTest from '@/features/game/multiplayer/views/DesignFTest.vue'
 import LobbyViewDesignF from '@/features/game/multiplayer/lobby/views/LobbyViewDesignF.vue'
 import RoomViewDesignF from '@/features/game/multiplayer/room/views/RoomViewDesignF.vue'
-import ComponentDesignTest from '@/features/game/multiplayer/views/ComponentDesignTest.vue'
 
 const devRoutes = [
     {
@@ -83,14 +82,7 @@ const devRoutes = [
             title: 'Design F 대기실'
         }
     },
-    {
-        path: '/component-design-test',
-        name: "ComponentDesignTest",
-        component: ComponentDesignTest,
-        meta: {
-            title: '컴포넌트 디자인 테스트'
-        }
-    },
+    
     // {
     //     path: '/dev/test',
     //     name: "DevTestPage",

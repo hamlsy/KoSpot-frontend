@@ -55,7 +55,7 @@
             @send-message="handleSendMessage"
             :current-user-id="currentUserId"
             :show-mobile-close="isMobile"
-            @close="isChatVisible = false"
+            @close="handleCloseChat"
           />
         </div>
       </div>
@@ -208,6 +208,10 @@ const handleBack = () => {
 };
 
 const handleToggleChat = () => {
+  emit('toggle-chat');
+};
+
+const handleCloseChat = () => {
   emit('toggle-chat');
 };
 
