@@ -93,13 +93,13 @@
         <button 
           v-else
           class="submit-btn" 
-          :disabled="!canSubmit || isSubmitting || isRoundEnded || isTeamVoting"
-          @click="initiateTeamVote"
+          :disabled="!canSubmit || isSubmitting || isRoundEnded"
+          @click="submitGuess"
         >
-          <span v-if="isSubmitting || isTeamVoting">
+          <span v-if="isSubmitting">
             <i class="fas fa-spinner fa-spin"></i>
           </span>
-          <span v-else>팀원들에게 제안하기</span>
+          <span v-else>답안 제출하기</span>
         </button>
 
         <button 
@@ -206,10 +206,6 @@ export default {
       default: false
     },
     isSubmitting: {
-      type: Boolean,
-      default: false
-    },
-    isTeamVoting: {
       type: Boolean,
       default: false
     },
@@ -331,14 +327,6 @@ export default {
       });
     },
     
-    initiateTeamVote() {
-      if (!this.canSubmit || this.isSubmitting || this.isRoundEnded || this.isTeamVoting) return;
-      
-      this.$emit('initiate-team-vote', {
-        position: this.selectedPosition,
-        initiatorId: this.currentPlayerId
-      });
-    },
     
     skipRound() {
       if (this.isSubmitting || this.isRoundEnded) return;

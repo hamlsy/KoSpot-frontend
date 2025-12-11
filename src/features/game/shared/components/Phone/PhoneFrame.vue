@@ -36,14 +36,6 @@
         <i class="fas fa-crosshairs"></i> Spot!
       </button>
 
-      <!-- Team 전용 Vote 버튼 (휴대폰 프레임 내부) - 팀 모드용 -->
-      <button
-        v-if="!disabled && isTeamMode && gameMode === 'team'"
-        class="phone-spot-button team-vote-button"
-        @click="voteSpotAnswer"
-      >
-        <i class="fas fa-vote-yea"></i> Vote!
-      </button>
 
     </div>
 
@@ -150,40 +142,6 @@ export default {
         });
     },
 
-    voteSpotAnswer() {
-      // 팀 모드가 아니면 실행하지 않음
-      if (this.gameMode !== 'team') {
-        console.warn('voteSpotAnswer는 team 모드에서만 사용할 수 있습니다.');
-        return;
-      }
-
-      if (!this.$refs.phoneMapGame) {
-        this.$emit("error", "지도가 준비되지 않았습니다. 다시 시도해주세요.");
-        return;
-      }
-
-      // 현재 사용자 정보 (실제 구현에서는 사용자 상태 관리에서 가져와야 함)
-      const playerInfo = {
-        id: this.$store?.state?.user?.id || 'user-' + Math.random().toString(36).substr(2, 9),
-        nickname: this.$store?.state?.user?.nickname || '사용자',
-        teamId: this.$store?.state?.game?.teamId || 'team-1',
-        profileImage: this.$store?.state?.user?.profileImage || '/assets/default-profile.png'
-      };
-
-      // KakaoMapGame 컴포넌트의 startTeamVoting 함수 호출
-      this.$refs.phoneMapGame.startTeamVoting?.(playerInfo)
-        .then(overlay => {
-          if (overlay) {
-            this.$emit("vote-started", { playerId: playerInfo.id, overlay });
-          } else {
-            this.$emit("error", "투표를 시작할 수 없습니다.");
-          }
-        })
-        .catch(error => {
-          console.error("투표 시작 중 오류:", error);
-          this.$emit("error", "투표를 시작할 수 없습니다.");
-        });
-    },
 
     getMapInstance() {
       return this.$refs.phoneMapGame ? this.$refs.phoneMapGame.getMapInstance() : null;

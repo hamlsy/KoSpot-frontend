@@ -236,7 +236,6 @@ import gameStore from "@/store/gameStore";
 import webSocketManager from "@/features/game/multiplayer/shared/services/websocket/composables/index.js";
 import { useRoomWebSocket } from "@/features/game/multiplayer/room/composables/useRoomWebSocket.js";
 
-const NEXT_ROUND_VOTE_TIME_LIMIT_MS = 15000;
 
 export default {
   name: "BaseMultiRoadViewGame",
@@ -343,11 +342,6 @@ export default {
       // UI 상태 관리
       isPlayerListOpen: window.innerWidth > 992, // 플레이어 리스트 표시 여부 (반응형에서는 기본 닫힘)
       isMobile: false, // 모바일 화면 여부 (768px 이하)
-      // Next Round Voting State
-      playersReadyForNextRound: new Set(),
-      nextRoundVoteTimerId: null,
-      isNextRoundVoteActive: false,
-      nextRoundVoteRemainingTime: NEXT_ROUND_VOTE_TIME_LIMIT_MS,
       toastMessage: "",
       toastTimeout: null,
       // WebSocket 관련 상태
@@ -394,16 +388,6 @@ export default {
     majorityThreshold() {
       if (this.totalPlayersInRoom === 0) return 1; // Avoid division by zero, default to 1 if no players
       return Math.ceil(this.totalPlayersInRoom / 2);
-    },
-    numPlayersReadyForNextRound() {
-      return this.playersReadyForNextRound.size;
-    },
-    didCurrentUserVoteForNextRound() {
-      return this.playersReadyForNextRound.has(this.gameStore.state.currentUser?.id);
-    },
-    nextRoundVoteStatusText() {
-      if (!this.isNextRoundVoteActive) return "";
-      return `${this.numPlayersReadyForNextRound} / ${this.totalPlayersInRoom}`;
     },
     // 현재 사용자의 마커 이미지 URL
     currentUserMarkerImageUrl() {
@@ -493,16 +477,6 @@ export default {
       console.log("BaseMultiRoadViewGame: 다음 라운드 처리");
       // 이벤트 발생
       this.$emit("next-round");
-      
-      // 다음 라운드 투표 타이머 취소
-      if (this.nextRoundVoteTimerId) {
-        clearInterval(this.nextRoundVoteTimerId);
-        this.nextRoundVoteTimerId = null;
-      }
-      
-      // 투표 상태 초기화
-      this.isNextRoundVoteActive = false;
-      this.playersReadyForNextRound.clear();
       
       // 게임 스토어의 다음 라운드 시작 메서드 호출
       this.gameStore.startNextRound();
@@ -713,9 +687,7 @@ export default {
     toggleMap() {
       // 라운드가 끝났을 때는 결과 지도 표시/숨김 토글
       if (this.gameStore.state.roundEnded) {
-      
         this.showResultMap = !this.showResultMap;
-        this.initiateNextRoundVoting(); // Start voting when round results are shown
       } else {
         const wasOpen = this.isMapOpen;
         this.isMapOpen = !this.isMapOpen;
@@ -748,26 +720,6 @@ export default {
       }
     },
 
-    initiateNextRoundVoting() {
-      this.isNextRoundVoteActive = true;
-      this.playersReadyForNextRound.clear();
-      this.nextRoundVoteRemainingTime = NEXT_ROUND_VOTE_TIME_LIMIT_MS;
-      this.nextRoundVoteTimerId = setInterval(() => {
-        this.nextRoundVoteRemainingTime -= 1000;
-        if (this.nextRoundVoteRemainingTime <= 0) {
-          clearInterval(this.nextRoundVoteTimerId);
-          this.isNextRoundVoteActive = false;
-          
-          // 다음 라운드 시작 메서드 호출
-          this.gameStore.startNextRound();
-          
-          // 다음 라운드 데이터 가져오기
-          this.fetchRoundData();
-          
-          console.log("타이머 종료로 다음 라운드 시작", this.gameStore.state.currentRound);
-        }
-      }, 1000);
-    },
 
     // PhoneFrame 내부 지도 재로딩
     reloadPhoneMap(showToast = true) {

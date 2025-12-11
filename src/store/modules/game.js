@@ -38,13 +38,6 @@ export default {
     isLoading: false,
     
     // 팀 모드 관련 상태
-    showTeamVoting: false,
-    voteInitiator: null,
-    votingResults: {
-      yes: 0,
-      no: 0,
-      total: 0
-    }
   }),
   
   mutations: {
@@ -129,28 +122,6 @@ export default {
       state.hasSubmittedGuess = true;
     },
     
-    // 팀 투표 시작
-    START_TEAM_VOTING(state, initiator) {
-      state.showTeamVoting = true;
-      state.voteInitiator = initiator;
-      state.votingResults = { yes: 0, no: 0, total: 0 };
-    },
-    
-    // 투표 제출
-    SUBMIT_VOTE(state, isApproved) {
-      if (isApproved) {
-        state.votingResults.yes++;
-      } else {
-        state.votingResults.no++;
-      }
-      state.votingResults.total++;
-    },
-    
-    // 투표 완료
-    FINALIZE_VOTING(state, approved = null) {
-      state.showTeamVoting = false;
-    },
-    
     // 챗 메시지 추가
     ADD_CHAT_MESSAGE(state, { message, isSys }) {
       state.chatMessages.push({
@@ -217,23 +188,6 @@ export default {
     // 추측 제출
     submitGuess({ commit }) {
       commit('SUBMIT_GUESS');
-    },
-    
-    // 팀 투표 시작
-    startTeamVoting({ commit }, initiator) {
-      commit('START_TEAM_VOTING', initiator);
-    },
-    
-    // 투표 제출
-    submitVote({ commit }, isApproved) {
-      commit('SUBMIT_VOTE', isApproved);
-    },
-    
-    // 투표 완료
-    finalizeVoting({ commit, state }) {
-      const approved = state.votingResults.yes > state.votingResults.no;
-      commit('FINALIZE_VOTING', approved);
-      return approved;
     },
     
     // 챗 메시지 추가

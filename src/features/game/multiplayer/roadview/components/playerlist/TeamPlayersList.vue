@@ -15,19 +15,9 @@
         <div class="team-info">
           <div class="team-name">
             {{ getTeamName(team.id) }}
-            <span v-if="isTeamVoting(team.id)" class="voting-progress">
-              투표 중 ({{ getTeamVotingProgress(team.id) }})
-            </span>
           </div>
           <div class="team-status" v-if="getTeamSubmissionStatus(team.id)">
             <span class="submission-badge">제출 완료</span>
-          </div>
-        </div>
-        <div class="team-status">
-          <!-- Team voting status -->
-          <div v-if="isTeamVoting(team.id)" class="voting-badge">
-            <i class="fas fa-vote-yea"></i>
-            <span>투표 중 ({{ getTeamVotingProgress(team.id) }})</span>
           </div>
         </div>
       </div>
@@ -44,21 +34,10 @@
             <img 
               :src="player.equippedMarker || '/assets/default-marker.png'" 
               :alt="player.nickname" 
-              class="player-marker-img" 
-              :class="{ 'voting': isPlayerVoting(player.id) }"
+              class="player-marker-img"
             />
             <div v-if="player.isHost" class="host-crown">
               <i class="fas fa-crown"></i>
-            </div>
-            <!-- Voting status indicator -->
-            <div v-if="isPlayerVoting(player.id)" class="voting-indicator">
-              <i class="fas fa-vote-yea"></i>
-            </div>
-            <!-- Vote choice badge (only shown when player has voted) -->
-            <div v-if="getPlayerVoteChoice(player.id)" 
-                 class="vote-choice-badge"
-                 :class="getPlayerVoteChoice(player.id) === 'approve' ? 'vote-approve' : 'vote-reject'">
-              <i :class="getPlayerVoteChoice(player.id) === 'approve' ? 'fas fa-check' : 'fas fa-times'"></i>
             </div>
           </div>
           <div class="player-tooltip">{{ player.nickname }}</div>
@@ -132,42 +111,6 @@ export default {
     // Check if a team has submitted their guess
     const getTeamSubmissionStatus = (teamId) => {
       return teamSubmissionStatus.value[teamId] || false;
-    };
-    
-    // Check if a team is currently voting
-    const isTeamVoting = (teamId) => {
-      if (!gameStore.state.teamVoting) return false;
-      return gameStore.state.teamVoting.active && gameStore.state.teamVoting.teamId === teamId;
-    };
-    
-    // Check if a player is part of active voting
-    const isPlayerVoting = (playerId) => {
-      if (!gameStore.state.teamVoting || !gameStore.state.teamVoting.active) return false;
-      
-      const player = gameStore.state.players.find(p => p.id === playerId);
-      if (!player) return false;
-      
-      return player.teamId === gameStore.state.teamVoting.teamId;
-    };
-    
-    // Get player's vote choice if they have voted
-    const getPlayerVoteChoice = (playerId) => {
-      if (!gameStore.state.teamVoting || !gameStore.state.teamVoting.active) return null;
-      
-      const vote = gameStore.state.teamVoting.votes.find(v => v.playerId === playerId);
-      if (!vote) return null;
-      
-      return vote.choice; // 'approve' or 'reject'
-    };
-    
-    // Get team voting progress text
-    const getTeamVotingProgress = (teamId) => {
-      if (!isTeamVoting(teamId)) return '';
-      
-      const teamSize = gameStore.getTeamSize(teamId);
-      const votesCount = gameStore.state.teamVoting.votes.length;
-      
-      return `${votesCount}/${teamSize}`;
     };
     
     // Sort teams by score (highest first)
@@ -244,11 +187,7 @@ export default {
       sortedTeams,
       teamSubmissionStatus,
       teamRoundScores,
-      showTeamRoundScores,
-      isTeamVoting,
-      isPlayerVoting,
-      getPlayerVoteChoice,
-      getTeamVotingProgress
+      showTeamRoundScores
     };
   }
 };
@@ -358,8 +297,7 @@ export default {
   z-index: 1;
 }
 
-.submission-badge,
-.voting-badge {
+.submission-badge {
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -370,19 +308,10 @@ export default {
   backdrop-filter: blur(4px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
-}
-
-.submission-badge {
   background: rgba(255, 255, 255, 0.2);
 }
 
-.voting-badge {
-  background: rgba(255, 215, 0, 0.3);
-  animation: pulse 2s infinite;
-}
-
-.submission-badge:hover,
-.voting-badge:hover {
+.submission-badge:hover {
   background: rgba(255, 255, 255, 0.3);
   transform: scale(1.05);
 }
@@ -423,21 +352,6 @@ export default {
   transform: translateY(0);
 }
 
-.player-marker-img.voting {
-  animation: voting-pulse 2s infinite;
-}
-
-@keyframes voting-pulse {
-  0% {
-    filter: brightness(1);
-  }
-  50% {
-    filter: brightness(1.2);
-  }
-  100% {
-    filter: brightness(1);
-  }
-}
 
 .player-marker-wrapper {
   width: 100%;
@@ -578,65 +492,6 @@ export default {
 @media (max-width: 768px) {
   .team-players-grid {
     grid-template-columns: repeat(2, 1fr);
-  }
-}
-/* Voting indicators */
-.voting-indicator {
-  position: absolute;
-  top: -5px;
-  left: -5px;
-  width: 20px;
-  height: 20px;
-  background: linear-gradient(135deg, #ffd700 0%, #ffb700 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  border: 2px solid white;
-  z-index: 2;
-  animation: bounce 1s infinite alternate;
-}
-
-.voting-indicator i {
-  font-size: 0.6rem;
-  color: white;
-}
-
-.vote-choice-badge {
-  position: absolute;
-  bottom: -5px;
-  right: -5px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  border: 2px solid white;
-  z-index: 2;
-}
-
-.vote-approve {
-  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
-}
-
-.vote-reject {
-  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
-}
-
-.vote-choice-badge i {
-  font-size: 0.6rem;
-  color: white;
-}
-
-@keyframes bounce {
-  from {
-    transform: translateY(0);
-  }
-  to {
-    transform: translateY(-3px);
   }
 }
 </style>

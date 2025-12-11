@@ -226,18 +226,6 @@ export default {
       type: Array,
       default: () => [],
     },
-    isVoteTimerActive: {
-      type: Boolean,
-      default: false,
-    },
-    voteTimeRemaining: {
-      type: Number,
-      default: 15000, 
-    },
-    currentUserHasVoted: {
-      type: Boolean,
-      default: false,
-    },
     teamMessages: {
       type: Object,
       default: () => ({}),
@@ -351,12 +339,6 @@ export default {
       }
     },
     
-    voteCountdownProgressPercentage() {
-      if (!this.isVoteTimerActive || this.voteTimeRemaining === null) return 0;
-      const totalTime = 15000;
-      const progress = Math.max(0, (this.voteTimeRemaining / totalTime) * 100);
-      return progress;
-    },
   },
 
   watch: {

@@ -46,8 +46,6 @@ class SoloGameWebSocketService {
     this.roomId = roomId
     this.handlers = { ...this.handlers, ...handlers }
 
-    console.log(`[Solo WebSocket] 게임 채널 구독 시작: Room ${roomId}`)
-
     // 타이머 시작 구독
     this.subscribe(
       `/topic/game/${roomId}/timer/start`,
@@ -101,8 +99,6 @@ class SoloGameWebSocketService {
     if (handlers.onLoadingStatus) {
       this.setupLoadingSubscription(roomId, handlers.onLoadingStatus)
     }
-
-    console.log(`[Solo WebSocket] 모든 게임 채널 구독 완료`)
   }
 
   /**
@@ -120,8 +116,6 @@ class SoloGameWebSocketService {
       'playerSubmission',
       this.handlePlayerSubmission.bind(this)
     )
-
-    console.log(`[Solo WebSocket] 제출 알림 채널 구독 완료: Game ${gameId}`)
   }
 
   /**
@@ -129,7 +123,6 @@ class SoloGameWebSocketService {
    */
   subscribe(topic, key, callback) {
     if (!this.isConnected) {
-      console.warn(`[Solo WebSocket] 연결되지 않음: ${topic}`)
       return
     }
 
@@ -145,7 +138,6 @@ class SoloGameWebSocketService {
     })
     if (subscriptionId) {
       this.subscriptions.set(key, { topic, subscriptionId })
-      console.log(`[Solo WebSocket] 구독 성공: ${topic}`)
     }
   }
 
@@ -153,8 +145,6 @@ class SoloGameWebSocketService {
    * 타이머 시작 메시지 처리
    */
   handleTimerStart(message) {
-    console.log('[Solo WebSocket] 타이머 시작:', message)
-
     if (this.handlers.onTimerStart) {
       const { serverStartTimeMs, durationMs, serverTimestamp } = message
 
@@ -174,8 +164,6 @@ class SoloGameWebSocketService {
    * 타이머 동기화 메시지 처리
    */
   handleTimerSync(message) {
-    console.log('[Solo WebSocket] 타이머 동기화:', message)
-
     if (this.handlers.onTimerSync) {
       this.handlers.onTimerSync(message)
     }
@@ -185,8 +173,6 @@ class SoloGameWebSocketService {
    * 라운드 결과 메시지 처리
    */
   handleRoundResult(message) {
-    console.log('[Solo WebSocket] 라운드 결과:', message)
-
     if (this.handlers.onRoundResult) {
       this.handlers.onRoundResult(message)
     }
@@ -196,8 +182,6 @@ class SoloGameWebSocketService {
    * 라운드 전환 대기 메시지 처리
    */
   handleRoundTransition(message) {
-    console.log('[Solo WebSocket] 라운드 전환 대기:', message)
-
     if (this.handlers.onRoundTransition) {
       const { nextRoundStartTimeMs, serverTimestamp, isLastRound } = message
 
@@ -217,8 +201,6 @@ class SoloGameWebSocketService {
    * 다음 라운드 시작 메시지 처리
    */
   handleNextRound(message) {
-    console.log('[Solo WebSocket] 다음 라운드 시작:', message)
-
     if (this.handlers.onNextRound) {
       this.handlers.onNextRound(message)
     }
@@ -228,8 +210,6 @@ class SoloGameWebSocketService {
    * 플레이어 제출 알림 메시지 처리
    */
   handlePlayerSubmission(message) {
-    console.log('[Solo WebSocket] 플레이어 제출:', message)
-
     if (this.handlers.onPlayerSubmission) {
       this.handlers.onPlayerSubmission(message)
     }
@@ -239,8 +219,6 @@ class SoloGameWebSocketService {
    * 게임 종료 메시지 처리
    */
   handleGameFinished(message) {
-    console.log('[Solo WebSocket] 게임 종료:', message)
-
     if (this.handlers.onGameFinished) {
       this.handlers.onGameFinished(message)
     }
@@ -250,13 +228,8 @@ class SoloGameWebSocketService {
    * 게임 중 채팅 메시지 처리
    */
   handleGlobalChat(message) {
-    console.log('[Solo WebSocket] 게임 중 채팅 메시지 수신:', message)
-
     if (this.handlers.onGlobalChat) {
-      console.log('[Solo WebSocket] onGlobalChat 핸들러 호출')
       this.handlers.onGlobalChat(message)
-    } else {
-      console.warn('[Solo WebSocket] onGlobalChat 핸들러가 설정되지 않았습니다.')
     }
   }
 
@@ -268,7 +241,6 @@ class SoloGameWebSocketService {
    */
   publishGlobalChatMessage(roomId, content) {
     if (!this.isConnected) {
-      console.warn('[Solo WebSocket] 연결되지 않아 채팅 메시지를 발행할 수 없습니다.')
       return false
     }
 
@@ -280,9 +252,7 @@ class SoloGameWebSocketService {
 
       const success = webSocketManager.publish(topic, payload)
       
-      if (success) {
-        console.log('[Solo WebSocket] 게임 중 채팅 메시지 발행 성공:', { roomId, content })
-      } else {
+      if (!success) {
         console.error('[Solo WebSocket] 게임 중 채팅 메시지 발행 실패')
       }
       
@@ -297,8 +267,6 @@ class SoloGameWebSocketService {
    * 로딩 상태 메시지 처리
    */
   handleLoadingStatus(message) {
-    console.log('[Solo WebSocket] 로딩 상태 업데이트:', message)
-
     if (this.handlers.onLoadingStatus) {
       this.handlers.onLoadingStatus(message)
     }
@@ -321,7 +289,6 @@ class SoloGameWebSocketService {
 
     // 구독은 건너뛰고 핸들러만 설정 (RoomView에서 이미 구독한 경우)
     if (skipSubscribe) {
-      console.log(`[Solo WebSocket] 로딩 상태 핸들러만 설정 (구독은 RoomView에서 이미 완료): Room ${roomId}`)
       return
     }
 
@@ -333,7 +300,6 @@ class SoloGameWebSocketService {
       'loadingStatus',
       this.handleLoadingStatus.bind(this)
     )
-    console.log(`[Solo WebSocket] 로딩 상태 채널 구독 완료: Room ${roomId}`)
   }
 
   /**
@@ -349,7 +315,6 @@ class SoloGameWebSocketService {
    */
   publishLoadingAcknowledge(roomId, payload = {}) {
     if (!this.isConnected) {
-      console.warn('[Solo WebSocket] 연결되지 않아 로딩 ACK를 보낼 수 없습니다.')
       return false
     }
 
@@ -360,9 +325,7 @@ class SoloGameWebSocketService {
     }
 
     const success = webSocketManager.publish(topic, acknowledgePayload)
-    if (success) {
-      console.log('[Solo WebSocket] 로딩 ACK 발행 성공:', acknowledgePayload)
-    } else {
+    if (!success) {
       console.error('[Solo WebSocket] 로딩 ACK 발행 실패')
     }
     return success
@@ -379,7 +342,6 @@ class SoloGameWebSocketService {
 
     try {
       webSocketManager.unsubscribe(subscription.topic)
-      console.log(`[Solo WebSocket] 구독 해제: ${subscription.topic}`)
     } catch (error) {
       console.error(`[Solo WebSocket] 구독 해제 오류 (${subscription.topic}):`, error)
     }
@@ -391,12 +353,9 @@ class SoloGameWebSocketService {
    * 모든 구독 해제
    */
   unsubscribeAll() {
-    console.log('[Solo WebSocket] 모든 구독 해제 시작')
-
     this.subscriptions.forEach(({ topic, subscriptionId }) => {
       try {
         webSocketManager.unsubscribe(topic)
-        console.log(`[Solo WebSocket] 구독 해제: ${topic}`)
       } catch (error) {
         console.error(`[Solo WebSocket] 구독 해제 오류 (${topic}):`, error)
       }
@@ -405,8 +364,6 @@ class SoloGameWebSocketService {
     this.subscriptions.clear()
     this.roomId = null
     this.gameId = null
-
-    console.log('[Solo WebSocket] 모든 구독 해제 완료')
   }
 
   /**

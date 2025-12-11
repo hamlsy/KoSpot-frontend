@@ -38,10 +38,7 @@ const gameStore = {
     isLoading: false,
     
     // 팀 모드 관련 상태
-    canSubmitGuess: true,
-    
-    // 팀 투표 통합 상태 객체
-    teamVoting: null
+    canSubmitGuess: true
   }),
   
   // 테스트용 데이터 로드
@@ -138,117 +135,6 @@ const gameStore = {
   // 추측 제출
   submitGuess() {
     this.state.hasSubmittedGuess = true;
-  },
-  
-  // 팀 투표 시작
-  startTeamVoting(initiator, position) {
-    // 투표 상태 초기화
-    this.state.canSubmitGuess = false;
-    
-    // 팀 투표 객체 생성
-    this.state.teamVoting = {
-      active: true,
-      initiatorId: initiator.id,
-      teamId: initiator.teamId,
-      position: position,
-      startTime: new Date(),
-      timeoutSeconds: 30, // 30초 타임아웃
-      votes: [{
-        playerId: initiator.id,
-        playerName: initiator.nickname,
-        choice: 'approve', // 'approve' 또는 'reject'
-        timestamp: new Date()
-      }]
-    };
-    
-    // 팀 채팅에 투표 시작 메시지 추가
-    this.addTeamChatMessage(initiator.teamId, `${initiator.nickname}님이 위치 제출을 제안했습니다. 투표해주세요!`, true);
-  },
-  
-  // 투표 제출
-  submitVote(choice) { // choice: 'approve' 또는 'reject'
-    if (!this.state.teamVoting || !this.state.teamVoting.active) return false;
-    
-    // 이미 투표한 경우 처리하지 않음
-    const alreadyVoted = this.state.teamVoting.votes.some(vote => vote.playerId === this.state.currentUser.id);
-    if (alreadyVoted) return false;
-    
-    // 투표 추가
-    this.state.teamVoting.votes.push({
-      playerId: this.state.currentUser.id,
-      playerName: this.state.currentUser.nickname,
-      choice: choice,
-      timestamp: new Date()
-    });
-    
-    // 팀 채팅에 투표 메시지 추가
-    const voteMessage = choice === 'approve' ? '찬성' : '반대';
-    this.addTeamChatMessage(this.state.teamVoting.teamId, `${this.state.currentUser.nickname}님이 ${voteMessage}했습니다.`, true);
-    
-    // 투표 완료 여부 확인
-    const teamSize = this.getTeamSize(this.state.teamVoting.teamId);
-    const votesCount = this.state.teamVoting.votes.length;
-    
-    // 모든 팀원이 투표했으면 자동으로 결과 처리
-    if (votesCount >= teamSize) {
-      return this.checkVotingResult();
-    }
-    
-    return true;
-  },
-  
-  // 투표 결과 확인
-  checkVotingResult() {
-    if (!this.state.teamVoting || !this.state.teamVoting.active) return false;
-    
-    // 찬성, 반대 투표 수 계산
-    const approveVotes = this.state.teamVoting.votes.filter(vote => vote.choice === 'approve').length;
-    const rejectVotes = this.state.teamVoting.votes.filter(vote => vote.choice === 'reject').length;
-    
-    // 과반수 이상이 찬성한 경우 승인
-    const teamSize = this.getTeamSize(this.state.teamVoting.teamId);
-    const approved = approveVotes > (teamSize / 2);
-    
-    return this.finalizeVoting(approved);
-  },
-  
-  // 투표 완료
-  finalizeVoting(approved = null) {
-    if (!this.state.teamVoting) return false;
-    
-    const teamId = this.state.teamVoting.teamId;
-    const position = this.state.teamVoting.position;
-    
-    // 승인된 경우 위치 설정
-    if (approved) {
-      this.state.guessPosition = position;
-      this.addTeamChatMessage(teamId, '팀 투표가 승인되었습니다. 위치가 제출됩니다.', true);
-    } else {
-      this.addTeamChatMessage(teamId, '팀 투표가 거부되었습니다. 위치 제출이 취소됩니다.', true);
-    }
-    
-    // 투표 상태 초기화
-    this.state.canSubmitGuess = true;
-    this.state.teamVoting = null;
-    
-    return approved;
-  },
-  
-  // 투표 취소
-  cancelVoting() {
-    if (!this.state.teamVoting) return false;
-    
-    const teamId = this.state.teamVoting.teamId;
-    const initiatorName = this.state.players.find(p => p.id === this.state.teamVoting.initiatorId)?.nickname || '제안자';
-    
-    // 팀 채팅에 취소 메시지 추가
-    this.addTeamChatMessage(teamId, `${initiatorName}님이 투표를 취소했습니다.`, true);
-    
-    // 투표 상태 초기화
-    this.state.canSubmitGuess = true;
-    this.state.teamVoting = null;
-    
-    return true;
   },
   
   // 팀 크기 가져오기

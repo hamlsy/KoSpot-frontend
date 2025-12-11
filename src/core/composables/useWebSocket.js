@@ -19,7 +19,6 @@ export function useWebSocket(url) {
   // 연결 설정
   const connect = () => {
     if (!isAuthenticated.value) {
-      console.warn('WebSocket: 인증되지 않은 사용자')
       return
     }
     
@@ -30,7 +29,6 @@ export function useWebSocket(url) {
       ws.value = new WebSocket(wsUrl)
       
       ws.value.onopen = () => {
-        console.log('WebSocket 연결됨')
         isConnected.value = true
         reconnectAttempts.value = 0
         
@@ -56,14 +54,12 @@ export function useWebSocket(url) {
       }
       
       ws.value.onclose = (event) => {
-        console.log('WebSocket 연결 종료:', event.code, event.reason)
         isConnected.value = false
         
         // 자동 재연결 비활성화 - 수동으로만 재연결
         // if (event.code !== 1000 && reconnectAttempts.value < maxReconnectAttempts) {
         //   scheduleReconnect()
         // }
-        console.log('useWebSocket: 자동 재연결 비활성화됨')
       }
       
       ws.value.onerror = (error) => {
@@ -78,7 +74,6 @@ export function useWebSocket(url) {
   
   // 재연결 스케줄링 - 비활성화됨
   const scheduleReconnect = () => {
-    console.log('useWebSocket: 자동 재연결이 비활성화되어 있습니다. 수동으로 connect()를 호출하세요.')
     // 자동 재연결 로직 완전 비활성화
     // if (reconnectInterval.value) return
     // 
@@ -95,7 +90,6 @@ export function useWebSocket(url) {
   // 메시지 전송
   const send = (message) => {
     if (!isConnected.value || !ws.value) {
-      console.warn('WebSocket이 연결되지 않음')
       return false
     }
     
@@ -116,19 +110,15 @@ export function useWebSocket(url) {
   const handleMessage = (message) => {
     switch (message.type) {
       case 'GAME_START':
-        console.log('게임 시작:', message.data)
         break
       case 'PLAYER_JOINED':
-        console.log('플레이어 참가:', message.data)
         break
       case 'GAME_UPDATE':
-        console.log('게임 업데이트:', message.data)
         break
       case 'CHAT_MESSAGE':
-        console.log('채팅 메시지:', message.data)
         break
       default:
-        console.log('알 수 없는 메시지 타입:', message.type)
+        break
     }
   }
   
@@ -179,7 +169,6 @@ export function useWebSocket(url) {
     // if (isAuthenticated.value) {
     //   connect()
     // }
-    console.log('useWebSocket: 자동 연결 비활성화됨, 수동으로 connect() 호출 필요')
   })
   
   onUnmounted(() => {

@@ -13,7 +13,6 @@ export function useKakaoMapControls(props, emit) {
     markerImage,
     hasMarker,
     clickListener,
-    isVoteInProgress,
     gameStore,
   } = useKakaoMapState();
 
@@ -191,13 +190,6 @@ export function useKakaoMapControls(props, emit) {
         return;
       }
       
-      // 투표 진행 중일 때 마커 이동 제한
-      if (isVoteInProgress.value) {
-        console.log("투표 진행 중에는 마커 위치를 변경할 수 없습니다.");
-        // emit('vote-in-progress'); // 필요시 상위 컴포넌트에 알림
-        return;
-      }
-      
       // 기존 마커 제거
       removeMarker();
       
@@ -230,11 +222,6 @@ export function useKakaoMapControls(props, emit) {
         lat: latlng.getLat(),
         lng: latlng.getLng()
       });
-    });
-    
-    // 디버깅용: 투표 상태 변경 감시
-    watch(() => isVoteInProgress.value, (newValue) => {
-      console.log("🔍 투표 상태 변경 감지:", newValue);
     });
   };
   
