@@ -3,6 +3,7 @@ import { onMounted, onBeforeUnmount, watch } from 'vue';
 import { useKakaoMapState } from './useKakaoMapState';
 import { useKakaoMapDistance } from './useKakaoMapDistance';
 import { useKakaoMapHintCircles } from './useKakaoMapHintCircles';
+import { getGameMarkerSize, getGameMarkerOffset } from '@/core/constants/markerSizes.js';
 
 export function useKakaoMapControls(props, emit) {
   const {
@@ -45,8 +46,8 @@ export function useKakaoMapControls(props, emit) {
 
       // 마커 이미지 설정 (markerImageUrl이 있으면 사용, 없으면 기본 이미지)
       const imageSrc = props.markerImageUrl || "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
-      const imageSize = new window.kakao.maps.Size(24, 35);
-      const imageOption = { offset: new window.kakao.maps.Point(12, 35) };
+      const imageSize = getGameMarkerSize(window.kakao);
+      const imageOption = { offset: getGameMarkerOffset(window.kakao) };
       markerImage.value = new window.kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
       
       if (!props.disabled && !props.hasSubmitted) {
@@ -92,8 +93,8 @@ export function useKakaoMapControls(props, emit) {
       
       // 마커 이미지 설정 (props.markerImageUrl 우선, 없으면 기본 이미지)
       const imageSrc = props.markerImageUrl || "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
-      const imageSize = new window.kakao.maps.Size(24, 35);
-      const imageOption = { offset: new window.kakao.maps.Point(12, 35) };
+      const imageSize = getGameMarkerSize(window.kakao);
+      const imageOption = { offset: getGameMarkerOffset(window.kakao) };
       const markerImageToUse = new window.kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
       
       // 제출한 위치에 마커 생성
@@ -201,8 +202,8 @@ export function useKakaoMapControls(props, emit) {
       if (props.markerImageUrl && markerImage.value) {
         // markerImageUrl이 변경되었으면 새로운 마커 이미지 생성
         const imageSrc = props.markerImageUrl;
-        const imageSize = new window.kakao.maps.Size(24, 35);
-        const imageOption = { offset: new window.kakao.maps.Point(12, 35) };
+        const imageSize = getGameMarkerSize(window.kakao);
+        const imageOption = { offset: getGameMarkerOffset(window.kakao) };
         markerImageToUse = new window.kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
       }
       
@@ -306,8 +307,8 @@ export function useKakaoMapControls(props, emit) {
     if (newUrl && markerImage.value) {
       // 마커 이미지 업데이트
       const imageSrc = newUrl;
-      const imageSize = new window.kakao.maps.Size(24, 35);
-      const imageOption = { offset: new window.kakao.maps.Point(12, 35) };
+      const imageSize = getGameMarkerSize(window.kakao);
+      const imageOption = { offset: getGameMarkerOffset(window.kakao) };
       markerImage.value = new window.kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
       
       // 기존 마커가 있으면 이미지 업데이트

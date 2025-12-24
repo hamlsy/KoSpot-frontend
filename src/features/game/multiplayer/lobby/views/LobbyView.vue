@@ -285,15 +285,6 @@ const createRoom = async (roomData) => {
     const newRoom = await createRoomAPI(roomData);
     
     if (newRoom && newRoom.gameRoomId) {
-      // 사용자 정보 가져오기 
-      const { user: authUser } = useAuth();
-      const userNickname = authUser.value?.nickname || '익명';
-      
-      // 시스템 메시지 추가 (WebSocket 서비스를 통해)
-      lobbyService.createGlobalSystemMessage(
-        `${userNickname}님이 '${roomData.title}' 방을 생성했습니다.`
-      );
-      
       // 생성된 방으로 자동 입장 및 RoomView로 이동
       // newRoom 구조: { gameRoomId, title, gameModeKey, playerMatchTypeKey, maxPlayers, totalRounds, timeLimit }
       await router.push({

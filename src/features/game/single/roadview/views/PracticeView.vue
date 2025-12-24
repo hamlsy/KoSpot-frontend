@@ -207,6 +207,7 @@ import PhoneFrame from 'src/features/game/shared/components/Phone/PhoneFrame.vue
 import CountdownOverlay from "@/features/game/shared/components/Common/CountdownOverlay.vue";
 import IntroOverlay from "@/features/game/shared/components/Common/IntroOverlay.vue";
 import { roadViewApiService } from 'src/features/game/single/roadview/services/roadViewApi.service.js';
+import { getUserMarkerSize, getResultMarkerSize } from '@/core/constants/markerSizes.js';
 
 export default {
   name: "RoadViewPractice",
@@ -324,7 +325,7 @@ export default {
       hintsLeft: 3,
       hintCount: 3, // 힌트 사용 가능 횟수
       hintCircle: null, // 힌트 원 객체
-      hintRadius: 120000, // 초기 힌트 원 반경 (미터)
+      hintRadius: 50000, // 초기 힌트 원 반경 (미터) - 60km
       hintAvailable: false, // 힌트 사용 가능 여부
       nextHintTime: 30, // 다음 힌트까지 남은 시간 (초)
       hintTimer: null, // 힌트 타이머
@@ -417,7 +418,7 @@ export default {
 
       // 힌트 상태 초기화
       this.hintCount = 3;
-      this.hintRadius = 120000;
+      this.hintRadius = 15000; // 초기 힌트 원 반경 (15km)
       this.hintAvailable = false;
       this.nextHintTime = 30;
 
@@ -463,18 +464,6 @@ export default {
             }
           }, 200);
         });
-        
-        // 지도가 열릴 때 (false -> true) 자동으로 재로딩
-        if (!wasOpen && this.isMapOpen) {
-          // PhoneFrame이 마운트된 후 재로딩 실행
-          this.$nextTick(() => {
-            // 약간의 딜레이를 주어 PhoneFrame이 완전히 렌더링된 후 재로딩
-            // 자동 재로딩이므로 토스트 메시지 표시 안 함
-            setTimeout(() => {
-              this.reloadPhoneMap(false);
-            }, 300); // 힌트 원 재표시보다 약간 늦게 실행
-          });
-        }
       } else {
         // 지도를 닫을 때는 인라인 스타일에서 자동으로 z-index가 -1로 설정됨
         
@@ -578,14 +567,14 @@ export default {
 
       // 힌트 반경 조정 (힌트를 사용할 때마다 원이 작아짐)
       if (this.hintCount === 2) {
-        this.hintRadius = 80000; // 두 번째 힌트는 80km
+        this.hintRadius = 5000; // 두 번째 힌트는 5km
       } else if (this.hintCount === 1) {
-        this.hintRadius = 30000; // 세 번째 힌트는 30km
+        this.hintRadius = 1000; // 세 번째 힌트는 1km
       }
 
       // 다음 힌트 사용 가능 시간 설정
       this.hintAvailable = false;
-      this.nextHintTime = 3;
+      this.nextHintTime = 10;
 
       // 힌트 타이머 재설정
       if (this.hintTimer) {
@@ -894,7 +883,7 @@ export default {
         // 사용자가 장착한 마커 이미지가 있는 경우
         const userMarkerImage = new kakao.maps.MarkerImage(
           this.markerImageUrl,
-          new kakao.maps.Size(35, 35)
+          getUserMarkerSize(kakao)
         );
         new kakao.maps.Marker({
           position: new kakao.maps.LatLng(guessPosition.lat, guessPosition.lng),
@@ -911,10 +900,9 @@ export default {
 
       // 실제 위치 마커 (location-flag.png 사용 - RankView와 동일)
       const answerImageSrc = require('@/shared/assets/images/marker/location-flag.png');
-      const answerImageSize = new kakao.maps.Size(35, 35);
       const answerMarkerImage = new kakao.maps.MarkerImage(
         answerImageSrc,
-        answerImageSize
+        getResultMarkerSize(kakao)
       );
 
       new kakao.maps.Marker({

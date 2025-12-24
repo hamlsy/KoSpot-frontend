@@ -38,6 +38,7 @@
 
 <script>
 import colors from 'src/core/constants/colors.js'
+import { getUserMarkerSize, getResultMarkerSize } from '@/core/constants/markerSizes.js';
 
 export default {
   name: 'KakaoMap',
@@ -281,7 +282,7 @@ export default {
         // 새 마커 생성 - 정답 마커는 location-flag.png 사용
         const markerImage = new kakao.maps.MarkerImage(
           require('@/shared/assets/images/marker/location-flag.png'),
-          new kakao.maps.Size(35, 35)
+          getResultMarkerSize(kakao)
         );
         
         this.actualMarker = new kakao.maps.Marker({
@@ -466,14 +467,11 @@ export default {
         try {
           const position = new kakao.maps.LatLng(guess.position.lat, guess.position.lng);
           
-          // 플레이어별 다른 색상의 마커 이미지 생성
-          const markerSize = new kakao.maps.Size(35, 35);
-          
           // 플레이어가 장착한 마커 이미지 사용 (없으면 기본 이미지)
           const markerImageUrl = guess.markerImageUrl || 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png';
           const markerImage = new kakao.maps.MarkerImage(
             markerImageUrl,
-            markerSize
+            getUserMarkerSize(kakao)
           );
           
           // 마커 생성

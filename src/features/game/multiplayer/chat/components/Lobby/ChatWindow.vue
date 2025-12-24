@@ -10,7 +10,7 @@
     
     <div class="chat-messages" ref="messageContainer">
       <div 
-        v-for="message in messages" 
+        v-for="(message, index) in messages" 
         :key="message.id"
         class="message-wrapper"
         :class="{ 
@@ -31,7 +31,7 @@
             <div class="message-content-wrapper">
               <div class="message-info">
                 <span class="sender-name">{{ message.sender }}</span>
-                <span class="message-time">{{ formatTime(message.timestamp) }}</span>
+                <span v-if="shouldShowTime(message, messages[index - 1])" class="message-time">{{ formatTime(message.timestamp) }}</span>
               </div>
               <div class="message-bubble other-bubble">
                 <span class="bubble-tail other-tail"></span>
@@ -44,7 +44,7 @@
           <div v-else-if="isMyMessage(message)" class="my-message">
             <div class="my-content-wrapper">
               <div class="my-message-info">
-                <span class="message-time">{{ formatTime(message.timestamp) }}</span>
+                <span v-if="shouldShowTime(message, messages[index - 1])" class="message-time">{{ formatTime(message.timestamp) }}</span>
               </div>
               <div class="message-bubble my-bubble">
                 {{ message.message }}
@@ -205,6 +205,21 @@ export default {
       }
       
       return false;
+    },
+    
+    shouldShowTime(message, previousMessage) {
+      if (!previousMessage) return true; // 첫 메시지는 항상 표시
+      if (message.system) return false; // 시스템 메시지는 시간 표시 안 함
+      
+      const currentTime = new Date(message.timestamp);
+      const prevTime = new Date(previousMessage.timestamp);
+      
+      // 같은 분인지 확인 (년, 월, 일, 시, 분 비교)
+      return currentTime.getFullYear() !== prevTime.getFullYear() ||
+             currentTime.getMonth() !== prevTime.getMonth() ||
+             currentTime.getDate() !== prevTime.getDate() ||
+             currentTime.getHours() !== prevTime.getHours() ||
+             currentTime.getMinutes() !== prevTime.getMinutes();
     }
   }
 };

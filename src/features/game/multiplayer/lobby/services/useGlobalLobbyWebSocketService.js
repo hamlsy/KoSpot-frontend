@@ -173,11 +173,6 @@ export function useGlobalLobbyWebSocketService() {
             // API 명세서에 따라 빈 객체 전송
             const success = publish('/app/chat.join.lobby', {});
             
-            if (success) {
-                // 로컬에만 표시되는 시스템 메시지
-                createSystemMessage('로비에 입장했습니다.', 'lobby');
-            }
-            
             return success;
         } catch (error) {
             console.error('글로벌 로비 입장 중 오류:', error);

@@ -48,7 +48,6 @@ export function useLobbyRoom() {
     error.value = null;
     
     try {
-      console.log(`🔍 방 목록 조회 요청... (페이지: ${page})`);
       
       // Spring Controller: @GetMapping("/") with @RequestParam("page")
       const response = await apiClient.get(API_ENDPOINTS.GAME_ROOM.LIST, {
@@ -78,7 +77,6 @@ export function useLobbyRoom() {
         currentPage.value = page;
         hasNextPage.value = roomList.length > 0; // 다음 페이지 존재 여부는 결과 길이로 판단
         
-        console.log('✅ 방 목록 조회 성공:', roomList.length, '개의 방 (총:', rooms.value.length, '개)');
         return formattedRooms;
       } else {
         throw new Error(response.data?.message || '방 목록 조회에 실패했습니다.');
@@ -116,7 +114,7 @@ export function useLobbyRoom() {
     error.value = null;
     
     try {
-      console.log(`🚪 방 입장 시도: ${roomId}${password ? ' (비밀방)' : ''}`);
+  
       
       // Spring GameRoomRequest.Join 구조에 맞는 요청 바디
       const requestBody = {
@@ -128,7 +126,6 @@ export function useLobbyRoom() {
       
       // Spring ApiResponseDto<SuccessStatus> 응답 처리
       if (response.data && response.data.isSuccess) {
-        console.log('✅ 방 입장 성공 - API 응답:', response.data);
         
         // Redis에서 관리되는 현재 플레이어 수를 즉시 업데이트
         _updateRoomPlayerCountAfterJoin(roomId);
