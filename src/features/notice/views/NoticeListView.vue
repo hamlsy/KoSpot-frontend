@@ -187,8 +187,10 @@ const loadUserProfileFromMain = async () => {
     const response = await mainService.getMainPageData()
     
     if (response.isSuccess && response.result) {
-      userProfile.value.isAdmin = response.result.isAdmin || false
-      isAdmin.value = response.result.isAdmin || false
+      // 수정: result.myInfo.isAdmin 사용
+      const isAdminValue = response.result.myInfo?.isAdmin || false
+      userProfile.value.isAdmin = isAdminValue
+      isAdmin.value = isAdminValue
     }
   } catch (error) {
     console.error('사용자 정보 로드 실패:', error)

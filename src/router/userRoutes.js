@@ -36,10 +36,6 @@ const userRoutes = [
         component: AccountSettings
     },
     {
-        path: '/noticeList',
-        redirect: '/tempPage'
-    },
-    {
         path: '/myPoints',
         redirect: '/myProfile'
     }

@@ -205,7 +205,8 @@ const loadUserProfileFromMain = async () => {
     const response = await mainService.getMainPageData()
     
     if (response.isSuccess && response.result) {
-      userProfile.value.isAdmin = response.result.isAdmin || false
+      // 수정: result.myInfo.isAdmin 사용
+      userProfile.value.isAdmin = response.result.myInfo?.isAdmin || false
     }
   } catch (error) {
     console.error('사용자 정보 로드 실패:', error)
@@ -340,8 +341,8 @@ const saveNotice = async () => {
       const message = isEditMode.value ? '공지사항이 수정되었습니다.' : '공지사항이 작성되었습니다.'
       alert(message)
       
-      // 목록 페이지로 이동
-      router.push('/notice')
+      // 목록 페이지로 이동 (라우트 이름 사용)
+      router.push({ name: 'NoticeListView' })
     } else {
       throw new Error(response.message || '저장에 실패했습니다.')
     }
