@@ -36,7 +36,7 @@
           <div class="notice-navigation">
             <button @click="goBack" class="back-button">
               <i class="fas fa-arrow-left"></i>
-              목록으로
+            
             </button>
             
             <!-- 관리자 액션 버튼 -->

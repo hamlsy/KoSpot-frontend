@@ -254,7 +254,13 @@
                 @click="!item.equipped && equipInventoryItem(item)"
               >
                 <div class="item-image">
-                  {{ item.icon }}
+                  <img 
+                    v-if="item.itemImageUrl" 
+                    :src="item.itemImageUrl" 
+                    :alt="item.name"
+                    class="item-image-img"
+                  />
+                  <span v-else class="item-icon-fallback">{{ item.icon }}</span>
                 </div>
                 <div class="item-info">
                   <div class="item-name">{{ item.name }}</div>
@@ -581,7 +587,8 @@ async function loadInventory() {
           name: item.name,
           category: getItemCategoryLabel(itemType),
           type: getItemTypeId(itemType),
-          icon: getItemIcon(itemType, item.name),
+          itemImageUrl: item.itemImageUrl || null, // 이미지 URL
+          icon: getItemIcon(itemType, item.name), // fallback 아이콘
           equipped: item.equipped || false,
           acquiredDate: item.purchaseTime,
           description: item.description || ''
@@ -1562,6 +1569,23 @@ watch(showInventoryModal, (newValue) => {
   justify-content: center;
   background: white;
   border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+.item-image-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.item-icon-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
 .item-info {

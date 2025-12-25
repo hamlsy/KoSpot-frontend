@@ -154,25 +154,25 @@ class MainService {
   /**
    * 공지사항 카테고리 분류
    * @param {string} title - 공지사항 제목
-   * @returns {string} 카테고리 ('공지', '이벤트', '업데이트', '일반')
+   * @returns {string} 카테고리 (기본값: '공지')
    * @private
    */
   _getNoticeCategory(title) {
     if (!title || typeof title !== 'string') {
-      return '일반';
+      return '공지';
     }
     
     const titleLower = title.toLowerCase();
     
+    // 특정 키워드가 있는 경우에만 다른 카테고리 반환 (하위 호환성)
     if (titleLower.includes('이벤트') || titleLower.includes('event')) {
       return '이벤트';
     } else if (titleLower.includes('업데이트') || titleLower.includes('update')) {
       return '업데이트';
-    } else if (titleLower.includes('공지') || titleLower.includes('notice')) {
-      return '공지';
-    } else {
-      return '일반';
     }
+    
+    // 기본값: 공지
+    return '공지';
   }
 
   /**

@@ -201,10 +201,7 @@ const loadUserProfileFromMain = async () => {
 // 카테고리 필터
 const categories = [
   { id: 'all', name: '전체', icon: 'fas fa-list' },
-  { id: '공지', name: '공지', icon: 'fas fa-bullhorn' },
-  { id: '이벤트', name: '이벤트', icon: 'fas fa-gift' },
-  { id: '업데이트', name: '업데이트', icon: 'fas fa-sync-alt' },
-  { id: '일반', name: '일반', icon: 'fas fa-info-circle' }
+  { id: '공지', name: '공지', icon: 'fas fa-bullhorn' }
 ]
 
 // 컴퓨티드 속성

@@ -1,5 +1,10 @@
 <template>
   <div class="road-view-practice">
+    <!-- Google AdSense 광고 (헤더 위) -->
+    <div class="top-ads-container">
+      <Adsense :ad-slot="'6033902133'" />
+    </div>
+    
     <!-- 헤더 -->
     <div class="game-header">
       <button class="back-btn" @click="exitGame">
@@ -206,6 +211,7 @@ import RoadViewGame from 'src/features/game/single/roadview/components/gameplay/
 import PhoneFrame from 'src/features/game/shared/components/Phone/PhoneFrame.vue'
 import CountdownOverlay from "@/features/game/shared/components/Common/CountdownOverlay.vue";
 import IntroOverlay from "@/features/game/shared/components/Common/IntroOverlay.vue";
+import Adsense from "@/features/game/shared/components/Common/Adsense.vue";
 import { roadViewApiService } from 'src/features/game/single/roadview/services/roadViewApi.service.js';
 import { getUserMarkerSize, getResultMarkerSize } from '@/core/constants/markerSizes.js';
 
@@ -216,6 +222,7 @@ export default {
     PhoneFrame,
     CountdownOverlay,
     IntroOverlay,
+    Adsense,
   },
   props: {
     isRankMode: {
@@ -1224,10 +1231,23 @@ export default {
   overflow: hidden;
 }
 
+/* 상단 광고 컨테이너 */
+.top-ads-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 15;
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--spacing-xs) 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
 /* 헤더 스타일 */
 .game-header {
   position: absolute;
-  top: 0;
+  top: 90px; /* 광고 높이만큼 아래로 이동 (광고 높이에 따라 조정) */
   left: 0;
   right: 0;
   z-index: 20;
@@ -1626,9 +1646,24 @@ export default {
   }
 }
 
+@media (max-width: 768px) {
+  .top-ads-container {
+    padding: var(--spacing-xs) 0;
+  }
+  
+  .game-header {
+    top: 100px; /* 모바일에서 광고 높이 조정 */
+  }
+}
+
 @media (max-width: 480px) {
+  .top-ads-container {
+    padding: 4px 0;
+  }
+  
   .game-header {
     padding: 10px;
+    top: 90px; /* 작은 화면에서 광고 높이 조정 */
   }
 
   .game-status {
