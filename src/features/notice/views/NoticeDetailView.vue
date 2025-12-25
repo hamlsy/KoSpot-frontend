@@ -71,24 +71,10 @@
 
           <!-- 공지사항 내용 -->
           <div class="notice-content">
-            <div class="content-body" v-html="formattedContent"></div>
-            
-            <!-- 이미지가 있는 경우 -->
-            <div v-if="notice.images && notice.images.length > 0" class="notice-images">
-              <div
-                v-for="(image, index) in notice.images"
-                :key="index"
-                class="image-container"
-              >
-                <img
-                  :src="image"
-                  :alt="`공지사항 이미지 ${index + 1}`"
-                  class="notice-image"
-                  @error="handleImageError"
-                  @click="openImageModal(image)"
-                />
-              </div>
-            </div>
+            <div 
+              class="content-body markdown-content" 
+              v-html="renderedContent"
+            ></div>
           </div>
 
           <!-- 공지사항 푸터 -->
@@ -125,15 +111,6 @@
           </div>
         </div>
 
-        <!-- 이미지 모달 -->
-        <div v-if="selectedImage" class="image-modal-overlay" @click="selectedImage = null">
-          <div class="image-modal" @click.stop>
-            <button @click="selectedImage = null" class="image-modal-close">
-              <i class="fas fa-times"></i>
-            </button>
-            <img :src="selectedImage" alt="확대된 이미지" class="modal-image" />
-          </div>
-        </div>
       </div>
     </main>
   </div>
@@ -155,8 +132,7 @@ const loading = ref(false)
 const error = ref(null)
 const notice = ref(null)
 const showDeleteModal = ref(false)
-const selectedImage = ref(null)
-const isAdmin = ref(false) // TODO: 실제 권한 체크로 교체
+const isAdmin = ref(false)
 
 // 사용자 프로필 및 인증 상태
 const hasToken = computed(() => !!localStorage.getItem('accessToken'))
@@ -173,22 +149,18 @@ const loadUserProfileFromMain = async () => {
     const response = await mainService.getMainPageData()
     
     if (response.isSuccess && response.result) {
-      userProfile.value.isAdmin = response.result.isAdmin || false
-      isAdmin.value = response.result.isAdmin || false
+      userProfile.value.isAdmin = response.result.myInfo?.isAdmin || false
+      isAdmin.value = response.result.myInfo?.isAdmin || false
     }
   } catch (error) {
     console.error('사용자 정보 로드 실패:', error)
   }
 }
 
-// 컴퓨티드 속성
-const formattedContent = computed(() => {
-  if (!notice.value?.content) return ''
-  
-  // 줄바꿈을 <br> 태그로 변환
-  return notice.value.content
-    .replace(/\n/g, '<br>')
-    .replace(/\r\n/g, '<br>')
+// HTML 콘텐츠 (백엔드에서 contentHtml로 제공)
+const renderedContent = computed(() => {
+  if (!notice.value?.contentHtml) return ''
+  return notice.value.contentHtml
 })
 
 // 메서드
@@ -223,11 +195,11 @@ const loadNotice = async () => {
 }
 
 const goBack = () => {
-  router.push('/notice')
+  router.push({ name: 'NoticeListView' })
 }
 
 const editNotice = () => {
-  router.push(`/notice/edit/${notice.value.noticeId}`)
+  router.push({ name: 'NoticeEdit', params: { id: notice.value.noticeId } })
 }
 
 const deleteNotice = async () => {
@@ -238,7 +210,7 @@ const deleteNotice = async () => {
     
     if (response.isSuccess) {
       alert('공지사항이 삭제되었습니다.')
-      router.push('/notice')
+      router.push({ name: 'NoticeListView' })
     } else {
       throw new Error(response.message || '삭제에 실패했습니다.')
     }
@@ -251,13 +223,6 @@ const deleteNotice = async () => {
   }
 }
 
-const handleImageError = (event) => {
-  event.target.style.display = 'none'
-}
-
-const openImageModal = (imageUrl) => {
-  selectedImage.value = imageUrl
-}
 
 // 라이프사이클
 onMounted(() => {
@@ -280,7 +245,7 @@ const noticeServiceRef = noticeService
 
 .main-content {
   padding-top: 80px;
-  max-width: 900px;
+  max-width: 1400px;
   margin: 0 auto;
   padding-left: var(--spacing-lg);
   padding-right: var(--spacing-lg);
@@ -322,6 +287,11 @@ const noticeServiceRef = noticeService
 .error-content {
   text-align: center;
   max-width: 400px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-2xl);
+  box-shadow: var(--shadow-sm);
 }
 
 .error-icon {
@@ -370,6 +340,11 @@ const noticeServiceRef = noticeService
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+}
+
+.notice-detail:hover {
+  box-shadow: var(--shadow-md);
 }
 
 /* 네비게이션 */
@@ -383,7 +358,7 @@ const noticeServiceRef = noticeService
 }
 
 .back-button {
-  background: none;
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   color: var(--color-text-secondary);
   font-weight: 500;
@@ -394,12 +369,15 @@ const noticeServiceRef = noticeService
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-lg);
   border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
 }
 
 .back-button:hover {
   background: var(--color-surface);
   color: var(--color-text-primary);
   border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .admin-actions {
@@ -427,7 +405,6 @@ const noticeServiceRef = noticeService
 }
 
 .edit-button:hover {
-  background: var(--color-info);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
   filter: brightness(0.9);
@@ -439,7 +416,6 @@ const noticeServiceRef = noticeService
 }
 
 .delete-button:hover {
-  background: var(--color-error);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
   filter: brightness(0.9);
@@ -507,58 +483,135 @@ const noticeServiceRef = noticeService
 }
 
 .content-body {
-  color: var(--color-text-primary);
-  line-height: var(--line-height-relaxed);
-  font-size: var(--font-size-body);
   margin-bottom: var(--spacing-2xl);
 }
 
-.content-body ::v-deep(p) {
-  margin-bottom: 1rem;
-}
-
-.content-body ::v-deep(h1),
-.content-body ::v-deep(h2),
-.content-body ::v-deep(h3) {
-  margin-top: 2rem;
-  margin-bottom: 1rem;
+/* 마크다운 콘텐츠 스타일링 */
+.markdown-content :deep(h1),
+.markdown-content :deep(h2),
+.markdown-content :deep(h3),
+.markdown-content :deep(h4),
+.markdown-content :deep(h5),
+.markdown-content :deep(h6) {
+  font-family: var(--font-heading);
   font-weight: 600;
+  margin-top: var(--spacing-xl);
+  margin-bottom: var(--spacing-md);
+  color: var(--color-text-primary);
+  line-height: var(--line-height-tight);
 }
 
-.content-body ::v-deep(ul),
-.content-body ::v-deep(ol) {
-  margin-left: 1.5rem;
-  margin-bottom: 1rem;
+.markdown-content :deep(h1) {
+  font-size: var(--font-size-h1);
+  border-bottom: 2px solid var(--color-border);
+  padding-bottom: var(--spacing-sm);
 }
 
-.content-body ::v-deep(li) {
-  margin-bottom: 0.5rem;
+.markdown-content :deep(h2) {
+  font-size: var(--font-size-h2);
 }
 
-/* 이미지 */
-.notice-images {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-top: 2rem;
+.markdown-content :deep(h3) {
+  font-size: var(--font-size-h3);
 }
 
-.image-container {
-  border-radius: 8px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: transform 0.2s ease;
+.markdown-content :deep(p) {
+  margin-bottom: var(--spacing-md);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-relaxed);
 }
 
-.image-container:hover {
-  transform: scale(1.02);
+.markdown-content :deep(ul),
+.markdown-content :deep(ol) {
+  margin-left: var(--spacing-xl);
+  margin-bottom: var(--spacing-md);
+  color: var(--color-text-secondary);
 }
 
-.notice-image {
-  width: 100%;
+.markdown-content :deep(li) {
+  margin-bottom: var(--spacing-sm);
+  line-height: var(--line-height-relaxed);
+}
+
+.markdown-content :deep(blockquote) {
+  border-left: 4px solid var(--color-primary);
+  padding-left: var(--spacing-md);
+  margin: var(--spacing-md) 0;
+  color: var(--color-text-secondary);
+  font-style: italic;
+  background: var(--color-surface-hover);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-sm);
+}
+
+.markdown-content :deep(code) {
+  background: var(--color-surface-hover);
+  padding: 0.2rem 0.4rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  color: var(--color-primary);
+}
+
+.markdown-content :deep(pre) {
+  background: var(--color-surface-hover);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  margin: var(--spacing-md) 0;
+  border: 1px solid var(--color-border);
+}
+
+.markdown-content :deep(pre code) {
+  background: transparent;
+  padding: 0;
+  color: var(--color-text-primary);
+}
+
+.markdown-content :deep(a) {
+  color: var(--color-primary);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: all var(--transition-normal);
+}
+
+.markdown-content :deep(a:hover) {
+  border-bottom-color: var(--color-primary);
+}
+
+.markdown-content :deep(img) {
+  max-width: 100%;
   height: auto;
-  display: block;
+  border-radius: var(--radius-md);
+  margin: var(--spacing-md) 0;
+  box-shadow: var(--shadow-sm);
 }
+
+.markdown-content :deep(hr) {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: var(--spacing-xl) 0;
+}
+
+.markdown-content :deep(table) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--spacing-md) 0;
+}
+
+.markdown-content :deep(table th),
+.markdown-content :deep(table td) {
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-sm);
+  text-align: left;
+}
+
+.markdown-content :deep(table th) {
+  background: var(--color-surface-hover);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
 
 /* 공지사항 푸터 */
 .notice-footer {
@@ -665,6 +718,7 @@ const noticeServiceRef = noticeService
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-normal);
+  box-shadow: var(--shadow-sm);
 }
 
 .cancel-button {
@@ -675,70 +729,32 @@ const noticeServiceRef = noticeService
 
 .cancel-button:hover {
   background: var(--color-border-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .confirm-delete-button {
   background: var(--color-error);
   color: white;
-  box-shadow: var(--shadow-sm);
 }
 
 .confirm-delete-button:hover {
-  background: var(--color-error);
   filter: brightness(0.9);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
 
-/* 이미지 모달 */
-.image-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.9);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1001;
-}
-
-.image-modal {
-  position: relative;
-  max-width: 90vw;
-  max-height: 90vh;
-}
-
-.image-modal-close {
-  position: absolute;
-  top: -3rem;
-  right: 0;
-  background: none;
-  border: none;
-  color: white;
-  font-size: 2rem;
-  cursor: pointer;
-  padding: 0.5rem;
-}
-
-.modal-image {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  border-radius: 8px;
-}
 
 /* 반응형 디자인 */
 @media (max-width: 768px) {
   .main-content {
-    padding-left: 1rem;
-    padding-right: 1rem;
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
   }
   
   .notice-navigation {
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--spacing-md);
     align-items: stretch;
   }
   
@@ -747,46 +763,47 @@ const noticeServiceRef = noticeService
   }
   
   .notice-header {
-    padding: 1.5rem;
+    padding: var(--spacing-lg);
   }
   
   .notice-title {
-    font-size: 1.5rem;
+    font-size: var(--font-size-h1);
   }
   
   .notice-content {
-    padding: 1.5rem;
+    padding: var(--spacing-lg);
   }
   
   .notice-meta {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.5rem;
+    gap: var(--spacing-sm);
+  }
+  
+  .notice-footer {
+    padding: var(--spacing-lg);
   }
 }
 
 @media (max-width: 480px) {
   .notice-container {
-    padding: 1rem 0;
+    padding: var(--spacing-md) 0;
   }
   
   .notice-header,
   .notice-content,
   .notice-footer {
-    padding: 1rem;
+    padding: var(--spacing-md);
   }
   
   .notice-title {
-    font-size: 1.25rem;
+    font-size: var(--font-size-h2);
   }
   
-  .notice-images {
-    grid-template-columns: 1fr;
-  }
   
   .modal-container {
     width: 95%;
-    margin: 1rem;
+    margin: var(--spacing-md);
   }
   
   .modal-footer {
