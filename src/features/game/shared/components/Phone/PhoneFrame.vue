@@ -201,7 +201,7 @@ export default {
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5),
     inset 0 0 10px rgba(255, 255, 255, 0.1), 0 0 0 8px #333;
-  z-index: 15;
+  z-index: 21;
   /* Scalable parts */
   --header-h: clamp(36px, 6.5%, 56px);
   --footer-h: clamp(36px, 6.5%, 56px);

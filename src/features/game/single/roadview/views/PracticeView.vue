@@ -2,11 +2,11 @@
   <div class="road-view-practice">
     <!-- Google AdSense 광고 (헤더 위) -->
     <div class="top-ads-container">
-      <Adsense :ad-slot="'6033902133'" />
+      <Adsense :ad-slot="'6033902133'" @ad-loaded="onAdLoaded" />
     </div>
     
     <!-- 헤더 -->
-    <div class="game-header">
+    <div class="game-header" :style="{ top: headerTop }">
       <button class="back-btn" @click="exitGame">
         <i class="fas fa-arrow-left"></i>
       </button>
@@ -77,7 +77,7 @@
       <!-- 휴대폰 프레임 -->
       <PhoneFrame
         :showReloadButton="isMapOpen && !showResult"
-        :style="{ zIndex: isMapOpen ? 15 : -1 }"
+        :style="{ zIndex: isMapOpen ? 21 : -1 }"
         :centerLocation="{ lat: 36.5, lng: 127.5 }"
         :showHintCircles="false"
         :disabled="showResult"
@@ -336,7 +336,16 @@ export default {
       hintAvailable: false, // 힌트 사용 가능 여부
       nextHintTime: 30, // 다음 힌트까지 남은 시간 (초)
       hintTimer: null, // 힌트 타이머
+
+      // 광고 관련
+      hasAd: false, // 광고 표시 여부
     };
+  },
+  computed: {
+    // 헤더 위치 계산
+    headerTop() {
+      return this.hasAd ? '90px' : '0';
+    },
   },
   mounted() {
     // 쿼리 파라미터에서 sido key 받기
@@ -392,6 +401,11 @@ export default {
     this.clearAllTimers();
   },
   methods: {
+    // 광고 로드 상태 업데이트
+    onAdLoaded(hasAd) {
+      this.hasAd = hasAd;
+    },
+
     // 게임 시작
     endIntro() {
       this.showIntro = false;
@@ -1247,7 +1261,7 @@ export default {
 /* 헤더 스타일 */
 .game-header {
   position: absolute;
-  top: 90px; /* 광고 높이만큼 아래로 이동 (광고 높이에 따라 조정) */
+  /* top은 동적으로 바인딩됨 */
   left: 0;
   right: 0;
   z-index: 20;
@@ -1258,6 +1272,7 @@ export default {
   background-color: rgba(0, 0, 0, 0.7);
   color: white;
   backdrop-filter: blur(5px);
+  transition: top 0.3s ease;
 }
 
 .poi-header {
@@ -1652,7 +1667,7 @@ export default {
   }
   
   .game-header {
-    top: 100px; /* 모바일에서 광고 높이 조정 */
+    /* top은 동적으로 바인딩됨 */
   }
 }
 
@@ -1663,7 +1678,7 @@ export default {
   
   .game-header {
     padding: 10px;
-    top: 90px; /* 작은 화면에서 광고 높이 조정 */
+    /* top은 동적으로 바인딩됨 */
   }
 
   .game-status {

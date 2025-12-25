@@ -1,7 +1,8 @@
 <template>
-  <div class="adsense-container">
+  <div class="adsense-container" ref="containerRef">
     <ins 
       class="adsbygoogle"
+      ref="adElementRef"
       style="display:block"
       :data-ad-client="client"
       :data-ad-slot="adSlot"
@@ -12,7 +13,7 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount } from 'vue'
+import { onMounted, onBeforeUnmount, ref, nextTick } from 'vue'
 
 const props = defineProps({
   adSlot: {
@@ -24,6 +25,13 @@ const props = defineProps({
     default: 'ca-pub-7204650236738388'
   }
 })
+
+const emit = defineEmits(['ad-loaded'])
+
+const containerRef = ref(null)
+const adElementRef = ref(null)
+let resizeObserver = null
+let checkTimeout = null
 
 // Google AdSense 스크립트 로드
 const loadAdSenseScript = () => {
@@ -39,6 +47,36 @@ const loadAdSenseScript = () => {
   document.head.appendChild(script)
 }
 
+// 광고 높이 감지 및 이벤트 emit
+const checkAdHeight = () => {
+  if (!adElementRef.value) return
+  
+  const height = adElementRef.value.offsetHeight || adElementRef.value.clientHeight
+  
+  // 높이가 50px 이상이면 광고가 표시된 것으로 간주
+  if (height >= 50) {
+    emit('ad-loaded', true)
+  } else {
+    emit('ad-loaded', false)
+  }
+}
+
+// ResizeObserver로 광고 높이 모니터링
+const setupObserver = () => {
+  if (!adElementRef.value) return
+  
+  resizeObserver = new ResizeObserver(() => {
+    checkAdHeight()
+  })
+  
+  resizeObserver.observe(adElementRef.value)
+  
+  // 초기 체크 (2초 후에도 높이가 0이면 광고 없음으로 판단)
+  checkTimeout = setTimeout(() => {
+    checkAdHeight()
+  }, 2000)
+}
+
 onMounted(() => {
   // AdSense 스크립트 로드
   loadAdSenseScript()
@@ -52,11 +90,26 @@ onMounted(() => {
     } catch (error) {
       console.error('AdSense 광고 초기화 실패:', error)
     }
+    
+    // 광고 초기화 후 Observer 설정
+    nextTick(() => {
+      setupObserver()
+    })
   }, 100)
 })
 
 onBeforeUnmount(() => {
-  // 컴포넌트 언마운트 시 정리 작업 (필요시)
+  // Observer 정리
+  if (resizeObserver) {
+    resizeObserver.disconnect()
+    resizeObserver = null
+  }
+  
+  // Timeout 정리
+  if (checkTimeout) {
+    clearTimeout(checkTimeout)
+    checkTimeout = null
+  }
 })
 </script>
 
