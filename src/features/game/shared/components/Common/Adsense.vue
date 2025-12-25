@@ -33,18 +33,37 @@ const adElementRef = ref(null)
 let resizeObserver = null
 let checkTimeout = null
 
-// Google AdSense 스크립트 로드
-const loadAdSenseScript = () => {
-  // 스크립트가 이미 로드되었는지 확인
-  if (document.querySelector('script[src*="adsbygoogle.js"]')) {
-    return
-  }
+// 스크립트 로드 완료 보장 (Promise 기반)
+const ensureScriptLoaded = () => {
+  return new Promise((resolve, reject) => {
+    // 이미 로드된 경우 즉시 resolve
+    if (window.adsbygoogle) {
+      return resolve()
+    }
+    
+    // 기존 스크립트 태그가 있으면 onload 대기
+    const existing = document.querySelector('script[src*="adsbygoogle.js"]')
+    if (existing) {
+      existing.addEventListener('load', () => resolve(), { once: true })
+      existing.addEventListener('error', reject, { once: true })
+      return
+    }
+    
+    // 새로 삽입하고 onload 대기
+    const script = document.createElement('script')
+    script.async = true
+    script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${props.client}`
+    script.crossOrigin = 'anonymous'
+    script.onload = () => resolve()
+    script.onerror = reject
+    document.head.appendChild(script)
+  })
+}
 
-  const script = document.createElement('script')
-  script.async = true
-  script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + props.client
-  script.crossOrigin = 'anonymous'
-  document.head.appendChild(script)
+// 레이아웃 폭 체크
+const hasWidth = (el) => {
+  if (!el) return false
+  return el.getBoundingClientRect().width > 0
 }
 
 // 광고 높이 감지 및 이벤트 emit
@@ -77,25 +96,40 @@ const setupObserver = () => {
   }, 2000)
 }
 
-onMounted(() => {
-  // AdSense 스크립트 로드
-  loadAdSenseScript()
-  
-  // 스크립트 로드 후 광고 초기화 (약간의 지연을 주어 스크립트가 완전히 로드되도록)
-  setTimeout(() => {
+// 광고 요청 함수
+const requestAd = async () => {
+  try {
+    // 1. 스크립트 로드 완료 보장
+    await ensureScriptLoaded()
+    await nextTick()
+    
+    // 2. 레이아웃 폭이 0인 경우 재시도 (최대 10회, 50ms 간격)
+    let tries = 0
+    while (!hasWidth(adElementRef.value) && tries < 10) {
+      await new Promise((r) => setTimeout(r, 50))
+      tries++
+    }
+    
+    // 3. push 실행 (조건문 제거, 무조건 실행)
     try {
-      if (window.adsbygoogle && Array.isArray(window.adsbygoogle)) {
-        window.adsbygoogle.push({})
-      }
+      ;(window.adsbygoogle = window.adsbygoogle || []).push({})
     } catch (error) {
       console.error('AdSense 광고 초기화 실패:', error)
     }
     
-    // 광고 초기화 후 Observer 설정
-    nextTick(() => {
-      setupObserver()
-    })
-  }, 100)
+    // 4. 광고 초기화 후 Observer 설정
+    await nextTick()
+    setupObserver()
+  } catch (error) {
+    console.error('AdSense 스크립트 로드 실패:', error)
+    // 스크립트 로드 실패 시에도 Observer는 설정 (나중에 로드될 수 있음)
+    await nextTick()
+    setupObserver()
+  }
+}
+
+onMounted(() => {
+  requestAd()
 })
 
 onBeforeUnmount(() => {
