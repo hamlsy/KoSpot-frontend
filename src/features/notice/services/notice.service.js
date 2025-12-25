@@ -10,11 +10,13 @@ import { apiClient } from '@/core/api/apiClient.js';
  */
 const NOTICE_ENDPOINTS = {
   // 공지사항 CRUD
-  GET_ALL_NOTICES: '/notice/',
+  GET_ALL_NOTICES: '/notice',
   GET_NOTICE_BY_ID: (id) => `/notice/${id}`,
-  CREATE_NOTICE: '/notice/',
+  CREATE_NOTICE: '/notice',
   UPDATE_NOTICE: (id) => `/notice/${id}`,
   DELETE_NOTICE: (id) => `/notice/${id}`,
+  // 공지사항 이미지 업로드
+  UPLOAD_NOTICE_IMAGE: '/notice/image',
 };
 
 /**
@@ -30,23 +32,29 @@ const NOTICE_ENDPOINTS = {
  * @typedef {Object} NoticeDetailResponse
  * @property {number} noticeId - 공지사항 ID
  * @property {string} title - 공지사항 제목
- * @property {string} content - 공지사항 내용
+ * @property {string} contentHtml - 공지사항 내용 (HTML)
  * @property {string} createdDate - 생성일 (ISO 8601 format)
+ */
+
+/**
+ * 공지사항 이미지 업로드 응답 데이터 인터페이스
+ * @typedef {Object} NoticeImageResponse
+ * @property {number} imageId - 이미지 ID
+ * @property {string} url - 이미지 URL
  */
 
 /**
  * 공지사항 생성 요청 데이터 인터페이스
  * @typedef {Object} CreateNoticeRequest
  * @property {string} title - 공지사항 제목
- * @property {string} content - 공지사항 내용
- * @property {string[]} images - 이미지 URL 배열
+ * @property {string} contentMd - 공지사항 내용 (마크다운)
  */
 
 /**
  * 공지사항 수정 요청 데이터 인터페이스
  * @typedef {Object} UpdateNoticeRequest
  * @property {string} title - 공지사항 제목
- * @property {string} content - 공지사항 내용
+ * @property {string} contentMd - 공지사항 내용 (마크다운)
  */
 
 /**
@@ -106,7 +114,7 @@ class NoticeService {
 
   /**
    * 공지사항 생성
-   * @param {CreateNoticeRequest} noticeData - 생성할 공지사항 데이터
+   * @param {CreateNoticeRequest} noticeData - 생성할 공지사항 데이터 (title, contentMd)
    * @returns {Promise<ApiResponse>} API 응답 데이터
    */
   async createNotice(noticeData) {
@@ -114,9 +122,15 @@ class NoticeService {
       console.log('📤 공지사항 생성 요청:', noticeData);
       
       // 데이터 유효성 검사
-      this._validateNoticeData(noticeData);
+      this._validateNoticeData(noticeData, true);
       
-      const response = await apiClient.post(NOTICE_ENDPOINTS.CREATE_NOTICE, noticeData);
+      // contentMd로 변환하여 전송 (contentMd 필드로 전송)
+      const requestData = {
+        title: noticeData.title.trim(),
+        contentMd: noticeData.contentMd.trim()
+      };
+      
+      const response = await apiClient.post(NOTICE_ENDPOINTS.CREATE_NOTICE, requestData);
       
       console.log('✅ 공지사항 생성 성공:', response.data);
       return response.data;
@@ -130,7 +144,7 @@ class NoticeService {
   /**
    * 공지사항 수정
    * @param {number} noticeId - 수정할 공지사항 ID
-   * @param {UpdateNoticeRequest} noticeData - 수정할 공지사항 데이터
+   * @param {UpdateNoticeRequest} noticeData - 수정할 공지사항 데이터 (title, contentMd)
    * @returns {Promise<ApiResponse>} API 응답 데이터
    */
   async updateNotice(noticeId, noticeData) {
@@ -140,7 +154,13 @@ class NoticeService {
       // 데이터 유효성 검사
       this._validateNoticeData(noticeData, false);
       
-      const response = await apiClient.put(NOTICE_ENDPOINTS.UPDATE_NOTICE(noticeId), noticeData);
+      // contentMd로 변환하여 전송 (contentMd 필드로 전송)
+      const requestData = {
+        title: noticeData.title.trim(),
+        contentMd: noticeData.contentMd.trim()
+      };
+      
+      const response = await apiClient.put(NOTICE_ENDPOINTS.UPDATE_NOTICE(noticeId), requestData);
       
       console.log('✅ 공지사항 수정 성공:', response.data);
       return response.data;
@@ -172,14 +192,52 @@ class NoticeService {
   }
 
   /**
+   * 공지사항 이미지 업로드
+   * @param {File} file - 업로드할 이미지 파일
+   * @returns {Promise<ApiResponse<NoticeImageResponse>>} API 응답 데이터
+   */
+  async uploadNoticeImage(file) {
+    try {
+      console.log('📤 공지사항 이미지 업로드 요청:', file.name);
+      
+      // 파일 유효성 검사
+      if (!file || !(file instanceof File)) {
+        throw new Error('유효한 파일을 선택해주세요.');
+      }
+      
+      if (!file.type.startsWith('image/')) {
+        throw new Error('이미지 파일만 업로드할 수 있습니다.');
+      }
+      
+      // FormData 생성
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      // multipart/form-data로 전송 (Content-Type 헤더는 자동 설정)
+      const response = await apiClient.post(NOTICE_ENDPOINTS.UPLOAD_NOTICE_IMAGE, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      console.log('✅ 공지사항 이미지 업로드 성공:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ 공지사항 이미지 업로드 실패:', error);
+      this._handleApiError(error, '이미지 업로드에 실패했습니다.');
+      throw error;
+    }
+  }
+
+  /**
    * 공지사항 데이터 유효성 검사
    * @param {CreateNoticeRequest|UpdateNoticeRequest} noticeData - 검사할 공지사항 데이터
-   * @param {boolean} includeImages - 이미지 필드 포함 여부 (기본값: true)
+   * @param {boolean} isCreate - 생성 여부 (기본값: true)
    * @returns {boolean} 유효성 여부
    * @private
    */
-  _validateNoticeData(noticeData, includeImages = true) {
-    const { title, content } = noticeData;
+  _validateNoticeData(noticeData, isCreate = true) {
+    const { title, contentMd } = noticeData;
     
     if (!title || typeof title !== 'string' || title.trim().length === 0) {
       throw new Error('공지사항 제목을 입력해주세요.');
@@ -189,16 +247,12 @@ class NoticeService {
       throw new Error('공지사항 제목은 100자를 초과할 수 없습니다.');
     }
     
-    if (!content || typeof content !== 'string' || content.trim().length === 0) {
+    if (!contentMd || typeof contentMd !== 'string' || contentMd.trim().length === 0) {
       throw new Error('공지사항 내용을 입력해주세요.');
     }
     
-    if (content.length > 5000) {
+    if (contentMd.length > 5000) {
       throw new Error('공지사항 내용은 5000자를 초과할 수 없습니다.');
-    }
-    
-    if (includeImages && noticeData.images && !Array.isArray(noticeData.images)) {
-      throw new Error('이미지는 배열 형태로 제공되어야 합니다.');
     }
     
     return true;
@@ -305,24 +359,24 @@ class NoticeService {
   /**
    * 공지사항 카테고리 분류
    * @param {string} title - 공지사항 제목
-   * @returns {string} 카테고리 ('공지', '이벤트', '업데이트', '일반')
+   * @returns {string} 카테고리 (기본값: '공지')
    */
   getNoticeCategory(title) {
     if (!title || typeof title !== 'string') {
-      return '일반';
+      return '공지';
     }
     
     const titleLower = title.toLowerCase();
     
+    // 특정 키워드가 있는 경우에만 다른 카테고리 반환 (하위 호환성)
     if (titleLower.includes('이벤트') || titleLower.includes('event')) {
       return '이벤트';
     } else if (titleLower.includes('업데이트') || titleLower.includes('update')) {
       return '업데이트';
-    } else if (titleLower.includes('공지') || titleLower.includes('notice')) {
-      return '공지';
-    } else {
-      return '일반';
     }
+    
+    // 기본값: 공지
+    return '공지';
   }
 }
 

@@ -58,8 +58,8 @@
       </div>
     </div>
 
-    <!-- 타이머 컨테이너 (헤더 밑) -->
-    <div class="timer-container" v-if="!showIntroOverlay && !showNextRoundOverlay">
+    <!-- 타이머 컨테이너 (헤더 밑) - 라운드 종료 시 숨김 -->
+    <div class="timer-container" v-if="!showIntroOverlay && !showNextRoundOverlay && !gameStore.state.roundEnded">
       <game-timer
         :initialTime="gameStore.state.remainingTime"
         :totalTime="totalTime"
@@ -215,6 +215,9 @@
       >
         <div class="btn-icon">
           <i class="fas" :class="isChatOpen ? 'fa-times' : 'fa-comments'"></i>
+          <div class="chat-notification-badge" v-if="!isChatOpen && unreadChatMessages > 0">
+            {{ unreadChatMessages > 9 ? '9+' : unreadChatMessages }}
+          </div>
         </div>
         <span class="btn-label">채팅</span>
         <div class="active-indicator" v-if="isChatOpen"></div>
@@ -233,7 +236,6 @@ import gameStore from "@/store/gameStore";
 import webSocketManager from "@/features/game/multiplayer/shared/services/websocket/composables/index.js";
 import { useRoomWebSocket } from "@/features/game/multiplayer/room/composables/useRoomWebSocket.js";
 
-const NEXT_ROUND_VOTE_TIME_LIMIT_MS = 15000;
 
 export default {
   name: "BaseMultiRoadViewGame",
@@ -297,9 +299,14 @@ export default {
       type: Object,
       default: null
     },
+    // 채팅 알림 카운트 (부모 컴포넌트에서 전달)
+    unreadChatMessages: {
+      type: Number,
+      default: 0
+    },
   },
 
-  emits: ['leave-game', 'roadview-load-error'],
+  emits: ['leave-game', 'roadview-load-error', 'reset-chat-unread'],
 
   provide() {
     return {
@@ -335,11 +342,6 @@ export default {
       // UI 상태 관리
       isPlayerListOpen: window.innerWidth > 992, // 플레이어 리스트 표시 여부 (반응형에서는 기본 닫힘)
       isMobile: false, // 모바일 화면 여부 (768px 이하)
-      // Next Round Voting State
-      playersReadyForNextRound: new Set(),
-      nextRoundVoteTimerId: null,
-      isNextRoundVoteActive: false,
-      nextRoundVoteRemainingTime: NEXT_ROUND_VOTE_TIME_LIMIT_MS,
       toastMessage: "",
       toastTimeout: null,
       // WebSocket 관련 상태
@@ -386,16 +388,6 @@ export default {
     majorityThreshold() {
       if (this.totalPlayersInRoom === 0) return 1; // Avoid division by zero, default to 1 if no players
       return Math.ceil(this.totalPlayersInRoom / 2);
-    },
-    numPlayersReadyForNextRound() {
-      return this.playersReadyForNextRound.size;
-    },
-    didCurrentUserVoteForNextRound() {
-      return this.playersReadyForNextRound.has(this.gameStore.state.currentUser?.id);
-    },
-    nextRoundVoteStatusText() {
-      if (!this.isNextRoundVoteActive) return "";
-      return `${this.numPlayersReadyForNextRound} / ${this.totalPlayersInRoom}`;
     },
     // 현재 사용자의 마커 이미지 URL
     currentUserMarkerImageUrl() {
@@ -485,16 +477,6 @@ export default {
       console.log("BaseMultiRoadViewGame: 다음 라운드 처리");
       // 이벤트 발생
       this.$emit("next-round");
-      
-      // 다음 라운드 투표 타이머 취소
-      if (this.nextRoundVoteTimerId) {
-        clearInterval(this.nextRoundVoteTimerId);
-        this.nextRoundVoteTimerId = null;
-      }
-      
-      // 투표 상태 초기화
-      this.isNextRoundVoteActive = false;
-      this.playersReadyForNextRound.clear();
       
       // 게임 스토어의 다음 라운드 시작 메서드 호출
       this.gameStore.startNextRound();
@@ -616,6 +598,11 @@ export default {
     toggleChat() {
       this.isChatOpen = !this.isChatOpen;
       
+      // 채팅창이 열릴 때 읽지 않은 메시지 카운트 리셋
+      if (this.isChatOpen) {
+        this.$emit('reset-chat-unread');
+      }
+      
       // CSS 클래스 기반으로 애니메이션 처리
       const rightPanel = document.querySelector(".right-panel");
       if (rightPanel && this.isResponsiveMode) {
@@ -700,9 +687,7 @@ export default {
     toggleMap() {
       // 라운드가 끝났을 때는 결과 지도 표시/숨김 토글
       if (this.gameStore.state.roundEnded) {
-      
         this.showResultMap = !this.showResultMap;
-        this.initiateNextRoundVoting(); // Start voting when round results are shown
       } else {
         const wasOpen = this.isMapOpen;
         this.isMapOpen = !this.isMapOpen;
@@ -735,26 +720,6 @@ export default {
       }
     },
 
-    initiateNextRoundVoting() {
-      this.isNextRoundVoteActive = true;
-      this.playersReadyForNextRound.clear();
-      this.nextRoundVoteRemainingTime = NEXT_ROUND_VOTE_TIME_LIMIT_MS;
-      this.nextRoundVoteTimerId = setInterval(() => {
-        this.nextRoundVoteRemainingTime -= 1000;
-        if (this.nextRoundVoteRemainingTime <= 0) {
-          clearInterval(this.nextRoundVoteTimerId);
-          this.isNextRoundVoteActive = false;
-          
-          // 다음 라운드 시작 메서드 호출
-          this.gameStore.startNextRound();
-          
-          // 다음 라운드 데이터 가져오기
-          this.fetchRoundData();
-          
-          console.log("타이머 종료로 다음 라운드 시작", this.gameStore.state.currentRound);
-        }
-      }, 1000);
-    },
 
     // PhoneFrame 내부 지도 재로딩
     reloadPhoneMap(showToast = true) {
@@ -1800,10 +1765,7 @@ export default {
     overflow: hidden; /* 넘치는 요소 숨김 */
   }
 
-  /* 전역 고정 헤더와의 겹침 방지 */
-  .multiplayer-roadview-game {
-    padding-top: 64px;
-  }
+  /* 게임 화면에서는 자체 헤더만 사용하므로 padding-top 불필요 */
 
   .header-left {
     flex: 0 0 auto; /* 고정 크기 */
@@ -2408,5 +2370,43 @@ export default {
     width: 28px;
     height: 2.5px;
   }
+}
+
+/* 채팅 알림 배지 스타일 */
+.chat-notification-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  border-radius: 9px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+  border: 2px solid white;
+  animation: badgePulse 2s ease-in-out infinite;
+  z-index: 10;
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.6);
+  }
+}
+
+/* btn-icon에 position relative 추가 */
+.btn-icon {
+  position: relative;
 }
 </style>

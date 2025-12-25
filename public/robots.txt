@@ -1,0 +1,32 @@
+# KoSpot Robots.txt
+# 한국판 GeoGuessr - 지리 게임
+
+User-agent: *
+Allow: /
+Allow: /welcome/
+Allow: /main
+Allow: /roadView/
+Allow: /lobby
+Allow: /notice
+
+# Disallow admin and development pages
+Disallow: /admin
+Disallow: /dev
+Disallow: /api
+
+# Sitemap location
+Sitemap: https://kospot.com/sitemap.xml
+
+# Crawl delay (optional, adjust if needed)
+Crawl-delay: 1
+
+# Google-specific directives
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+# Bing-specific directives
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+

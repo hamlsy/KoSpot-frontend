@@ -21,7 +21,8 @@ const routes = [
   ...adminRoutes,
   ...devRoutes,
   ...noticeRoutes,
-  ...shopRoutes
+  ...shopRoutes,
+
 ];
 
 const router = createRouter({

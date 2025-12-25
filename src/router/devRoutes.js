@@ -2,71 +2,144 @@ import tempPage from '@/dummy/TempPage.vue'
 import CoordData from '@/dummy/coordData.vue'
 import kakaoMapTest from '@/dummy/KakaoMapTest.vue'
 import EncryptTest from 'src/dummy/EncryptTest.vue'
-import ComponentTest from 'src/dummy/ComponentTest.vue'
+// import ComponentTest from 'src/dummy/ComponentTest.vue'
 import TempLoginView from '@/features/auth/views/TempLoginView.vue'
 import SoloGameView from '@/features/game/multiplayer/roadview/views/SoloGameView.vue'
 import RoomView from '@/features/game/multiplayer/room/views/RoomView.vue'
 import DevTestPage from '@/dummy/DevTestPage.vue'
 import ResultOverlay from '@/features/game/single/roadview/components/Result/ResultOverlay.vue'
+import DesignTestView from '@/features/game/multiplayer/roadview/views/DesignTestView.vue'
+import RoomCardDesignTest from '@/features/game/multiplayer/lobby/views/RoomCardDesignTest.vue'
+import HUDDesignTest from '@/features/game/multiplayer/views/HUDDesignTest.vue'
+import LobbyViewHUD from '@/features/game/multiplayer/lobby/views/LobbyViewHUD.vue'
+import RoomViewHUD from '@/features/game/multiplayer/room/views/RoomViewHUD.vue'
+import DesignFTest from '@/features/game/multiplayer/views/DesignFTest.vue'
+import LobbyViewDesignF from '@/features/game/multiplayer/lobby/views/LobbyViewDesignF.vue'
+import RoomViewDesignF from '@/features/game/multiplayer/room/views/RoomViewDesignF.vue'
 
 const devRoutes = [
     {
-        path: '/dev/test',
-        name: "DevTestPage",
-        component: DevTestPage,
+        path: '/design-test',
+        name: "DesignTestView",
+        component: DesignTestView,
         meta: {
-            title: '개발자 테스트 페이지'
+            title: 'RoundResults 디자인 테스트'
         }
     },
     {
-        path: '/tempPage',
-        name: "TempPage",
-        component: tempPage
-    },
-    {
-        path: '/coordData',
-        name: "CoordData",
-        component: CoordData
-    },
-    {
-        path: '/kakaoMapTest',
-        name: "KakaoMapTest",
-        component: kakaoMapTest
-    },
-    {
-        path: '/encryptTest',
-        name: "EncryptTest",
-        component: EncryptTest
-    },
-    {
-        path: '/componentTest',
-        name: "ComponentTest",
-        component: ComponentTest
-    },
-    {
-        path: '/temp-login',
-        name: "TempLogin",
-        component: TempLoginView
-    },
-    {
-        path: '/test/roadview-solo',
-        name: "TestRoadviewSolo",
-        component: SoloGameView,
+        path: '/room-card-test',
+        name: "RoomCardDesignTest",
+        component: RoomCardDesignTest,
         meta: {
-            title: '로드뷰 개인전 테스트'
+            title: '방 카드 디자인 테스트'
         }
     },
     {
-        path: '/test/room-start',
-        name: "TestRoomStartCountdown",
-        component: RoomView,
-        props: {
-            roomId: 'dev-room-start'
-        },
+        path: '/hud-design-test',
+        name: "HUDDesignTest",
+        component: HUDDesignTest,
         meta: {
-            title: '멀티플레이어 방 시작 테스트'
+            title: 'HUD 디자인 테스트'
         }
     },
+    {
+        path: '/hud-lobby',
+        name: "LobbyViewHUD",
+        component: LobbyViewHUD,
+        meta: {
+            title: 'HUD 로비'
+        }
+    },
+    {
+        path: '/hud-room',
+        name: "RoomViewHUD",
+        component: RoomViewHUD,
+        meta: {
+            title: 'HUD 대기실'
+        }
+    },
+    {
+        path: '/design-f-test',
+        name: "DesignFTest",
+        component: DesignFTest,
+        meta: {
+            title: 'Design F 테스트'
+        }
+    },
+    {
+        path: '/design-f-lobby',
+        name: "LobbyViewDesignF",
+        component: LobbyViewDesignF,
+        meta: {
+            title: 'Design F 로비'
+        }
+    },
+    {
+        path: '/design-f-room',
+        name: "RoomViewDesignF",
+        component: RoomViewDesignF,
+        meta: {
+            title: 'Design F 대기실'
+        }
+    },
+    
+    // {
+    //     path: '/dev/test',
+    //     name: "DevTestPage",
+    //     component: DevTestPage,
+    //     meta: {
+    //         title: '개발자 테스트 페이지'
+    //     }
+    // },
+    // {
+    //     path: '/tempPage',
+    //     name: "TempPage",
+    //     component: tempPage
+    // },
+    // {
+    //     path: '/coordData',
+    //     name: "CoordData",
+    //     component: CoordData
+    // },
+    // {
+    //     path: '/kakaoMapTest',
+    //     name: "KakaoMapTest",
+    //     component: kakaoMapTest
+    // },
+    // {
+    //     path: '/encryptTest',
+    //     name: "EncryptTest",
+    //     component: EncryptTest
+    // },
+    // {
+    //     path: '/componentTest',
+    //     name: "ComponentTest",
+    //     component: ComponentTest
+    // },
+    // {
+    //     path: '/temp-login',
+    //     name: "TempLogin",
+    //     component: TempLoginView
+    // },
+    // {
+    //     path: '/test/roadview-solo',
+    //     name: "TestRoadviewSolo",
+    //     component: SoloGameView,
+    //     meta: {
+    //         title: '로드뷰 개인전 테스트'
+    //     }
+    // },
+    // {
+    //     path: '/test/room-start',
+    //     name: "TestRoomStartCountdown",
+    //     component: RoomView,
+    //     props: {
+    //         roomId: 'dev-room-start'
+    //     },
+    //     meta: {
+    //         title: '멀티플레이어 방 시작 테스트'
+    //     }
+    // },
     {
         path: '/devRoute',
         name: "DevRoundTest",

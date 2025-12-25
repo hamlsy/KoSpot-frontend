@@ -21,10 +21,7 @@
           <div class="profile-avatar-section">
             <div class="profile-avatar">
               <img :src="profile.profileImageUrl || '/assets/avatars/default.png'" :alt="profile.nickname">
-              <button class="edit-avatar-btn" @click="editAvatar">
-              <i class="fas fa-camera"></i>
-            </button>
-          </div>
+            </div>
           
           <div class="profile-info">
               <h1 class="profile-nickname">{{ profile.nickname }}</h1>
@@ -114,104 +111,42 @@
               </button>
             </div>
             
-          <!-- 전체 통계 -->
-          <div v-if="activeTab === 'overall'" class="tab-content">
-            <!-- 전체 랭크 카드 (로드뷰 랭크 표시) -->
-            <div class="rank-card-inline">
-              <div class="rank-icon">{{ rankInfo.icon }}</div>
-              <div class="rank-details">
-                <div class="rank-tier">
-                  전체 랭크: {{ rankInfo.name }} {{ getRankLevel(profile.rankInfo?.roadViewRank?.level) }}
-                </div>
-                <div class="rank-rating">{{ formatNumber(profile.rankInfo?.roadViewRank?.ratingScore || 0) }} RP</div>
-              </div>
-              </div>
-              
-            <div class="best-score-card">
-              <div class="best-score-icon">
-                <i class="fas fa-trophy"></i>
-                </div>
-              <div class="best-score-content">
-                <div class="best-score-label">전체 최고 점수</div>
-                <div class="best-score-value">{{ formatNumber(profile.statistics?.bestScore || 0) }}</div>
-                </div>
-              </div>
-
-            <div class="overall-stats">
-              <div class="overall-stat-card">
-                <div class="overall-stat-icon">
-                  <i class="fas fa-gamepad"></i>
-            </div>
-                <div class="overall-stat-info">
-                  <div class="overall-stat-value">{{ getTotalGames() }}</div>
-                  <div class="overall-stat-label">총 게임 수</div>
-          </div>
-        </div>
-        
-              <div class="overall-stat-card">
-                <div class="overall-stat-icon">
-                  <i class="fas fa-star"></i>
-                </div>
-                <div class="overall-stat-info">
-                  <div class="overall-stat-value">{{ getAverageScore() }}</div>
-                  <div class="overall-stat-label">평균 점수</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        
           <!-- 로드뷰 통계 -->
           <div v-if="activeTab === 'roadview'" class="tab-content">
-            <!-- 로드뷰 랭크 카드 -->
-            <div class="rank-card-inline">
-              <div class="rank-icon">{{ rankInfo.icon }}</div>
-              <div class="rank-details">
-                <div class="rank-tier">
-                  로드뷰 랭크: {{ rankInfo.name }} {{ getRankLevel(profile.rankInfo?.roadViewRank?.level) }}
+            <div class="roadview-stats-layout">
+              <!-- 로드뷰 랭크 카드 -->
+              <div class="rank-card-inline compact-rank-card">
+                <div class="rank-icon">{{ rankInfo.icon }}</div>
+                <div class="rank-details">
+                  <div class="rank-tier">
+                    {{ rankInfo.name }} {{ getRankLevel(profile.rankInfo?.roadViewRank?.level) }}
+                  </div>
+                  <div class="rank-rating">{{ formatNumber(profile.rankInfo?.roadViewRank?.ratingScore || 0) }} RP</div>
                 </div>
-                <div class="rank-rating">{{ formatNumber(profile.rankInfo?.roadViewRank?.ratingScore || 0) }} RP</div>
               </div>
-            </div>
 
-            <div class="best-score-card">
-              <div class="best-score-icon">
-                <i class="fas fa-street-view"></i>
-              </div>
-              <div class="best-score-content">
-                <div class="best-score-label">로드뷰 최고 점수</div>
-                <div class="best-score-value">{{ formatNumber(profile.statistics?.bestScore || 0) }}</div>
-              </div>
-            </div>
-
-            <!-- 싱글 게임 통계 -->
-            <div class="game-stats-container">
-            <div class="game-stats-card">
-              <h3 class="stats-title">
-                <i class="fas fa-user"></i>
-                싱글 게임
-              </h3>
-              
-            <div class="stats-grid">
+              <!-- 싱글 게임 통계 -->
+              <div class="compact-stats-grid">
                 <!-- 연습 모드 -->
-                <div class="stat-item">
+                <div class="compact-stat-item">
                   <div class="stat-header">
                     <i class="fas fa-dumbbell"></i>
                     <span>연습 모드</span>
-              </div>
+                  </div>
                   <div class="stat-details">
                     <div class="stat-row">
                       <span class="stat-label">게임 수</span>
                       <span class="stat-value">{{ formatNumber(profile.statistics?.roadView?.practice?.totalGames || 0) }}</span>
-              </div>
+                    </div>
                     <div class="stat-row">
                       <span class="stat-label">평균 점수</span>
                       <span class="stat-value">{{ formatNumber(profile.statistics?.roadView?.practice?.averageScore || 0) }}</span>
-              </div>
+                    </div>
                   </div>
                 </div>
 
                 <!-- 랭크 모드 -->
-                <div class="stat-item">
+                <div class="compact-stat-item">
                   <div class="stat-header">
                     <i class="fas fa-medal"></i>
                     <span>랭크 모드</span>
@@ -226,84 +161,13 @@
                       <span class="stat-value">{{ formatNumber(profile.statistics?.roadView?.rank?.averageScore || 0) }}</span>
                     </div>
                   </div>
+                </div>
               </div>
             </div>
           </div>
           
-            <!-- 멀티 게임 통계 -->
-            <div class="game-stats-card">
-              <h3 class="stats-title">
-                <i class="fas fa-users"></i>
-                멀티플레이 로드뷰
-              </h3>
-              
-              <div class="stats-grid">
-                <div class="stat-item full-width">
-                  <div class="stat-row">
-                    <span class="stat-label">총 게임 수</span>
-                    <span class="stat-value">{{ formatNumber(profile.statistics?.roadView?.multi?.totalGames || 0) }}</span>
-            </div>
-                  <div class="stat-row">
-                    <span class="stat-label">평균 점수</span>
-                    <span class="stat-value">{{ formatNumber(profile.statistics?.roadView?.multi?.averageScore || 0) }}</span>
-                  </div>
-                </div>
-
-                <!-- 순위별 횟수 -->
-                <div class="rank-counts">
-                  <div class="rank-count-item first">
-                    <div class="rank-count-icon">🥇</div>
-                    <div class="rank-count-value">{{ formatNumber(profile.statistics?.roadView?.multi?.firstPlaceCount || 0) }}</div>
-                    <div class="rank-count-label">1위</div>
-                  </div>
-                  <div class="rank-count-item second">
-                    <div class="rank-count-icon">🥈</div>
-                    <div class="rank-count-value">{{ formatNumber(profile.statistics?.roadView?.multi?.secondPlaceCount || 0) }}</div>
-                    <div class="rank-count-label">2위</div>
-                  </div>
-                  <div class="rank-count-item third">
-                    <div class="rank-count-icon">🥉</div>
-                    <div class="rank-count-value">{{ formatNumber(profile.statistics?.roadView?.multi?.thirdPlaceCount || 0) }}</div>
-                    <div class="rank-count-label">3위</div>
-                  </div>
-                </div>
-              </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- 포토 모드 통계 -->
-          <div v-if="activeTab === 'photo'" class="tab-content">
-            <div class="coming-soon">
-              <i class="fas fa-camera"></i>
-              <h3>포토 모드 통계</h3>
-              <p>포토 모드는 곧 오픈 예정입니다</p>
-                </div>
-                </div>
-
           <!-- 멀티플레이 전체 통계 -->
           <div v-if="activeTab === 'multiplayer'" class="tab-content">
-            <!-- 멀티플레이 랭크 카드 (로드뷰 멀티플레이 랭크 표시) -->
-            <div class="rank-card-inline">
-              <div class="rank-icon">{{ rankInfo.icon }}</div>
-              <div class="rank-details">
-                <div class="rank-tier">
-                  멀티플레이 랭크: {{ rankInfo.name }} {{ getRankLevel(profile.rankInfo?.roadViewRank?.level) }}
-              </div>
-                <div class="rank-rating">{{ formatNumber(profile.rankInfo?.roadViewRank?.ratingScore || 0) }} RP</div>
-            </div>
-          </div>
-
-            <div class="best-score-card">
-              <div class="best-score-icon">
-                <i class="fas fa-users"></i>
-        </div>
-              <div class="best-score-content">
-                <div class="best-score-label">멀티플레이 최고 점수</div>
-                <div class="best-score-value">{{ formatNumber(profile.statistics?.roadView?.multi?.averageScore || 0) }}</div>
-      </div>
-            </div>
-
             <div class="multiplayer-stats">
               <h3 class="stats-title">
                 <i class="fas fa-trophy"></i>
@@ -332,10 +196,6 @@
                 <div class="stat-row">
                   <span class="stat-label">총 게임 수</span>
                   <span class="stat-value">{{ formatNumber(profile.statistics?.roadView?.multi?.totalGames || 0) }}</span>
-                </div>
-                <div class="stat-row">
-                  <span class="stat-label">평균 점수</span>
-                  <span class="stat-value">{{ formatNumber(profile.statistics?.roadView?.multi?.averageScore || 0) }}</span>
                 </div>
               </div>
             </div>
@@ -369,8 +229,9 @@
                 v-for="tab in inventoryTabs" 
                 :key="tab.id"
                 class="inventory-tab"
-                :class="{ active: activeInventoryTab === tab.id }"
-                @click="activeInventoryTab = tab.id"
+                :class="{ active: activeInventoryTab === tab.id, disabled: tab.disabled }"
+                :disabled="tab.disabled"
+                @click="!tab.disabled && (activeInventoryTab = tab.id)"
               >
                 <i :class="tab.icon"></i>
                 {{ tab.label }}
@@ -393,7 +254,13 @@
                 @click="!item.equipped && equipInventoryItem(item)"
               >
                 <div class="item-image">
-                  {{ item.icon }}
+                  <img 
+                    v-if="item.itemImageUrl" 
+                    :src="item.itemImageUrl" 
+                    :alt="item.name"
+                    class="item-image-img"
+                  />
+                  <span v-else class="item-icon-fallback">{{ item.icon }}</span>
                 </div>
                 <div class="item-info">
                   <div class="item-name">{{ item.name }}</div>
@@ -417,7 +284,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import NavigationBar from '@/core/components/NavigationBar.vue';
 import { userService } from '@/features/user/services/user.service.js';
 
@@ -428,7 +295,7 @@ const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'));
 const isLoading = ref(true);
 const showToast = ref(false);
 const toastMessage = ref('');
-const activeTab = ref('overall'); // 기본은 전체 통계
+const activeTab = ref('roadview'); // 기본은 로드뷰 통계
 const showInventoryModal = ref(false);
 const activeInventoryTab = ref('all');
 
@@ -494,19 +361,16 @@ const profile = ref({
 
 // 모드 탭 정의
 const modeTabs = [
-  { id: 'overall', label: '전체', icon: 'fas fa-chart-bar' },
   { id: 'roadview', label: '로드뷰', icon: 'fas fa-street-view' },
-  { id: 'photo', label: '포토', icon: 'fas fa-camera' },
   { id: 'multiplayer', label: '멀티플레이', icon: 'fas fa-users' }
 ];
 
 // 인벤토리 탭 정의 (API 타입과 매핑)
 const inventoryTabs = [
-  { id: 'all', label: '전체', icon: 'fas fa-th', apiType: null },
-  { id: 'marker', label: '마커', icon: 'fas fa-map-marker-alt', apiType: 'MARKER' },
-  { id: 'profile', label: '프로필', icon: 'fas fa-user-circle', apiType: 'PROFILE' },
-  { id: 'effect', label: '이펙트', icon: 'fas fa-magic', apiType: 'EFFECT' },
-  { id: 'theme', label: '테마', icon: 'fas fa-palette', apiType: 'THEME' }
+  { id: 'all', label: '전체', icon: 'fas fa-th', apiType: null, disabled: false },
+  { id: 'marker', label: '마커', icon: 'fas fa-map-marker-alt', apiType: 'MARKER', disabled: false },
+  { id: 'effect', label: '효과', icon: 'fas fa-magic', apiType: 'MARKER_EFFECT', disabled: false },
+  { id: 'theme', label: '테마', icon: 'fas fa-palette', apiType: 'THEME', disabled: true }
 ];
 
 // 인벤토리 아이템 데이터 (API에서 가져옴)
@@ -518,7 +382,7 @@ const rankInfo = computed(() => {
   if (activeTab.value === 'photo') {
     return userService.getRankTierInfo(profile.value.rankInfo?.photoRank?.tier || 'BRONZE');
   }
-  // 전체, 로드뷰, 멀티플레이 탭은 로드뷰 랭크 사용
+  // 로드뷰 탭은 로드뷰 랭크 사용
   return userService.getRankTierInfo(profile.value.rankInfo?.roadViewRank?.tier || 'BRONZE');
 });
 
@@ -714,17 +578,18 @@ async function loadInventory() {
     
     const response = await userService.getInventory();
     
-    if (response.isSuccess && response.data) {
+    if (response.isSuccess && response.result) {
       // API 응답을 프론트엔드 형식으로 변환
-      inventoryItems.value = response.data.map(item => {
+      inventoryItems.value = response.result.map(item => {
         const itemType = item.itemType || 'MARKER'; // 기본값 설정
         return {
           id: item.memberItemId,
           name: item.name,
           category: getItemCategoryLabel(itemType),
           type: getItemTypeId(itemType),
-          icon: getItemIcon(itemType, item.name),
-          equipped: item.isEquipped || false,
+          itemImageUrl: item.itemImageUrl || null, // 이미지 URL
+          icon: getItemIcon(itemType, item.name), // fallback 아이콘
+          equipped: item.equipped || false,
           acquiredDate: item.purchaseTime,
           description: item.description || ''
         };
@@ -747,6 +612,7 @@ async function loadInventory() {
 function getItemTypeId(apiType) {
   const typeMap = {
     'MARKER': 'marker',
+    'MARKER_EFFECT': 'effect',
     'PROFILE': 'profile',
     'EFFECT': 'effect',
     'THEME': 'theme'
@@ -758,6 +624,7 @@ function getItemTypeId(apiType) {
 function getItemCategoryLabel(apiType) {
   const labelMap = {
     'MARKER': '마커',
+    'MARKER_EFFECT': '효과',
     'PROFILE': '프로필',
     'EFFECT': '이펙트',
     'THEME': '테마'
@@ -771,6 +638,7 @@ function getItemIcon(apiType, name) {
   // 현재는 타입별로 기본 아이콘 설정
   const iconMap = {
     'MARKER': '📍',
+    'MARKER_EFFECT': '✨',
     'PROFILE': '👤',
     'EFFECT': '✨',
     'THEME': '🎨'
@@ -807,9 +675,16 @@ async function equipInventoryItem(item) {
   }
 }
 
-// 컴포넌트 마운트 시 프로필 로드
+// 컴포넌트 마운트 시 프로필 로드 및 body 스크롤 초기화
 onMounted(() => {
+  // body overflow 초기화 (다른 페이지에서 설정된 overflow: hidden 상태 복원)
+  document.body.style.overflow = '';
   loadProfile();
+});
+
+// 컴포넌트 언마운트 시 body 스크롤 복원 (안전을 위해)
+onBeforeUnmount(() => {
+  document.body.style.overflow = '';
 });
 
 // 인벤토리 모달이 열릴 때 인벤토리 로드
@@ -827,8 +702,6 @@ watch(showInventoryModal, (newValue) => {
   height: auto;
   width: 100%;
   background: #f8f9fa;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch; /* iOS 부드러운 스크롤 */
 }
 
 .profile-content {
@@ -1131,6 +1004,73 @@ watch(showInventoryModal, (newValue) => {
 .rank-percentage {
   font-size: 0.875rem;
   color: #6b7280;
+}
+
+/* 로드뷰 통계 레이아웃 */
+.roadview-stats-layout {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.compact-rank-card {
+  flex: 0 0 auto;
+  min-width: 280px;
+  margin-bottom: 0;
+}
+
+.compact-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  flex: 1;
+}
+
+.compact-stat-item {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.compact-stat-item .stat-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.compact-stat-item .stat-header i {
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+.compact-stat-item .stat-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.compact-stat-item .stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8125rem;
+}
+
+.compact-stat-item .stat-label {
+  color: #6b7280;
+}
+
+.compact-stat-item .stat-value {
+  font-weight: 500;
+  color: #111827;
 }
 
 /* 통계 섹션 */
@@ -1551,6 +1491,18 @@ watch(showInventoryModal, (newValue) => {
   font-size: 0.875rem;
 }
 
+.inventory-tab.disabled,
+.inventory-tab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.inventory-tab.disabled:hover,
+.inventory-tab:disabled:hover {
+  color: #6b7280;
+}
+
 .inventory-loading {
   display: flex;
   flex-direction: column;
@@ -1617,6 +1569,23 @@ watch(showInventoryModal, (newValue) => {
   justify-content: center;
   background: white;
   border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+.item-image-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.item-icon-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
 .item-info {
@@ -1733,6 +1702,19 @@ watch(showInventoryModal, (newValue) => {
   
   .rank-details {
     text-align: center;
+  }
+
+  .roadview-stats-layout {
+    flex-direction: column;
+  }
+
+  .compact-rank-card {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .compact-stats-grid {
+    grid-template-columns: 1fr;
   }
 }
 

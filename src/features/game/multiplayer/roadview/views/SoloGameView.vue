@@ -71,13 +71,10 @@
         :full-address="gameStore.state.locationInfo.fullAddress || ''"
         :player-guesses="gameStore.state.playerGuesses"
         :top-player="gameStore.state.topPlayer"
-        :num-players-ready="$refs.baseGame ? $refs.baseGame.numPlayersReadyForNextRound : 0"
+        :num-players-ready="0"
         :total-players-in-room="$refs.baseGame ? $refs.baseGame.totalPlayersInRoom : 0"
-        :majority-threshold="$refs.baseGame ? $refs.baseGame.majorityThreshold : 0"
+        :majority-threshold="0"
         :players-ready-details="[]"
-        :is-vote-timer-active="false"
-        :vote-time-remaining="15000"
-        :current-user-has-voted="false"
         :is-mobile="$refs.baseGame ? $refs.baseGame.isMobile : false"
         :server-countdown-seconds="soloGameFlow.transitionCountdown.value"
         :is-server-mode="isServerMode"
@@ -1837,7 +1834,7 @@ export default {
   
     // NextRoundOverlay 완료 후 다음 라운드 시작 처리
     handleNextRoundReady() {
-      console.log(`다음 라운드 준비 완료 - 라운드 ${this.gameStore.state.currentRound + 1} 시작`);
+      console.log(`[Solo Game] 다음 라운드 준비 완료 - 현재 라운드: ${this.gameStore.state.currentRound}`);
       
       // 라운드 상태 완전 초기화
       this.gameStore.state.roundEnded = false;
@@ -1857,27 +1854,26 @@ export default {
           player.distanceToTarget = null;
           player.lastRoundScore = 0;
         });
+        
+        // 더미 모드에서만 startNextRound 호출 (라운드 번호 증가)
+        this.gameStore.startNextRound();
+        
+        // 더미 모드에서 다음 라운드 데이터 시뮬레이션
+        setTimeout(() => {
+          this.simulateRoundData();
+        }, 1000);
       } else {
         // 서버 모드: gamePlayers의 제출 상태 초기화
+        // 라운드 번호는 서버에서 받은 데이터로만 업데이트 (processRoundData에서 처리)
+        // startNextRound를 호출하지 않음 (라운드 번호 중복 증가 방지)
         if (this.gamePlayers && this.gamePlayers.length > 0) {
           this.gamePlayers.forEach(player => {
             player.gamePlayerStatus = 'WAITING'
             player.distanceToTarget = null
             player.lastRoundScore = 0
           })
-          console.log('[Solo Game] 다음 라운드 준비 - 플레이어 제출 상태 초기화: WAITING')
+          console.log('[Solo Game] 서버 모드 - 플레이어 제출 상태 초기화 (라운드 번호는 서버에서 관리)')
         }
-      }
-      
-      // 다음 라운드로 진행
-      this.gameStore.startNextRound();
-      
-      // 더미 모드에서 다음 라운드 데이터 시뮬레이션
-      const isDummyMode = this.$route.query.test === 'true' || !this.$refs.baseGame?.isWebSocketConnected;
-      if (isDummyMode) {
-        setTimeout(() => {
-          this.simulateRoundData();
-        }, 1000);
       }
     },
     

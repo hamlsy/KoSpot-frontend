@@ -1,30 +1,25 @@
 <template>
   <div v-if="show" class="tutorial-overlay" @click.self="skipTutorial">
     <div class="tutorial-container">
-      <!-- 헤더 -->
-      <div class="tutorial-header">
-        <button
-          class="top-dismiss-button"
-          type="button"
-          @click="skipTutorial"
-        >
-          <i class="fas fa-times"></i>
-          튜토리얼 닫기
-        </button>
-        <div class="progress-indicator">
-          <span
-            v-for="(slide, index) in slides"
-            :key="index"
-            class="progress-dot"
-            :class="{ active: currentSlide === index }"
-            @click="goToSlide(index)"
-          ></span>
-        </div>
+      <!-- 진행 표시기 -->
+      <div class="progress-dots">
+        <span
+          v-for="(slide, index) in slides"
+          :key="index"
+          class="dot"
+          :class="{ active: currentSlide === index }"
+          @click="goToSlide(index)"
+        ></span>
       </div>
 
-      <!-- 슬라이드 컨텐츠 -->
+      <!-- 닫기 버튼 -->
+      <button class="close-button" @click="skipTutorial" title="건너뛰기">
+        <i class="fas fa-times"></i>
+      </button>
+
+      <!-- 슬라이드 래퍼 -->
       <div class="slide-wrapper">
-        <div class="slide-content" :key="currentSlide">
+        <div :key="currentSlide" class="slide-content">
           <!-- 슬라이드 이미지 -->
           <div class="slide-image-container">
             <img
@@ -157,136 +152,131 @@ const completeTutorial = () => {
 <style scoped>
 /* 오버레이 */
 .tutorial-overlay {
-  /* position: absolute; */
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: white;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1001;
-  padding: 0;
-  border-radius: 24px;
-  overflow: hidden;
+  z-index: 1100;
+  padding: 20px;
 }
 
 /* 튜토리얼 컨테이너 */
 .tutorial-container {
-  background: white;
-  border-radius: 0;
+  background: #ffffff;
+  border-radius: 24px;
   width: 100%;
-  height: 100%;
-  max-width: 100%;
-  max-height: 100%;
-  padding-top: 0px;
+  max-width: 700px;
+  min-height: 500px;
+  max-height: 85vh;
   position: relative;
-  box-shadow: none;
-  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
   padding: 1rem;
-}
-
-/* 헤더 */
-.tutorial-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0;
-  margin-bottom: 1.75rem;
-  border-bottom: none;
-  position: relative;
-}
-
-.top-dismiss-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.55rem 1.1rem;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
-  border: 1px solid #cbd5f5;
-  color: #1e293b;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.top-dismiss-button i {
-  font-size: 0.9rem;
-}
-
-.top-dismiss-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 18px rgba(148, 163, 184, 0.35);
-}
-
-.top-dismiss-button:active {
-  transform: translateY(0);
-  box-shadow: none;
+  overflow: hidden;
 }
 
 /* 진행 표시기 */
-.progress-indicator {
+.progress-dots {
   display: flex;
   justify-content: center;
-  gap: 6px;
-  flex: 1;
+  gap: 12px;
+  padding: 20px;
+  flex-shrink: 0;
 }
 
-.progress-dot {
+.dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #e2e8f0;
-  border: 2px solid #cbd5f5;
+  background: #e5e7eb;
   cursor: pointer;
-  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
-.progress-dot.active {
-  background: #3b82f6;
-  border-color: #2563eb;
-  transform: scale(1.15);
+.dot.active {
+  background: #2563eb;
+  width: 32px;
+  border-radius: 5px;
 }
 
-.progress-dot:hover {
-  background: #bfdbfe;
+.dot:hover {
+  background: #cbd5e1;
+}
+
+/* 닫기 버튼 */
+.close-button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  color: #6b7280;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.close-button:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #111827;
 }
 
 /* 슬라이드 래퍼 */
 .slide-wrapper {
   flex: 1;
-  overflow: hidden;
-  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
 }
 
 /* 슬라이드 컨텐츠 */
 .slide-content {
-  width: 100%;
-  padding: 0;
+  padding: 0 20px 20px;
+  animation: slideIn 0.3s ease-out;
   text-align: center;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* 이미지 컨테이너 */
 .slide-image-container {
   width: 100%;
-  height: 320px;
-  border-radius: 12px;
+  max-width: 500px;
+  margin: 0 auto 24px;
+  border-radius: 16px;
   overflow: hidden;
-  margin-bottom: 20px;
-  background: #f1f5f9;
+  background: #f3f4f6;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .slide-image {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
   display: block;
+  object-fit: cover;
 }
 
 /* 설명 영역 */
@@ -295,16 +285,16 @@ const completeTutorial = () => {
 }
 
 .slide-title {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: #1e293b;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
   margin: 0 0 12px 0;
-  line-height: 1.4;
+  line-height: 1.3;
 }
 
 .slide-text {
-  font-size: 0.95rem;
-  color: #64748b;
+  font-size: 1rem;
+  color: #6b7280;
   line-height: 1.6;
   margin: 0;
 }
@@ -314,105 +304,176 @@ const completeTutorial = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0;
-  margin-top: 1.5rem;
-  border-top: none;
+  padding: 16px 20px 24px;
+  flex-shrink: 0;
+  border-top: 1px solid #e5e7eb;
+  background: #ffffff;
   gap: 10px;
-  flex-wrap: nowrap;
 }
 
 .nav-button {
   padding: 10px 20px;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.15s ease;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
 .nav-button:hover {
-  opacity: 0.9;
-}
-
-.nav-button:active {
-  opacity: 0.8;
+  transform: translateY(-2px);
 }
 
 .prev-button {
-  background: #f1f5f9;
-  color: #475569;
+  background: #f3f4f6;
+  color: #6b7280;
+  margin-right: auto;
+}
+
+.prev-button:hover {
+  background: #e5e7eb;
+  color: #111827;
 }
 
 .next-button,
 .complete-button {
-  background: #3b82f6;
-  color: white;
   margin-left: auto;
 }
 
-.complete-button {
-  background: #10b981;
+.next-button {
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
 }
 
-/* 반응형 */
+.next-button:hover {
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.complete-button {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
+.complete-button:hover {
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* 반응형 - 태블릿 */
 @media (max-width: 768px) {
+  .tutorial-overlay {
+    padding: 15px;
+  }
+
   .tutorial-container {
-    max-width: 95%;
-    border-radius: 12px;
+    max-width: 90%;
+    border-radius: 20px;
+    max-height: 90vh;
+    padding: 0.75rem;
+  }
+
+  .progress-dots {
+    padding: 16px;
   }
 
   .slide-content {
-    padding: 20px;
+    padding: 0 16px 16px;
+  }
+
+  .slide-title {
+    font-size: 1.3rem;
+  }
+
+  .slide-text {
+    font-size: 0.95rem;
   }
 
   .slide-image-container {
-    height: 200px;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
+  }
+
+  .navigation-controls {
+    padding: 14px 16px 20px;
+  }
+
+  .nav-button {
+    padding: 9px 18px;
+    font-size: 0.9rem;
+  }
+}
+
+/* 반응형 - 모바일 */
+@media (max-width: 480px) {
+  .tutorial-overlay {
+    padding: 12px;
+  }
+
+  .tutorial-container {
+    max-width: 100%;
+    border-radius: 16px;
+    max-height: 92vh;
+    padding: 0.5rem;
+  }
+
+  .progress-dots {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+  }
+
+  .dot.active {
+    width: 28px;
+  }
+
+  .close-button {
+    width: 32px;
+    height: 32px;
+    top: 12px;
+    right: 12px;
+    font-size: 1rem;
+  }
+
+  .slide-content {
+    padding: 0 12px 12px;
   }
 
   .slide-title {
     font-size: 1.2rem;
+    margin-bottom: 10px;
   }
 
   .slide-text {
     font-size: 0.9rem;
   }
 
-  .navigation-controls {
-    padding: 12px 16px;
-  }
-
-  .nav-button {
-    padding: 8px 16px;
-    font-size: 0.9rem;
-  }
-}
-
-@media (max-width: 480px) {
   .slide-image-container {
-    height: 180px;
-  }
-
-  .slide-title {
-    font-size: 1.1rem;
-  }
-
-  .slide-text {
-    font-size: 0.85rem;
+    margin-bottom: 16px;
+    border-radius: 12px;
   }
 
   .navigation-controls {
-    justify-content: center;
+    padding: 12px 12px 16px;
     gap: 8px;
   }
 
   .nav-button {
-    min-width: 120px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    min-width: 100px;
     justify-content: center;
+  }
+
+  .prev-button {
+    margin-right: 0;
   }
 
   .next-button,

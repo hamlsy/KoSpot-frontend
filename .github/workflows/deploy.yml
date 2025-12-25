@@ -131,7 +131,7 @@ jobs:
         # 환경 결정
         #if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
         ENV="production"
-        DEPLOY_PATH="/"
+        # DEPLOY_PATH="/"
         #else
         #  ENV="development"
         #  DEPLOY_PATH="/dev/"

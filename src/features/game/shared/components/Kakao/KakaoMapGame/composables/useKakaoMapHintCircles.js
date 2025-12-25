@@ -24,12 +24,12 @@ export function useKakaoMapHintCircles(props) {
     );
     
     // 반지름 (km)
-    const radiusList = [1, 2, 5]; 
+    const radiusList = [0.5, 1, 1.5]; 
     
     radiusList.forEach((radius) => {
       const circle = new window.kakao.maps.Circle({
         center: position,
-        radius: radius * 800, // 미터 단위
+        radius: radius * 100, // 미터 단위
         strokeWeight: 1,
         strokeColor: '#75B8FA',
         strokeOpacity: 0.5,

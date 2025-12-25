@@ -3,10 +3,16 @@
     <!-- Header -->
     <header class="header">
       <div class="header-content">
-        <button class="back-button" @click="$router.push('/')">
+        <button class="back-button" @click="$router.push('/main')">
           <i class="fas fa-arrow-left"></i>
         </button>
-        <app-logo class="home-link" to="/" />
+        <div class="logo-container">
+          <img
+            src="/images/logo/kospot_logo_1-removebg.png"
+            alt="KoSpot"
+            class="header-logo"
+          />
+        </div>
         <div class="header-right">
           <h3>로드뷰 모드</h3>
         </div>
@@ -14,14 +20,10 @@
     </header>
 
     <main class="main-content">
-      <!-- Google Ads Space - 일시적으로 숨김 -->
-      <!-- <section class="google-ads-space">
-        <div class="ads-container">
-          <div class="ads-placeholder">
-            <p>Google Ads 영역</p>
-          </div>
-        </div>
-      </section> -->
+      <!-- Google Ads Space -->
+      <section class="google-ads-space">
+        <Adsense :ad-slot="'6033902133'" />
+      </section>
 
       <!-- Game Modes Section -->
       <section class="game-modes">
@@ -39,10 +41,7 @@
       <section class="stats-section">
         <h2 class="section-title">나의 랭크 통계</h2>
         <div class="stats-grid">
-          <div
-            v-for="stat in stats"
-            :key="stat.label"
-            class="stat-card">
+          <div v-for="stat in stats" :key="stat.label" class="stat-card">
             <div class="stat-header">
               <i :class="stat.icon"></i>
               <span>{{ stat.label }}</span>
@@ -56,8 +55,8 @@
       <section class="records-section">
         <div class="section-header">
           <h2 class="section-title">최근 기록</h2>
-          <button 
-            class="view-all-button" 
+          <button
+            class="view-all-button"
             @click="showHistoryModal = true"
             v-if="recentRecords.length > 0"
           >
@@ -89,12 +88,16 @@
                 {{ record.mode }}
               </div>
               <span class="record-poi">{{ record.poiName }}</span>
-              <span v-if="record.region" class="record-region">{{ record.region }}</span>
-              <p class="record-score">{{ formatNumber(Math.round(record.score)) }}점</p>
+              <span v-if="record.region" class="record-region">{{
+                record.region
+              }}</span>
+              <p class="record-score">
+                {{ formatNumber(Math.round(record.score)) }}점
+              </p>
             </div>
             <span class="record-date">{{ record.date }}</span>
           </div>
-          
+
           <div v-if="recentRecords.length === 0" class="no-records">
             <p>아직 플레이 기록이 없습니다.</p>
           </div>
@@ -117,20 +120,12 @@
             </button>
           </div>
 
-          <div 
+          <div
             v-if="!showPracticeTutorial || selectedGameMode.id !== 'practice'"
             class="popup-description"
           >
             <p>{{ selectedGameMode.fullDescription }}</p>
           </div>
-
-          <!-- 연습 게임 튜토리얼 모달 -->
-          <practice-tutorial-modal
-            v-if="selectedGameMode.id === 'practice'"
-            :show="showPracticeTutorial"
-            @close="showPracticeTutorial = false"
-            @complete="handleTutorialComplete"
-          />
 
           <div
             v-if="selectedGameMode.id === 'practice' && !showPracticeTutorial"
@@ -149,28 +144,48 @@
             </div>
           </div>
 
-          <div 
-            v-if="selectedGameMode.id === 'rank' && (!showPracticeTutorial || selectedGameMode.id !== 'practice')" 
+          <div
+            v-if="
+              selectedGameMode.id === 'rank' &&
+              (!showPracticeTutorial || selectedGameMode.id !== 'practice')
+            "
             class="rank-mode-options"
           >
             <div class="rank-info-card">
-              <div class="rank-info-header">
-                <span class="rank-label">현재 랭크</span>
-                <div class="rank-icon" v-if="rankInfo">
-                  <i :class="getRankIcon(userRank)"></i>
+              <div v-if="rankInfo" class="rank-info-content">
+                <!-- 랭크 아이콘 (중앙 배치) -->
+                <div class="rank-icon-container">
+                  <div class="rank-icon">
+                    <i :class="getRankIcon(userRank)"></i>
+                  </div>
+                </div>
+
+                <!-- 랭크 티어 정보 -->
+                <div class="rank-tier-info">
+                  <span class="rank-label">현재 랭크</span>
+                  <h3 class="rank-value">{{ userRank }}</h3>
+                </div>
+
+                <!-- 레이팅 정보 -->
+                <div class="rank-rating-info">
+                  <div class="rating-item">
+                    <span class="rating-label">레이팅 점수</span>
+                    <span class="rating-value">{{
+                      formatNumber(rankInfo.ratingScore)
+                    }}</span>
+                  </div>
+                  <div class="rating-item">
+                    <span class="rating-label">상위 순위</span>
+                    <span class="rating-value"
+                      >{{ rankInfo.rankPercentage }}%</span
+                    >
+                  </div>
                 </div>
               </div>
-              <div class="rank-info-content">
-                <div class="rank-tier-level" v-if="rankInfo">
-                  <span class="rank-value">{{ userRank }}</span>
-                </div>
-                <div class="rank-rating" v-if="rankInfo">
-                  <span class="rating-label">레이팅</span>
-                  <span class="rating-value">{{ formatNumber(rankInfo.ratingScore) }}</span>
-                </div>
-                <div v-else class="rank-loading">
-                  <p>랭크 정보를 불러오는 중...</p>
-                </div>
+
+              <div v-else class="rank-loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>랭크 정보를 불러오는 중...</p>
               </div>
             </div>
           </div>
@@ -187,6 +202,17 @@
         </div>
       </div>
     </transition>
+
+    <!-- 연습 게임 튜토리얼 모달 (독립 오버레이) -->
+    <transition name="tutorial-fade">
+      <practice-tutorial-modal
+        v-if="selectedGameMode?.id === 'practice' && showPracticeTutorial"
+        :show="showPracticeTutorial"
+        @close="showPracticeTutorial = false"
+        @complete="handleTutorialComplete"
+      />
+    </transition>
+
     <!-- Theme Mode Popup -->
     <transition name="popup-slide">
       <theme-mode-popup
@@ -198,22 +224,18 @@
     </transition>
 
     <!-- History Modal -->
-    <history-modal
-      :show="showHistoryModal"
-      @close="showHistoryModal = false"
-    />
-
+    <history-modal :show="showHistoryModal" @close="showHistoryModal = false" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
-import AppLogo from "@/core/components/AppLogo.vue";
-import ThemeModePopup from 'src/features/game/single/main/components/Theme/ThemeModePopup.vue'
+import { ref, computed, onMounted, nextTick } from "vue";
+import { useRouter } from "vue-router";
+import ThemeModePopup from "src/features/game/single/main/components/Theme/ThemeModePopup.vue";
 import GameModeCard from "@/features/game/shared/components/Common/GameModeCard.vue";
 import HistoryModal from "@/features/game/single/main/components/HistoryModal.vue";
 import PracticeTutorialModal from "@/features/game/single/main/components/PracticeTutorialModal.vue";
+import Adsense from "@/features/game/shared/components/Common/Adsense.vue";
 import roadViewMainService from "@/features/game/single/main/services/roadViewMain.service";
 
 // 라우터 설정
@@ -268,7 +290,7 @@ const gameModes = [
 // 지역 데이터 (백엔드 sido key 기반)
 const regions = {
   서울: "SEOUL",
-  부산: "BUSAN", 
+  부산: "BUSAN",
   대구: "DAEGU",
   인천: "INCHEON",
   광주: "GWANGJU",
@@ -288,42 +310,42 @@ const regions = {
 
 // 지역 코드를 한글로 변환하는 맵
 const regionMap = {
-  SEOUL: '서울',
-  BUSAN: '부산',
-  DAEGU: '대구',
-  INCHEON: '인천',
-  GWANGJU: '광주',
-  DAEJEON: '대전',
-  ULSAN: '울산',
-  SEJONG: '세종',
-  GYEONGGI: '경기',
-  GANGWON: '강원',
-  CHUNGBUK: '충북',
-  CHUNGNAM: '충남',
-  JEONBUK: '전북',
-  JEONNAM: '전남',
-  GYEONGBUK: '경북',
-  GYEONGNAM: '경남',
-  JEJU: '제주'
+  SEOUL: "서울",
+  BUSAN: "부산",
+  DAEGU: "대구",
+  INCHEON: "인천",
+  GWANGJU: "광주",
+  DAEJEON: "대전",
+  ULSAN: "울산",
+  SEJONG: "세종",
+  GYEONGGI: "경기",
+  GANGWON: "강원",
+  CHUNGBUK: "충북",
+  CHUNGNAM: "충남",
+  JEONBUK: "전북",
+  JEONNAM: "전남",
+  GYEONGBUK: "경북",
+  GYEONGNAM: "경남",
+  JEJU: "제주",
 };
 
 // 티어를 한글로 변환하는 맵
 const tierMap = {
-  BRONZE: 'Bronze',
-  SILVER: 'Silver',
-  GOLD: 'Gold',
-  PLATINUM: 'Platinum',
-  DIAMOND: 'Diamond',
-  MASTER: 'Master'
+  BRONZE: "Bronze",
+  SILVER: "Silver",
+  GOLD: "Gold",
+  PLATINUM: "Platinum",
+  DIAMOND: "Diamond",
+  MASTER: "Master",
 };
 
 // 레벨을 숫자로 변환하는 맵
 const levelMap = {
-  ONE: '1',
-  TWO: '2',
-  THREE: '3',
-  FOUR: '4',
-  FIVE: '5'
+  ONE: "1",
+  TWO: "2",
+  THREE: "3",
+  FOUR: "4",
+  FIVE: "5",
 };
 
 // 통계 데이터 (computed)
@@ -344,22 +366,45 @@ const stats = computed(() => {
 
   return [
     { icon: "fas fa-trophy", label: "내 랭크", value: rankDisplay },
-    { icon: "fas fa-trophy", label: "내 레이팅 점수", value: rankInfo.value.ratingScore.toLocaleString() },
-    { icon: "fas fa-clock", label: "총 플레이 수", value: `${statisticInfo.value.rankPlayCount} 판` },
-    { icon: "fas fa-medal", label: "평균 점수", value: `${formatNumber(Math.round(statisticInfo.value.rankAvgScore))}점` },
-    { icon: "fas fa-users", label: "전체 랭킹", value: `상위 ${rankInfo.value.rankPercentage}%` },
+    {
+      icon: "fas fa-trophy",
+      label: "내 레이팅 점수",
+      value: rankInfo.value.ratingScore.toLocaleString(),
+    },
+    {
+      icon: "fas fa-clock",
+      label: "총 플레이 수",
+      value: `${statisticInfo.value.rankPlayCount} 판`,
+    },
+    {
+      icon: "fas fa-medal",
+      label: "평균 점수",
+      value: `${formatNumber(Math.round(statisticInfo.value.rankAvgScore))}점`,
+    },
+    {
+      icon: "fas fa-users",
+      label: "전체 랭킹",
+      value: `상위 ${rankInfo.value.rankPercentage}%`,
+    },
   ];
 });
 
 // 최근 기록 데이터 (computed)
 const recentRecords = computed(() => {
-  return recentGamesData.value.map(game => ({
+  return recentGamesData.value.map((game) => ({
     id: game.gameId,
-    mode: game.gameType === 'RANK' ? '랭크' : game.gameType === 'PRACTICE' ? '연습' : '테마',
+    mode:
+      game.gameType === "RANK"
+        ? "랭크"
+        : game.gameType === "PRACTICE"
+        ? "연습"
+        : "테마",
     score: game.score,
     date: formatDateShort(game.playedAt),
-    region: game.practiceSido ? regionMap[game.practiceSido] || game.practiceSido : '',
-    poiName: game.poiName
+    region: game.practiceSido
+      ? regionMap[game.practiceSido] || game.practiceSido
+      : "",
+    poiName: game.poiName,
   }));
 });
 
@@ -375,20 +420,20 @@ const isGameStartReady = computed(() => {
 onMounted(async () => {
   // DOM이 완전히 렌더링된 후 페이지 상단으로 스크롤
   await nextTick();
-  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   document.documentElement.scrollTop = 0;
   document.body.scrollTop = 0;
-  
+
   // 로그인 여부 확인
-  const isLoggedIn = !!localStorage.getItem('accessToken');
-  
+  const isLoggedIn = !!localStorage.getItem("accessToken");
+
   if (!isLoggedIn) {
     // 로그인하지 않은 경우 메인 페이지로 리다이렉션
-    alert('로그인한 사용자만 접근할 수 있습니다.');
-    router.push('/');
+    alert("로그인한 사용자만 접근할 수 있습니다.");
+    router.push("/");
     return;
   }
-  
+
   fetchMainPageData();
 });
 
@@ -405,26 +450,24 @@ async function startGame() {
     if (selectedGameMode.value.id === "practice") {
       // 연습 모드: sido key와 함께 라우팅
       const sidoKey = selectedRegion.value; // 이미 SEOUL, BUSAN 등의 형태
-      
+
       console.log("Starting practice game with sido:", sidoKey);
-      
+
       // 연습 게임 화면으로 라우팅 (sido를 쿼리 파라미터로 전달)
       await router.push({
-        path: '/roadView/practice',
-        query: { sido: sidoKey }
+        path: "/roadView/practice",
+        query: { sido: sidoKey },
       });
-      
     } else if (selectedGameMode.value.id === "rank") {
       // 랭크 모드: 바로 랭크 게임 화면으로 라우팅
       console.log("Starting rank game");
-      
+
       await router.push({
-        path: '/roadView/rank'
+        path: "/roadView/rank",
       });
     }
-    
+
     closeGameModePopup();
-    
   } catch (error) {
     console.error("게임 시작 중 오류 발생:", error);
   }
@@ -439,8 +482,8 @@ function formatNumber(number) {
 function formatDateShort(dateString) {
   const date = new Date(dateString);
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
   return `${year}.${month}.${day}`;
 }
 
@@ -465,16 +508,16 @@ function getRankIcon(rank) {
 function getDummyData() {
   return {
     rankInfo: {
-      rankTier: 'GOLD',
-      rankLevel: 'THREE',
+      rankTier: "GOLD",
+      rankLevel: "THREE",
       ratingScore: 1250,
-      rankPercentage: 35.5
+      rankPercentage: 35.5,
     },
     statisticInfo: {
       totalPlayCount: 42,
-      bestScore: 8500
+      bestScore: 8500,
     },
-    recentGames: []
+    recentGames: [],
   };
 }
 
@@ -482,24 +525,26 @@ function getDummyData() {
 async function fetchMainPageData() {
   try {
     const response = await roadViewMainService.getMainPageData();
-    
+
     if (response.data.isSuccess) {
       const result = response.data.result;
-      
+
       // 랭크 정보 저장
       rankInfo.value = result.rankInfo;
-      
+
       // 통계 정보 저장
       statisticInfo.value = result.statisticInfo;
-      
+
       // 최근 게임 기록 저장
       recentGamesData.value = result.recentGames;
-      
+
       // userRank도 업데이트 (랭크 모드 팝업에서 사용)
-      const tier = tierMap[result.rankInfo.rankTier] || result.rankInfo.rankTier;
-      const level = levelMap[result.rankInfo.rankLevel] || result.rankInfo.rankLevel;
+      const tier =
+        tierMap[result.rankInfo.rankTier] || result.rankInfo.rankTier;
+      const level =
+        levelMap[result.rankInfo.rankLevel] || result.rankInfo.rankLevel;
       userRank.value = `${tier} ${level}`;
-      
+
       console.log("메인 페이지 데이터 로드 완료:", result);
     } else {
       console.error("메인 페이지 데이터 조회 실패:", response.data.message);
@@ -508,7 +553,7 @@ async function fetchMainPageData() {
     }
   } catch (error) {
     console.error("메인 페이지 데이터 조회 중 오류 발생:", error);
-    
+
     // 인터넷 연결 실패 또는 API 오류 시 더미 데이터 사용
     useDummyData();
   }
@@ -517,21 +562,23 @@ async function fetchMainPageData() {
 // 더미 데이터 사용 함수
 function useDummyData() {
   const dummyData = getDummyData();
-  
+
   // 더미 랭크 정보 저장
   rankInfo.value = dummyData.rankInfo;
-  
+
   // 더미 통계 정보 저장
   statisticInfo.value = dummyData.statisticInfo;
-  
+
   // 더미 최근 게임 기록 저장
   recentGamesData.value = dummyData.recentGames;
-  
+
   // userRank도 업데이트 (랭크 모드 팝업에서 사용)
-  const tier = tierMap[dummyData.rankInfo.rankTier] || dummyData.rankInfo.rankTier;
-  const level = levelMap[dummyData.rankInfo.rankLevel] || dummyData.rankInfo.rankLevel;
+  const tier =
+    tierMap[dummyData.rankInfo.rankTier] || dummyData.rankInfo.rankTier;
+  const level =
+    levelMap[dummyData.rankInfo.rankLevel] || dummyData.rankInfo.rankLevel;
   userRank.value = `${tier} ${level}`;
-  
+
   console.log("더미 데이터로 표시합니다:", dummyData);
 }
 
@@ -542,7 +589,7 @@ function openGameModePopup(mode) {
   } else {
     selectedGameMode.value = mode;
     selectedRegion.value = null;
-    
+
     // 연습 게임인 경우 튜토리얼 표시
     if (mode.id === "practice") {
       showPracticeTutorial.value = true;
@@ -585,24 +632,98 @@ function startThemeGame(gameData) {
 </script>
 
 <style scoped>
-@import url("@/shared/assets/styles/common/header.css");
-@import url("@/shared/assets/styles/common/footer.css");
-@import url("@/shared/assets/styles/common/slide-menu/slide-menu.css");
 @import url("@/shared/assets/styles/game/roadView/roadview-main.css");
+
+/* 헤더 스타일 */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--color-border);
+  z-index: 100;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
+  transition: all var(--transition-normal);
+}
+
+.header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  height: 100%;
+  padding: 0 var(--spacing-xl);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.back-button {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: rgba(37, 99, 235, 0.05);
+  border: 1px solid rgba(37, 99, 235, 0.1);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.back-button:hover {
+  background: var(--color-primary);
+  color: white;
+  transform: translateX(-4px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.logo-container {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.header-logo {
+  height: 50px;
+  width: auto;
+  filter: drop-shadow(0 2px 8px rgba(37, 99, 235, 0.15));
+  transition: transform var(--transition-normal);
+}
+
+.header-logo:hover {
+  transform: scale(1.05);
+}
+
+.header-right {
+  margin-left: auto;
+}
+
+.header-right h3 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h3);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.01em;
+}
 
 .practice-mode-options {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--spacing-lg);
 }
 
 .region-selector {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
+  gap: var(--spacing-md);
   width: 100%;
 }
-
 
 @media (max-width: 640px) {
   .practice-mode-options {
@@ -621,36 +742,9 @@ function startThemeGame(gameData) {
 
 /* Google Ads 공간 스타일 */
 .google-ads-space {
-  margin: 20px 0;
-  padding: 0 20px;
-}
-
-.ads-container {
+  margin: var(--spacing-xl) 0;
+  padding: 0 var(--spacing-lg);
   width: 100%;
-  min-height: 120px;
-  background-color: #f8f9fa;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  border: 2px dashed #dee2e6;
-}
-
-.ads-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
-.ads-placeholder p {
-  color: #6c757d;
-  font-size: 14px;
-  font-weight: 500;
-  margin: 0;
 }
 
 .popup-header {
@@ -660,11 +754,8 @@ function startThemeGame(gameData) {
 /* 반응형 */
 @media (max-width: 768px) {
   .google-ads-space {
-    padding: 0 15px;
-  }
-  
-  .ads-container {
-    min-height: 100px;
+    padding: 0 var(--spacing-md);
+    margin: var(--spacing-lg) 0;
   }
 }
 </style>

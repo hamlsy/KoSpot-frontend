@@ -187,8 +187,10 @@ const loadUserProfileFromMain = async () => {
     const response = await mainService.getMainPageData()
     
     if (response.isSuccess && response.result) {
-      userProfile.value.isAdmin = response.result.isAdmin || false
-      isAdmin.value = response.result.isAdmin || false
+      // 수정: result.myInfo.isAdmin 사용
+      const isAdminValue = response.result.myInfo?.isAdmin || false
+      userProfile.value.isAdmin = isAdminValue
+      isAdmin.value = isAdminValue
     }
   } catch (error) {
     console.error('사용자 정보 로드 실패:', error)
@@ -199,10 +201,7 @@ const loadUserProfileFromMain = async () => {
 // 카테고리 필터
 const categories = [
   { id: 'all', name: '전체', icon: 'fas fa-list' },
-  { id: '공지', name: '공지', icon: 'fas fa-bullhorn' },
-  { id: '이벤트', name: '이벤트', icon: 'fas fa-gift' },
-  { id: '업데이트', name: '업데이트', icon: 'fas fa-sync-alt' },
-  { id: '일반', name: '일반', icon: 'fas fa-info-circle' }
+  { id: '공지', name: '공지', icon: 'fas fa-bullhorn' }
 ]
 
 // 컴퓨티드 속성
@@ -351,19 +350,20 @@ const noticeServiceRef = noticeService
 <style scoped>
 .notice-list-page {
   min-height: 100vh;
-  background-color: #f5f7fa;
+  background-color: var(--color-background);
+  transition: background-color var(--transition-slow);
 }
 
 .main-content {
   padding-top: 80px;
   max-width: 1200px;
   margin: 0 auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding-left: var(--spacing-lg);
+  padding-right: var(--spacing-lg);
 }
 
 .notice-container {
-  padding: 2rem 0;
+  padding: var(--spacing-2xl) 0;
 }
 
 /* 헤더 섹션 */
@@ -371,83 +371,87 @@ const noticeServiceRef = noticeService
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-bottom: 2rem;
-  gap: 1rem;
+  margin-bottom: var(--spacing-2xl);
+  gap: var(--spacing-lg);
 }
 
 .header-content h1 {
-  font-size: 2rem;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-display);
   font-weight: 700;
-  color: #1f2937;
-  margin-bottom: 0.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-sm);
+  letter-spacing: -0.02em;
 }
 
 .page-description {
-  color: #6b7280;
-  font-size: 1rem;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-body);
   margin: 0;
 }
 
 .write-button {
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: var(--color-primary);
   color: white;
   text-decoration: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 12px;
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-radius: var(--radius-lg);
   font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  transition: all 0.2s ease;
+  gap: var(--spacing-sm);
+  transition: all var(--transition-normal);
   white-space: nowrap;
+  box-shadow: var(--shadow-sm);
 }
 
 .write-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  box-shadow: var(--shadow-md);
+  background: var(--color-primary-dark);
 }
 
 /* 필터 섹션 */
 .notice-filters {
-  background: white;
-  border-radius: 16px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
 }
 
 .filter-tabs {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xl);
   flex-wrap: wrap;
 }
 
 .filter-tab {
-  background: #f3f4f6;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
+  background: var(--color-surface-hover);
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
   font-weight: 500;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
 }
 
 .filter-tab:hover {
-  background: #e5e7eb;
+  background: var(--color-border-light);
+  border-color: var(--color-primary);
+  color: var(--color-text-primary);
 }
 
 .filter-tab.active {
-  background: #667eea;
+  background: var(--color-primary);
   color: white;
+  border-color: var(--color-primary);
 }
 
 .search-section {
@@ -462,26 +466,28 @@ const noticeServiceRef = noticeService
 
 .search-input {
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: var(--spacing-md) var(--spacing-lg);
   padding-right: 2.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-body);
+  transition: all var(--transition-normal);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
 }
 
 .search-input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
 }
 
 .search-icon {
   position: absolute;
-  right: 0.75rem;
+  right: var(--spacing-md);
   top: 50%;
   transform: translateY(-50%);
-  color: #9ca3af;
+  color: var(--color-text-tertiary);
 }
 
 /* 로딩 상태 */
@@ -489,44 +495,46 @@ const noticeServiceRef = noticeService
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 4rem 2rem;
+  padding: var(--spacing-2xl);
 }
 
 .loading-spinner {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  color: #6b7280;
+  gap: var(--spacing-lg);
+  color: var(--color-text-secondary);
 }
 
 .loading-spinner i {
   font-size: 2rem;
-  color: #667eea;
+  color: var(--color-primary);
 }
 
 /* 공지사항 목록 */
 .notice-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--spacing-md);
 }
 
 .notice-item {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
   cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid #e5e7eb;
+  transition: all var(--transition-normal);
+  border: 1px solid var(--color-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  box-shadow: var(--shadow-sm);
 }
 
 .notice-item:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
 }
 
 .notice-content {
@@ -541,54 +549,61 @@ const noticeServiceRef = noticeService
 }
 
 .notice-category {
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-small);
   font-weight: 600;
 }
 
 .notice-category.공지 {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--color-info);
+  color: white;
 }
 
 .notice-category.이벤트 {
-  background: #fef3c7;
-  color: #d97706;
+  background: var(--color-warning);
+  color: white;
 }
 
 .notice-category.업데이트 {
-  background: #d1fae5;
-  color: #065f46;
+  background: var(--color-success);
+  color: white;
 }
 
 .notice-category.일반 {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--color-surface-hover);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
 }
 
 .notice-date {
-  color: #9ca3af;
-  font-size: 0.9rem;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-small);
 }
 
 .notice-title {
-  font-size: 1.1rem;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h3);
   font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 0.5rem;
-  line-height: 1.4;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-sm);
+  line-height: var(--line-height-tight);
 }
 
 .notice-preview {
-  color: #6b7280;
-  font-size: 0.9rem;
-  line-height: 1.5;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-relaxed);
 }
 
 .notice-actions {
-  color: #9ca3af;
-  font-size: 1.2rem;
+  color: var(--color-text-tertiary);
+  font-size: 1.25rem;
+  transition: color var(--transition-normal);
+}
+
+.notice-item:hover .notice-actions {
+  color: var(--color-primary);
 }
 
 /* 빈 상태 */
@@ -597,24 +612,28 @@ const noticeServiceRef = noticeService
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4rem 2rem;
+  padding: var(--spacing-2xl);
   text-align: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
 }
 
 .empty-icon {
   font-size: 4rem;
-  color: #d1d5db;
-  margin-bottom: 1rem;
+  color: var(--color-border-dark);
+  margin-bottom: var(--spacing-lg);
 }
 
 .empty-state h3 {
-  font-size: 1.25rem;
-  color: #374151;
-  margin-bottom: 0.5rem;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h3);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-sm);
 }
 
 .empty-state p {
-  color: #6b7280;
+  color: var(--color-text-secondary);
   margin: 0;
 }
 
@@ -623,28 +642,30 @@ const noticeServiceRef = noticeService
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.5rem;
-  margin-top: 2rem;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-2xl);
 }
 
 .pagination-btn,
 .pagination-number {
-  background: white;
-  border: 1px solid #d1d5db;
-  color: #374151;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
   min-width: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: 500;
 }
 
 .pagination-btn:hover:not(:disabled),
 .pagination-number:hover {
-  background: #f3f4f6;
+  background: var(--color-surface-hover);
+  border-color: var(--color-primary);
 }
 
 .pagination-btn:disabled {
@@ -653,14 +674,14 @@ const noticeServiceRef = noticeService
 }
 
 .pagination-number.active {
-  background: #667eea;
+  background: var(--color-primary);
   color: white;
-  border-color: #667eea;
+  border-color: var(--color-primary);
 }
 
 .pagination-numbers {
   display: flex;
-  gap: 0.25rem;
+  gap: var(--spacing-xs);
 }
 
 /* 반응형 디자인 */

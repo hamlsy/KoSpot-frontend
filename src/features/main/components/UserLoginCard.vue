@@ -130,15 +130,16 @@ export default {
 
 <style scoped>
 .user-card {
-  background-color: #fff;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  padding: 16px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-lg);
   height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: all var(--transition-normal);
   min-height: 180px;
 }
 
@@ -147,23 +148,25 @@ export default {
 }
 
 .clickable:hover {
-  background-color: #f8fafc;
+  background-color: var(--color-surface-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .profile-header {
   display: flex;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: var(--spacing-md);
   position: relative;
 }
 
 .user-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-full);
   overflow: hidden;
-  background: linear-gradient(135deg, #f0f9ff, #e6f7ff);
-  border: 2px solid #4cd964;
+  background: var(--color-surface-hover);
+  border: 2px solid var(--color-primary);
   flex-shrink: 0;
 }
 
@@ -174,110 +177,115 @@ export default {
 }
 
 .user-name-level {
-  margin-left: 12px;
+  margin-left: var(--spacing-md);
   text-align: left;
   flex-grow: 1;
 }
 
 .user-name-level h3 {
-  font-size: 1rem;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h3);
   font-weight: 600;
-  margin: 0 0 2px 0;
-  color: #000;
+  margin: 0 0 var(--spacing-xs) 0;
+  color: var(--color-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 120px;
+  max-width: 140px;
 }
 
 .user-name-level p {
-  color: #000;
+  color: var(--color-text-secondary);
   margin: 0;
-  font-size: 0.8rem;
-  opacity: 0.7;
+  font-size: var(--font-size-small);
 }
 
 .user-email {
-  font-size: 0.75rem !important;
-  opacity: 0.6 !important;
+  font-size: var(--font-size-tiny) !important;
+  color: var(--color-text-tertiary) !important;
 }
 
 .logout-button {
   background: transparent;
-  color: #000;
+  color: var(--color-text-secondary);
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
   position: absolute;
   right: 0;
   top: 0;
-  padding: 4px 8px;
-  font-size: 0.75rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-small);
 }
 
 .logout-button i {
-  margin-right: 4px;
+  margin-right: var(--spacing-xs);
 }
 
 .logout-button:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-  transform: translateY(-2px);
+  background-color: var(--color-surface-hover);
+  color: var(--color-error);
 }
 
-/* 통계 정보는 나중에 추가 예정 */
 .user-highlights {
   display: flex;
-  gap: 12px;
-  margin-top: 12px;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
 }
 
 .highlight-card {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 10px;
-  background: linear-gradient(135deg, #f8fafc, #eef2ff);
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  border-radius: 12px;
-  padding: 10px 12px;
+  gap: var(--spacing-sm);
+  background: var(--color-surface-hover);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  transition: all var(--transition-normal);
+}
+
+.highlight-card:hover {
+  border-color: var(--color-primary);
 }
 
 .highlight-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(59, 130, 246, 0.08);
-  color: #000;
+  background: var(--color-primary);
+  color: white;
   flex-shrink: 0;
 }
 
 .highlight-icon i {
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 
 .highlight-text {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--spacing-xs);
 }
 
 .highlight-label {
-  font-size: 0.7rem;
-  color: rgba(0, 0, 0, 0.65);
+  font-size: var(--font-size-tiny);
+  color: var(--color-text-secondary);
   font-weight: 500;
 }
 
 .highlight-value {
-  font-size: 0.95rem;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-small);
   font-weight: 600;
-  color: #000;
+  color: var(--color-text-primary);
 }
 
 .login-section {
@@ -285,60 +293,59 @@ export default {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 8px;
+  padding: var(--spacing-md);
 }
 
 .login-section h3 {
-  font-size: 1rem;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h3);
   font-weight: 600;
-  margin: 0 0 6px 0;
-  color: #000;
+  margin: 0 0 var(--spacing-sm) 0;
+  color: var(--color-text-primary);
 }
 
 .login-section p {
-  color: #000;
-  margin: 0 0 10px 0;
-  font-size: 0.8rem;
-  opacity: 0.7;
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--spacing-lg) 0;
+  font-size: var(--font-size-small);
 }
 
 .login-button {
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  background: var(--color-primary);
   color: white;
   border: none;
-  border-radius: 12px;
-  padding: 8px 16px;
-  font-weight: 500;
-  font-size: 0.9rem;
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md) var(--spacing-xl);
+  font-weight: 600;
+  font-size: var(--font-size-body);
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 6px rgba(99, 102, 241, 0.15);
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-sm);
   width: 100%;
-  margin-top: 8px;
-  position: relative;
-  overflow: hidden;
 }
 
 .login-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(99, 102, 241, 0.2);
+  box-shadow: var(--shadow-md);
+  background: var(--color-primary-dark);
 }
 
 .login-button:active {
   transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.1);
+  box-shadow: var(--shadow-sm);
 }
 
 @media (max-width: 768px) {
   .user-avatar {
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
   }
   
   .user-name-level h3 {
-    font-size: 0.9rem;
+    font-size: var(--font-size-body);
     max-width: 100px;
   }
+  
   .user-highlights {
     flex-direction: column;
   }

@@ -24,25 +24,12 @@
                 :src="player.equippedMarker || '/assets/default-marker.png'"
                 alt="플레이어 마커"
                 class="player-marker-img"
-                :class="{ 'voting': isPlayerVoting(player.id) }"
               />
               <div class="player-status-indicator" v-if="player.status">
                 <i class="fas" :class="getStatusIcon(player.status)"></i>
               </div>
               <div class="host-indicator" v-if="player.isHost">
                 <i class="fas fa-crown"></i>
-              </div>
-              <!-- Voting indicator -->
-              <div class="voting-indicator" v-if="isPlayerVoting(player.id)">
-                <i class="fas fa-vote-yea"></i>
-              </div>
-              <!-- Vote choice badge -->
-              <div 
-                v-if="getPlayerVoteChoice(player.id)" 
-                class="vote-choice-badge"
-                :class="getPlayerVoteChoice(player.id) === 'approve' ? 'vote-approve' : 'vote-reject'"
-              >
-                <i :class="getPlayerVoteChoice(player.id) === 'approve' ? 'fas fa-check' : 'fas fa-times'"></i>
               </div>
             </div>
             
@@ -223,24 +210,6 @@ const formatDistance = (distance) => {
   return (distance / 1000).toFixed(1);
 };
 
-const isPlayerVoting = (playerId) => {
-  if (!gameStore.state.teamVoting || !gameStore.state.teamVoting.active) return false;
-  
-  const player = gameStore.state.players.find(p => p.id === playerId);
-  if (!player) return false;
-  
-  return player.teamId === gameStore.state.teamVoting.teamId;
-};
-
-const getPlayerVoteChoice = (playerId) => {
-  if (!gameStore.state.teamVoting || !gameStore.state.teamVoting.active) return null;
-  
-  const vote = gameStore.state.teamVoting.votes.find(v => v.playerId === playerId);
-  if (!vote) return null;
-  
-  return vote.choice; // 'approve' or 'reject'
-};
-
 // 팀 이름 매핑
 const teamNames = {
   0: "블루팀",
@@ -253,11 +222,6 @@ const getTeamName = (teamId) => {
   return teamNames[teamId] || `팀 ${teamId}`;
 };
 
-// Expose methods to template
-defineExpose({
-  isPlayerVoting,
-  getPlayerVoteChoice
-});
 </script>
 
 <style scoped>
@@ -986,81 +950,6 @@ defineExpose({
   
   .player-avatar {
     border-color: var(--border-color);
-  }
-}
-/* Voting indicators */
-.voting-indicator {
-  position: absolute;
-  top: -5px;
-  left: -5px;
-  width: 20px;
-  height: 20px;
-  background: linear-gradient(135deg, #ffd700 0%, #ffb700 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  border: 2px solid white;
-  z-index: 3;
-  animation: bounce 1s infinite alternate;
-}
-
-.voting-indicator i {
-  font-size: 0.6rem;
-  color: white;
-}
-
-.vote-choice-badge {
-  position: absolute;
-  bottom: -5px;
-  right: -5px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  border: 2px solid white;
-  z-index: 3;
-}
-
-.vote-approve {
-  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
-}
-
-.vote-reject {
-  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
-}
-
-.vote-choice-badge i {
-  font-size: 0.6rem;
-  color: white;
-}
-
-.player-marker-img.voting {
-  animation: voting-pulse 2s infinite;
-}
-
-@keyframes voting-pulse {
-  0% {
-    filter: brightness(1);
-  }
-  50% {
-    filter: brightness(1.2);
-  }
-  100% {
-    filter: brightness(1);
-  }
-}
-
-@keyframes bounce {
-  from {
-    transform: translateY(0);
-  }
-  to {
-    transform: translateY(-3px);
   }
 }
 </style>

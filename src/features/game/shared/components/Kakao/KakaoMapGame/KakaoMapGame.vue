@@ -149,10 +149,7 @@ const {
 
 // 게임 로직
 const {
-  submitAnswer,
-  startTeamVoting,
-  onVoteAnswer,
-  updateVotingBadge
+  submitAnswer
 } = useKakaoMapGame(props, emit);
 
 const getMapInstance = () => {
@@ -172,7 +169,6 @@ const ensureMapInitialized = () => {
 defineExpose({
   getMapInstance,
   getMarkerPosition,
-  startTeamVoting,
   ensureMapInitialized,
   reloadMap
 });

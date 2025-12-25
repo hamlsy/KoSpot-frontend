@@ -6,8 +6,8 @@
         <button class="back-button" @click="$router.push('/main')">
           <i class="fas fa-arrow-left"></i>
         </button>
-        <div class="header-left">
-          <app-logo class="home-link" to="/main" />
+        <div class="logo-container">
+          <img src="/images/logo/kospot_logo_1-removebg.png" alt="KoSpot" class="header-logo" />
         </div>
         <div class="header-right">
           <h3>멀티플레이어 로비</h3>
@@ -121,7 +121,6 @@ import { useLobbyRoom } from '../composables/useLobbyRoom.js';
 import GameRoomList from '../components/RoomList.vue';
 import ChatWindow from '../../chat/components/Lobby/ChatWindow.vue';
 import CreateRoomModal from '../components/CreateRoomModal.vue';
-import AppLogo from '@/core/components/AppLogo.vue';
 
 // Vue3 script setup에서 process.env 접근을 위한 정의
 // const isDevelopment = process.env.NODE_ENV === 'development';
@@ -286,17 +285,8 @@ const createRoom = async (roomData) => {
     const newRoom = await createRoomAPI(roomData);
     
     if (newRoom && newRoom.gameRoomId) {
-      // 사용자 정보 가져오기 
-      const { user: authUser } = useAuth();
-      const userNickname = authUser.value?.nickname || '익명';
-      
-      // 시스템 메시지 추가 (WebSocket 서비스를 통해)
-      lobbyService.createGlobalSystemMessage(
-        `${userNickname}님이 '${roomData.title}' 방을 생성했습니다.`
-      );
-      
       // 생성된 방으로 자동 입장 및 RoomView로 이동
-      // newRoom 구조: { gameRoomId, title, gameModeKey, playerMatchTypeKey, maxPlayers }
+      // newRoom 구조: { gameRoomId, title, gameModeKey, playerMatchTypeKey, maxPlayers, totalRounds, timeLimit }
       await router.push({
         name: 'RoomView',
         params: { roomId: newRoom.gameRoomId.toString() },
@@ -309,6 +299,8 @@ const createRoom = async (roomData) => {
             maxPlayers: newRoom.maxPlayers,
             isPrivate: newRoom.privateRoom || false,
             hostId: getCurrentUserId(),
+            totalRounds: newRoom.totalRounds,
+            timeLimit: newRoom.timeLimit,
             currentPlayerCount: 1
           }
         }
@@ -381,13 +373,12 @@ onBeforeUnmount(async () => {
 </script>
 
 <style scoped>
-@import url("@/shared/assets/styles/common/header.css");
-
 .multiplayer-container {
-  min-height: 120vh;
+  min-height: 100vh;
   padding-bottom: 40px;
   position: relative;
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-body);
+  background-color: var(--color-background);
 }
 
 /* 헤더 스타일 */
@@ -396,64 +387,79 @@ onBeforeUnmount(async () => {
   top: 0;
   left: 0;
   right: 0;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.03);
+  height: 80px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--color-border);
   z-index: 100;
-  transition: all 0.3s ease;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
+  transition: all var(--transition-normal);
 }
 
 .header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  height: 100%;
+  padding: 0 var(--spacing-xl);
   display: flex;
   align-items: center;
-  padding: 1rem 1.5rem;
-  max-width: 1200px;
-  margin: 0 auto;
+  justify-content: space-between;
 }
 
 .back-button {
-  background: none;
-  border: none;
-  color: #333;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: rgba(37, 99, 235, 0.05);
+  border: 1px solid rgba(37, 99, 235, 0.1);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 1.2rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
-  transition: transform 0.2s ease;
-  margin-right: 1rem;
 }
 
 .back-button:hover {
-  transform: translateX(-3px);
+  background: var(--color-primary);
+  color: white;
+  transform: translateX(-4px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
 }
 
-.header-left {
-  display: flex;
-  align-items: center;
+.logo-container {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
-/* 로고 스타일 */
+.header-logo {
+  height: 50px;
+  width: auto;
+  filter: drop-shadow(0 2px 8px rgba(37, 99, 235, 0.15));
+  transition: transform var(--transition-normal);
+}
+
+.header-logo:hover {
+  transform: scale(1.05);
+}
+
 .header-right {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
 }
 
 .header-right h3 {
   margin: 0;
-  font-size: 1.2rem;
-  color: #111827;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h3);
   font-weight: 700;
-  position: relative;
+  color: var(--color-text-primary);
   letter-spacing: -0.01em;
-}
-
-.header-right h3::after {
-  content: '';
-  position: absolute;
-  bottom: -6px;
-  left: 0;
-  width: 40%;
-  height: 3px;
-  background: linear-gradient(90deg, #60a5fa, #3b82f6);
-  border-radius: 2px;
 }
 
 /* 개발 모드 토글 버튼 */
@@ -461,23 +467,19 @@ onBeforeUnmount(async () => {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.5rem 0.8rem;
-  margin-left: 1rem;
-  background: rgba(107, 114, 128, 0.1);
-  border: 1px solid rgba(107, 114, 128, 0.2);
-  border-radius: 8px;
-  color: #6b7280;
+  padding: 0.5rem 0.9rem;
+  background: rgba(107, 114, 128, 0.08);
+  border: 1px solid rgba(107, 114, 128, 0.15);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.25s ease;
-  position: relative;
-  overflow: hidden;
+  transition: all var(--transition-normal);
 }
 
 .dev-mode-toggle i {
   font-size: 0.75rem;
-  transition: all 0.25s ease;
 }
 
 .dev-mode-toggle span {
@@ -486,27 +488,25 @@ onBeforeUnmount(async () => {
 }
 
 .dev-mode-toggle:hover {
-  background: rgba(107, 114, 128, 0.15);
-  border-color: rgba(107, 114, 128, 0.3);
-  transform: translateY(-1px);
+  background: rgba(107, 114, 128, 0.12);
+  transform: translateY(-2px);
 }
 
 .dev-mode-toggle.active {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  border-color: #2563eb;
+  background: linear-gradient(135deg, var(--color-primary) 0%, #1d4ed8 100%);
+  border-color: var(--color-primary);
   color: white;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
 }
 
 .dev-mode-toggle.active:hover {
-  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
 }
 
 /* 메인 콘텐츠 스타일 */
 .main-content {
-  padding: 80px 20px 20px;
-  max-width: 1200px;
+  padding: 100px var(--spacing-xl) var(--spacing-xl);
+  max-width: 1400px;
   margin: 0 auto;
 }
 
@@ -544,35 +544,34 @@ onBeforeUnmount(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem 1.5rem;
-  background: #3b82f6;
+  padding: 1.1rem 1.5rem;
+  background: linear-gradient(135deg, var(--color-primary) 0%, #1d4ed8 100%);
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
+  font-family: var(--font-heading);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+  transition: all var(--transition-normal);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
   width: 100%;
   margin-top: auto;
 }
 
 .create-room-button i {
   margin-right: 0.5rem;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .create-room-button:hover {
-  background: #2563eb;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
 }
 
 .create-room-button:active {
-  background: #1d4ed8;
-  transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
 }
 
 /* 로딩 오버레이 */
@@ -598,7 +597,7 @@ onBeforeUnmount(async () => {
 
 .loading-spinner i {
   font-size: 3rem;
-  color: #3b82f6;
+  color: var(--color-primary);
   margin-bottom: 1rem;
   animation: pulse 1.5s infinite;
 }
@@ -619,7 +618,8 @@ onBeforeUnmount(async () => {
 }
 
 .loading-spinner p {
-  color: #333;
+  color: var(--color-text-primary);
+  font-family: var(--font-heading);
   font-size: 1.2rem;
   font-weight: 600;
 }
@@ -627,21 +627,22 @@ onBeforeUnmount(async () => {
 /* 채팅 토글 버튼 */
 .chat-toggle-button {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: var(--spacing-xl);
+  right: var(--spacing-xl);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #3b82f6;
+  background: linear-gradient(135deg, var(--color-primary) 0%, #1d4ed8 100%);
   color: white;
   border: none;
-  border-radius: 30px;
+  border-radius: var(--radius-full);
   padding: 12px 20px;
+  font-family: var(--font-heading);
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+  transition: all var(--transition-normal);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
   z-index: 50;
 }
 
@@ -650,13 +651,12 @@ onBeforeUnmount(async () => {
 }
 
 .chat-toggle-button:hover {
-  background: #2563eb;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
 }
 
 .chat-toggle-button.active {
-  background: #1d4ed8;
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
 }
 
 /* 에러 토스트 */
@@ -723,12 +723,12 @@ onBeforeUnmount(async () => {
 .dummy-mode-toast {
   position: fixed;
   top: 100px;
-  left: 20px;
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  left: var(--spacing-xl);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #1d4ed8 100%);
   color: white;
   padding: 1rem 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.3);
   z-index: 1000;
   animation: slideInLeft 0.3s ease-out;
   max-width: 400px;
@@ -831,18 +831,29 @@ onBeforeUnmount(async () => {
 
 @media (max-width: 640px) {
   .header-content {
-    padding: 0.8rem 1rem;
+    padding: 0.6rem 0.8rem;
+  }
+  
+  /* 모바일에서 로고 크기 축소 */
+  .header-logo {
+    height: 32px;
+  }
+  
+  .logo-container {
+    position: static;
+    transform: none;
   }
   
   .header-right {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 0.5rem;
+    gap: 0.3rem;
   }
   
   .header-right h3 {
-    font-size: 1rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
   }
   
   .dev-mode-toggle {

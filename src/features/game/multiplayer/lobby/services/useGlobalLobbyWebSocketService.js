@@ -120,7 +120,6 @@ export function useGlobalLobbyWebSocketService() {
     const subscribeToGlobalLobbyChat = () => {
         // WebSocket이 연결되지 않은 경우 구독 불가
         if (!webSocketManager.isConnected.value) {
-            console.warn('WebSocket이 연결되지 않아 구독할 수 없습니다.');
             return;
         }
         
@@ -154,7 +153,6 @@ export function useGlobalLobbyWebSocketService() {
         // 로비 채팅은 서버 세션으로 사용자 식별
         
         if (!webSocketManager.isConnected.value) {
-            console.error('❌ WebSocket이 연결되지 않아 메시지를 전송할 수 없습니다.');
             return false;
         }
         
@@ -168,18 +166,12 @@ export function useGlobalLobbyWebSocketService() {
      */
     const joinGlobalLobby = () => {
         if (!webSocketManager.isConnected.value) {
-            console.warn('WebSocket이 연결되지 않아 로비에 입장할 수 없습니다.');
             return false;
         }
         
         try {
             // API 명세서에 따라 빈 객체 전송
             const success = publish('/app/chat.join.lobby', {});
-            
-            if (success) {
-                // 로컬에만 표시되는 시스템 메시지
-                createSystemMessage('로비에 입장했습니다.', 'lobby');
-            }
             
             return success;
         } catch (error) {
@@ -195,7 +187,6 @@ export function useGlobalLobbyWebSocketService() {
      */
     const leaveGlobalLobby = () => {
         if (!webSocketManager.isConnected.value) {
-            console.warn('WebSocket이 연결되지 않아 로비에서 퇴장할 수 없습니다.');
             return false;
         }
         

@@ -39,7 +39,7 @@
             </div>
             <div class="info-content">
               <div class="info-label">라운드</div>
-              <div class="info-value">{{ roomData.rounds }}회</div>
+              <div class="info-value">{{ roomData.totalRounds }}회</div>
             </div>
           </div>
           

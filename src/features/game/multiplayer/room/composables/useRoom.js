@@ -656,25 +656,8 @@ export function useRoom(props, emit, options = {}) {
     try {
       isStartingGame.value = true;
 
-      const gameModeKey = (localRoomData.value.gameMode || props.roomData?.gameMode || 'ROADVIEW')
-        .toString()
-        .toUpperCase();
-      const playerMatchTypeKey = localRoomData.value.isTeamMode ? 'TEAM' : 'SOLO';
-
-      const roundsRaw = localRoomData.value.rounds ?? localRoomData.value.totalRounds ?? 5;
-      const totalRounds = Number.isFinite(Number(roundsRaw)) ? Number(roundsRaw) : 5;
-
-      const timeLimitRaw = localRoomData.value.timeLimit ?? null;
-      const normalizedTimeLimit = timeLimitRaw != null && Number.isFinite(Number(timeLimitRaw))
-        ? Number(timeLimitRaw)
-        : null;
-
-      await roomApiService.startGame(localRoomData.value.id, {
-        gameModeKey,
-        playerMatchTypeKey,
-        totalRounds,
-        timeLimit: normalizedTimeLimit
-      });
+      // 서버에서 방 설정(gameMode, playerMatchType, totalRounds, timeLimit)을 자동으로 가져옴
+      await roomApiService.startGame(localRoomData.value.id);
       requestSucceeded = true;
       roomChat.addSystemMessage('방장이 게임 시작을 요청했습니다. 잠시 후 게임이 시작됩니다.');
       if (toastRef?.value) {

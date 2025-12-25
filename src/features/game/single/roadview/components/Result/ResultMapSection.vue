@@ -12,6 +12,8 @@
 </template>
 
 <script>
+import { getUserMarkerSize, getResultMarkerSize } from '@/core/constants/markerSizes.js';
+
 export default {
   name: "ResultMapSection",
   props: {
@@ -64,7 +66,7 @@ export default {
       // 실제 위치 마커 (location-flag.png 사용)
       const realLocationImage = new window.kakao.maps.MarkerImage(
         require('@/shared/assets/images/marker/location-flag.png'),
-        new window.kakao.maps.Size(35, 35)
+        getResultMarkerSize(window.kakao)
       );
       
       const actualMarker = new window.kakao.maps.Marker({
@@ -115,7 +117,7 @@ export default {
           // 사용자가 장착한 마커 이미지가 있는 경우
           const userMarkerImage = new window.kakao.maps.MarkerImage(
             this.markerImageUrl,
-            new window.kakao.maps.Size(35, 35)
+            getUserMarkerSize(window.kakao)
           );
           guessedMarker = new window.kakao.maps.Marker({
             position: new window.kakao.maps.LatLng(

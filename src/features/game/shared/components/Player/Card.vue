@@ -25,18 +25,6 @@
       <div class="host-badge" v-if="player.isHost">
         <i class="fas fa-crown"></i>
       </div>
-      <!-- Voting indicator -->
-      <div class="voting-indicator" v-if="showVotingIndicators && isPlayerVoting">
-        <i class="fas fa-vote-yea"></i>
-      </div>
-      <!-- Vote choice badge -->
-      <div 
-        v-if="showVotingIndicators && playerVoteChoice" 
-        class="vote-choice-badge"
-        :class="playerVoteChoice === 'approve' ? 'vote-approve' : 'vote-reject'"
-      >
-        <i :class="playerVoteChoice === 'approve' ? 'fas fa-check' : 'fas fa-times'"></i>
-      </div>
     </div>
     
     <!-- Player info -->
@@ -106,33 +94,10 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
-  showVotingIndicators: {
-    type: Boolean,
-    default: true
-  }
 });
 
 const emit = defineEmits(['click', 'kick']);
 
-// Check if player is part of active voting
-const isPlayerVoting = computed(() => {
-  if (!gameStore.state.teamVoting || !gameStore.state.teamVoting.active) return false;
-  
-  const player = props.player;
-  if (!player) return false;
-  
-  return player.teamId === gameStore.state.teamVoting.teamId;
-});
-
-// Get player's vote choice if they have voted
-const playerVoteChoice = computed(() => {
-  if (!gameStore.state.teamVoting || !gameStore.state.teamVoting.active) return null;
-  
-  const vote = gameStore.state.teamVoting.votes.find(v => v.playerId === props.player.id);
-  if (!vote) return null;
-  
-  return vote.choice; // 'approve' or 'reject'
-});
 
 const handleClick = () => {
   emit('click', props.player);
@@ -423,65 +388,6 @@ const convertToRoman = (num) => {
 .chat-bubble.active {
   opacity: 1;
   transform: translateY(0);
-}
-/* Voting indicators */
-.voting-indicator {
-  position: absolute;
-  top: -5px;
-  left: -5px;
-  width: 20px;
-  height: 20px;
-  background: linear-gradient(135deg, #ffd700 0%, #ffb700 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  border: 2px solid white;
-  z-index: 3;
-  animation: bounce 1s infinite alternate;
-}
-
-.voting-indicator i {
-  font-size: 0.6rem;
-  color: white;
-}
-
-.vote-choice-badge {
-  position: absolute;
-  bottom: -5px;
-  right: -5px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  border: 2px solid white;
-  z-index: 3;
-}
-
-.vote-approve {
-  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
-}
-
-.vote-reject {
-  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
-}
-
-.vote-choice-badge i {
-  font-size: 0.6rem;
-  color: white;
-}
-
-@keyframes bounce {
-  from {
-    transform: translateY(0);
-  }
-  to {
-    transform: translateY(-3px);
-  }
 }
 </style>
 

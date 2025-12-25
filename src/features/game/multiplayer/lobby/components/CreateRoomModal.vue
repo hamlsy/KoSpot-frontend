@@ -107,6 +107,48 @@
         </div>
 
         <div class="form-group">
+          <label>라운드 수</label>
+          <div class="player-count-control">
+            <button
+              class="count-btn"
+              @click="decreaseTotalRounds"
+              :disabled="totalRounds <= 2"
+            >
+              <i class="fas fa-minus"></i>
+            </button>
+            <span class="player-count">{{ totalRounds }}라운드</span>
+            <button
+              class="count-btn"
+              @click="increaseTotalRounds"
+              :disabled="totalRounds >= 10"
+            >
+              <i class="fas fa-plus"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>라운드 시간 제한</label>
+          <div class="time-limit-control">
+            <button
+              class="count-btn"
+              @click="decreaseTimeLimit"
+              :disabled="timeLimit <= 30"
+            >
+              <i class="fas fa-minus"></i>
+            </button>
+            <span class="player-count time-display">{{ formattedTimeLimit }}</span>
+            <button
+              class="count-btn"
+              @click="increaseTimeLimit"
+              :disabled="timeLimit >= 300"
+            >
+              <i class="fas fa-plus"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
           <label>게임 설정</label>
           <div class="settings-group">
             <label class="checkbox-option">
@@ -162,6 +204,7 @@ export default {
       maxPlayers: 4,
       gameType: "solo",
       timeLimit: 180,
+      totalRounds: 5,
       password: "",
       gameSettings: {
         isPrivate: false,
@@ -170,6 +213,20 @@ export default {
         isPoiNameVisible: true,
       },
     };
+  },
+
+  computed: {
+    formattedTimeLimit() {
+      const minutes = Math.floor(this.timeLimit / 60);
+      const seconds = this.timeLimit % 60;
+      if (minutes === 0) {
+        return `${seconds}초`;
+      } else if (seconds === 0) {
+        return `${minutes}분`;
+      } else {
+        return `${minutes}분 ${seconds}초`;
+      }
+    },
   },
 
   methods: {
@@ -188,6 +245,7 @@ export default {
         password: this.password || null,
         gameModeKey: this.gameMode,
         timeLimit: this.timeLimit,
+        totalRounds: this.totalRounds,
         playerMatchTypeKey: playerMatchTypeKey,
         maxPlayers: this.maxPlayers,
         privateRoom: this.gameSettings.isPrivate,
@@ -206,6 +264,30 @@ export default {
     decreasePlayerCount() {
       if (this.maxPlayers > 2) {
         this.maxPlayers--;
+      }
+    },
+
+    increaseTotalRounds() {
+      if (this.totalRounds < 10) {
+        this.totalRounds++;
+      }
+    },
+
+    decreaseTotalRounds() {
+      if (this.totalRounds > 2) {
+        this.totalRounds--;
+      }
+    },
+
+    increaseTimeLimit() {
+      if (this.timeLimit < 300) {
+        this.timeLimit += 30;
+      }
+    },
+
+    decreaseTimeLimit() {
+      if (this.timeLimit > 30) {
+        this.timeLimit -= 30;
       }
     },
   },
@@ -538,6 +620,16 @@ export default {
   padding: 0.5rem 0.8rem;
   border-radius: 10px;
   border: 1px solid #e2e8f0;
+}
+
+.time-limit-control {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.time-display {
+  min-width: 100px;
 }
 
 .settings-group {

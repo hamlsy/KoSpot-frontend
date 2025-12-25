@@ -14,8 +14,7 @@ const markerImage = ref(null);
 const hasMarker = ref(false);
 
 //team
-const teamMarkers = ref([]); // team marker(vote) data
-const isVoteInProgress = ref(false);
+const teamMarkers = ref([]); // team marker data
 
 export function useKakaoMapState() {
   // computed 속성
@@ -48,8 +47,7 @@ export function useKakaoMapState() {
     // computed
     formattedDistance,
 
-    //team vote
+    //team
     teamMarkers,
-    isVoteInProgress,
   };
 }

@@ -28,57 +28,66 @@
         v-for="room in rooms" 
         :key="room.gameRoomId"
         class="room-card"
-        :class="{ 'playing': room.gameRoomStatus === '게임 중' }"
+        :class="roomCardClass(room)"
         @click="joinRoom(room)"
       >
+        <!-- 좌측 상태 바 -->
+        <div class="room-status-bar"></div>
+        
         <div class="room-content">
           <div class="room-header">
-            <div class="room-info">
-              <h3 class="room-name">{{ room.title }}</h3>
-              <span class="room-host">방장: {{ room.hostNickname }}</span>
-            </div>
             <div class="room-badges">
-              <span 
-                class="mode-badge"
-                :class="{ 
-                  'roadview-mode': room.gameMode === '로드뷰',
-                  'photo-mode': room.gameMode === '포토모드'
-                }"
-              >
-                <i :class="room.gameMode === '로드뷰' ? 'fas fa-street-view' : 'fas fa-camera'"></i>
-                {{ room.gameMode }}
+              <span class="status-chip" :class="statusChipClass(room)">
+                <span class="status-dot"></span>
+                {{ isPlaying(room) ? '진행 중' : '대기 중' }}
               </span>
-              <span 
-                class="type-badge"
-                :class="{ 
-                  'solo': room.gameType === '개인전',
-                  'team': room.gameType === '팀전'
-                }"
-              >
-                <i :class="room.gameType === '개인전' ? 'fas fa-user' : 'fas fa-users'"></i>
-                {{ room.gameType }}
-              </span>
-              <span 
-                class="status-badge"
-                :class="{ 
-                  'waiting': room.gameRoomStatus === '대기 중',
-                  'playing': room.gameRoomStatus === '게임 중'
-                }"
-              >
-                {{ room.gameRoomStatus }}
+              <span v-if="room.privateRoom" class="lock-badge">
+                <i class="fas fa-lock"></i>
               </span>
             </div>
           </div>
           
-          <div class="room-details">
-            <div class="detail-item">
-              <i class="fas fa-users"></i>
-              <span>{{ room.currentPlayerCount }}/{{ room.maxPlayers }}명</span>
+          <div class="room-main">
+            <div class="room-info">
+              <h3 class="room-name">{{ room.title }}</h3>
+              <div class="room-host">
+                <i class="fas fa-user"></i>
+                <span>{{ room.hostNickname }}</span>
+              </div>
             </div>
-            <div class="detail-item" v-if="room.privateRoom">
-              <i class="fas fa-lock"></i>
-              <span>비밀방</span>
+          </div>
+          
+          <div class="room-meta">
+            <span class="meta-tag">
+              <i :class="room.gameMode === '로드뷰' ? 'fas fa-street-view' : 'fas fa-camera'"></i>
+              {{ room.gameMode }}
+            </span>
+            <span class="meta-divider"></span>
+            <span class="meta-tag">
+              <i :class="room.gameType === '개인전' ? 'fas fa-user' : 'fas fa-users'"></i>
+              {{ room.gameType }}
+            </span>
+            <span class="meta-divider" v-if="room.totalRounds || room.timeLimit"></span>
+            <span class="meta-tag" v-if="room.totalRounds">
+              <i class="fas fa-redo"></i>
+              {{ room.totalRounds }}라운드
+            </span>
+            <span class="meta-divider" v-if="room.totalRounds && room.timeLimit"></span>
+            <span class="meta-tag" v-if="room.timeLimit">
+              <i class="fas fa-clock"></i>
+              {{ formatTime(room.timeLimit) }}
+            </span>
+          </div>
+          
+          <div class="room-footer">
+            <div class="player-bar-wrapper">
+              <div class="player-bar">
+                <div class="player-fill" :style="{ width: playerPercentage(room) + '%' }"></div>
+              </div>
+              <span class="player-count">{{ room.currentPlayerCount }}/{{ room.maxPlayers }}</span>
             </div>
+            <span class="join-text" v-if="!isPlaying(room)">입장하기 →</span>
+            <span class="join-text disabled" v-else>진행 중</span>
           </div>
         </div>
       </div>
@@ -151,6 +160,42 @@ export default {
       this.$emit('refresh-rooms');
     },
     
+    isPlaying(room) {
+      return room.gameRoomStatus === '게임 중' || room.gameRoomStatus === 'PLAYING';
+    },
+    
+    roomCardClass(room) {
+      return {
+        'is-playing': this.isPlaying(room),
+        'is-private': !this.isPlaying(room) && room.privateRoom,
+        'is-public': !this.isPlaying(room) && !room.privateRoom
+      };
+    },
+    
+    statusChipClass(room) {
+      return {
+        'status-playing': this.isPlaying(room),
+        'status-private': !this.isPlaying(room) && room.privateRoom,
+        'status-public': !this.isPlaying(room) && !room.privateRoom
+      };
+    },
+    
+    playerPercentage(room) {
+      return (room.currentPlayerCount / room.maxPlayers) * 100;
+    },
+    
+    formatTime(seconds) {
+      const min = Math.floor(seconds / 60);
+      const sec = seconds % 60;
+      if (sec === 0) {
+        return `${min}분`;
+      } else if (min === 0) {
+        return `${sec}초`;
+      } else {
+        return `${min}:${String(sec).padStart(2, '0')}`;
+      }
+    },
+    
     joinRoom(room) {
       // FindGameRoomResponse 구조에 맞는 검증 로직
       if (room.currentPlayerCount >= room.maxPlayers) {
@@ -159,7 +204,7 @@ export default {
       }
       
       // Spring에서 올 수 있는 gameRoomStatus 값들 체크
-      if (room.gameRoomStatus === '게임 중' || room.gameRoomStatus === 'PLAYING') {
+      if (this.isPlaying(room)) {
         alert('이미 게임이 진행중인 방입니다.');
         return;
       }
@@ -199,69 +244,62 @@ export default {
 .game-rooms-panel {
   flex: 1;
   background: white;
-  border-radius: 20px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   max-height: 600px;
-  border: 1px solid rgba(240, 244, 248, 0.8);
+  border: 1px solid #e5e7eb;
   transition: all 0.3s ease;
 }
 
 .panel-header {
-  padding: 1rem 1.5rem;
+  padding: 1rem 1.25rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-  background: linear-gradient(to right, rgba(240, 244, 248, 0.5), rgba(215, 227, 252, 0.5));
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
+  border-bottom: 1px solid #f3f4f6;
+  background: #fafafa;
 }
 
 .panel-title-section {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--spacing-md);
 }
 
 .panel-title {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 700;
   color: #111827;
-  position: relative;
-  padding-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.panel-title i {
+  color: #10b981;
+  font-size: 1rem;
 }
 
 .header-loading {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   color: #6b7280;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 500;
 }
 
 .header-loading i {
-  color: #60a5fa;
-  font-size: 0.85rem;
+  color: #10b981;
+  font-size: 0.75rem;
 }
 
 .loading-text {
   animation: fadeInOut 2s infinite;
-}
-
-.panel-title::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 40px;
-  height: 3px;
-  background: linear-gradient(90deg, #60a5fa, #8b5cf6);
-  border-radius: 2px;
 }
 
 .room-actions {
@@ -283,116 +321,127 @@ export default {
 
 .search-box {
   position: relative;
-}
-
-.search-box input {
-  padding: 0.6rem 0.8rem 0.6rem 2.2rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
-  width: 180px;
-  background-color: rgba(248, 250, 252, 0.8);
-  color: #334155;
-}
-
-.search-box input:focus {
-  outline: none;
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
-  width: 240px;
-  background-color: white;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
 }
 
 .search-box i {
-  position: absolute;
-  left: 0.9rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #94a3b8;
-  transition: color 0.3s ease;
+  color: #9ca3af;
+  font-size: 0.8rem;
 }
 
-.search-box input:focus + i {
-  color: #60a5fa;
+.search-box input {
+  border: none;
+  outline: none;
+  font-size: 0.8rem;
+  width: 140px;
+  color: #374151;
+  background: transparent;
+}
+
+.search-box input::placeholder {
+  color: #9ca3af;
 }
 
 .refresh-button {
-  background: rgba(240, 244, 248, 0.8);
-  border: 1px solid #e2e8f0;
-  color: #60a5fa;
-  font-size: 1rem;
-  cursor: pointer;
-  padding: 0.6rem;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  transition: all 0.3s ease;
+  width: 34px;
+  height: 34px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  color: #6b7280;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
 }
 
 .refresh-button:hover:not(:disabled) {
-  background: white;
-  transform: rotate(180deg);
-  box-shadow: 0 4px 8px rgba(96, 165, 250, 0.15);
-  color: #3b82f6;
+  background: #f3f4f6;
+  color: #374151;
 }
 
 .refresh-button:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
-}
-
-.refresh-button:disabled:hover {
-  background: rgba(240, 244, 248, 0.8);
-  transform: none;
-  box-shadow: none;
 }
 
 .rooms-container {
   flex: 1;
-  padding: 1.2rem;
+  padding: 0.75rem;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  background-color: #f8fafc;
+  gap: 0.6rem;
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-color: #10b981 transparent;
 }
 
 .rooms-container::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 .rooms-container::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(16, 185, 129, 0.1);
 }
 
 .rooms-container::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1;
-  border-radius: 6px;
+  background: #10b981;
+  border-radius: 2px;
 }
 
 .room-card {
-  background: white;
-  border-radius: 16px;
-  padding: 1rem 1.2rem;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
-  transition: all 0.3s ease;
-  border-left: 4px solid #60a5fa;
   position: relative;
-  overflow: hidden;
-  min-height: 105px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  background: #ffffff;
+  border-radius: 4px;
+  padding: 0;
   cursor: pointer;
+  transition: all 0.25s ease;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  display: flex;
   animation: slideIn 0.4s ease-out;
   animation-fill-mode: both;
+}
+
+.room-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+/* 좌측 상태 바 */
+.room-status-bar {
+  width: 5px;
+  flex-shrink: 0;
+}
+
+.is-public .room-status-bar {
+  background: linear-gradient(180deg, #10b981, #059669);
+}
+
+.is-private .room-status-bar {
+  background: linear-gradient(180deg, #6366f1, #4f46e5);
+}
+
+.is-playing .room-status-bar {
+  background: linear-gradient(180deg, #f59e0b, #d97706);
+}
+
+.is-playing {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.is-playing:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 @keyframes slideIn {
@@ -412,120 +461,211 @@ export default {
 .room-card:nth-child(4) { animation-delay: 0.2s; }
 .room-card:nth-child(5) { animation-delay: 0.25s; }
 
-.room-card.playing {
-  border-left-color: #f59e0b;
-  cursor: not-allowed;
-  opacity: 0.9;
-  background: linear-gradient(to right, rgba(255, 247, 237, 0.5), white);
-}
-
-.room-card:not(.playing):hover {
-  background-color: #f0f9ff;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.06);
-}
-
-.room-info {
+.room-content {
   flex: 1;
-}
-
-.room-name {
-  margin: 0 0 0.3rem 0;
-  font-size: 1.05rem;
-  color: #111827;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-.room-host {
-  font-size: 0.85rem;
-  color: #64748b;
+  padding: 0.875rem 1rem;
   display: flex;
-  align-items: center;
-  gap: 0.3rem;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-.room-host::before {
-  content: '👑';
-  font-size: 0.8rem;
+/* 헤더 */
+.room-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .room-badges {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.3rem;
+  margin-left: auto;
 }
 
-.mode-badge, .status-badge, .type-badge {
-  padding: 0.35rem 0.7rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
+.status-chip {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 2px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
-.roadview-mode {
-  background: linear-gradient(135deg, #dcfce7, #d1fae5);
-  color: #16a34a;
+.status-chip.status-public {
+  background: #ecfdf5;
+  color: #059669;
 }
 
-.photo-mode {
-  background: linear-gradient(135deg, #dbeafe, #e0f2fe);
-  color: #2563eb;
-}
-
-.waiting {
-  background: linear-gradient(135deg, #e0e7ff, #ddd6fe);
+.status-chip.status-private {
+  background: #eef2ff;
   color: #4f46e5;
 }
 
-.playing {
-  background: linear-gradient(135deg, #fef3c7, #ffedd5);
+.status-chip.status-playing {
+  background: #fef3c7;
   color: #d97706;
 }
 
-.solo {
-  background: linear-gradient(135deg, #f3e8ff, #e9d5ff);
-  color: #8b5cf6;
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
-.team {
-  background: linear-gradient(135deg, #ecfeff, #cffafe);
-  color: #06b6d4;
+.status-chip.status-public .status-dot {
+  animation: pulse 2s infinite;
 }
 
-.round-info {
-  margin-left: 0.3rem;
-  font-weight: 700;
-  border-left: 1px solid rgba(230, 81, 0, 0.3);
-  padding-left: 0.3rem;
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
-.room-details {
+.lock-badge {
+  width: 28px;
+  height: 28px;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
   display: flex;
-  gap: 1rem;
-  margin-bottom: 0.8rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+}
+
+.lock-badge i {
+  color: #6366f1;
+  font-size: 0.7rem;
+}
+
+/* 메인 영역 */
+.room-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.room-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.room-name {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.room-host {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.room-host i {
+  font-size: 0.65rem;
+}
+
+/* 메타 정보 */
+.room-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
   flex-wrap: wrap;
 }
 
-.detail-item {
+.meta-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  color: #6b7280;
+}
+
+.meta-tag i {
+  font-size: 0.65rem;
+  color: #9ca3af;
+}
+
+.meta-divider {
+  width: 3px;
+  height: 3px;
+  background: #d1d5db;
+  border-radius: 50%;
+}
+
+/* 푸터 */
+.room-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.5rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+.player-bar-wrapper {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.85rem;
-  color: #64748b;
-  background: #f8fafc;
-  padding: 0.4rem 0.7rem;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  flex: 1;
 }
 
-.detail-item i {
-  color: #60a5fa;
-  font-size: 0.9rem;
+.player-bar {
+  flex: 1;
+  max-width: 100px;
+  height: 4px;
+  background: #f3f4f6;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.player-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.is-public .player-fill {
+  background: #10b981;
+}
+
+.is-private .player-fill {
+  background: #6366f1;
+}
+
+.is-playing .player-fill {
+  background: #f59e0b;
+}
+
+.player-count {
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.join-text {
+  font-size: 0.7rem;
+  font-weight: 600;
+  transition: transform 0.2s ease;
+}
+
+.is-public .join-text { color: #059669; }
+.is-private .join-text { color: #4f46e5; }
+
+.room-card:hover .join-text:not(.disabled) {
+  transform: translateX(3px);
+}
+
+.join-text.disabled {
+  color: #9ca3af;
 }
 
 .empty-state {
@@ -535,72 +675,47 @@ export default {
   align-items: center;
   justify-content: center;
   padding: 3rem 0;
-  color: #94a3b8;
-  background-color: #f8fafc;
-  animation: fadeIn 0.5s ease-out;
+  color: #9ca3af;
 }
 
 .empty-state i {
-  font-size: 3.5rem;
-  margin-bottom: 1.2rem;
-  color: #cbd5e1;
-  background: linear-gradient(135deg, #60a5fa, #8b5cf6);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  opacity: 0.4;
-  animation: pulse 2s infinite ease-in-out;
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: #d1d5db;
 }
 
 .empty-state p {
-  margin: 0 0 1.2rem 0;
-  font-size: 1rem;
-  font-weight: 500;
-  color: #64748b;
-  background: #f1f5f9;
-  padding: 0.6rem 1.2rem;
-  border-radius: 20px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #6b7280;
 }
 
 /* 비밀번호 모달 스타일 */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  animation: fadeIn 0.2s ease-out;
 }
 
 .password-modal {
   background: white;
-  padding: 1.5rem;
-  border-radius: 20px;
+  border-radius: 16px;
   width: 90%;
-  max-width: 400px;
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  animation: slideDown 0.3s ease-out;
+  max-width: 360px;
+  overflow: hidden;
+  animation: slideUp 0.3s ease;
 }
 
-@keyframes slideDown {
+@keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(-30px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -609,114 +724,82 @@ export default {
 }
 
 .password-modal h3 {
-  margin: 0 0 1.2rem 0;
-  color: #111827;
-  font-size: 1.2rem;
+  margin: 0;
+  font-size: 1rem;
   font-weight: 700;
-  position: relative;
-  padding-bottom: 5px;
-}
-
-.password-modal h3::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 40px;
-  height: 3px;
-  background: linear-gradient(90deg, #60a5fa, #8b5cf6);
-  border-radius: 2px;
+  color: #111827;
+  padding: 1rem 1.25rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .password-modal input {
   width: 100%;
-  padding: 0.9rem 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
   font-size: 0.95rem;
-  margin-bottom: 1.2rem;
+  margin: 1.25rem;
   outline: none;
-  transition: all 0.3s ease;
-  background-color: #f8fafc;
-  color: #334155;
+  transition: border-color 0.2s ease;
 }
 
 .password-modal input:focus {
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
-  background-color: white;
+  border-color: #6366f1;
 }
 
 .modal-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 0.8rem;
+  gap: 0.6rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #e5e7eb;
 }
 
 .cancel-button, .submit-button {
-  padding: 0.7rem 1.2rem;
-  border-radius: 12px;
+  flex: 1;
+  padding: 0.7rem;
+  border-radius: 10px;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .cancel-button {
-  background: white;
-  border: 1px solid #e2e8f0;
-  color: #64748b;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
 }
 
 .submit-button {
-  background: linear-gradient(135deg, #60a5fa 0%, #8b5cf6 100%);
+  background: #6366f1;
   border: none;
   color: white;
-  box-shadow: 0 4px 15px rgba(96, 165, 250, 0.25);
-  position: relative;
-  overflow: hidden;
-  z-index: 1;
-}
-
-.submit-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, #8b5cf6 0%, #60a5fa 100%);
-  opacity: 0;
-  z-index: -1;
-  transition: opacity 0.3s ease;
-}
-
-.cancel-button:hover {
-  background: #f8fafc;
-  color: #334155;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
 }
 
 .submit-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(96, 165, 250, 0.35);
-}
-
-.submit-button:hover::before {
-  opacity: 1;
+  background: #4f46e5;
 }
 
 @media (max-width: 768px) {
+  .game-rooms-panel {
+    max-height: none;
+  }
+
   .panel-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 1rem;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+  }
+  
+  .panel-title {
+    font-size: 1rem;
   }
   
   .room-actions {
     width: 100%;
+    gap: 0.5rem;
   }
   
   .search-box {
@@ -725,15 +808,67 @@ export default {
   
   .search-box input {
     width: 100%;
+    padding: 0.4rem 0.6rem 0.4rem 2rem;
+    font-size: 0.8rem;
   }
   
   .search-box input:focus {
     width: 100%;
   }
   
-  .room-details {
-    flex-direction: column;
+  .search-box i {
+    left: 0.6rem;
+    font-size: 0.8rem;
+  }
+  
+  .refresh-button {
+    width: 34px;
+    height: 34px;
+    font-size: 0.85rem;
+  }
+  
+  .rooms-container {
+    padding: 0.75rem;
     gap: 0.5rem;
+  }
+  
+  /* 카드 높이 및 내부 요소 축소 */
+  .room-card {
+    min-height: auto;
+  }
+
+  .room-content {
+    padding: 0.75rem 0.875rem;
+  }
+
+  .room-name {
+    font-size: 0.85rem;
+  }
+
+  .room-host {
+    font-size: 0.7rem;
+  }
+
+  .meta-tag {
+    font-size: 0.65rem;
+  }
+
+  .player-bar {
+    max-width: 80px;
+  }
+  
+  .empty-state {
+    padding: 1.5rem 0;
+  }
+  
+  .empty-state i {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .empty-state p {
+    font-size: 0.85rem;
+    padding: 0.6rem 1rem;
   }
 }
 </style> 

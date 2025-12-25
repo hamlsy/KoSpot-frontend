@@ -4,7 +4,7 @@
       <div class="header-content">
         <div class="header-left">
           <div class="home-link" @click="goToMain">
-            <h1 class="logo">KoSpot</h1>
+            <img src="/images/logo/kospot_logo_1-removebg.png" alt="KoSpot" class="logo-image">
             <span class="badge">Beta</span>
           </div>
         </div>
@@ -14,12 +14,6 @@
           <!-- 네비게이션 추가 - 웹 전용 -->
           <div class="main-nav desktop-only">
             <router-link :to="{ name: 'NoticeListView' }" class="nav-link">공지사항</router-link>
-            <!-- 메인 페이지만 통계/상점/이벤트 표시 -->
-            <template v-if="isMainPage">
-              <!-- <router-link v-if="actualIsAdmin" :to="{ name: 'NoticeListView', query: { category: '이벤트' } }" class="nav-link">이벤트</router-link>
-              <router-link v-if="actualIsAdmin" to="/tempPage" class="nav-link">통계</router-link>
-              <router-link v-if="actualIsAdmin" to="/shopMain" class="nav-link">상점</router-link> -->
-            </template>
             <!-- 로그인한 경우에만 마이페이지 표시 -->
             <router-link v-if="actualIsLoggedIn" to="/myProfile" class="nav-link">마이페이지</router-link>
             <!-- 관리자 버튼 -->
@@ -33,10 +27,12 @@
               <i class="fas fa-question-circle"></i>
               <span class="tutorial-text">게임 소개</span>
             </button>
-            <!-- <button v-if="actualIsAdmin" class="icon-button" @click="openNotifications">
-              <i class="fas fa-bell"></i>
-              <span class="notification-badge" v-if="unreadNotifications">{{ unreadNotifications }}</span>
+            
+            <!-- 다크모드 토글 버튼 (웹에만 표시) -->
+            <!-- <button class="theme-toggle desktop-only" @click="toggleTheme" :title="isDarkMode ? '라이트 모드로 전환' : '다크 모드로 전환'">
+              <i class="fas" :class="isDarkMode ? 'fa-sun' : 'fa-moon'"></i>
             </button> -->
+            
             <div class="user-profile" @click="toggleProfileMenu">
               <div class="user-avatar" :class="{ 'guest-avatar': !actualIsLoggedIn }">
                 <img
@@ -49,14 +45,6 @@
             </div>
           </div>
         </template>
-
-        <!-- Simple Mode일 때: 나가기 버튼만 표시 -->
-        <!-- <div v-if="simpleMode && showBackButton" class="header-right">
-          <button class="back-button" @click="handleBackButton">
-            <i class="fas fa-arrow-left"></i>
-            {{ backButtonText }}
-          </button>
-        </div> -->
       </div>
     </header>
     
@@ -107,25 +95,18 @@
 
         <!-- 모바일용 내비게이션 메뉴 추가 -->
         <nav class="mobile-nav" v-if="actualIsLoggedIn">
+          <!-- 다크모드 토글 비활성화 -->
+          <!-- <div class="menu-item theme-menu-item" @click="toggleTheme">
+            <i class="fas" :class="isDarkMode ? 'fa-sun' : 'fa-moon'"></i>
+            {{ isDarkMode ? '라이트 모드' : '다크 모드' }}
+          </div>
+          
+          <div class="menu-divider"></div> -->
+          
           <router-link :to="{ name: 'NoticeListView' }" class="menu-item">
             <i class="fas fa-bullhorn"></i>
             공지사항
           </router-link>
-          <!-- 메인 페이지만 통계/상점/이벤트 표시 -->
-          <!-- <template v-if="isMainPage">
-            <router-link v-if="actualIsAdmin" :to="{ name: 'NoticeListView', query: { category: '이벤트' } }" class="menu-item">
-              <i class="fas fa-calendar-alt"></i>
-              이벤트
-            </router-link>
-            <router-link v-if="actualIsAdmin" to="/tempPage" class="menu-item">
-              <i class="fas fa-chart-bar"></i>
-              통계
-            </router-link>
-            <router-link v-if="actualIsAdmin" to="/shopMain" class="menu-item">
-              <i class="fas fa-shopping-cart"></i>
-              상점
-            </router-link>
-          </template> -->
           <router-link to="/myProfile" class="menu-item">
             <i class="fas fa-user-circle"></i>
             마이페이지
@@ -155,6 +136,7 @@
 
 <script>
 import { tokenRefreshService } from '@/core/services/tokenRefresh.service.js';
+import { useTheme } from '@/core/composables/useTheme.js';
 
 export default {
   name: 'NavigationBar',
@@ -179,6 +161,14 @@ export default {
       type: String,
       default: '나가기'
     }
+  },
+  setup() {
+    const { isDarkMode, toggleTheme } = useTheme();
+    
+    return {
+      isDarkMode,
+      toggleTheme
+    };
   },
   data() {
     return {
@@ -271,7 +261,9 @@ export default {
     },
     goToMain() {
       // 메인 페이지로 새로고침 이동
-      window.location.href = '/main';
+      // window.location.href = '/main';
+      
+      this.$router.push('/main');
     },
     // 개발 모드 확인 (API 연결 실패 시)
     async checkDevMode() {
@@ -357,17 +349,24 @@ export default {
   top: 0;
   left: 0;
   right: 0;
-  background: white;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  background: var(--color-surface);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-border-light);
   z-index: 100;
-  transition: all 0.3s ease;
+  transition: all var(--transition-slow);
+}
+
+.dark .header {
+  background: rgba(30, 41, 59, 0.9);
+  border-bottom-color: var(--color-border);
 }
 
 .header-content {
   display: flex;
   align-items: center;
-  padding: 1rem 1.5rem;
-  max-width: 1200px;
+  padding: var(--spacing-md) var(--spacing-lg);
+  max-width: 1400px;
   margin: 0 auto;
 }
 
@@ -379,53 +378,82 @@ export default {
 .home-link {
   display: flex;
   align-items: center;
+  gap: var(--spacing-sm);
   text-decoration: none;
-  transition: opacity 0.2s ease;
   cursor: pointer;
+  transition: opacity var(--transition-normal);
 }
 
 .home-link:hover {
   opacity: 0.8;
 }
 
-.logo {
-  font-size: 20px;
-  font-weight: 700;
-  color: #2563eb;
-  margin: 0;
+.logo-image {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+  transition: opacity var(--transition-normal);
 }
 
 .badge {
-  background: #f59e0b;
+  background: var(--color-accent);
   color: white;
-  padding: 2px 6px;
-  border-radius: 10px;
-  font-size: 10px;
-  font-weight: 600;
-  margin-left: 6px;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.625rem;
+  font-weight: 700;
+  margin-left: var(--spacing-sm);
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .main-nav {
-  margin-left: 2rem;
+  margin-left: 3rem;
   display: flex;
-  gap: 1.5rem;
+  gap: 2rem;
 }
 
 .nav-link {
+  position: relative;
   text-decoration: none;
-  color: #555;
+  color: var(--color-text-secondary);
   font-weight: 500;
-  font-size: 1rem;
-  transition: color 0.2s ease;
+  font-size: var(--font-size-body);
+  transition: color var(--transition-normal);
 }
 
-.nav-link:hover, .nav-link.router-link-active {
-  color: #4a6cf7;
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--color-primary);
+  transition: width var(--transition-normal);
+}
+
+.nav-link:hover::after,
+.nav-link.router-link-active::after {
+  width: 100%;
+}
+
+.nav-link:hover,
+.nav-link.router-link-active {
+  color: var(--color-primary);
 }
 
 .admin-link {
-  color: #6366f1;
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.admin-link::after {
+  background: var(--color-accent);
+}
+
+.temp-login-link {
+  color: var(--color-warning);
   font-weight: 600;
 }
 
@@ -433,112 +461,82 @@ export default {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 1rem;
-}
-
-.icon-button {
-  background: none;
-  border: none;
-  font-size: 1.2rem;
-  color: #555;
-  cursor: pointer;
-  position: relative;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: background 0.2s ease;
-}
-
-.icon-button:hover {
-  background: #f0f2f5;
+  gap: var(--spacing-md);
 }
 
 .tutorial-button {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-primary);
   color: white;
   border: none;
-  border-radius: 20px;
-  font-size: 0.9rem;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-small);
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-  will-change: transform;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-sm);
 }
 
 .tutorial-button:hover {
-  transform: translate3d(0, -2px, 0);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  background: var(--color-primary-dark);
 }
 
 .tutorial-button i {
   font-size: 1rem;
 }
 
-.tutorial-text {
-  font-size: 0.9rem;
-}
-
-.back-button {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1.25rem;
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
-  border: none;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
-}
-
-.back-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-}
-
-.back-button i {
-  font-size: 0.9rem;
-}
-
-.notification-badge {
-  position: absolute;
-  top: 0;
-  right: 0;
-  background: #e74c3c;
-  color: white;
-  font-size: 0.7rem;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
+.theme-toggle {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.theme-toggle:hover {
+  background: var(--color-border-light);
+  transform: rotate(180deg);
+}
+
+.theme-toggle i {
+  font-size: 1.1rem;
 }
 
 .user-profile {
   cursor: pointer;
+  transition: transform var(--transition-normal);
+}
+
+.user-profile:hover {
+  transform: scale(1.05);
 }
 
 .user-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: #f0f2f5;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-hover);
+  border: 2px solid var(--color-border);
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: border-color var(--transition-normal);
+}
+
+.user-avatar:hover {
+  border-color: var(--color-primary);
 }
 
 .user-avatar img {
@@ -548,16 +546,14 @@ export default {
 }
 
 .guest-avatar {
-  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: linear-gradient(135deg, var(--color-primary-light), var(--color-primary));
 }
 
 .guest-text {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: #4f46e5;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+  letter-spacing: 0.02em;
 }
 
 /* 오버레이 스타일 */
@@ -567,8 +563,15 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   z-index: 9998;
+  transition: opacity var(--transition-slow);
+}
+
+.dark .overlay {
+  background-color: rgba(0, 0, 0, 0.6);
 }
 
 /* 프로필 메뉴 스타일 */
@@ -577,113 +580,138 @@ export default {
   top: 0;
   right: 0;
   bottom: 0;
-  width: 300px;
-  background: white;
+  width: 320px;
+  background: var(--color-surface);
   z-index: 9999;
-  padding: 24px;
+  padding: var(--spacing-xl);
   overflow-y: auto;
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-xl);
+  border-left: 1px solid var(--color-border);
 }
 
 .profile-header {
   display: flex;
   justify-content: flex-end;
   align-items: start;
-  margin-bottom: 24px;
+  margin-bottom: var(--spacing-xl);
 }
 
 .profile-info-section {
-  margin-bottom: 24px;
+  margin-bottom: var(--spacing-xl);
 }
 
 .profile-info {
   display: flex;
-  gap: 12px;
+  gap: var(--spacing-md);
+  align-items: center;
 }
 
 .profile-info img {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-border);
 }
 
 .profile-text h3 {
-  font-size: 18px;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h3);
   font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 4px;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-xs);
   margin-top: 0;
 }
 
 .profile-text p {
-  font-size: 14px;
-  color: #6b7280;
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
   margin: 0;
 }
 
 .close-menu {
   background: none;
   border: none;
-  font-size: 20px;
-  color: #6b7280;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
   cursor: pointer;
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-menu:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
 }
 
 .mobile-nav {
   display: flex;
   flex-direction: column;
+  gap: var(--spacing-xs);
 }
 
 .menu-item {
   display: flex;
   align-items: center;
-  padding: 12px 0;
-  color: #1f2937;
+  padding: var(--spacing-md);
+  color: var(--color-text-primary);
   text-decoration: none;
   font-weight: 500;
-  gap: 12px;
-  border-radius: 8px;
-  transition: background 0.2s;
+  gap: var(--spacing-md);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-normal);
 }
 
 .menu-item:hover {
-  background: #f3f4f6;
+  background: var(--color-surface-hover);
+  transform: translateX(4px);
 }
 
 .menu-item i {
   width: 20px;
   text-align: center;
-  font-size: 18px;
-  color: #6b7280;
+  font-size: 1.1rem;
+  color: var(--color-text-secondary);
 }
 
 .menu-divider {
   height: 1px;
-  background: #e5e7eb;
-  margin: 16px 0;
+  background: var(--color-border);
+  margin: var(--spacing-md) 0;
 }
 
 .admin-menu-item {
-  color: #6366f1 !important;
+  color: var(--color-accent) !important;
   font-weight: 600;
 }
 
 .admin-menu-item i {
-  color: #6366f1;
-}
-
-.temp-login-link {
-  color: #f59e0b !important;
-  font-weight: 600;
+  color: var(--color-accent);
 }
 
 .temp-login-menu-item {
-  color: #f59e0b !important;
+  color: var(--color-warning) !important;
   font-weight: 600;
 }
 
 .temp-login-menu-item i {
-  color: #f59e0b;
+  color: var(--color-warning);
+}
+
+.theme-menu-item {
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.theme-menu-item:hover {
+  color: var(--color-primary);
+}
+
+.theme-menu-item i {
+  color: var(--color-primary);
 }
 
 /* 로그인 안내 스타일 */
@@ -692,55 +720,57 @@ export default {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 2rem 1rem;
-  gap: 1rem;
+  padding: var(--spacing-2xl) var(--spacing-md);
+  gap: var(--spacing-lg);
 }
 
 .login-icon {
   font-size: 4rem;
-  color: #e0e7ff;
-  margin-bottom: 0.5rem;
+  color: var(--color-primary-light);
+  margin-bottom: var(--spacing-sm);
 }
 
 .login-icon i {
-  color: #6366f1;
+  color: var(--color-primary);
 }
 
 .login-prompt h3 {
-  font-size: 1.25rem;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h3);
   font-weight: 700;
-  color: #1f2937;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
 .login-prompt p {
-  font-size: 0.9rem;
-  color: #6b7280;
+  font-size: var(--font-size-body);
+  color: var(--color-text-secondary);
   margin: 0;
-  line-height: 1.6;
+  line-height: var(--line-height-relaxed);
 }
 
 .login-prompt-button {
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  background: var(--color-primary);
   color: white;
   border: none;
-  border-radius: 12px;
-  padding: 1rem 2rem;
-  font-size: 1rem;
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md) var(--spacing-xl);
+  font-size: var(--font-size-body);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-md);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
   width: 100%;
   justify-content: center;
 }
 
 .login-prompt-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+  box-shadow: var(--shadow-lg);
+  background: var(--color-primary-dark);
 }
 
 .login-prompt-button i {
@@ -749,7 +779,7 @@ export default {
 
 /* 트랜지션 애니메이션 */
 .fade-enter-active, .fade-leave-active {
-  transition: opacity 0.3s;
+  transition: opacity var(--transition-slow);
 }
 
 .fade-enter-from, .fade-leave-to {
@@ -757,7 +787,7 @@ export default {
 }
 
 .slide-menu-enter-active, .slide-menu-leave-active {
-  transition: transform 0.3s ease;
+  transition: transform var(--transition-slow) ease-out;
 }
 
 .slide-menu-enter-from, .slide-menu-leave-to {
@@ -770,15 +800,35 @@ export default {
   }
   
   .header-content {
-    padding: 0.8rem 1rem;
+    padding: var(--spacing-md) var(--spacing-md);
+  }
+  
+  /* 모바일에서 로고 크기 축소 */
+  .logo-image {
+    height: 24px;
+  }
+  
+  .badge {
+    font-size: 0.5rem;
+    padding: 2px 5px;
+  }
+  
+  .main-nav {
+    margin-left: var(--spacing-lg);
+    gap: var(--spacing-lg);
   }
   
   .tutorial-button {
-    padding: 8px 12px;
+    padding: var(--spacing-sm) var(--spacing-md);
   }
   
   .tutorial-text {
     display: none;
+  }
+  
+  .profile-menu {
+    width: 100%;
+    max-width: 320px;
   }
 }
 </style> 

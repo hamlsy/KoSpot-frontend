@@ -119,7 +119,7 @@
               </div>
               
               <!-- Photo Mode Card -->
-              <div class="rank-card photo">
+              <!-- <div class="rank-card photo">
                 <div class="rank-header">
                   <div class="rank-icon">
                     <i class="fas fa-camera"></i>
@@ -147,7 +147,7 @@
                     </div>
                   </div>
                 </div>
-              </div>
+              </div> -->
             </div>
           </div>
         </div>
