@@ -5,10 +5,10 @@
     </button>
     
     <div class="hero-content">
-      <h1 class="hero-title">KoSpot - 한국 지리 게임</h1>
+      <h1 class="hero-title">KoSpot</h1>
       
       <p class="hero-description">
-        실제 로드뷰로 위치를 맞추고, 친구들과 경쟁하세요
+        실제 관광지 로드뷰로 위치를 맞추고, 친구들과 경쟁하세요
       </p>
       
       <div class="hero-actions">
