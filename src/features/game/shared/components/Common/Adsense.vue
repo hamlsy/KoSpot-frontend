@@ -162,6 +162,11 @@ onBeforeUnmount(() => {
   min-height: 90px;
 }
 
+/* data-ad-status="unfilled" 숨기기 */
+ins.adsbygoogle[data-ad-status="unfilled"] {
+  display: none !important;
+}
+
 /* 반응형 디자인 */
 @media (max-width: 768px) {
   .adsense-container {

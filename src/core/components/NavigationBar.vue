@@ -18,8 +18,6 @@
             <router-link v-if="actualIsLoggedIn" to="/myProfile" class="nav-link">마이페이지</router-link>
             <!-- 관리자 버튼 -->
             <router-link v-if="actualIsAdmin" to="/admin" class="nav-link admin-link">관리자</router-link>
-            <!-- 개발 모드일 때만 개발자 페이지 표시 -->
-            <router-link v-if="isDevMode" to="/dev/test" class="nav-link temp-login-link">🧪 개발자 페이지</router-link>
           </div>
 
           <div class="header-right">
@@ -112,11 +110,6 @@
             마이페이지
           </router-link>
           <div class="menu-divider"></div>
-          <!-- 개발 모드일 때만 개발자 페이지 표시 -->
-          <router-link v-if="isDevMode" to="/dev/test" class="menu-item temp-login-menu-item">
-            <i class="fas fa-flask"></i>
-            개발자 페이지
-          </router-link>
           <a href="#" class="menu-item" @click.prevent="handleLogout">
             <i class="fas fa-sign-out-alt"></i>
             로그아웃
