@@ -14,7 +14,8 @@ const multiplayerRoutes = [
     {
         path: '/lobby',
         name: "MultiplayerLobby",
-        component: LobbyView
+        component: LobbyView,
+        meta: { requiresAuth: true }
     },
     {
         path: '/gameRoom/:roomId',

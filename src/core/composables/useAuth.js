@@ -13,12 +13,23 @@ const authState = reactive({
   error: null
 })
 
+// 봇 여부 확인 헬퍼 함수
+const isBot = () => {
+  return localStorage.getItem('isBot') === 'true'
+}
+
 export function useAuth() {
   const router = useRouter()
   
   // 상태 반응형 참조
   const user = computed(() => authState.user)
-  const isAuthenticated = computed(() => authState.isAuthenticated)
+  const isAuthenticated = computed(() => {
+    // 봇인 경우 항상 true 반환
+    if (isBot()) {
+      return true
+    }
+    return authState.isAuthenticated
+  })
   const loading = computed(() => authState.loading)
   const error = computed(() => authState.error)
   
@@ -57,13 +68,26 @@ export function useAuth() {
     }
   }
   
+  // 봇 로그인 처리 (쿠키 기반)
+  const loginAsBot = () => {
+    // 봇 정보 저장
+    localStorage.setItem('isBot', 'true')
+    authState.user = {
+      id: 'adsense_bot',
+      isBot: true
+    }
+    authState.isAuthenticated = true
+    console.log('🤖 봇 로그인 완료')
+  }
+
   // 로그아웃
   const logout = async () => {
     try {
       const refreshToken = localStorage.getItem('refreshToken')
+      const isBotUser = isBot()
       
-      // refreshToken이 있으면 서버에 로그아웃 요청
-      if (refreshToken) {
+      // refreshToken이 있고 봇이 아닌 경우에만 서버에 로그아웃 요청
+      if (refreshToken && !isBotUser) {
         await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT, {
           refreshToken: refreshToken
         })
@@ -75,7 +99,8 @@ export function useAuth() {
       // 로컬 상태 정리
       localStorage.removeItem('accessToken')
       localStorage.removeItem('refreshToken')
-      localStorage.removeItem('memberId') // memberId도 삭제
+      localStorage.removeItem('memberId')
+      localStorage.removeItem('isBot') // 봇 정보도 삭제
       authState.user = null
       authState.isAuthenticated = false
       
@@ -105,6 +130,16 @@ export function useAuth() {
   
   // 토큰 검증 및 사용자 정보 로드
   const checkAuth = async () => {
+    // 봇인 경우 항상 true 반환
+    if (isBot()) {
+      authState.user = {
+        id: 'adsense_bot',
+        isBot: true
+      }
+      authState.isAuthenticated = true
+      return true
+    }
+    
     const token = localStorage.getItem('accessToken')
     if (!token) return false
     
@@ -131,8 +166,10 @@ export function useAuth() {
     
     // 메서드
     login,
+    loginAsBot,
     logout,
     register,
     checkAuth,
+    isBot,
   }
 }

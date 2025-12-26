@@ -11,6 +11,21 @@ import adminRoutes from './adminRoutes.js';
 import noticeRoutes from './noticeRoutes.js';
 import shopRoutes from './shopRoutes.js';
 
+// 봇 여부 확인 헬퍼 함수
+const isBot = () => {
+  return localStorage.getItem('isBot') === 'true'
+}
+
+// 로그인 여부 확인 헬퍼 함수
+const isAuthenticated = () => {
+  // 봇인 경우 항상 true
+  if (isBot()) {
+    return true
+  }
+  // 일반 사용자는 accessToken 확인
+  return !!localStorage.getItem('accessToken')
+}
+
 // Combine all routes
 const routes = [
   ...mainRoutes,
@@ -46,6 +61,30 @@ const router = createRouter({
     });
   }
 });
+
+// 라우터 가드: 로그인이 필요한 페이지 보호
+router.beforeEach((to, from, next) => {
+  // 봇인 경우 모든 페이지 접근 허용
+  if (isBot()) {
+    next()
+    return
+  }
+
+  // meta.requiresAuth가 true인 경우 로그인 필요
+  if (to.meta?.requiresAuth) {
+    if (isAuthenticated()) {
+      next()
+    } else {
+      // 로그인 페이지로 리다이렉션
+      next({
+        path: '/loginPage',
+        query: { redirect: to.fullPath }
+      })
+    }
+  } else {
+    next()
+  }
+})
 
 const requireComponent = require.context('./', true, /index\.vue$/)
 const components = {}

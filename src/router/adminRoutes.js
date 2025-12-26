@@ -4,7 +4,8 @@ const adminRoutes = [
     {
         path: '/admin',
         name: "Dashboard",
-        component: DashboardView
+        component: DashboardView,
+        meta: { requiresAuth: true }
     },
 ];
 

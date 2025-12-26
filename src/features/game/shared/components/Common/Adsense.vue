@@ -112,7 +112,7 @@ const requestAd = async () => {
     
     // 3. push 실행 (조건문 제거, 무조건 실행)
     try {
-      ;(window.adsbygoogle = window.adsbygoogle || []).push({})
+      (window.adsbygoogle = window.adsbygoogle || []).push({})
     } catch (error) {
       console.error('AdSense 광고 초기화 실패:', error)
     }

@@ -8,32 +8,38 @@ const userRoutes = [
     {
         path: '/shop',
         name: "Shop",
-        component: Shop
+        component: Shop,
+        meta: { requiresAuth: true }
     },
     {
         path: '/inventory',
         name: "Inventory",
-        component: Inventory
+        component: Inventory,
+        meta: { requiresAuth: true }
     },
     {
         path: '/profile',
         name: "Profile",
-        component: Profile
+        component: Profile,
+        meta: { requiresAuth: true }
     },
     {
         path: '/myProfile',
         name: "MyProfile",
-        component: Profile
+        component: Profile,
+        meta: { requiresAuth: true }
     },
     {
         path: '/friendsList',
         name: "FriendsList",
-        component: FriendsList
+        component: FriendsList,
+        meta: { requiresAuth: true }
     },
     {
         path: '/accountSettings',
         name: "AccountSettings",
-        component: AccountSettings
+        component: AccountSettings,
+        meta: { requiresAuth: true }
     },
     {
         path: '/myPoints',

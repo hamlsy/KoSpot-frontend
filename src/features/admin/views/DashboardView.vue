@@ -99,6 +99,15 @@
                 <span>🧪 테스트 실험실</span>
                 <div v-if="activeSection === 'test-lab'" class="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600"></div>
               </button>
+              <button 
+                @click="activeSection = 'adsense-bot'" 
+                class="px-4 py-2 text-sm font-medium transition-colors relative whitespace-nowrap"
+                :class="activeSection === 'adsense-bot' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
+              >
+                <i class="fas fa-robot mr-2"></i>
+                <span>애드센스 봇 계정 추가</span>
+                <div v-if="activeSection === 'adsense-bot'" class="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600"></div>
+              </button>
             </div>
           </div>
           
@@ -145,6 +154,11 @@
           <!-- 접속자 통계 섹션 -->
           <div v-if="activeSection === 'statistics'">
             <VisitorStatsManager />
+          </div>
+          
+          <!-- 애드센스 봇 계정 추가 섹션 -->
+          <div v-if="activeSection === 'adsense-bot'">
+            <AdSenseBotManager />
           </div>
           
           <!-- 테스트 실험실 섹션 -->
@@ -255,6 +269,7 @@ import BannerManager from '@/features/admin/components/Banner/BannerManager.vue'
 import ShopManager from '@/features/admin/components/Shop/ShopManager.vue'
 import GameResultsManager from '@/features/admin/components/Analytics/GameResultsManager.vue'
 import VisitorStatsManager from '@/features/admin/components/Analytics/VisitorStatsManager.vue'
+import AdSenseBotManager from '@/features/admin/components/Adsense/AdSenseBotManager.vue'
 
 // 활성 섹션
 const activeSection = ref('game-modes')
