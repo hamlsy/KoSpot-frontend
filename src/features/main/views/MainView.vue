@@ -25,7 +25,7 @@
     <!-- Main Content -->
     <main class="main-content">
       <!-- 히어로 섹션 -->
-      <HeroSection @open-tutorial="!isLoggedIn" />
+      <HeroSection @open-tutorial="showTutorial = true" />
 
       <!-- Featured Challenge Banner Carousel -->
       <div v-if="displayBanners && displayBanners.length > 0" class="banner-carousel">
