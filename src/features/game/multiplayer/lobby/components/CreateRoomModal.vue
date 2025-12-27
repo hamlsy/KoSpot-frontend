@@ -21,7 +21,7 @@
           <small>{{ roomName.length }}/30</small>
         </div>
 
-        <div class="form-group">
+        <div v-if="false" class="form-group">
           <label>게임 모드</label>
           <div class="radio-group">
             <label class="radio-option">
@@ -85,66 +85,87 @@
           </div>
         </div>
 
-        <div class="form-group">
-          <label>인원 제한</label>
-          <div class="player-count-control">
-            <button
-              class="count-btn"
-              @click="decreasePlayerCount"
-              :disabled="maxPlayers <= 2"
-            >
-              <i class="fas fa-minus"></i>
-            </button>
-            <span class="player-count">{{ maxPlayers }}명</span>
-            <button
-              class="count-btn"
-              @click="increasePlayerCount"
-              :disabled="maxPlayers >= 8"
-            >
-              <i class="fas fa-plus"></i>
-            </button>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>라운드 수</label>
-          <div class="player-count-control">
-            <button
-              class="count-btn"
-              @click="decreaseTotalRounds"
-              :disabled="totalRounds <= 2"
-            >
-              <i class="fas fa-minus"></i>
-            </button>
-            <span class="player-count">{{ totalRounds }}라운드</span>
-            <button
-              class="count-btn"
-              @click="increaseTotalRounds"
-              :disabled="totalRounds >= 10"
-            >
-              <i class="fas fa-plus"></i>
-            </button>
+        <div class="form-group form-group-inline">
+          <div class="inline-control-group">
+            <div class="inline-control-item">
+              <label>인원 제한</label>
+              <div class="player-count-control">
+                <button
+                  class="count-btn"
+                  @click="decreasePlayerCount"
+                  :disabled="maxPlayers <= 2"
+                >
+                  <i class="fas fa-minus"></i>
+                </button>
+                <span class="player-count">{{ maxPlayers }}명</span>
+                <button
+                  class="count-btn"
+                  @click="increasePlayerCount"
+                  :disabled="maxPlayers >= 8"
+                >
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+            </div>
+            <div class="inline-control-item">
+              <label>라운드 수</label>
+              <div class="player-count-control">
+                <button
+                  class="count-btn"
+                  @click="decreaseTotalRounds"
+                  :disabled="totalRounds <= 2"
+                >
+                  <i class="fas fa-minus"></i>
+                </button>
+                <span class="player-count">{{ totalRounds }}라운드</span>
+                <button
+                  class="count-btn"
+                  @click="increaseTotalRounds"
+                  :disabled="totalRounds >= 10"
+                >
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
         <div class="form-group">
           <label>라운드 시간 제한</label>
-          <div class="time-limit-control">
-            <button
-              class="count-btn"
-              @click="decreaseTimeLimit"
-              :disabled="timeLimit <= 30"
-            >
-              <i class="fas fa-minus"></i>
-            </button>
-            <span class="player-count time-display">{{ formattedTimeLimit }}</span>
-            <button
-              class="count-btn"
-              @click="increaseTimeLimit"
-              :disabled="timeLimit >= 300"
-            >
-              <i class="fas fa-plus"></i>
-            </button>
+          <div class="radio-group time-limit-radio-group">
+            <label class="radio-option">
+              <input
+                type="radio"
+                name="timeLimit"
+                :value="60"
+                v-model="timeLimit"
+              />
+              <div class="radio-content">
+                <span>1분</span>
+              </div>
+            </label>
+            <label class="radio-option">
+              <input
+                type="radio"
+                name="timeLimit"
+                :value="180"
+                v-model="timeLimit"
+              />
+              <div class="radio-content">
+                <span>3분<span class="default-badge">(기본)</span></span>
+              </div>
+            </label>
+            <label class="radio-option">
+              <input
+                type="radio"
+                name="timeLimit"
+                :value="300"
+                v-model="timeLimit"
+              />
+              <div class="radio-content">
+                <span>5분</span>
+              </div>
+            </label>
           </div>
         </div>
 
@@ -152,12 +173,12 @@
           <label>게임 설정</label>
           <div class="settings-group">
             <label class="checkbox-option">
-              <input type="checkbox" v-model="gameSettings.isPrivate" />
-              <span> 비공개 방 (비밀번호로 입장 가능)</span>
+              <input type="checkbox" v-model="gameSettings.isPoiNameVisible" />
+              <span> 지명 공개 <span class="checkbox-description">(좌표 지역 명이 공개됩니다.)</span></span>
             </label>
             <label class="checkbox-option">
-              <input type="checkbox" v-model="gameSettings.isPoiNameVisible" />
-              <span> 지명 공개</span>
+              <input type="checkbox" v-model="gameSettings.isPrivate" />
+              <span> 비공개 방 <span class="checkbox-description">(비밀번호로 입장 가능)</span></span>
             </label>
             <!-- <label class="checkbox-option">
               <input type="checkbox" v-model="gameSettings.allowSpectators" />
@@ -215,19 +236,6 @@ export default {
     };
   },
 
-  computed: {
-    formattedTimeLimit() {
-      const minutes = Math.floor(this.timeLimit / 60);
-      const seconds = this.timeLimit % 60;
-      if (minutes === 0) {
-        return `${seconds}초`;
-      } else if (seconds === 0) {
-        return `${minutes}분`;
-      } else {
-        return `${minutes}분 ${seconds}초`;
-      }
-    },
-  },
 
   methods: {
     closeModal() {
@@ -276,18 +284,6 @@ export default {
     decreaseTotalRounds() {
       if (this.totalRounds > 2) {
         this.totalRounds--;
-      }
-    },
-
-    increaseTimeLimit() {
-      if (this.timeLimit < 300) {
-        this.timeLimit += 30;
-      }
-    },
-
-    decreaseTimeLimit() {
-      if (this.timeLimit > 30) {
-        this.timeLimit -= 30;
       }
     },
   },
@@ -427,11 +423,6 @@ export default {
   }
 }
 
-.form-group:nth-child(1) { animation-delay: 0.1s; }
-.form-group:nth-child(2) { animation-delay: 0.2s; }
-.form-group:nth-child(3) { animation-delay: 0.3s; }
-.form-group:nth-child(4) { animation-delay: 0.4s; }
-.form-group:nth-child(5) { animation-delay: 0.5s; }
 
 .form-group label {
   display: block;
@@ -473,6 +464,32 @@ export default {
 .radio-group {
   display: flex;
   gap: 1rem;
+}
+
+.time-limit-radio-group {
+  gap: 0.75rem;
+}
+
+.time-limit-radio-group .radio-option {
+  flex: 1;
+}
+
+.time-limit-radio-group .radio-content {
+  padding: 0.9rem 0.5rem;
+  min-height: 60px;
+  justify-content: center;
+}
+
+.time-limit-radio-group .radio-content span {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.default-badge {
+  color: #60a5fa;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-left: 0.25rem;
 }
 
 .radio-option {
@@ -578,6 +595,29 @@ export default {
   color: #666;
 }
 
+.form-group-inline {
+  margin-bottom: 1.5rem;
+}
+
+.inline-control-group {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.inline-control-item {
+  flex: 1;
+}
+
+.inline-control-item label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+}
+
 .player-count-control {
   display: flex;
   align-items: center;
@@ -622,16 +662,6 @@ export default {
   border: 1px solid #e2e8f0;
 }
 
-.time-limit-control {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.time-display {
-  min-width: 100px;
-}
-
 .settings-group {
   display: flex;
   flex-direction: column;
@@ -650,6 +680,18 @@ export default {
   height: 20px;
   accent-color: #60a5fa;
   cursor: pointer;
+  flex-shrink: 0;
+}
+
+.checkbox-option span {
+  line-height: 1.5;
+}
+
+.checkbox-description {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 400;
+  margin-left: 0.25rem;
 }
 
 .private-room-notice {
@@ -777,11 +819,7 @@ export default {
 @media (max-width: 640px) {
   .modal-container {
     width: 95%;
-  }
-
-  .radio-group {
-    flex-direction: column;
-    gap: 0.8rem;
+    max-height: 90vh;
   }
 
   .modal-header h2 {
@@ -790,10 +828,73 @@ export default {
 
   .modal-body {
     padding: 1.2rem;
+    max-height: calc(90vh - 120px);
   }
 
   .modal-footer {
     padding: 1rem 1.2rem;
+  }
+
+  .form-group {
+    margin-bottom: 1.2rem;
+  }
+
+  .inline-control-group {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .inline-control-item {
+    width: 100%;
+  }
+
+  .radio-group {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .time-limit-radio-group {
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+
+  .time-limit-radio-group .radio-content {
+    padding: 0.75rem 0.5rem;
+    min-height: 50px;
+    font-size: 0.9rem;
+  }
+
+  .player-count-control {
+    gap: 0.75rem;
+  }
+
+  .count-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 0.85rem;
+  }
+
+  .player-count {
+    font-size: 1rem;
+    min-width: 50px;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .settings-group {
+    gap: 0.7rem;
+  }
+
+  .checkbox-option {
+    align-items: flex-start;
+  }
+
+  .checkbox-option span {
+    font-size: 0.9rem;
+  }
+
+  .checkbox-description {
+    font-size: 0.75rem;
+    line-height: 1.4;
   }
 }
 </style>

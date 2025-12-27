@@ -216,7 +216,9 @@ export function useRoom(props, emit, options = {}) {
         gameMode: roomDetail.gameMode?.toLowerCase?.() ?? roomDetail.gameMode ?? localRoomData.value.gameMode,
         isTeamMode: roomDetail.gameType ? roomDetail.gameType.toLowerCase() === 'team' : localRoomData.value.isTeamMode,
         isPrivate: roomDetail.privateRoom ?? localRoomData.value.isPrivate,
-        maxPlayers: roomDetail.maxPlayers ?? localRoomData.value.maxPlayers
+        maxPlayers: roomDetail.maxPlayers ?? localRoomData.value.maxPlayers,
+        totalRounds: roomDetail.totalRounds ?? roomDetail.rounds ?? localRoomData.value.totalRounds ?? localRoomData.value.rounds ?? 5,
+        isPoiNameVisible: roomDetail.isPoiNameVisible ?? localRoomData.value.isPoiNameVisible ?? true
       };
       console.log('✅ 방 정보 로딩 완료:', localRoomData.value.title);
 
@@ -512,22 +514,38 @@ export function useRoom(props, emit, options = {}) {
   // 방 관련 메서드들
   const updateRoomSettings = async (settings) => {
     if (isDummyMode.value) {
+      // rounds를 totalRounds로 변환하여 저장
+      const transformedSettings = {
+        ...settings,
+        totalRounds: settings.totalRounds !== undefined ? settings.totalRounds : (settings.rounds !== undefined ? settings.rounds : localRoomData.value.totalRounds)
+      };
+      // rounds 필드 제거 (totalRounds만 사용)
+      delete transformedSettings.rounds;
+      
       localRoomData.value = {
         ...localRoomData.value,
-        ...settings
+        ...transformedSettings
       };
 
       roomChat.addSystemMessage('오프라인 테스트 모드: 설정이 로컬에서만 변경되었습니다.');
       roomModal.closeRoomSettings();
-      emit('update-room-settings', settings);
+      emit('update-room-settings', transformedSettings);
       return;
     }
 
     try {
       // 로컬 상태 업데이트 (UI 즉시 반영)
+      // rounds를 totalRounds로 변환하여 저장
+      const transformedSettings = {
+        ...settings,
+        totalRounds: settings.totalRounds !== undefined ? settings.totalRounds : (settings.rounds !== undefined ? settings.rounds : localRoomData.value.totalRounds)
+      };
+      // rounds 필드 제거 (totalRounds만 사용)
+      delete transformedSettings.rounds;
+      
       localRoomData.value = {
         ...localRoomData.value,
-        ...settings
+        ...transformedSettings
       };
       
       // API 호출로 방 설정 업데이트
@@ -537,7 +555,11 @@ export function useRoom(props, emit, options = {}) {
         gameModeKey: settings.gameMode || localRoomData.value.gameMode,
         playerMatchTypeKey: settings.isTeamMode ? 'team' : 'solo',
         privateRoom: settings.isPrivate !== undefined ? settings.isPrivate : localRoomData.value.isPrivate,
-        teamCount: settings.teamCount || localRoomData.value.teamCount || 2
+        teamCount: settings.teamCount || localRoomData.value.teamCount || 2,
+        timeLimit: settings.timeLimit !== undefined ? settings.timeLimit : localRoomData.value.timeLimit,
+        totalRounds: settings.totalRounds !== undefined ? settings.totalRounds : (settings.rounds !== undefined ? settings.rounds : localRoomData.value.totalRounds || localRoomData.value.rounds),
+        maxPlayers: settings.maxPlayers !== undefined ? settings.maxPlayers : localRoomData.value.maxPlayers,
+        isPoiNameVisible: settings.isPoiNameVisible !== undefined ? settings.isPoiNameVisible : localRoomData.value.isPoiNameVisible
       };
       
       await roomApiService.updateGameRoom(localRoomData.value.id, updateData);
@@ -545,7 +567,7 @@ export function useRoom(props, emit, options = {}) {
       // WebSocket으로 방 설정 변경 알림
       const success = roomWebSocketService.publishRoomSettings(
         localRoomData.value.id,
-        settings,
+        transformedSettings,
         props.currentUserId
       );
       
@@ -557,7 +579,7 @@ export function useRoom(props, emit, options = {}) {
       roomChat.addSystemMessage('방 설정이 변경되었습니다.');
       
       // 기존 emit 유지 (하위 호환성)
-      emit('update-room-settings', settings);
+      emit('update-room-settings', transformedSettings);
       roomModal.closeRoomSettings();
       
       console.log('✅ 방 설정 업데이트 성공');
@@ -774,11 +796,14 @@ export function useRoom(props, emit, options = {}) {
     }
   };
 
-  const sendChatMessage = () => {
-    if (!roomChat.chatInput.value.trim()) return;
+  const sendChatMessage = (message = null) => {
+    // 파라미터로 받은 메시지 우선 사용, 없으면 chatInput에서 읽기
+    const messageToSend = message !== null ? message : roomChat.chatInput.value;
+    
+    if (!messageToSend || !messageToSend.trim()) return;
 
     if (isDummyMode.value) {
-      const content = roomChat.chatInput.value.trim();
+      const content = messageToSend.trim();
       roomChat.handleRoomChatMessage(
         {
           senderId: props.currentUserId || 'dummy-host',
@@ -790,25 +815,33 @@ export function useRoom(props, emit, options = {}) {
         },
         props.currentUserId
       );
-      roomChat.clearChatInput();
+      // chatInput이 아닌 경우에만 clearChatInput 호출
+      if (message === null) {
+        roomChat.clearChatInput();
+      }
       return;
     }
     
     // WebSocket으로 채팅 메시지 발행
     const success = roomWebSocketService.publishChatMessage(
       localRoomData.value.id,
-      roomChat.chatInput.value,
+      messageToSend.trim(),
       props.currentUserId
     );
     
     if (success) {
-      roomChat.clearChatInput();
+      // chatInput이 아닌 경우에만 clearChatInput 호출
+      if (message === null) {
+        roomChat.clearChatInput();
+      }
       console.log('✅ 채팅 메시지 발송 성공');
     } else {
       console.warn('⚠️ WebSocket 채팅 메시지 발송 실패, 기존 방식 사용');
       // WebSocket 실패 시 기존 emit 사용
-      emit('send-chat', roomChat.chatInput.value);
-      roomChat.clearChatInput();
+      emit('send-chat', messageToSend.trim());
+      if (message === null) {
+        roomChat.clearChatInput();
+      }
     }
   };
 

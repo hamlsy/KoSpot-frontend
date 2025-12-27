@@ -1,59 +1,81 @@
 <template>
   <div class="solo-players-container">
     <div class="players-grid">
+      <!-- 항상 8개 슬롯 표시 -->
       <div 
-        v-for="player in players"
-        :key="player.id"
-        class="player-card"
+        v-for="n in 8"
+        :key="`slot-${n}`"
+        class="slot-wrapper"
         :class="{ 
-          'is-current': player.id === currentUserId,
-          'is-host': player.isHost
+          'disabled-slot': n > maxPlayers,
+          'player-slot': n <= maxPlayers && players[n - 1],
+          'empty-slot': n <= maxPlayers && !players[n - 1]
         }"
-        @click="$emit('show-player-details', player)"
       >
-        <!-- 강퇴 버튼 (방장만 표시, 본인 제외) -->
-        <button 
-          v-if="isHost && player.id !== currentUserId"
-          class="kick-button"
-          @click.stop="$emit('kick-player', player)"
-          title="강퇴하기"
+        <!-- 플레이어가 있는 슬롯 -->
+        <div 
+          v-if="n <= maxPlayers && players[n - 1]"
+          class="player-card"
+          :class="{ 
+            'is-current': players[n - 1].id === currentUserId,
+            'is-host': players[n - 1].isHost
+          }"
+          @click="$emit('show-player-details', players[n - 1])"
         >
-          <i class="fas fa-times"></i>
-        </button>
+          <!-- 강퇴 버튼 (방장만 표시, 본인 제외) -->
+          <button 
+            v-if="isHost && players[n - 1].id !== currentUserId"
+            class="kick-button"
+            @click.stop="$emit('kick-player', players[n - 1])"
+            title="강퇴하기"
+          >
+            <i class="fas fa-times"></i>
+          </button>
 
-        <!-- 플레이어 아바타 -->
-        <div class="player-avatar">
-          <img 
-            :src="player.profileImage || '/images/default-avatar.png'"
-            :alt="player.nickname"
-            class="avatar-image"
-          />
-          
-          <!-- 방장 배지 -->
-          <div v-if="player.isHost" class="host-badge">
-            <i class="fas fa-crown"></i>
+          <!-- 플레이어 아바타 -->
+          <div class="player-avatar">
+            <img 
+              :src="players[n - 1].profileImage || '/images/default-avatar.png'"
+              :alt="players[n - 1].nickname"
+              class="avatar-image"
+            />
+            
+            <!-- 방장 배지 -->
+            <div v-if="players[n - 1].isHost" class="host-badge">
+              <i class="fas fa-crown"></i>
+            </div>
+          </div>
+
+          <!-- 플레이어 정보 -->
+          <div class="player-info">
+            <div class="player-name">
+              <span class="player-name-text">{{ players[n - 1].nickname }}</span>
+              <span v-if="players[n - 1].id === currentUserId" class="you-badge">나</span>
+            </div>
           </div>
         </div>
 
-        <!-- 플레이어 정보 -->
-        <div class="player-info">
-          <div class="player-name">
-            <span class="player-name-text">{{ player.nickname }}</span>
-            <span v-if="player.id === currentUserId" class="you-badge">나</span>
+        <!-- 빈 슬롯 (활성화된 슬롯만) -->
+        <div 
+          v-else-if="n <= maxPlayers"
+          class="empty-slot-card"
+        >
+          <div class="empty-avatar">
+            <i class="fas fa-user-plus"></i>
           </div>
+          <div class="empty-text">대기 중</div>
         </div>
-      </div>
-      
-      <!-- 빈 슬롯 표시 -->
-      <div 
-        v-for="n in emptySlots"
-        :key="`empty-${n}`"
-        class="empty-slot"
-      >
-        <div class="empty-avatar">
-          <i class="fas fa-user-plus"></i>
+
+        <!-- 비활성화된 슬롯 (maxPlayers 초과) -->
+        <div 
+          v-else
+          class="disabled-slot-card"
+        >
+          <div class="disabled-avatar">
+            <i class="fas fa-lock"></i>
+          </div>
+          <div class="disabled-text">비활성화</div>
         </div>
-        <div class="empty-text">대기 중</div>
       </div>
     </div>
   </div>
@@ -86,12 +108,6 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['show-player-details', 'kick-player']);
-
-// 빈 슬롯 계산
-const emptySlots = computed(() => {
-  const remaining = props.maxPlayers - props.players.length;
-  return remaining > 0 ? remaining : 0;
-});
 </script>
 
 <style scoped>
@@ -103,7 +119,7 @@ const emptySlots = computed(() => {
 
 .players-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
   width: 100%;
   max-width: 100%;
@@ -267,8 +283,14 @@ const emptySlots = computed(() => {
   font-weight: 500;
 }
 
-/* 빈 슬롯 */
-.empty-slot {
+/* 슬롯 래퍼 */
+.slot-wrapper {
+  width: 100%;
+  min-height: 120px;
+}
+
+/* 빈 슬롯 카드 (활성화된 슬롯) */
+.empty-slot-card {
   background: #f8fafc;
   border: 2px dashed #d1d5db;
   border-radius: 16px;
@@ -281,7 +303,7 @@ const emptySlots = computed(() => {
   transition: all 0.2s ease;
 }
 
-.empty-slot:hover {
+.empty-slot-card:hover {
   background: #f1f5f9;
   border-color: #9ca3af;
 }
@@ -308,25 +330,48 @@ const emptySlots = computed(() => {
   font-weight: 500;
 }
 
+/* 비활성화된 슬롯 카드 */
+.disabled-slot-card {
+  background: #f1f5f9;
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  max-height: 160px;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.disabled-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+.disabled-avatar i {
+  font-size: 1rem;
+  color: #94a3b8;
+}
+
+.disabled-text {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
 /* 반응형 디자인 */
 @media (max-width: 1024px) {
   .players-grid {
     grid-template-columns: repeat(3, 1fr);
     gap: 0.75rem;
-  }
-  
-  .player-card {
-    min-height: 110px;
-    padding: 0.75rem;
-  }
-  
-  .player-avatar {
-    width: 40px;
-    height: 40px;
-  }
-  
-  .player-name {
-    font-size: 0.8rem;
   }
 }
 
@@ -383,16 +428,19 @@ const emptySlots = computed(() => {
     font-size: 0.75rem;
   }
   
-  .empty-avatar {
+  .empty-avatar,
+  .disabled-avatar {
     width: 32px;
     height: 32px;
   }
-  
-  .empty-avatar i {
+
+  .empty-avatar i,
+  .disabled-avatar i {
     font-size: 1rem;
   }
-  
-  .empty-text {
+
+  .empty-text,
+  .disabled-text {
     font-size: 0.7rem;
   }
 }

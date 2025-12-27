@@ -161,6 +161,15 @@ jobs:
             --cache-control "no-cache, no-store, must-revalidate"
         fi
         
+        # Welcome 페이지 업로드
+        if [ -f "dist/welcome/index.html" ]; then
+          aws s3 cp dist/welcome/index.html s3://$BUCKET$DEPLOY_PATH/welcome/index.html \
+            --cache-control "no-cache, no-store, must-revalidate"
+          echo "✅ Welcome page uploaded"
+        else
+          echo "⚠️ Welcome page not found in dist/welcome/index.html"
+        fi
+        
         echo "Deployment completed successfully!"
         echo "Application URL: https://$BUCKET.s3-website.ap-northeast-2.amazonaws.com$DEPLOY_PATH"
         

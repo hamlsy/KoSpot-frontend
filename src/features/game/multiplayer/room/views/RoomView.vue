@@ -92,58 +92,13 @@
 
       <!-- 오른쪽 패널: 채팅 전체 높이 -->
       <div class="right-panel" :class="{ 'hidden-mobile': isMobileView && !isChatVisible }">
-        <div class="chat-panel">
-          <div class="chat-header">
-            <div class="chat-title">
-              <i class="fas fa-comments"></i>
-              <span>채팅</span>
-              <div class="chat-notification" v-if="unreadMessages > 0">
-                {{ unreadMessages > 9 ? '9+' : unreadMessages }}
-              </div>
-            </div>
-            <div class="chat-controls">
-              <div class="chat-status">
-                <i class="fas fa-circle online-indicator"></i>
-                <span>{{ localPlayers.length }}명 온라인</span>
-              </div>
-              <button 
-                v-if="isMobileView" 
-                class="chat-close-button"
-                @click="handleToggleChat"
-                title="채팅 닫기"
-              >
-                <i class="fas fa-times"></i>
-              </button>
-            </div>
-          </div>
-
-          <div class="chat-container">
-            <div class="chat-messages" ref="chatMessagesRef">
-              
-              <ChatMessage
-                v-for="(message, index) in chatMessages"
-                :key="index"
-                :message="message"
-                :current-user-id="currentUserId"
-              />
-            </div>
-
-            <div class="chat-input-container">
-              <input
-                type="text"
-                class="chat-input"
-                v-model="chatInput"
-                placeholder="메시지를 입력하세요..."
-                @keyup.enter="sendChatMessage"
-                @focus="handleChatInputFocus"
-                ref="chatInputFieldRef"
-              />
-              <button class="send-button" @click="sendChatMessage">
-                <i class="fas fa-paper-plane"></i>
-              </button>
-            </div>
-          </div>
-        </div>
+        <ChatWindow
+          :messages="formattedChatMessages"
+          :current-user-id="currentUserId"
+          :show-mobile-close="isMobileView && isChatVisible"
+          @send-message="(message) => sendChatMessage(message)"
+          @close="handleToggleChat"
+        />
       </div>
     </div>
 
@@ -188,7 +143,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
+import { ref, onMounted, onBeforeUnmount, nextTick, watch, computed } from 'vue';
 import { useRouter, useRoute, onBeforeRouteLeave } from 'vue-router';
 
 // Core Components
@@ -204,7 +159,7 @@ import SoloWaitingList from '@/features/game/multiplayer/room/components/list/So
 import KickConfirmationModal from 'src/features/game/multiplayer/room/components/player/KickConfirmationModal.vue'
 import PlayerDetailsModal from 'src/features/game/multiplayer/room/components/player/PlayerDetailsModal.vue'
 import RoomSettingsModal from 'src/features/game/multiplayer/room/components/settings/RoomSettingsModal.vue'
-import ChatMessage from 'src/features/game/multiplayer/chat/components/Room/ChatMessage.vue'
+import ChatWindow from 'src/features/game/multiplayer/chat/components/Lobby/ChatWindow.vue'
 
 //notifications
 import ToastNotification from 'src/features/game/multiplayer/room/components/notifications/ToastNotification.vue'
@@ -257,6 +212,7 @@ const initialRoomData = routerState ? {
   totalRounds: routerState.totalRounds || 5,
   timeLimit: routerState.timeLimit || 60,
   isPrivate: routerState.isPrivate || false,
+  isPoiNameVisible: routerState.isPoiNameVisible ?? true,
   password: routerState.password || '',
   hostId: routerState.hostId || (shouldUseDummyMode ? currentUserId : ''),
   currentPlayerCount: routerState.currentPlayerCount || 0,
@@ -267,9 +223,10 @@ const initialRoomData = routerState ? {
   gameMode: 'roadview',
   isTeamMode: false,
   maxPlayers: 8,
-  rounds: 5,
+  totalRounds: 5,
   timeLimit: 60,
   isPrivate: false,
+  isPoiNameVisible: true,
   password: '',
   hostId: shouldUseDummyMode ? currentUserId : '',
   currentPlayerCount: 0,
@@ -422,9 +379,7 @@ const {
   
   // 채팅 상태
   chatMessages,
-  chatInput,
   unreadMessages,
-  chatMessagesRef,
   
   // 플레이어 상태
   localPlayers,
@@ -471,6 +426,18 @@ const {
   initializeRoom
 } = room;
 
+// 채팅 메시지를 ChatWindow 형식에 맞게 변환
+const formattedChatMessages = computed(() => {
+  return chatMessages.value.map(msg => ({
+    id: msg.id,
+    sender: msg.senderName || msg.sender || '익명',
+    senderId: msg.senderId,
+    message: msg.content || msg.message,
+    timestamp: msg.timestamp,
+    system: msg.isSystem || msg.system || msg.messageType === 'SYSTEM'
+  }));
+});
+
 // leaveRoom 래퍼: 방 퇴장 후 로비로 새로고침 리다이렉션
 const leaveRoom = async () => {
   try {
@@ -491,23 +458,20 @@ const leaveRoom = async () => {
 // 반응형 디자인 상태 관리
 const isMobileView = ref(false);
 const isChatVisible = ref(false);
-const chatInputFieldRef = ref(null);
 
 // 화면 크기 감지
 const checkScreenSize = (preserveChatState = false) => {
+  const wasDesktop = !isMobileView.value;
   isMobileView.value = window.innerWidth <= 1024;
   
-  // 리사이즈 이벤트로 인한 호출이 아닌 경우에만 채팅창 상태 초기화
-  if (!preserveChatState) {
-    if (!isMobileView.value) {
-      isChatVisible.value = true; // 데스크톱에서는 항상 채팅 표시
-    } else {
-      // 반응형 전환 시 기본은 플레이어 리스트 화면이 먼저 보이도록 채팅 숨김
-      isChatVisible.value = false;
-    }
+  // 데스크톱에서 모바일로 전환 시 채팅창 숨김
+  if (wasDesktop && isMobileView.value) {
+    isChatVisible.value = false;
+  } else if (!isMobileView.value) {
+    isChatVisible.value = true; // 데스크톱에서는 항상 표시
   }
-  // preserveChatState가 true인 경우 (리사이즈 이벤트)에는 채팅창 상태를 변경하지 않음
-  // 이렇게 하면 모바일에서 키보드로 인한 뷰포트 변경 시에도 채팅창이 닫히지 않음
+  // preserveChatState가 true이고 모바일->모바일인 경우 상태 유지
+  // 키보드로 인한 뷰포트 변경 시에도 채팅창이 닫히지 않도록 함
 };
 
 // 채팅 토글 래퍼 함수
@@ -734,6 +698,7 @@ const formatUpdateTime = (timestamp) => {
   padding: var(--spacing-md);
   padding-top: 5rem;
   overflow: hidden;
+  max-width: 100vw;
 }
 
 .mode-background {
@@ -752,6 +717,11 @@ const formatUpdateTime = (timestamp) => {
   gap: var(--spacing-lg);
   flex: 1;
   min-height: 0;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .left-panel {
@@ -915,233 +885,32 @@ const formatUpdateTime = (timestamp) => {
   opacity: 0.8;
 }
 
-/* 채팅 패널 전체 높이 */
-.chat-panel {
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-border);
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.chat-header {
-  background: var(--color-primary);
-  color: white;
-  padding: var(--spacing-lg) var(--spacing-xl);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-}
-
-.chat-controls {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.chat-close-button {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.9rem;
-}
-
-.chat-close-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.05);
-}
-
-.chat-title {
-  font-family: var(--font-heading);
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  font-size: var(--font-size-h3);
-  font-weight: 700;
-  position: relative;
-}
-
-.chat-title i {
-  font-size: 1.25rem;
-}
-
-.chat-notification {
-  background: var(--color-error);
-  color: white;
-  border-radius: var(--radius-full);
-  width: 20px;
-  height: 20px;
-  font-size: var(--font-size-tiny);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  margin-left: var(--spacing-xs);
-  box-shadow: var(--shadow-sm);
-}
-
-.chat-status {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  font-size: var(--font-size-small);
-  opacity: 0.95;
-}
-
-.online-indicator {
-  color: var(--color-success);
-  font-size: 0.6rem;
-}
-
-/* 채팅 컨테이너 */
-.chat-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  flex: 1;
-  min-height: 0;
-}
-
-.chat-messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1rem 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 #f8fafc;
-}
-
-.chat-messages::-webkit-scrollbar {
-  width: 6px;
-}
-
-.chat-messages::-webkit-scrollbar-track {
-  background: #f8fafc;
-  border-radius: 10px;
-}
-
-.chat-messages::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 10px;
-  transition: background 0.2s ease;
-}
-
-.chat-messages::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-.chat-welcome {
-  text-align: center;
-  padding: 1.5rem 1rem;
-  color: #64748b;
-  border-bottom: 1px solid #f1f5f9;
-  margin-bottom: 1rem;
-}
-
-.welcome-icon {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 0.75rem;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-}
-
-.welcome-icon i {
-  font-size: 1.2rem;
-  color: white;
-}
-
-.welcome-text {
-  font-size: 0.85rem;
-  font-weight: 500;
-  line-height: 1.5;
-  margin: 0;
-}
-
-.chat-input-container {
-  display: flex;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-lg) var(--spacing-xl);
-  border-top: 1px solid var(--color-border);
-  background: var(--color-surface-hover);
-}
-
-.chat-input {
-  flex: 1;
-  padding: var(--spacing-md) var(--spacing-lg);
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius-full);
-  font-size: var(--font-size-body);
-  color: var(--color-text-primary);
-  outline: none;
-  transition: all var(--transition-normal);
-  background: var(--color-surface);
-}
-
-.chat-input:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
-}
-
-.chat-input::placeholder {
-  color: var(--color-text-tertiary);
-  font-weight: 400;
-}
-
-.send-button {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-full);
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all var(--transition-normal);
-  box-shadow: var(--shadow-sm);
-}
-
-.send-button:hover {
-  background: var(--color-primary-dark);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.send-button:active {
-  transform: translateY(0);
-}
-
-.send-button i {
-  font-size: 1rem;
-}
+/* ChatWindow 컴포넌트가 자체 스타일을 가지고 있으므로 채팅 관련 스타일 제거 */
 
 /* 모바일에서 채팅 숨김 */
 .right-panel.hidden-mobile {
   display: none;
 }
 
+/* 데스크톱에서 양사이드 광고 공간 확보 */
+@media (min-width: 1400px) {
+  .multiplayer-room-waiting {
+    padding-left: calc((100vw - 1400px) / 2 + var(--spacing-md));
+    padding-right: calc((100vw - 1400px) / 2 + var(--spacing-md));
+  }
+  
+  .room-content {
+    margin: 0;
+  }
+}
+
 /* Responsive design */
 @media (max-width: 1200px) {
+  .room-content {
+    max-width: 100%;
+    padding: 0 1rem;
+  }
+  
   .left-panel {
     flex: 1;
     max-width: 100%;
@@ -1182,25 +951,37 @@ const formatUpdateTime = (timestamp) => {
     -webkit-overflow-scrolling: touch;
   }
 
-  /* 모바일에서 채팅이 표시될 때 전체 화면 */
+  /* 모바일에서 채팅이 표시될 때 적절한 크기로 제한 */
   .right-panel:not(.hidden-mobile) {
-    position: absolute;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 420px;
+    height: 70vh;
+    max-height: 600px;
+    z-index: 1000;
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    padding: 1rem;
+    overflow: hidden;
+  }
+  
+  /* 모바일 채팅창 배경 오버레이 */
+  .right-panel:not(.hidden-mobile)::before {
+    content: '';
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    height: 100%;
-    z-index: 1000;
+    bottom: 0;
     background: rgba(0, 0, 0, 0.5);
-    padding: 1rem;
-    transform: translateX(0);
+    z-index: -1;
+    pointer-events: none;
   }
 
-  .right-panel:not(.hidden-mobile) .chat-panel {
-    max-width: 500px;
-    width: 100%;
-    height: 100%;
-    margin: 0 auto;
-  }
 }
 
 @media (max-width: 768px) {
@@ -1227,45 +1008,6 @@ const formatUpdateTime = (timestamp) => {
     font-size: 1rem;
     margin-bottom: 0.75rem;
   }
-
-  .chat-header {
-    padding: 0.75rem 1rem;
-  }
-
-  .chat-title {
-    font-size: 1rem;
-  }
-
-  .chat-controls {
-    gap: 0.75rem;
-  }
-
-  .chat-status {
-    font-size: 0.8rem;
-  }
-
-  .chat-status span {
-    display: none;
-  }
-
-  .chat-messages {
-    padding: 0.75rem 1rem;
-  }
-
-  .chat-input-container {
-    padding: 0.75rem 1rem;
-    gap: 0.5rem;
-  }
-
-  .send-button {
-    width: 40px;
-    height: 40px;
-  }
-
-  .right-panel:not(.hidden-mobile) .chat-panel {
-    max-width: 100%;
-    margin: 0;
-  }
 }
 
 @media (max-width: 480px) {
@@ -1277,39 +1019,6 @@ const formatUpdateTime = (timestamp) => {
   .multiplayer-room-waiting {
     overflow-x: hidden;
     overflow-y: auto;
-  }
-
-  .chat-welcome {
-    padding: 1rem 0.5rem;
-  }
-
-  .welcome-icon {
-    width: 40px;
-    height: 40px;
-  }
-
-  .welcome-text {
-    font-size: 0.8rem;
-  }
-
-  .chat-input {
-    padding: 0.65rem 0.85rem;
-    font-size: 0.85rem;
-  }
-
-  .send-button {
-    width: 36px;
-    height: 36px;
-  }
-
-  .send-button i {
-    font-size: 0.8rem;
-  }
-
-  .chat-close-button {
-    width: 28px;
-    height: 28px;
-    font-size: 0.8rem;
   }
 }
 </style>
