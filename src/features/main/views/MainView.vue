@@ -22,13 +22,25 @@
       @logout="handleLogout"
     />
 
-    <!-- Main Content -->
-    <main class="main-content">
-      <!-- 히어로 섹션 -->
-      <HeroSection @open-tutorial="showTutorial = true" />
+    <!-- 3컬럼 레이아웃 래퍼 -->
+    <div class="main-layout">
+      <!-- 좌측 광고 영역 -->
+      <aside class="ad-sidebar ad-sidebar-left">
+        <div class="ad-container" id="google-ad-left">
+          <Adsense 
+            v-if="!isMobileOrTablet"
+            ad-slot="YOUR_AD_SLOT_LEFT"
+          />
+        </div>
+      </aside>
+      
+      <!-- 중앙 컨텐츠 -->
+      <main class="main-content-wrapper">
+        <!-- 히어로 섹션 -->
+        <HeroSection @open-tutorial="showTutorial = true" />
 
-      <!-- Featured Challenge Banner Carousel -->
-      <div v-if="displayBanners && displayBanners.length > 0" class="banner-carousel">
+        <!-- Featured Challenge Banner Carousel -->
+        <div v-if="displayBanners && displayBanners.length > 0" class="banner-carousel">
         <div
           class="banner-container"
           :style="{ transform: `translateX(-${currentBanner * 100}%)` }"
@@ -60,6 +72,14 @@
             @mouseenter="setCurrentBanner(index)"
           ></button>
         </div>
+      </div>
+
+      <!-- 인라인 광고 1: 배너 아래 (모바일/태블릿만) -->
+      <div class="ad-inline ad-inline-top">
+        <Adsense 
+          v-if="isMobileOrTablet"
+          ad-slot="YOUR_AD_SLOT_1"
+        />
       </div>
 
       <!-- Game Modes -->
@@ -168,6 +188,14 @@
           </div>
         </div>
       </section>
+
+      <!-- 인라인 광고 2: 게임 모드와 공지사항 사이 (모바일/태블릿만) -->
+      <div class="ad-inline ad-inline-middle">
+        <Adsense 
+          v-if="isMobileOrTablet"
+          ad-slot="YOUR_AD_SLOT_2"
+        />
+      </div>
       
       <!-- Stats Overview - 베타 버전에서는 숨김 -->
       <!-- 
@@ -265,7 +293,19 @@
           </router-link>
         </div>
       </div>
-    </main>
+      </main>
+      
+      <!-- 우측 광고 영역 -->
+      <aside class="ad-sidebar ad-sidebar-right">
+        <div class="ad-container" id="google-ad-right">
+          <Adsense 
+            v-if="!isMobileOrTablet"
+            ad-slot="YOUR_AD_SLOT_RIGHT"
+          />
+        </div>
+      </aside>
+    </div>
+    
     <!-- 수정: 프로필 메뉴 오버레이 추가 -->
     <transition name="fade">
       <div
@@ -351,6 +391,7 @@ import UserLoginCard from '@/features/main/components/UserLoginCard.vue'
 import IntroTutorialModal from '@/features/intro/components/IntroTutorialModal.vue'
 import NicknameSetupModal from '@/features/intro/components/NicknameSetupModal.vue'
 import HeroSection from '@/features/intro/components/HeroSection.vue'
+import Adsense from '@/features/game/shared/components/Common/Adsense.vue'
 import { mainService } from '@/features/main/services/main.service.js'
 
 // 라우터 설정
@@ -416,6 +457,15 @@ const displayBanners = computed(() => {
 // 공지사항 데이터
 const recentNotices = ref([]);
 const noticesLoading = ref(false);
+
+// 반응형 감지
+const windowWidth = ref(window.innerWidth);
+const isMobileOrTablet = computed(() => windowWidth.value <= 1023);
+
+// 화면 크기 변경 감지
+function handleResize() {
+  windowWidth.value = window.innerWidth;
+}
 
 // 메인 페이지 데이터 로드 함수
 async function loadMainPageData() {
@@ -514,11 +564,13 @@ async function loadMainPageData() {
 onMounted(() => {
   loadMainPageData();
   startBannerRotation();
+  window.addEventListener('resize', handleResize);
 });
 
 // 컴포넌트 언마운트 전 실행
 onBeforeUnmount(() => {
   stopBannerRotation();
+  window.removeEventListener('resize', handleResize);
 });
 
 // 프로필 메뉴 토글 함수
@@ -708,6 +760,80 @@ async function handleLogout() {
   transition: background-color var(--transition-slow);
 }
 
+/* 3컬럼 레이아웃 */
+.main-layout {
+  display: flex;
+  gap: var(--spacing-xl);
+  max-width: 1920px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+  position: relative;
+}
+
+/* 사이드바 광고 영역 */
+.ad-sidebar {
+  flex: 0 0 160px;
+  position: sticky;
+  top: 100px;
+  height: fit-content;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ad-container {
+  width: 160px;
+  min-height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: sticky;
+  top: 100px;
+}
+
+/* 중앙 컨텐츠 영역 */
+.main-content-wrapper {
+  flex: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-top: 80px;
+  padding-left: var(--spacing-lg);
+  padding-right: var(--spacing-lg);
+}
+
+/* 반응형 인라인 광고 스타일 */
+.ad-inline {
+  width: 100%;
+  max-width: 728px;
+  margin: var(--spacing-xl) auto;
+}
+
+/* 반응형: 태블릿 이하에서 사이드바 광고 제거 */
+@media (max-width: 1023px) {
+  .main-layout {
+    flex-direction: column;
+    padding: 0 var(--spacing-lg);
+  }
+  
+  .ad-sidebar {
+    display: none;
+  }
+  
+  .main-content-wrapper {
+    max-width: 100%;
+    width: 100%;
+    padding-left: var(--spacing-lg);
+    padding-right: var(--spacing-lg);
+  }
+  
+  .ad-inline {
+    max-width: 100%;
+    margin: var(--spacing-lg) 0;
+    padding: var(--spacing-sm);
+  }
+}
+
+/* 기존 main-content 스타일 (하위 호환성) */
 .main-content {
   padding-top: 80px;
   max-width: 1400px;

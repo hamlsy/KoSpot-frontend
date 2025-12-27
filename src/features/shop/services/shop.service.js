@@ -134,30 +134,26 @@ class ShopService {
 
   /**
    * 아이템 타입 키 목록 가져오기
-   * @returns {Array<{key: string, name: string, icon: string, categoryId: string}>} 아이템 타입 목록
+   * @returns {Array<{key: string, name: string, icon: string, categoryId: string, disabled: boolean}>} 아이템 타입 목록
    */
   getItemTypes() {
     return [
-      { key: 'MARKER', name: '마커', icon: 'fas fa-map-marker-alt', categoryId: 'markers' },
-      { key: 'NICKNAME', name: '닉네임 꾸미기', icon: 'fas fa-font', categoryId: 'nicknames' },
-      { key: 'ITEM', name: '아이템', icon: 'fas fa-gift', categoryId: 'items' },
-      { key: 'PROFILE', name: '프로필', icon: 'fas fa-user-circle', categoryId: 'profile' },
-      { key: 'BACKGROUND', name: '배경', icon: 'fas fa-image', categoryId: 'background' }
+      { key: 'MARKER', name: '마커', icon: 'fas fa-map-marker-alt', categoryId: 'markers', disabled: false },
+      { key: 'MARKER_EFFECT', name: '마커 효과', icon: 'fas fa-sparkles', categoryId: 'marker-effects', disabled: true },
+      { key: 'ITEM', name: '아이템', icon: 'fas fa-gift', categoryId: 'items', disabled: false }
     ];
   }
 
   /**
    * 카테고리 ID를 아이템 타입 키로 변환
-   * @param {string} categoryId - 카테고리 ID (markers, nicknames, items 등)
-   * @returns {string} 아이템 타입 키 (MARKER, NICKNAME, ITEM 등)
+   * @param {string} categoryId - 카테고리 ID (markers, marker-effects, items 등)
+   * @returns {string} 아이템 타입 키 (MARKER, MARKER_EFFECT, ITEM 등)
    */
   getCategoryToItemTypeKey(categoryId) {
     const mapping = {
       'markers': 'MARKER',
-      'nicknames': 'NICKNAME', 
-      'items': 'ITEM',
-      'profile': 'PROFILE',
-      'background': 'BACKGROUND'
+      'marker-effects': 'MARKER_EFFECT',
+      'items': 'ITEM'
     };
     return mapping[categoryId] || 'ITEM';
   }
@@ -224,7 +220,7 @@ class ShopService {
    * @returns {boolean} 장착 가능 여부
    */
   isEquippableCategory(categoryId) {
-    return ['markers', 'nicknames', 'profile', 'background'].includes(categoryId);
+    return ['markers', 'marker-effects'].includes(categoryId);
   }
 }
 

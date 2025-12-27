@@ -39,7 +39,17 @@
 
       <!-- Stats Section -->
       <section class="stats-section">
-        <h2 class="section-title">나의 랭크 통계</h2>
+        <div class="section-header">
+          <h2 class="section-title">나의 랭크 통계</h2>
+          <button
+            class="view-all-button"
+            @click="showRankingModal = true"
+            v-if="rankInfo"
+          >
+            전체 랭킹 보기
+            <i class="fas fa-arrow-right"></i>
+          </button>
+        </div>
         <div class="stats-grid">
           <div v-for="stat in stats" :key="stat.label" class="stat-card">
             <div class="stat-header">
@@ -225,6 +235,14 @@
 
     <!-- History Modal -->
     <history-modal :show="showHistoryModal" @close="showHistoryModal = false" />
+
+    <!-- Ranking Modal -->
+    <ranking-modal
+      :show="showRankingModal"
+      :game-mode="'ROADVIEW'"
+      :initial-rank-tier="rankInfo?.rankTier || 'BRONZE'"
+      @close="showRankingModal = false"
+    />
   </div>
 </template>
 
@@ -235,6 +253,7 @@ import ThemeModePopup from "src/features/game/single/main/components/Theme/Theme
 import GameModeCard from "@/features/game/shared/components/Common/GameModeCard.vue";
 import HistoryModal from "@/features/game/single/main/components/HistoryModal.vue";
 import PracticeTutorialModal from "@/features/game/single/main/components/PracticeTutorialModal.vue";
+import RankingModal from "@/features/game/single/main/components/RankingModal.vue";
 import Adsense from "@/features/game/shared/components/Common/Adsense.vue";
 import roadViewMainService from "@/features/game/single/main/services/roadViewMain.service";
 
@@ -251,6 +270,7 @@ const hoverStat = ref(null);
 const hoverRecord = ref(null);
 const showThemeModePopup = ref(false);
 const showHistoryModal = ref(false);
+const showRankingModal = ref(false);
 const showPracticeTutorial = ref(false);
 
 // API 데이터 상태
@@ -355,8 +375,7 @@ const stats = computed(() => {
       { icon: "fas fa-trophy", label: "내 랭크", value: "-" },
       { icon: "fas fa-trophy", label: "내 레이팅 점수", value: "-" },
       { icon: "fas fa-clock", label: "총 플레이 수", value: "-" },
-      { icon: "fas fa-medal", label: "최고 점수", value: "-" },
-      { icon: "fas fa-users", label: "전체 랭킹", value: "-" },
+      { icon: "fas fa-medal", label: "평균 점수", value: "-" },
     ];
   }
 
@@ -380,11 +399,6 @@ const stats = computed(() => {
       icon: "fas fa-medal",
       label: "평균 점수",
       value: `${formatNumber(Math.round(statisticInfo.value.rankAvgScore))}점`,
-    },
-    {
-      icon: "fas fa-users",
-      label: "전체 랭킹",
-      value: `상위 ${rankInfo.value.rankPercentage}%`,
     },
   ];
 });

@@ -3,11 +3,6 @@
     <div class="result-map-container">
       <div class="result-map" ref="resultMapElement"></div>
     </div>
-
-    <!-- 구글 광고 공간 (향후 추가 예정) -->
-    <div class="ads-placeholder">
-      <!-- Google Ads will be placed here -->
-    </div>
   </div>
 </template>
 
@@ -235,26 +230,9 @@ export default {
   background-color: #f5f7fa;
 }
 
-/* 광고 플레이스홀더 */
-.ads-placeholder {
-  min-height: 100px;
-  background: #f8fafc;
-  border: 2px dashed #cbd5e1;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #94a3b8;
-  font-size: 0.875rem;
-}
-
 @media (max-width: 480px) {
   .result-map-container {
     height: 180px;
-  }
-  
-  .ads-placeholder {
-    min-height: 80px;
   }
 }
 </style>
