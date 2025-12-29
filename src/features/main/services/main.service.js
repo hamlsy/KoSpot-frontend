@@ -101,10 +101,9 @@ class MainService {
 
     return this.sortBanners(banners).map(banner => ({
       id: banner.bannerId,
-      badge: this._extractBadgeFromTitle(banner.title),
       title: banner.title,
       description: banner.description || '',
-      image: banner.imageUrl,
+      image: banner.imageUrl ? encodeURI(banner.imageUrl) : '',
       link: banner.linkUrl
     }));
   }
