@@ -116,11 +116,11 @@ const devRoutes = [
     //     name: "ComponentTest",
     //     component: ComponentTest
     // },
-    // {
-    //     path: '/temp-login',
-    //     name: "TempLogin",
-    //     component: TempLoginView
-    // },
+    {
+        path: '/temp-login',
+        name: "TempLogin",
+        component: TempLoginView
+    },
     // {
     //     path: '/test/roadview-solo',
     //     name: "TestRoadviewSolo",

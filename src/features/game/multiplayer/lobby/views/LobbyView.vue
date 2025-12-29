@@ -114,7 +114,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, onBeforeRouteLeave } from 'vue-router';
 import { useAuth } from '@/core/composables/useAuth.js';
 import useGlobalLobbyWebSocketService from '../services/useGlobalLobbyWebSocketService';
 import { useLobbyRoom } from '../composables/useLobbyRoom.js';
@@ -156,7 +156,10 @@ const {
   createRoom: createRoomAPI,
   clearError,
   enableDummyData,
-  disableDummyData
+  disableDummyData,
+  subscribeToRoomUpdates,
+  unsubscribeFromRoomUpdates,
+  resetRoomState
 } = useLobbyRoom();
 
 // 반응형 데이터
@@ -165,7 +168,6 @@ const isInitialized = ref(false);
 const isMobile = ref(false);
 const isChatVisible = ref(false);
 const windowWidth = ref(window.innerWidth);
-const refreshInterval = ref(null);
 
 // 계산된 속성
 const formattedChatMessages = computed(() => {
@@ -206,21 +208,26 @@ const getCurrentUserId = () => {
 
 const initializeData = async () => {
   try {
+    // 페이지 초기화 시 모든 GAME ROOM 상태 초기화
+    resetRoomState();
+    
+    // 기존 구독 해제 (새로고침 또는 재진입 시)
+    unsubscribeFromRoomUpdates();
+    
     // WebSocket 연결 및 채팅 서비스 시작
     // (사용자 정보는 서비스 내에서 자동으로 초기화됨)
     await connectToChat();
     
-    // 방 목록 가져오기 (첫 페이지)
+    // 방 목록 가져오기 (첫 페이지) - fetchRooms 내부에서도 상태 초기화가 되지만
+    // 명시적으로 초기화를 위해 resetRoomState를 먼저 호출
     await fetchRooms(0);
     
+    // WebSocket 연결이 완료된 후 STOMP 구독 시작 (실시간 방 업데이트)
+    // connectToChat 내부에서 WebSocket 연결이 완료되면 콜백으로 구독 시도
+    // 이미 연결되어 있으면 즉시 구독 시도
+    subscribeToRoomUpdates();
+    
     isInitialized.value = true;
-      
-      // 30초마다 방 목록 새로고침 (더미 데이터 모드가 아닐 때만)
-    refreshInterval.value = setInterval(() => {
-      if (!useDummyData.value) {
-        refreshRooms();
-      }
-      }, 30000);
     
   } catch (error) {
     console.error('로비 초기화 중 오류:', error);
@@ -362,12 +369,22 @@ onMounted(async () => {
   window.addEventListener('resize', () => checkMobileView(true)); // 리사이즈 시에는 채팅창 상태 보존
 });
 
+// 페이지 이탈 시 구독 해제 (라우트 전환)
+onBeforeRouteLeave((to, from, next) => {
+  console.log('🚪 로비 페이지 이탈 - 구독 해제');
+  unsubscribeFromRoomUpdates();
+  next();
+});
+
 onBeforeUnmount(async () => {
   // 정리 작업
-  if (refreshInterval.value) {
-    clearInterval(refreshInterval.value);
-  }
+  // STOMP 구독 해제
+  unsubscribeFromRoomUpdates();
+  
+  // 채팅 연결 해제
   await disconnectFromChat();
+  
+  // 리사이즈 이벤트 리스너 제거
   window.removeEventListener('resize', checkMobileView);
 });
 </script>

@@ -2,24 +2,6 @@
   <div class="kakao-map">
     <div id="map-container" ref="mapContainer"></div>
     
-    <div 
-      class="marker-info" 
-      v-if="showInfoWindow && actualPosition"
-    >
-      <div class="info-content">
-        <div class="info-header">
-          <span class="winner-info" v-if="topPlayer">
-            1등: {{ topPlayer.playerName || topPlayer.teamName }}
-          </span>
-        </div>
-        <div class="info-body">
-          <p class="winner-distance" v-if="topPlayer && topPlayer.distance">
-            정답과의 거리: <strong>{{ topPlayer.distance.toFixed(3) }}km</strong>
-          </p>
-        </div>
-      </div>
-    </div>
-    
     <div class="map-overlay" v-if="isLoading">
       <div class="loading-spinner">
         <i class="fas fa-spinner fa-spin"></i>
@@ -99,7 +81,6 @@ export default {
       actualOverlay: null, // 정답 위치 오버레이 추가
       polyline: null,
       isLoading: true,
-      showInfoWindow: false,
       // prop 대신 내부 상태로 관리
       internalMarkerPosition: this.markerPosition,
       distance: null,
@@ -334,9 +315,6 @@ export default {
       // 거리 계산 및 선 그리기
       this.calculateDistance();
       this.drawLine();
-      
-      // 정보창 표시
-      this.showInfoWindow = true;
       
       // 플레이어 추측 위치가 있으면 거리 선 표시
       if (this.showDistanceLines && this.playerGuesses && this.playerGuesses.length > 0) {
@@ -776,66 +754,6 @@ export default {
   margin: 0;
 }
 
-.marker-info {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 5;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-  min-width: 200px;
-  max-width: 300px;
-  overflow: hidden;
-}
-
-.info-content {
-  padding: 10px;
-}
-
-.info-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 5px;
-}
-
-.info-header h3 {
-  margin: 0;
-  font-size: 1rem;
-  color: #333;
-}
-
-.distance, .winner-info {
-  background: #f0f2f5;
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #444;
-}
-
-.winner-info {
-  background: #ffefd5;
-  color: #ff6b00;
-}
-
-.winner-distance {
-  margin: 5px 0;
-  font-size: 0.85rem;
-  color: #444;
-}
-
-.winner-distance strong {
-  color: #ff6b00;
-  font-weight: 600;
-}
-
-.info-body {
-  font-size: 0.9rem;
-}
-
 .coords {
   font-family: monospace;
   margin: 5px 0;
@@ -893,19 +811,6 @@ export default {
 }
 
 @media (max-width: 768px) {
-  .marker-info {
-    bottom: 10px;
-    min-width: 150px;
-  }
-  
-  .info-header h3 {
-    font-size: 0.9rem;
-  }
-  
-  .distance {
-    font-size: 0.7rem;
-  }
-  
   .control-btn {
     width: 32px;
     height: 32px;

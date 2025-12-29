@@ -293,7 +293,50 @@ export function useRoom(props, emit, options = {}) {
       const hasPlayersArray = Array.isArray(players) && players.length > 0;
       const hasPlayerInfo = !!playerInfo;
 
-      if (hasPlayersArray) {
+      // HOST_CHANGED 처리 (players가 null이고 playerInfo에 newHostInfo가 있음)
+      if (type === 'HOST_CHANGED' && hasPlayerInfo) {
+        const newHostInfo = transformGameRoomPlayer(playerInfo);
+        if (newHostInfo) {
+          const newHostId = newHostInfo.id || newHostInfo.memberId?.toString();
+          const oldHostId = localRoomData.value.hostId?.toString();
+          
+          // 방 데이터의 hostId 업데이트
+          localRoomData.value.hostId = newHostId;
+          
+          // 플레이어 목록에서 방장 상태 업데이트
+          const updatedPlayers = roomPlayer.localPlayers.value.map(player => {
+            const playerId = player.id?.toString();
+            if (playerId === oldHostId) {
+              // 기존 방장의 isHost를 false로 변경
+              return { ...player, isHost: false };
+            } else if (playerId === newHostId) {
+              // 새 방장의 isHost를 true로 변경
+              return { ...player, isHost: true };
+            }
+            return player;
+          });
+          
+          roomPlayer.updatePlayerList(updatedPlayers);
+          emit('player-list-updated', updatedPlayers);
+          
+          // 시스템 메시지 추가
+          const hostChangeMessage = `방장이 ${newHostInfo.nickname || '플레이어'}님으로 변경되었습니다.`;
+          roomChat.addSystemMessage(hostChangeMessage);
+          
+          // 토스트 알림 표시
+          if (toastRef?.value) {
+            if (newHostId === props.currentUserId?.toString()) {
+              // 자신이 새 방장이 된 경우
+              toastRef.value.showSuccessNotification('방장 권한을 받았습니다!', '이제 방 설정을 변경할 수 있습니다.');
+            } else {
+              // 다른 플레이어가 방장이 된 경우
+              toastRef.value.showSuccessNotification('방장 변경', `${newHostInfo.nickname || '플레이어'}님이 새로운 방장이 되었습니다.`);
+            }
+          }
+          
+          console.log(`✅ 방장 변경 완료: ${oldHostId} -> ${newHostId}`);
+        }
+      } else if (hasPlayersArray) {
         const transformedPlayers = transformGameRoomPlayers(players);
         roomPlayer.updatePlayerList(transformedPlayers);
         localRoomData.value.currentPlayerCount = transformedPlayers.length;
@@ -362,8 +405,14 @@ export function useRoom(props, emit, options = {}) {
             
           case 'PLAYER_KICKED':
             if (playerInfo?.memberId?.toString() === props.currentUserId) {
+              // 자신이 강퇴당한 경우: 알림 표시 후 로비로 이동
               toastRef.value.showErrorNotification('강퇴됨', '방장에 의해 강퇴되었습니다.');
-              setTimeout(() => leaveRoom(), 2000);
+              // 알림을 보여준 후 1.5초 뒤 로비로 이동
+              setTimeout(() => {
+                leaveRoom();
+                // 강퇴 이벤트를 emit하여 RoomView에서 로비로 이동하도록 함
+                emit('kicked-from-room');
+              }, 1500);
               return;
             } else {
               toastRef.value.showPlayerLeaveNotification(`${playerInfo?.nickname || '플레이어'} (강퇴)`);
@@ -372,17 +421,18 @@ export function useRoom(props, emit, options = {}) {
         }
       }
       
-      // 시스템 메시지 추가
-      if (message) {
+      // 시스템 메시지 추가 (HOST_CHANGED는 이미 처리됨)
+      if (message && type !== 'HOST_CHANGED') {
         roomChat.addSystemMessage(message);
       }
       
-      // 강퇴 처리 (자신이 강퇴당한 경우)
+      // 강퇴 처리 (자신이 강퇴당한 경우) - toastRef가 없는 경우를 위한 fallback
       if (type === 'PLAYER_KICKED' && playerInfo?.memberId?.toString() === props.currentUserId) {
-        // 알림이 없는 경우 기본 alert 사용
+        // 알림이 없는 경우 기본 alert 사용 후 즉시 이동
         if (!toastRef?.value) {
           alert('방장에 의해 강퇴되었습니다.');
           leaveRoom();
+          emit('kicked-from-room');
         }
         return;
       }
