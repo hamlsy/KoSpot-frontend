@@ -193,8 +193,8 @@ const checkMobileView = (preserveChatState = false) => {
   
   // 리사이즈 이벤트로 인한 호출이 아닌 경우에만 채팅창 상태 초기화
   if (!preserveChatState) {
-    // 데스크톱에서는 항상 채팅창 표시, 모바일에서는 숨김
-    isChatVisible.value = !isMobile.value;
+    // 모든 화면 크기에서 기본적으로 채팅창은 닫혀있음
+    isChatVisible.value = false;
   }
   // preserveChatState가 true인 경우 (리사이즈 이벤트)에는 채팅창 상태를 변경하지 않음
   // 이렇게 하면 모바일에서 키보드로 인한 뷰포트 변경 시에도 채팅창이 닫히지 않음
