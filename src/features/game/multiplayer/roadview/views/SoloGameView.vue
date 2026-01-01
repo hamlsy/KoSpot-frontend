@@ -18,6 +18,7 @@
       :is-poi-name-visible="isPoiNameVisibleLocal"
       :poi-name="currentPoiName"
       :room-data="roomDataFromHistory"
+      :unread-chat-messages="unreadChatCount"
       @leave-game="exitToLobby"
     @guess-submitted="handleGuessSubmission"
     @round-ended="handleRoundEnded"
@@ -29,6 +30,7 @@
     @player-submitted="handlePlayerSubmitted"
     @game-ended="handleGameEnded"
     @roadview-load-error="handleRoadviewLoadError"
+    @chat-opened="resetUnreadChatCount"
     ref="baseGame"
   >
     <!-- 개인전용 플레이어 리스트 -->
@@ -114,6 +116,7 @@ import PlayerLoadingOverlay from 'src/features/game/multiplayer/roadview/compone
 import gameStore from 'src/store/gameStore.js'
 import { useSoloGameFlow } from '@/features/game/multiplayer/roadview/composables/useSoloGameFlow'
 import soloGameWebSocket from '@/features/game/multiplayer/roadview/services/soloGameWebSocket'
+import roomApiService from '@/features/game/multiplayer/room/services/roomApi.service.js'
 
 export default {
   name: "SoloRoadViewGame",
@@ -232,8 +235,32 @@ export default {
 
       // 지명 공개 관련 로컬 상태
       isPoiNameVisibleLocal: true,
-      currentPoiName: ''
+      currentPoiName: '',
+
+      // 읽지 않은 채팅 메시지 카운트
+      unreadChatCount: 0,
+      // 이전 채팅 메시지 수 (새 메시지 감지용)
+      previousChatMessagesLength: 0
     };
+  },
+
+  watch: {
+    // 채팅 메시지가 추가될 때 읽지 않은 메시지 카운트 증가
+    'gameStore.state.chatMessages': {
+      handler(newMessages) {
+        // 새 메시지가 추가되었는지 확인
+        if (newMessages && newMessages.length > this.previousChatMessagesLength) {
+          const newCount = newMessages.length - this.previousChatMessagesLength
+          // 채팅창이 닫혀있을 때만 카운트 증가
+          const baseGame = this.$refs.baseGame
+          if (baseGame && !baseGame.isChatOpen) {
+            this.unreadChatCount += newCount
+          }
+        }
+        this.previousChatMessagesLength = newMessages?.length || 0
+      },
+      deep: true
+    }
   },
 
   computed: {
@@ -489,6 +516,11 @@ export default {
   },
 
   methods: {
+    // 읽지 않은 채팅 카운트 리셋
+    resetUnreadChatCount() {
+      this.unreadChatCount = 0
+    },
+
     resolveRoomId() {
       const paramId = this.$route?.params?.roomId
       const navState = typeof history !== 'undefined' ? history.state : undefined
@@ -1783,7 +1815,7 @@ export default {
       }
     },
 
-    exitToLobby() {
+    async exitToLobby() {
       // 확인 다이얼로그 표시
       if (!confirm('정말 게임을 나가시겠습니까? 진행 중인 게임은 저장되지 않습니다.')) {
         return
@@ -1791,6 +1823,19 @@ export default {
 
       // 자동 퇴장 카운트다운 취소
       this.cancelAutoExitCountdown()
+
+      // leave API 호출 (roomApi.service.js 사용)
+      const roomId = this.roomId
+      
+      if (roomId) {
+        try {
+          await roomApiService.leaveGameRoom(roomId)
+        
+        } catch (error) {
+          console.warn('⚠️ leave API 호출 실패:', error)
+          // API 실패해도 페이지 이동은 진행
+        }
+      }
 
       // 모든 구독 해제
       this.cleanupSubscriptions()

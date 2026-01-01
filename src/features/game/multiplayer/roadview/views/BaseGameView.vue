@@ -111,6 +111,7 @@
                 !gameStore.state.roundEnded && 
                 gameStore.state.currentLocation
               "
+              ref="roadViewRef"
               :position="
                 gameStore.state.currentLocation || {
                   lat: 37.5665,
@@ -124,6 +125,16 @@
               @load-error="onViewLoadError"
             />
           </slot>
+
+          <!-- 초기 위치로 돌아가기 버튼 (헤더 바로 밑, 우측 상단) -->
+          <button
+            v-if="!gameStore.state.roundEnded && gameStore.state.currentLocation"
+            class="road-reset-btn"
+            @click="resetRoadViewPosition"
+            title="초기 위치로 돌아가기"
+          >
+            <i class="fas fa-rotate-right"></i>
+          </button>
 
           <!-- 지도 버튼 -->
           <!-- 채팅 토글 버튼 (모바일) -->
@@ -601,6 +612,7 @@ export default {
       // 채팅창이 열릴 때 읽지 않은 메시지 카운트 리셋
       if (this.isChatOpen) {
         this.$emit('reset-chat-unread');
+        this.$emit('chat-opened');
       }
       
       // CSS 클래스 기반으로 애니메이션 처리
@@ -682,6 +694,13 @@ export default {
       const lat = position.lat.toFixed(4);
       const lng = position.lng.toFixed(4);
       return `${lat}, ${lng}`;
+    },
+
+    // 로드뷰 초기 위치로 돌아가기
+    resetRoadViewPosition() {
+      if (this.$refs.roadViewRef && this.$refs.roadViewRef.resetToInitial) {
+        this.$refs.roadViewRef.resetToInitial();
+      }
     },
 
     toggleMap() {
@@ -1302,6 +1321,8 @@ export default {
   height: 100dvh;
   background-color: #f5f7fa;
   overflow: hidden;
+  /* 헤더 높이 CSS 변수 (반응형에 따라 변경) */
+  --header-height: 80px;
 }
 
 /* 게임 헤더 스타일 */
@@ -1423,11 +1444,11 @@ export default {
   transition: width 0.5s ease-out;
 }
 
-/* 타이머 컨테이너 (헤더 밑) */
+/* 타이머 컨테이너 (헤더 바로 밑에 고정) */
 
 .timer-container {
   position: absolute;
-  top: 80px;
+  top: var(--header-height);
   left: 50%;
   transform: translateX(-50%);
   z-index: 20;
@@ -1533,6 +1554,44 @@ export default {
   flex: 1;
   position: relative;
   overflow: hidden;
+}
+
+/* 초기 위치로 돌아가기 버튼 (헤더 바로 밑, 우측 상단) */
+.road-reset-btn {
+  position: absolute;
+  /* 헤더 높이 변수 사용 */
+  top: calc(var(--header-height) + 10px);
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  cursor: pointer;
+  z-index: 100;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.road-reset-btn:hover {
+  transform: translateY(-1px);
+  background: rgba(0, 0, 0, 0.6);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+}
+
+.road-reset-btn i {
+  font-size: 1rem;
+}
+
+/* 데스크톱에서 채팅창이 열려있을 때 reset-btn 위치 조정 */
+@media (min-width: 993px) {
+  .game-content.chat-open .road-reset-btn {
+    /* 채팅창(300px) 바로 왼쪽에 위치 */
+    right: 312px;
+  }
 }
 
 .map-container {
@@ -1827,14 +1886,12 @@ export default {
     display: flex;
   }
   
-  /* 타이머 컨테이너는 헤더의 실제 높이에 맞춰 자동 조정됨 (top: 100% 사용) */
-  .timer-container {
-    position: absolute;
-    top: 160px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 20;
+  /* 모바일에서 헤더 높이 변수 업데이트 */
+  .multiplayer-roadview-game {
+    --header-height: 70px;
   }
+  
+  /* 타이머는 CSS 변수를 통해 헤더 바로 밑에 자동 배치 */
   /* poiName 표시 최적화 (모바일) */
   .poi-name-display {
     font-size: 0.75rem;
@@ -1864,6 +1921,11 @@ export default {
 
 /* 더 작은 화면에서 헤더 최적화 */
 @media (max-width: 480px) {
+  /* 작은 모바일에서 헤더 높이 변수 업데이트 */
+  .multiplayer-roadview-game {
+    --header-height: 65px;
+  }
+
   .game-header {
     padding: 0.4rem 0.6rem;
     min-height: 65px;
@@ -1900,8 +1962,6 @@ export default {
   .game-mode {
     font-size: 0.7rem;
   }
-  
-  /* 타이머 컨테이너는 헤더의 실제 높이에 맞춰 자동 조정됨 (top: 100% 사용) */
   
   /* poiName 표시 최적화 (작은 모바일) */
   .poi-name-display {

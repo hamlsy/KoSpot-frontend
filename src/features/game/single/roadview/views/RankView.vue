@@ -30,6 +30,7 @@
       <div class="road-view-container">
         <RoadViewGame
           v-if="currentLocation"
+          ref="roadViewGameRef"
           :initialPosition="currentLocation"
           :showControls="false"
           :showCompass="false"
@@ -37,6 +38,17 @@
           @load-complete="onRoadViewLoaded"
           @load-error="onRoadViewError"
         />
+
+        <!-- 초기 위치로 돌아가기 버튼 (헤더 바로 밑, 우측 상단) -->
+        <button
+          v-if="currentLocation && !showResult"
+          class="road-reset-btn"
+          :style="{ top: resetBtnTop }"
+          @click="resetRoadViewPosition"
+          title="초기 위치로 돌아가기"
+        >
+          <i class="fas fa-rotate-right"></i>
+        </button>
 
         <!-- 지도 버튼 -->
         <button class="map-toggle" @click="toggleMap">
@@ -46,8 +58,6 @@
           ></i>
           {{ isMapOpen ? "로드뷰로 돌아가기" : "지도 열기" }}
         </button>
-
-        
       </div>
 
       <!-- 휴대폰 프레임 -->
@@ -254,6 +264,12 @@ export default {
     timerTop() {
       return this.hasAd ? '160px' : '70px';
     },
+    // reset 버튼 위치 계산 (헤더 바로 밑)
+    // 광고(90px) + 헤더(56px) + 여백(12px) = 158px (광고 있을 때)
+    // 헤더(56px) + 여백(12px) = 68px (광고 없을 때)
+    resetBtnTop() {
+      return this.hasAd ? '158px' : '68px';
+    },
   },
   mounted() {
     // 게임 위치 데이터 요청
@@ -264,6 +280,13 @@ export default {
     this.clearAllTimers();
   },
   methods: {
+    // 로드뷰 초기 위치로 돌아가기
+    resetRoadViewPosition() {
+      if (this.$refs.roadViewGameRef && this.$refs.roadViewGameRef.resetToInitial) {
+        this.$refs.roadViewGameRef.resetToInitial();
+      }
+    },
+
     // 광고 로드 상태 업데이트
     onAdLoaded(hasAd) {
       this.hasAd = hasAd;
@@ -848,6 +871,38 @@ export default {
   color: white;
   backdrop-filter: blur(5px);
   transition: top 0.3s ease;
+  /* 헤더 높이 (reset-btn 위치 계산용) */
+  height: 56px;
+  box-sizing: border-box;
+}
+
+/* 초기 위치로 돌아가기 버튼 (헤더 바로 밑, 우측 상단) */
+.road-reset-btn {
+  position: absolute;
+  /* top은 동적으로 바인딩됨 */
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  cursor: pointer;
+  z-index: 100;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.road-reset-btn:hover {
+  transform: translateY(-1px);
+  background: rgba(0, 0, 0, 0.6);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+}
+
+.road-reset-btn i {
+  font-size: 1rem;
 }
 
 .back-btn {

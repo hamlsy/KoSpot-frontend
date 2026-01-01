@@ -1,6 +1,7 @@
 <template>
   <div class="road-view-game">
     <RoadView
+      ref="roadViewRef"
       :position="initialPosition"
       :showControls="showControls"
       :showCompass="showCompass"
@@ -27,6 +28,9 @@ export default {
   components: {
     RoadView
   },
+
+  // 부모 컴포넌트에서 resetToInitial 메서드를 호출할 수 있도록 expose
+  expose: ['resetToInitial'],
   
   props: {
     initialPosition: {
@@ -83,6 +87,13 @@ export default {
       this.isLoading = true;
       this.hasError = false;
       this.$emit('retry-requested');
+    },
+
+    // 로드뷰 초기 위치로 돌아가기 (부모 컴포넌트에서 호출)
+    resetToInitial() {
+      if (this.$refs.roadViewRef && this.$refs.roadViewRef.resetToInitial) {
+        this.$refs.roadViewRef.resetToInitial();
+      }
     }
   }
 };
