@@ -252,7 +252,8 @@ const emit = defineEmits([
   'kick-player',
   'join-team',
   'player-list-updated', // 웹소켓으로 플레이어 목록 업데이트 시 사용
-  'team-change-success' // 팀 변경 성공 시 사용
+  'team-change-success', // 팀 변경 성공 시 사용
+  'kicked-from-room' // 방장에 의해 강퇴된 경우
 ]);
 
 // 알림 시스템 - 반드시 useRoom 호출보다 먼저 선언되어야 함
@@ -355,6 +356,12 @@ const roomProps = {
 // 주의: roomProps는 접근 권한 확인 후 업데이트될 수 있으므로, useRoom 내부에서 참조로 사용됨
 const room = useRoom(roomProps, emit, { toastRef, onGameStartMessage: handleGameStartSignal, dummyMode: shouldUseDummyMode });
 
+// 강퇴 이벤트 리스너 등록
+// useRoom에서 emit('kicked-from-room')이 발생하면 handleKickedFromRoom이 호출됨
+// 하지만 script setup에서는 직접적으로 이벤트를 감지할 수 없으므로,
+// 대신 useRoom의 handleGameRoomNotification에서 직접 leaveRoom을 호출하도록 이미 구현되어 있음
+// 여기서는 추가 안전장치로 이벤트 핸들러를 준비만 함
+
 // 템플릿에서 사용할 상태와 메서드 추출
 const {
   // 상태
@@ -450,6 +457,22 @@ const leaveRoom = async () => {
     console.log('✅ 로비로 이동 완료');
   } catch (error) {
     console.error('❌ 방 퇴장 중 오류 발생:', error);
+    // 에러가 발생해도 로비로 이동
+    router.push('/lobby');
+  }
+};
+
+// 강퇴 이벤트 핸들러: 방장에 의해 강퇴된 경우 로비로 이동
+const handleKickedFromRoom = async () => {
+  console.log('🚫 방장에 의해 강퇴됨 - 로비로 이동');
+  try {
+    // WebSocket 연결 해제
+    await disconnectWebSocket();
+    // 로비로 이동
+    router.push('/lobby');
+    console.log('✅ 강퇴 후 로비로 이동 완료');
+  } catch (error) {
+    console.error('❌ 강퇴 후 로비 이동 중 오류:', error);
     // 에러가 발생해도 로비로 이동
     router.push('/lobby');
   }

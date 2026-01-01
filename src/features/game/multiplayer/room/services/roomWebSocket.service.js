@@ -304,6 +304,18 @@ class RoomWebSocketService {
         }
         break;
 
+      case GAME_ROOM_NOTIFICATION_TYPES.HOST_CHANGED:
+        if (eventHandlers.onGameRoomNotification) {
+          eventHandlers.onGameRoomNotification({
+            type: 'HOST_CHANGED',
+            playerInfo, // newHostInfo가 playerInfo로 전달됨
+            players: null, // players는 null
+            message: `${playerInfo?.nickname}님이 새로운 방장이 되었습니다.`,
+            timestamp
+          });
+        }
+        break;
+
       case GAME_ROOM_NOTIFICATION_TYPES.SETTINGS_UPDATED:
         if (eventHandlers.onGameRoomNotification) {
           eventHandlers.onGameRoomNotification({

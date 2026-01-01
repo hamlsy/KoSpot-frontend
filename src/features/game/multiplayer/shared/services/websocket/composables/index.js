@@ -82,6 +82,7 @@ const webSocketManager = {
     subscribe,
     unsubscribe,
     publish,
+    addConnectionCallback,
     
     // 채팅 관련 기능
     sendChatMessage,

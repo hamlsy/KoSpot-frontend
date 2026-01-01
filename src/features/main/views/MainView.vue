@@ -54,7 +54,6 @@
             :class="{ 'clickable': banner.link }"
           >
             <div class="main-banner-content">
-              <div class="main-banner-badge">{{ banner.badge }}</div>
               <h2>{{ banner.title }}</h2>
               <p>{{ banner.description }}</p>
             </div>
@@ -75,12 +74,12 @@
       </div>
 
       <!-- 인라인 광고 1: 배너 아래 (모바일/태블릿만) -->
-      <div class="ad-inline ad-inline-top">
+      <!-- <div class="ad-inline ad-inline-top">
         <Adsense 
           v-if="isMobileOrTablet"
           ad-slot="YOUR_AD_SLOT_1"
         />
-      </div>
+      </div> -->
 
       <!-- Game Modes -->
       <section class="game-modes">
