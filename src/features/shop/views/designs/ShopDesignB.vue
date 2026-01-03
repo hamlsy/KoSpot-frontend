@@ -1,141 +1,137 @@
 <template>
-  <div class="shop-page">
-    <NavigationBar />
-    
-    <div class="shop-layout">
-      <!-- 사이드바 -->
-      <aside class="sidebar">
-        <div class="sidebar-header">
-          <h2>상점</h2>
-        </div>
+  <div class="shop-design-b">
+    <!-- 사이드바 -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>상점</h2>
+      </div>
 
-        <nav class="category-list">
-          <button
-            v-for="category in categories"
-            :key="category.id"
-            class="category-item"
-            :class="{ 
-              active: currentCategory === category.id,
-              disabled: category.disabled 
-            }"
-            @click="!category.disabled && setCategory(category.id)"
-          >
-            <i :class="category.icon"></i>
-            <span class="category-name">{{ category.name }}</span>
-            <span v-if="category.disabled" class="soon-badge">준비중</span>
-            <i v-else class="fas fa-chevron-right arrow"></i>
-          </button>
-        </nav>
+      <nav class="category-list">
+        <button
+          v-for="category in categories"
+          :key="category.id"
+          class="category-item"
+          :class="{ 
+            active: currentCategory === category.id,
+            disabled: category.disabled 
+          }"
+          @click="!category.disabled && setCategory(category.id)"
+        >
+          <i :class="category.icon"></i>
+          <span class="category-name">{{ category.name }}</span>
+          <span v-if="category.disabled" class="soon-badge">준비중</span>
+          <i v-else class="fas fa-chevron-right arrow"></i>
+        </button>
+      </nav>
 
-        <div class="sidebar-footer">
-          <div class="points-card">
-            <div class="points-icon">
-              <i class="fas fa-coins"></i>
-            </div>
-            <div class="points-info">
-              <span class="points-label">보유 포인트</span>
-              <span class="points-value">{{ formatNumber(userCoins) }}</span>
-            </div>
+      <div class="sidebar-footer">
+        <div class="points-card">
+          <div class="points-icon">
+            <i class="fas fa-coins"></i>
+          </div>
+          <div class="points-info">
+            <span class="points-label">보유 포인트</span>
+            <span class="points-value">{{ formatNumber(userCoins) }}</span>
           </div>
         </div>
-      </aside>
+      </div>
+    </aside>
 
-      <!-- 메인 콘텐츠 -->
-      <main class="main-content">
-        <header class="content-header">
-          <div class="header-title">
-            <h1>{{ currentCategoryName }}</h1>
-            <span class="item-count">{{ filteredItems.length }}개 아이템</span>
-          </div>
-          <div class="header-actions">
-            <div class="filter-pills">
-              <button
-                v-for="filter in filters"
-                :key="filter.id"
-                class="pill"
-                :class="{ active: currentFilter === filter.id }"
-                @click="setFilter(filter.id)"
-              >
-                {{ filter.name }}
-              </button>
-            </div>
-          </div>
-        </header>
-
-        <!-- 로딩 -->
-        <div v-if="loading" class="loading-container">
-          <div class="loader"></div>
-          <p>로딩 중...</p>
+    <!-- 메인 콘텐츠 -->
+    <main class="main-content">
+      <header class="content-header">
+        <div class="header-title">
+          <h1>{{ currentCategoryName }}</h1>
+          <span class="item-count">{{ filteredItems.length }}개 아이템</span>
         </div>
+        <div class="header-actions">
+          <div class="filter-pills">
+            <button
+              v-for="filter in filters"
+              :key="filter.id"
+              class="pill"
+              :class="{ active: currentFilter === filter.id }"
+              @click="setFilter(filter.id)"
+            >
+              {{ filter.name }}
+            </button>
+          </div>
+        </div>
+      </header>
 
-        <!-- 아이템 그리드 -->
-        <div v-else-if="filteredItems.length > 0" class="items-container">
-          <div
-            v-for="item in filteredItems"
-            :key="item.itemId || item.id"
-            class="item-card"
-            :class="{ owned: item.owned, equipped: item.equipped }"
-          >
-            <div class="item-image">
-              <img :src="item.image" :alt="item.name" @error="handleImageError" />
-              <div v-if="item.isNew" class="tag new">NEW</div>
-              <div v-if="item.equipped" class="tag equipped">장착중</div>
+      <!-- 로딩 -->
+      <div v-if="loading" class="loading-container">
+        <div class="loader"></div>
+        <p>로딩 중...</p>
+      </div>
+
+      <!-- 아이템 그리드 -->
+      <div v-else-if="filteredItems.length > 0" class="items-container">
+        <div
+          v-for="item in filteredItems"
+          :key="item.itemId || item.id"
+          class="item-card"
+          :class="{ owned: item.owned, equipped: item.equipped }"
+        >
+          <div class="item-image">
+            <img :src="item.image" :alt="item.name" @error="handleImageError" />
+            <div v-if="item.isNew" class="tag new">NEW</div>
+            <div v-if="item.equipped" class="tag equipped">장착중</div>
+          </div>
+
+          <div class="item-details">
+            <div class="item-top">
+              <span class="rarity-badge" :class="getRarityClass(item.rarity)">
+                {{ item.rarity }}
+              </span>
+              <h3>{{ item.name }}</h3>
             </div>
+            <p class="description">{{ item.description }}</p>
+          </div>
 
-            <div class="item-details">
-              <div class="item-top">
-                <span class="rarity-badge" :class="getRarityClass(item.rarity)">
-                  {{ item.rarity }}
-                </span>
-                <h3>{{ item.name }}</h3>
+          <div class="item-actions">
+            <template v-if="!item.owned">
+              <div class="price-tag">
+                <i class="fas fa-coins"></i>
+                {{ formatNumber(item.price) }}
               </div>
-              <p class="description">{{ item.description }}</p>
-            </div>
-
-            <div class="item-actions">
-              <template v-if="!item.owned">
-                <div class="price-tag">
-                  <i class="fas fa-coins"></i>
-                  {{ formatNumber(item.price) }}
-                </div>
-                <button
-                  class="action-btn buy"
-                  :disabled="!canAfford(item) || loading"
-                  @click="buyItem(item)"
-                >
-                  <i class="fas fa-shopping-cart"></i>
-                  구매하기
-                </button>
-              </template>
-              <template v-else>
-                <div class="owned-label">
-                  <i class="fas fa-check-circle"></i>
-                  보유중
-                </div>
-                <button
-                  v-if="isEquippableCategory"
-                  class="action-btn equip"
-                  :class="{ active: item.equipped }"
-                  :disabled="loading"
-                  @click="equipItem(item)"
-                >
-                  <i :class="item.equipped ? 'fas fa-check' : 'fas fa-hand-pointer'"></i>
-                  {{ item.equipped ? '장착중' : '장착하기' }}
-                </button>
-              </template>
-            </div>
+              <button
+                class="action-btn buy"
+                :disabled="!canAfford(item) || loading"
+                @click="buyItem(item)"
+              >
+                <i class="fas fa-shopping-cart"></i>
+                구매하기
+              </button>
+            </template>
+            <template v-else>
+              <div class="owned-label">
+                <i class="fas fa-check-circle"></i>
+                보유중
+              </div>
+              <button
+                v-if="isEquippableCategory"
+                class="action-btn equip"
+                :class="{ active: item.equipped }"
+                :disabled="loading"
+                @click="equipItem(item)"
+              >
+                <i :class="item.equipped ? 'fas fa-check' : 'fas fa-hand-pointer'"></i>
+                {{ item.equipped ? '장착중' : '장착하기' }}
+              </button>
+            </template>
           </div>
         </div>
+      </div>
 
-        <!-- 빈 상태 -->
-        <div v-else class="empty-container">
-          <div class="empty-icon">
-            <i class="fas fa-store-slash"></i>
-          </div>
-          <p>아이템이 없습니다</p>
+      <!-- 빈 상태 -->
+      <div v-else class="empty-container">
+        <div class="empty-icon">
+          <i class="fas fa-store-slash"></i>
         </div>
-      </main>
-    </div>
+        <p>아이템이 없습니다</p>
+      </div>
+    </main>
 
     <!-- 구매 모달 -->
     <PurchaseModal
@@ -150,16 +146,12 @@
 
 <script>
 import PurchaseModal from '@/features/shop/components/PurchaseModal.vue'
-import NavigationBar from '@/core/components/NavigationBar.vue'
 import { shopService } from '@/features/shop/services/shop.service.js'
 import { userService } from '@/features/user/services/user.service.js'
 
 export default {
-  name: 'ShopView',
-  components: { 
-    PurchaseModal,
-    NavigationBar
-  },
+  name: 'ShopDesignB',
+  components: { PurchaseModal },
 
   data() {
     return {
@@ -334,15 +326,11 @@ export default {
 </script>
 
 <style scoped>
-.shop-page {
-  min-height: 100vh;
-  background: var(--color-background);
-}
-
-.shop-layout {
+.shop-design-b {
   display: flex;
-  padding-top: 70px;
   min-height: 100vh;
+  padding-top: 70px;
+  background: var(--color-background);
 }
 
 /* Sidebar */
@@ -766,7 +754,7 @@ export default {
 }
 
 @media (max-width: 768px) {
-  .shop-layout {
+  .shop-design-b {
     flex-direction: column;
   }
 
@@ -800,12 +788,9 @@ export default {
     display: none;
   }
 
-  .main-content {
-    padding: var(--spacing-md);
-  }
-
   .items-container {
     grid-template-columns: 1fr;
   }
 }
 </style>
+

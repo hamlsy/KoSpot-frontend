@@ -60,15 +60,21 @@ const closeHero = () => {
 
 <style scoped>
 .hero-section {
-  position: relative;
-  padding: var(--spacing-2xl) var(--spacing-xl);
-  margin: 0 0 var(--spacing-xl);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  padding: var(--spacing-lg) var(--spacing-md);
+  margin: 0;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
   transition: all var(--transition-normal);
+  width: calc(100% - var(--spacing-xl) * 2);
+  max-width: 800px;
 }
 
 .hero-section::before {
@@ -83,7 +89,7 @@ const closeHero = () => {
 }
 
 .hero-section:hover {
-  transform: translateY(-2px);
+  transform: translate(-50%, calc(-50% - 2px));
   box-shadow: var(--shadow-md);
 }
 
@@ -120,36 +126,36 @@ const closeHero = () => {
 
 .hero-title {
   font-family: var(--font-heading);
-  font-size: var(--font-size-display);
+  font-size: var(--font-size-h1);
   font-weight: 700;
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
   color: var(--color-text-primary);
   letter-spacing: -0.02em;
 }
 
 .hero-description {
-  font-size: var(--font-size-h3);
+  font-size: var(--font-size-body);
   line-height: var(--line-height-relaxed);
   color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-xl);
+  margin-bottom: var(--spacing-lg);
 }
 
 .hero-actions {
   display: flex;
   justify-content: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
 }
 
 .hero-button {
-  padding: var(--spacing-md) var(--spacing-xl);
+  padding: var(--spacing-sm) var(--spacing-lg);
   border-radius: var(--radius-lg);
-  font-size: var(--font-size-body);
+  font-size: var(--font-size-small);
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-normal);
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
 }
 
 .hero-button.primary {
@@ -182,27 +188,30 @@ const closeHero = () => {
 /* 반응형 */
 @media (max-width: 768px) {
   .hero-section {
-    padding: var(--spacing-xl) var(--spacing-lg);
-    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-md) var(--spacing-sm);
+    width: calc(100% - var(--spacing-md) * 2);
   }
 
   .hero-title {
-    font-size: var(--font-size-h1);
+    font-size: var(--font-size-h2);
+    margin-bottom: var(--spacing-xs);
   }
 
   .hero-description {
-    font-size: var(--font-size-body);
-    margin-bottom: var(--spacing-lg);
+    font-size: var(--font-size-small);
+    margin-bottom: var(--spacing-md);
   }
 
   .hero-actions {
     flex-direction: column;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-xs);
   }
 
   .hero-button {
     justify-content: center;
     width: 100%;
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: var(--font-size-small);
   }
 }
 </style>

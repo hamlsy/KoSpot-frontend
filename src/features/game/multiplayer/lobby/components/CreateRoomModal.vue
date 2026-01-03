@@ -172,13 +172,25 @@
         <div class="form-group">
           <label>게임 설정</label>
           <div class="settings-group">
-            <label class="checkbox-option">
-              <input type="checkbox" v-model="gameSettings.isPoiNameVisible" />
-              <span> 지명 공개 <span class="checkbox-description">(좌표 지역 명이 공개됩니다.)</span></span>
+            <label class="toggle-option">
+              <div class="toggle-label-content">
+                <span class="toggle-label-text">지명 공개</span>
+                <span class="toggle-description">(좌표 지역 명이 공개됩니다.)</span>
+              </div>
+              <div class="toggle-switch">
+                <input type="checkbox" v-model="gameSettings.isPoiNameVisible" />
+                <span class="toggle-slider"></span>
+              </div>
             </label>
-            <label class="checkbox-option">
-              <input type="checkbox" v-model="gameSettings.isPrivate" />
-              <span> 비공개 방 <span class="checkbox-description">(비밀번호로 입장 가능)</span></span>
+            <label class="toggle-option">
+              <div class="toggle-label-content">
+                <span class="toggle-label-text">비공개 방</span>
+                <span class="toggle-description">(비밀번호로 입장 가능)</span>
+              </div>
+              <div class="toggle-switch">
+                <input type="checkbox" v-model="gameSettings.isPrivate" />
+                <span class="toggle-slider"></span>
+              </div>
             </label>
             <!-- <label class="checkbox-option">
               <input type="checkbox" v-model="gameSettings.allowSpectators" />
@@ -187,7 +199,7 @@
           </div>
         </div>
 
-        <div v-if="gameSettings.isPrivate" class="private-room-notice">
+        <div v-if="gameSettings.isPrivate" ref="passwordSectionRef" class="private-room-notice">
           <div class="form-group password-form">
             <input
               type="password"
@@ -236,6 +248,20 @@ export default {
     };
   },
 
+  watch: {
+    'gameSettings.isPrivate'(newValue) {
+      if (newValue) {
+        this.$nextTick(() => {
+          if (this.$refs.passwordSectionRef) {
+            this.$refs.passwordSectionRef.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center' 
+            });
+          }
+        });
+      }
+    }
+  },
 
   methods: {
     closeModal() {
@@ -668,30 +694,91 @@ export default {
   gap: 0.8rem;
 }
 
-.checkbox-option {
+.toggle-option {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 0.6rem;
+  gap: 1rem;
+  padding: 0.75rem;
+  border-radius: 12px;
   cursor: pointer;
+  transition: background 0.2s ease;
 }
 
-.checkbox-option input {
-  width: 20px;
-  height: 20px;
-  accent-color: #60a5fa;
-  cursor: pointer;
+.toggle-option:hover {
+  background: rgba(240, 244, 248, 0.5);
+}
+
+.toggle-label-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.toggle-label-text {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.4;
+}
+
+.toggle-description {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
   flex-shrink: 0;
 }
 
-.checkbox-option span {
-  line-height: 1.5;
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
 }
 
-.checkbox-description {
-  font-size: 0.85rem;
-  color: #64748b;
-  font-weight: 400;
-  margin-left: 0.25rem;
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: 0.4s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: #60a5fa;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(24px);
+}
+
+.toggle-switch input:focus + .toggle-slider {
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
 }
 
 .private-room-notice {
@@ -884,17 +971,34 @@ export default {
     gap: 0.7rem;
   }
 
-  .checkbox-option {
-    align-items: flex-start;
+  .toggle-option {
+    padding: 0.6rem;
+    gap: 0.75rem;
   }
 
-  .checkbox-option span {
+  .toggle-label-text {
     font-size: 0.9rem;
   }
 
-  .checkbox-description {
+  .toggle-description {
     font-size: 0.75rem;
     line-height: 1.4;
+  }
+
+  .toggle-switch {
+    width: 44px;
+    height: 22px;
+  }
+
+  .toggle-slider:before {
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+  }
+
+  .toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(22px);
   }
 }
 </style>
