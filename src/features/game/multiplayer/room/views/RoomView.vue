@@ -751,9 +751,11 @@ const formatUpdateTime = (timestamp) => {
   flex: 0 0 65%;
   max-width: 65%;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-md);
+  overflow: hidden;
 }
 
 .right-panel {
@@ -774,7 +776,7 @@ const formatUpdateTime = (timestamp) => {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  overflow: visible;
+  overflow: hidden;
   transition: all var(--transition-normal);
 }
 
@@ -792,6 +794,16 @@ const formatUpdateTime = (timestamp) => {
 .section-title i {
   color: var(--color-primary);
   font-size: 1.1rem;
+}
+
+/* 플레이어 목록이 들어있는 영역을 스크롤 가능하게 */
+.panel-section :deep(.solo-players-container),
+.panel-section :deep(.teams-container) {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* 연결 상태 표시 */
