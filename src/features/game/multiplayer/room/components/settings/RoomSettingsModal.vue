@@ -54,6 +54,39 @@
           </div>
         </div>
 
+        <!-- 게임 타입 선택 -->
+        <div class="form-group">
+          <label>게임 타입</label>
+          <div class="radio-group">
+            <label class="radio-option">
+              <input
+                type="radio"
+                name="gameType"
+                value="solo"
+                v-model="formData.gameType"
+              />
+              <div class="radio-content">
+                <i class="fas fa-user"></i>
+                <span>개인전</span>
+              </div>
+            </label>
+            <label class="radio-option disabled">
+              <input
+                type="radio"
+                name="gameType"
+                value="team"
+                v-model="formData.gameType"
+                disabled
+              />
+              <div class="radio-content">
+                <i class="fas fa-users"></i>
+                <span>협동전</span>
+                <span class="badge-disabled">준비 중</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
         <!-- 인원 제한 및 라운드 수 가로 배치 -->
         <div class="form-group form-group-inline">
           <div class="inline-control-group">
@@ -144,19 +177,31 @@
         <div class="form-group">
           <label>게임 설정</label>
           <div class="settings-group">
-            <label class="checkbox-option">
-              <input type="checkbox" v-model="formData.isPoiNameVisible" />
-              <span> 지명 공개 <span class="checkbox-description">(좌표 지역 명이 공개됩니다.)</span></span>
+            <label class="toggle-option">
+              <div class="toggle-label-content">
+                <span class="toggle-label-text">지명 공개</span>
+                <span class="toggle-description">(좌표 지역 명이 공개됩니다.)</span>
+              </div>
+              <div class="toggle-switch">
+                <input type="checkbox" v-model="formData.isPoiNameVisible" />
+                <span class="toggle-slider"></span>
+              </div>
             </label>
-            <label class="checkbox-option">
-              <input type="checkbox" v-model="formData.isPrivate" />
-              <span> 비공개 방 <span class="checkbox-description">(비밀번호로 입장 가능)</span></span>
+            <label class="toggle-option">
+              <div class="toggle-label-content">
+                <span class="toggle-label-text">비공개 방</span>
+                <span class="toggle-description">(비밀번호로 입장 가능)</span>
+              </div>
+              <div class="toggle-switch">
+                <input type="checkbox" v-model="formData.isPrivate" />
+                <span class="toggle-slider"></span>
+              </div>
             </label>
           </div>
         </div>
 
         <!-- 비밀번호 (비공개 방인 경우) -->
-        <div v-if="formData.isPrivate" class="private-room-notice">
+        <div v-if="formData.isPrivate" ref="passwordSectionRef" class="private-room-notice">
           <div class="form-group password-form">
             <input
               type="password"
@@ -184,7 +229,7 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits, onMounted } from 'vue';
+import { ref, defineProps, defineEmits, onMounted, watch, nextTick } from 'vue';
 
 const props = defineProps({
   isActive: {
@@ -199,10 +244,14 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'save']);
 
+// 비밀번호 섹션 ref
+const passwordSectionRef = ref(null);
+
 // 폼 데이터 초기화
 const formData = ref({
   title: '',
   gameMode: 'roadview',
+  gameType: 'solo',
   rounds: 5,
   timeLimit: 180,
   maxPlayers: 8,
@@ -242,6 +291,19 @@ const decreaseRounds = () => {
   }
 };
 
+// 비공개방 선택 시 스크롤 처리
+watch(() => formData.value.isPrivate, async (newValue) => {
+  if (newValue) {
+    await nextTick();
+    if (passwordSectionRef.value) {
+      passwordSectionRef.value.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center' 
+      });
+    }
+  }
+});
+
 // 컴포넌트 마운트 시 초기 데이터 설정
 onMounted(() => {
   // props로 받은 roomData로 폼 데이터 초기화
@@ -249,6 +311,7 @@ onMounted(() => {
     formData.value = {
       title: props.roomData.title || '',
       gameMode: props.roomData.gameMode || 'roadview',
+      gameType: props.roomData.playerMatchTypeKey || props.roomData.gameType || 'solo',
       rounds: props.roomData.rounds || props.roomData.totalRounds || 5,
       timeLimit: props.roomData.timeLimit || 180,
       maxPlayers: props.roomData.maxPlayers || 8,
@@ -609,34 +672,91 @@ onMounted(() => {
   gap: 0.8rem;
 }
 
-.checkbox-option {
+.toggle-option {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 0.6rem;
+  gap: 1rem;
+  padding: 0.75rem;
+  border-radius: 12px;
   cursor: pointer;
+  transition: background 0.2s ease;
 }
 
-.checkbox-option input {
-  width: 20px;
-  height: 20px;
-  accent-color: #60a5fa;
-  cursor: pointer;
-  flex-shrink: 0;
+.toggle-option:hover {
+  background: rgba(240, 244, 248, 0.5);
 }
 
-.checkbox-option span {
-  line-height: 1.5;
+.toggle-label-content {
   display: flex;
   flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
 }
 
-.checkbox-description {
+.toggle-label-text {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.4;
+}
+
+.toggle-description {
   font-size: 0.8rem;
   color: #64748b;
   font-weight: 400;
-  margin-left: 0;
-  display: block;
-  white-space: normal;
+  line-height: 1.4;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: 0.4s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: #60a5fa;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(24px);
+}
+
+.toggle-switch input:focus + .toggle-slider {
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
 }
 
 .private-room-notice {
@@ -817,17 +937,34 @@ onMounted(() => {
     gap: 0.7rem;
   }
 
-  .checkbox-option {
-    align-items: flex-start;
+  .toggle-option {
+    padding: 0.6rem;
+    gap: 0.75rem;
   }
 
-  .checkbox-option span {
+  .toggle-label-text {
     font-size: 0.9rem;
   }
 
-  .checkbox-description {
+  .toggle-description {
     font-size: 0.75rem;
     line-height: 1.4;
+  }
+
+  .toggle-switch {
+    width: 44px;
+    height: 22px;
+  }
+
+  .toggle-slider:before {
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+  }
+
+  .toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(22px);
   }
 }
 </style>

@@ -88,11 +88,11 @@
 
       <!-- 액션 버튼 -->
       <div class="final-actions">
-        <button class="action-btn secondary-btn" @click="$emit('play-again')">
+        <button class="action-btn secondary-btn" @click="handlePlayAgain">
           <i class="fas fa-arrow-left"></i>
           <span>돌아가기</span>
         </button>
-        <button class="action-btn primary-btn" @click="$emit('exit-to-lobby')">
+        <button class="action-btn primary-btn" @click="handleExitToLobby">
           <i class="fas fa-sign-out-alt"></i>
           <span>나가기</span>
         </button>
@@ -129,6 +129,13 @@ export default {
     }
   },
 
+  data() {
+    return {
+      autoExitTimer: null,
+      autoExitRemaining: 30
+    };
+  },
+
   computed: {
     sortedPlayers() {
       return [...this.playerResults].sort((a, b) => {
@@ -136,6 +143,14 @@ export default {
         return (a.finalRank || 999) - (b.finalRank || 999);
       });
     }
+  },
+
+  mounted() {
+    this.startAutoExitTimer();
+  },
+
+  beforeUnmount() {
+    this.clearAutoExitTimer();
   },
 
   methods: {
@@ -153,6 +168,33 @@ export default {
       return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
     },
 
+    startAutoExitTimer() {
+      this.autoExitRemaining = 30;
+      this.autoExitTimer = setInterval(() => {
+        this.autoExitRemaining--;
+        if (this.autoExitRemaining <= 0) {
+          this.clearAutoExitTimer();
+          this.$emit('exit-to-lobby');
+        }
+      }, 1000);
+    },
+
+    clearAutoExitTimer() {
+      if (this.autoExitTimer) {
+        clearInterval(this.autoExitTimer);
+        this.autoExitTimer = null;
+      }
+    },
+
+    handleExitToLobby() {
+      this.clearAutoExitTimer();
+      this.$emit('exit-to-lobby');
+    },
+
+    handlePlayAgain() {
+      this.clearAutoExitTimer();
+      this.$emit('play-again');
+    }
   }
 };
 </script>

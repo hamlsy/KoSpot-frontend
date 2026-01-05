@@ -2054,3 +2054,15 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.solo-game-container {
+  position: relative;
+  width: 100%;
+  /* 모바일 브라우저 주소창 변동 대응 */
+  min-height: 100svh;
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
+}
+</style>

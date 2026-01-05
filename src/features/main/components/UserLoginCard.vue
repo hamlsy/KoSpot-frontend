@@ -233,12 +233,13 @@ export default {
 
 .user-highlights {
   display: flex;
+  flex-direction: column;
   gap: var(--spacing-sm);
   margin-top: var(--spacing-md);
 }
 
 .highlight-card {
-  flex: 1;
+  width: 100%;
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);

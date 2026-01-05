@@ -75,6 +75,7 @@
                   'with-border': index !== players.length - 1,
                   'is-me': myRank && player.nickname === myRank.nickname
                 }"
+                @click="showPlayerDetails(player)"
               >
                 <div class="player-rank">{{ currentPage * 20 + index + 1 }}</div>
                 <div class="player-info">
@@ -134,11 +135,21 @@
       </div>
     </div>
   </transition>
+
+  <!-- 플레이어 상세 정보 모달 -->
+  <PlayerDetailsModal
+    :is-active="isPlayerDetailsOpen"
+    :player="selectedPlayer"
+    :is-host="false"
+    :current-user-id="currentUserId"
+    @close="closePlayerDetails"
+  />
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue';
 import rankingService from '@/features/game/shared/services/ranking.service.js';
+import PlayerDetailsModal from '@/features/game/multiplayer/room/components/player/PlayerDetailsModal.vue';
 
 const props = defineProps({
   show: {
@@ -175,6 +186,15 @@ const players = ref([]);
 const loading = ref(false);
 const error = ref(null);
 const currentPage = ref(0);
+
+// PlayerDetailsModal 상태
+const selectedPlayer = ref(null);
+const isPlayerDetailsOpen = ref(false);
+
+// 현재 사용자 ID (localStorage에서 가져오기)
+const currentUserId = computed(() => {
+  return localStorage.getItem('memberId') || '';
+});
 
 // 페이징 관련 computed
 const hasNextPage = computed(() => players.value.length >= 20);
@@ -230,6 +250,23 @@ function goToPage(page) {
 // 모달 닫기
 function close() {
   emit('close');
+}
+
+// 플레이어 상세 정보 표시
+function showPlayerDetails(player) {
+  // PlayerDetailsModal에 전달할 player 객체 형식
+  selectedPlayer.value = {
+    id: player.memberId,
+    memberId: player.memberId,
+    nickname: player.nickname
+  };
+  isPlayerDetailsOpen.value = true;
+}
+
+// 플레이어 상세 정보 모달 닫기
+function closePlayerDetails() {
+  isPlayerDetailsOpen.value = false;
+  selectedPlayer.value = null;
 }
 
 // 티어 아이콘 가져오기
@@ -533,6 +570,7 @@ watch(() => props.show, (newVal) => {
   background: #f9fafb;
   border-radius: 12px;
   transition: all 0.2s;
+  cursor: pointer;
 }
 
 .player-item:hover {

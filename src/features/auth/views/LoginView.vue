@@ -4,7 +4,7 @@
     <div class="logo-section">
       <div class="map-animation">
         <img src="@/shared/assets/images/login/korea.png" alt="한반도 지도" class="korea-map" />
-        <h1 class="main-title">KoSpot</h1>
+        <img src="/images/logo/kospot_logo_1-removebg.png" alt="KoSpot 로고" class="main-title logo-image" />
       </div>
     </div>
 
@@ -122,10 +122,10 @@ onMounted(() => {
 }
 
 .main-title {
-  font-size: 4rem;
-  font-weight: 800;
-  color: #1a1a1a;
-  text-align: center;
+  max-width: 300px;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
   position: relative;
   z-index: 1;
   animation: fadeIn 1.5s ease-out;
@@ -312,7 +312,7 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .main-title {
-    font-size: 2.5rem;
+    max-width: 180px;
   }
 
   .game-container {

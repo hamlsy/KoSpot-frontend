@@ -36,11 +36,13 @@
       
       <!-- 중앙 컨텐츠 -->
       <main class="main-content-wrapper">
-        <!-- 히어로 섹션 -->
-        <HeroSection @open-tutorial="showTutorial = true" />
+        <!-- 히어로 섹션과 배너 래퍼 -->
+        <div class="hero-banner-wrapper" :class="{ 'has-banner': displayBanners && displayBanners.length > 0 }">
+          <!-- 히어로 섹션 -->
+          <HeroSection @open-tutorial="showTutorial = true" />
 
-        <!-- Featured Challenge Banner Carousel -->
-        <div v-if="displayBanners && displayBanners.length > 0" class="banner-carousel">
+          <!-- Featured Challenge Banner Carousel -->
+          <div v-if="displayBanners && displayBanners.length > 0" class="banner-carousel">
         <div
           class="banner-container"
           :style="{ transform: `translateX(-${currentBanner * 100}%)` }"
@@ -53,10 +55,6 @@
             @click="onBannerClick(banner)"
             :class="{ 'clickable': banner.link }"
           >
-            <div class="main-banner-content">
-              <h2>{{ banner.title }}</h2>
-              <p>{{ banner.description }}</p>
-            </div>
           </div>
         </div>
 
@@ -71,7 +69,8 @@
             @mouseenter="setCurrentBanner(index)"
           ></button>
         </div>
-      </div>
+        </div>
+        </div>
 
       <!-- 인라인 광고 1: 배너 아래 (모바일/태블릿만) -->
       <!-- <div class="ad-inline ad-inline-top">
@@ -793,11 +792,22 @@ async function handleLogout() {
 /* 중앙 컨텐츠 영역 */
 .main-content-wrapper {
   flex: 1;
-  max-width: 1200px;
+  max-width: 1000px;
   margin: 0 auto;
   padding-top: 80px;
   padding-left: var(--spacing-lg);
   padding-right: var(--spacing-lg);
+}
+
+/* 히어로 섹션과 배너 래퍼 */
+.hero-banner-wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: var(--spacing-xl);
+}
+
+.hero-banner-wrapper:not(.has-banner) {
+  min-height: 400px;
 }
 
 /* 반응형 인라인 광고 스타일 */

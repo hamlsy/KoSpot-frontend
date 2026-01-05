@@ -246,6 +246,7 @@ import MultiplayNextRoundOverlay from "@/features/game/multiplayer/shared/compon
 import gameStore from "@/store/gameStore";
 import webSocketManager from "@/features/game/multiplayer/shared/services/websocket/composables/index.js";
 import { useRoomWebSocket } from "@/features/game/multiplayer/room/composables/useRoomWebSocket.js";
+import roomApiService from '@/features/game/multiplayer/room/services/roomApi.service.js';
 
 
 export default {
@@ -1301,10 +1302,25 @@ export default {
       }
     },
 
-    exitToLobby() {
+    async exitToLobby() {
       this.clearTimers();
-      // STOMP Placeholder: Disconnect WebSocket
-      // this.disconnectWebSocket();
+      
+      // leaveGameRoom API 호출
+      const roomId = this.roomId || this.$route?.params?.roomId;
+      if (roomId) {
+        try {
+          await roomApiService.leaveGameRoom(roomId);
+          console.log('✅ 방 퇴장 API 호출 성공');
+        } catch (error) {
+          console.warn('⚠️ 방 퇴장 API 호출 실패:', error);
+          // API 실패해도 페이지 이동은 진행
+        }
+      }
+      
+      // WebSocket 연결 해제
+      this.disconnectWebSocket();
+      
+      // 로비로 이동
       this.$router.push("/multiplayerLobby");
     },
   },
