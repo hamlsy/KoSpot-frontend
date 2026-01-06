@@ -158,7 +158,7 @@
                     </div>
                     <div class="stat-row">
                       <span class="stat-label">평균 점수</span>
-                      <span class="stat-value">{{ formatNumber(profile.statistics?.roadView?.rank?.averageScore || 0) }}</span>
+                      <span class="stat-value">{{ formatAverageScore(profile.statistics?.roadView?.rank?.averageScore || 0) }}</span>
                     </div>
                   </div>
                 </div>
@@ -179,23 +179,12 @@
                   <div class="rank-count-icon">🥇</div>
                   <div class="rank-count-value">{{ formatNumber(profile.statistics?.roadView?.multi?.firstPlaceCount || 0) }}</div>
                   <div class="rank-count-label">1위</div>
-        </div>
-                <div class="rank-count-item second">
-                  <div class="rank-count-icon">🥈</div>
-                  <div class="rank-count-value">{{ formatNumber(profile.statistics?.roadView?.multi?.secondPlaceCount || 0) }}</div>
-                  <div class="rank-count-label">2위</div>
-      </div>
-                <div class="rank-count-item third">
-                  <div class="rank-count-icon">🥉</div>
-                  <div class="rank-count-value">{{ formatNumber(profile.statistics?.roadView?.multi?.thirdPlaceCount || 0) }}</div>
-                  <div class="rank-count-label">3위</div>
                 </div>
-              </div>
-
-              <div class="stat-item full-width" style="margin-top: 1rem;">
-                <div class="stat-row">
-                  <span class="stat-label">총 게임 수</span>
-                  <span class="stat-value">{{ formatNumber(profile.statistics?.roadView?.multi?.totalGames || 0) }}</span>
+                
+                <div class="rank-count-item">
+                  <div class="rank-count-icon">🎮</div>
+                  <div class="rank-count-value">{{ formatNumber(profile.statistics?.roadView?.multi?.totalGames || 0) }}</div>
+                  <div class="rank-count-label">총 게임 수</div>
                 </div>
               </div>
             </div>
@@ -514,6 +503,15 @@ function formatDate(dateString) {
 // 숫자 포맷팅
 function formatNumber(num) {
   return userService.formatNumber(num);
+}
+
+// 평균점수 포맷팅 (소수점 2자리)
+function formatAverageScore(num) {
+  if (num === null || num === undefined || isNaN(num)) {
+    return '0.00';
+  }
+  const rounded = Math.round(num * 100) / 100;
+  return rounded.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
 // 랭크 레벨 변환
@@ -1219,7 +1217,7 @@ watch(showInventoryModal, (newValue) => {
 /* 순위별 횟수 */
 .rank-counts {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.75rem;
   margin-top: 1rem;
 }

@@ -137,6 +137,19 @@
             <button class="text-button" @click="closeTutorial">
               메인 화면으로 이동
             </button>
+
+            <!-- 데이터 출처 footer -->
+            <div class="data-source-footer">
+              <span>데이터 출처:</span>
+              <a 
+                href="https://www.bigdata-culture.kr/bigdata/user/data_market/detail.do?id=1ec19f06-035e-49f3-8c5d-ff8d2d2829a7" 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                문화 빅데이터 플랫폼
+                <i class="fas fa-external-link-alt"></i>
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -257,8 +270,8 @@ const goToLogin = () => {
   border-radius: 24px;
   width: 100%;
   max-width: 700px;
-  min-height: 500px;
-  max-height: 85vh;
+  height: 580px;
+  max-height: 95vh;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -271,7 +284,7 @@ const goToLogin = () => {
   display: flex;
   justify-content: center;
   gap: 12px;
-  padding: 20px;
+  padding: 14px;
   flex-shrink: 0;
 }
 
@@ -322,14 +335,16 @@ const goToLogin = () => {
 /* 슬라이드 래퍼 */
 .slide-wrapper {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: visible;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 /* 슬라이드 컨텐츠 */
 .slide-content {
-  padding: 20px 50px 40px;
+  padding: 12px 40px 20px;
   animation: slideIn 0.3s ease-out;
 }
 
@@ -353,15 +368,15 @@ const goToLogin = () => {
 
 /* 슬라이드 아이콘 */
 .slide-icon {
-  width: 70px;
-  height: 70px;
-  margin: 0 auto 20px;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 12px;
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary) 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
+  font-size: 1.6rem;
   color: white;
   flex-shrink: 0;
   transition: transform 0.2s ease;
@@ -377,10 +392,10 @@ const goToLogin = () => {
 
 /* 타이틀 */
 .slide-title {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #111827;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   line-height: 1.3;
 }
 
@@ -393,29 +408,29 @@ const goToLogin = () => {
 
 /* 설명 */
 .slide-description {
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: #6b7280;
-  line-height: 1.6;
-  margin-bottom: 28px;
+  line-height: 1.5;
+  margin-bottom: 16px;
 }
 
 /* 기능 카드 */
 .feature-cards {
   display: flex;
   justify-content: center;
-  gap: 16px;
-  margin-top: 20px;
+  gap: 12px;
+  margin-top: 12px;
   flex-wrap: wrap;
   width: 100%;
 }
 
 .feature-card {
   flex: 1;
-  min-width: 140px;
-  max-width: 180px;
-  padding: 20px 16px;
+  min-width: 130px;
+  max-width: 160px;
+  padding: 14px 12px;
   background: #f3f4f6;
-  border-radius: 16px;
+  border-radius: 12px;
   border: 1px solid #e5e7eb;
   transition: all 0.2s ease;
 }
@@ -427,35 +442,35 @@ const goToLogin = () => {
 }
 
 .feature-card i {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   color: var(--color-primary);
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   display: block;
 }
 
 .feature-card span {
   font-weight: 600;
   color: #111827;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
 }
 
 /* 게임 플레이 단계 */
 .gameplay-steps {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-top: 20px;
+  gap: 10px;
+  margin-top: 12px;
   width: 100%;
-  max-width: 500px;
+  max-width: 480px;
 }
 
 .step {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   text-align: left;
-  padding: 18px;
+  padding: 12px;
   background: #f3f4f6;
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid #e5e7eb;
   transition: all 0.2s ease;
 }
@@ -467,8 +482,8 @@ const goToLogin = () => {
 }
 
 .step-number {
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary) 100%);
   color: white;
   border-radius: 50%;
@@ -476,7 +491,7 @@ const goToLogin = () => {
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   flex-shrink: 0;
 }
 
@@ -485,33 +500,33 @@ const goToLogin = () => {
 }
 
 .step-content h3 {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: #111827;
-  margin-bottom: 6px;
+  margin-bottom: 2px;
 }
 
 .step-content p {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: #6b7280;
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 /* 멀티플레이어 기능 */
 .multiplayer-features {
   display: flex;
   justify-content: center;
-  gap: 16px;
-  margin-top: 20px;
+  gap: 12px;
+  margin-top: 12px;
   width: 100%;
-  max-width: 500px;
+  max-width: 480px;
 }
 
 .mp-feature {
   flex: 1;
-  padding: 24px 20px;
+  padding: 16px 14px;
   background: #f3f4f6;
-  border-radius: 16px;
+  border-radius: 12px;
   border: 1px solid #e5e7eb;
   transition: all 0.2s ease;
 }
@@ -523,46 +538,46 @@ const goToLogin = () => {
 }
 
 .mp-feature i {
-  font-size: 2rem;
+  font-size: 1.5rem;
   color: var(--color-primary);
-  margin-bottom: 12px;
-}
-
-.mp-feature h3 {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #111827;
   margin-bottom: 8px;
 }
 
+.mp-feature h3 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
 .mp-feature p {
-  font-size: 0.88rem;
+  font-size: 0.8rem;
   color: #6b7280;
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 /* 시작 옵션 */
 .start-options {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: 24px;
-  max-width: 400px;
+  gap: 10px;
+  margin-top: 16px;
+  max-width: 360px;
   width: 100%;
 }
 
 .start-button {
-  padding: 16px 32px;
-  border-radius: 14px;
+  padding: 12px 24px;
+  border-radius: 12px;
   border: none;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -587,13 +602,13 @@ const goToLogin = () => {
 }
 
 .text-button {
-  margin-top: 12px;
+  margin-top: 8px;
   background: none;
   border: none;
   color: #6b7280;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   cursor: pointer;
-  padding: 8px 16px;
+  padding: 6px 12px;
   transition: color 0.2s ease;
 }
 
@@ -602,29 +617,63 @@ const goToLogin = () => {
   text-decoration: underline;
 }
 
+/* 데이터 출처 footer */
+.data-source-footer {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+  font-size: 0.7rem;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.data-source-footer span {
+  color: #9ca3af;
+}
+
+.data-source-footer a {
+  color: #6b7280;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.2s ease;
+}
+
+.data-source-footer a:hover {
+  color: var(--color-primary, #0ea5e9);
+}
+
+.data-source-footer a i {
+  font-size: 0.65rem;
+}
+
 /* 네비게이션 버튼 */
 .navigation-buttons {
   display: flex;
   justify-content: space-between;
-  padding: 16px 50px 24px;
+  padding: 12px 40px 16px;
   flex-shrink: 0;
   border-top: 1px solid #e5e7eb;
   background: #ffffff;
 }
 
 .nav-button {
-  padding: 10px 20px;
+  padding: 8px 16px;
   background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
   color: white;
   border: none;
-  border-radius: 10px;
-  font-size: 0.95rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .nav-button:hover {
@@ -645,192 +694,227 @@ const goToLogin = () => {
   .intro-modal-container {
     max-width: 90%;
     border-radius: 20px;
+    height: 520px;
     max-height: 90vh;
   }
 
+  /* 태블릿/모바일에서는 스크롤 허용 */
+  .slide-wrapper {
+    overflow-y: auto;
+    overflow-x: hidden;
+    justify-content: flex-start;
+  }
+
   .slide-content {
-    padding: 16px 32px 32px;
+    padding: 12px 24px 20px;
   }
 
   .slide-title {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
   }
 
   .slide-description {
-    font-size: 0.95rem;
-    margin-bottom: 20px;
+    font-size: 0.9rem;
+    margin-bottom: 12px;
   }
 
   .slide-icon {
-    width: 60px;
-    height: 60px;
-    font-size: 1.8rem;
-    margin-bottom: 16px;
+    width: 48px;
+    height: 48px;
+    font-size: 1.4rem;
+    margin-bottom: 10px;
   }
 
   .feature-cards {
-    gap: 12px;
+    gap: 10px;
   }
 
   .feature-card {
-    min-width: 120px;
-    padding: 16px 12px;
+    min-width: 100px;
+    padding: 12px 10px;
   }
 
   .gameplay-steps {
-    gap: 12px;
+    gap: 8px;
   }
 
   .step {
-    padding: 14px;
+    padding: 10px;
   }
 
   .multiplayer-features {
     flex-direction: column;
     max-width: 100%;
+    gap: 8px;
   }
 
   .mp-feature {
-    padding: 20px 16px;
+    padding: 14px 12px;
   }
 
   .navigation-buttons {
-    padding: 14px 32px 20px;
+    padding: 10px 24px 14px;
   }
 
   .nav-button {
-    padding: 9px 18px;
-    font-size: 0.9rem;
+    padding: 8px 14px;
+    font-size: 0.8rem;
   }
 }
 
 /* 반응형 - 모바일 */
 @media (max-width: 480px) {
   .intro-modal-overlay {
-    padding: 12px;
+    padding: 8px;
   }
 
   .intro-modal-container {
     max-width: 100%;
     border-radius: 16px;
-    max-height: 92vh;
+    height: 90vh;
+    max-height: 95vh;
   }
 
   .progress-dots {
-    padding: 16px;
-    gap: 10px;
+    padding: 12px;
+    gap: 8px;
   }
 
   .dot {
-    width: 8px;
-    height: 8px;
+    width: 7px;
+    height: 7px;
   }
 
   .dot.active {
-    width: 28px;
+    width: 24px;
   }
 
   .close-button {
-    width: 32px;
-    height: 32px;
-    top: 12px;
-    right: 12px;
-    font-size: 1rem;
+    width: 28px;
+    height: 28px;
+    top: 10px;
+    right: 10px;
+    font-size: 0.9rem;
   }
 
   .slide-content {
-    padding: 12px 24px 24px;
+    padding: 8px 16px 16px;
   }
 
   .slide-title {
-    font-size: 1.3rem;
-    margin-bottom: 10px;
+    font-size: 1.15rem;
+    margin-bottom: 6px;
   }
 
   .slide-description {
-    font-size: 0.9rem;
-    margin-bottom: 16px;
+    font-size: 0.8rem;
+    margin-bottom: 10px;
   }
 
   .slide-icon {
-    width: 56px;
-    height: 56px;
-    font-size: 1.6rem;
-    margin-bottom: 14px;
+    width: 44px;
+    height: 44px;
+    font-size: 1.3rem;
+    margin-bottom: 8px;
   }
 
   .feature-cards {
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     max-width: 100%;
   }
 
   .feature-card {
     max-width: 100%;
-    padding: 14px;
+    padding: 10px;
+  }
+
+  .feature-card i {
+    font-size: 1.2rem;
+    margin-bottom: 4px;
+  }
+
+  .feature-card span {
+    font-size: 0.8rem;
   }
 
   .gameplay-steps {
-    gap: 10px;
+    gap: 6px;
     max-width: 100%;
   }
 
   .step {
-    padding: 12px;
+    padding: 8px;
+    gap: 10px;
   }
 
   .step-number {
-    width: 32px;
-    height: 32px;
-    font-size: 1rem;
+    width: 26px;
+    height: 26px;
+    font-size: 0.85rem;
   }
 
   .step-content h3 {
-    font-size: 0.95rem;
+    font-size: 0.8rem;
+    margin-bottom: 1px;
   }
 
   .step-content p {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
   }
 
   .multiplayer-features {
-    gap: 10px;
+    gap: 6px;
   }
 
   .mp-feature {
-    padding: 18px 14px;
+    padding: 12px 10px;
   }
 
   .mp-feature i {
-    font-size: 1.8rem;
+    font-size: 1.3rem;
+    margin-bottom: 4px;
   }
 
   .mp-feature h3 {
-    font-size: 0.95rem;
+    font-size: 0.8rem;
+    margin-bottom: 2px;
   }
 
   .mp-feature p {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
   }
 
   .start-options {
-    margin-top: 20px;
-    gap: 10px;
+    margin-top: 12px;
+    gap: 8px;
     max-width: 100%;
   }
 
   .start-button {
-    padding: 14px 24px;
-    font-size: 0.95rem;
+    padding: 10px 18px;
+    font-size: 0.85rem;
+  }
+
+  .text-button {
+    margin-top: 6px;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+  }
+
+  .data-source-footer {
+    margin-top: 12px;
+    padding-top: 10px;
+    font-size: 0.65rem;
   }
 
   .navigation-buttons {
-    padding: 12px 24px 16px;
+    padding: 8px 16px 12px;
   }
 
   .nav-button {
-    padding: 8px 16px;
-    font-size: 0.85rem;
+    padding: 6px 12px;
+    font-size: 0.75rem;
   }
 }
 </style>

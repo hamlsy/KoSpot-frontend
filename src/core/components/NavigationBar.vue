@@ -16,6 +16,8 @@
             <router-link :to="{ name: 'NoticeListView' }" class="nav-link">공지사항</router-link>
             <!-- 로그인한 경우에만 마이페이지 표시 -->
             <router-link v-if="actualIsLoggedIn" to="/myProfile" class="nav-link">마이페이지</router-link>
+            <!-- 버그/문의 -->
+            <a href="#" class="nav-link" @click.prevent="openContactModal">버그/문의</a>
             <!-- 관리자 버튼 -->
             <router-link v-if="actualIsAdmin" to="/admin" class="nav-link admin-link">관리자</router-link>
           </div>
@@ -53,6 +55,51 @@
         class="overlay"
         @click="closeProfileMenu"
       ></div>
+    </transition>
+
+    <!-- Contact Modal - 버그/문의 모달 -->
+    <transition name="fade">
+      <div
+        v-if="showContactModal"
+        class="contact-modal-overlay"
+        @click.self="closeContactModal"
+      >
+        <div class="contact-modal">
+          <button class="contact-modal-close" @click="closeContactModal">
+            <i class="fas fa-times"></i>
+          </button>
+          
+          <div class="contact-modal-icon">
+            <i class="fas fa-envelope"></i>
+          </div>
+          
+          <h2 class="contact-modal-title">버그/문의</h2>
+          
+          <p class="contact-modal-description">
+            버그 또는 기타 문의가 필요할 경우<br/>
+            아래 연락처로 메일을 보내주세요!
+          </p>
+          
+          <p class="contact-modal-tip">
+            <i class="fas fa-lightbulb"></i>
+            버그 제보일 경우 스크린샷 또는 설명이 자세할수록 좋습니다
+          </p>
+          
+          <div class="contact-email-card">
+            <span class="email-address">kospotdev25@gmail.com</span>
+            <div class="email-actions">
+              <button class="email-action-btn" @click="copyEmail" :title="emailCopied ? '복사 완료!' : '이메일 복사'">
+                <i :class="emailCopied ? 'fas fa-check' : 'fas fa-copy'"></i>
+                <span>{{ emailCopied ? '복사됨' : '복사' }}</span>
+              </button>
+              <a href="mailto:kospotdev25@gmail.com" class="email-action-btn primary">
+                <i class="fas fa-paper-plane"></i>
+                <span>메일 보내기</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
     </transition>
 
     <!-- Profile Menu - header 밖으로 이동 -->
@@ -109,6 +156,10 @@
             <i class="fas fa-user-circle"></i>
             마이페이지
           </router-link>
+          <a href="#" class="menu-item" @click.prevent="openContactModalFromSidebar">
+            <i class="fas fa-envelope"></i>
+            버그/문의
+          </a>
           <div class="menu-divider"></div>
           <a href="#" class="menu-item" @click.prevent="handleLogout">
             <i class="fas fa-sign-out-alt"></i>
@@ -166,6 +217,8 @@ export default {
   data() {
     return {
       showProfileMenu: false,
+      showContactModal: false,
+      emailCopied: false,
       unreadNotifications: 3,
       userProfile: {
         name: "김코스팟",
@@ -247,6 +300,37 @@ export default {
     },
     openTutorial() {
       this.$emit('open-tutorial');
+    },
+    // 문의 모달 열기
+    openContactModal() {
+      this.showContactModal = true;
+      this.emailCopied = false;
+      document.body.style.overflow = "hidden";
+    },
+    // 문의 모달 닫기
+    closeContactModal() {
+      this.showContactModal = false;
+      document.body.style.overflow = "";
+    },
+    // 이메일 복사
+    async copyEmail() {
+      try {
+        await navigator.clipboard.writeText('kospotdev25@gmail.com');
+        this.emailCopied = true;
+        setTimeout(() => {
+          this.emailCopied = false;
+        }, 2000);
+      } catch (err) {
+        console.error('이메일 복사 실패:', err);
+      }
+    },
+    // 사이드바에서 문의 모달 열기 (사이드바 먼저 닫기)
+    openContactModalFromSidebar() {
+      this.closeProfileMenu();
+      // 약간의 딜레이 후 모달 열기 (애니메이션 충돌 방지)
+      setTimeout(() => {
+        this.openContactModal();
+      }, 100);
     },
     goToLogin() {
       this.closeProfileMenu();
@@ -787,6 +871,176 @@ export default {
   transform: translateX(100%);
 }
 
+/* Contact Modal 스타일 */
+.contact-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: var(--spacing-lg);
+}
+
+.contact-modal {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 420px;
+  padding: var(--spacing-2xl);
+  position: relative;
+  box-shadow: var(--shadow-xl);
+  text-align: center;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.contact-modal-close {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-hover);
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-normal);
+}
+
+.contact-modal-close:hover {
+  background: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.contact-modal-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto var(--spacing-lg);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contact-modal-icon i {
+  font-size: 1.75rem;
+  color: white;
+}
+
+.contact-modal-title {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h2);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-md);
+}
+
+.contact-modal-description {
+  font-size: var(--font-size-body);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-relaxed);
+  margin: 0 0 var(--spacing-md);
+}
+
+.contact-modal-tip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-small);
+  color: var(--color-text-tertiary);
+  background: var(--color-surface-hover);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin: 0 0 var(--spacing-xl);
+}
+
+.contact-modal-tip i {
+  color: var(--color-warning);
+}
+
+.contact-email-card {
+  background: var(--color-surface-hover);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+}
+
+.email-address {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-md);
+  word-break: break-all;
+}
+
+.email-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: center;
+}
+
+.email-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  text-decoration: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.email-action-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.email-action-btn.primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+.email-action-btn.primary:hover {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.email-action-btn i {
+  font-size: 0.9rem;
+}
+
 @media (max-width: 768px) {
   .desktop-only {
     display: none;
@@ -822,6 +1076,36 @@ export default {
   .profile-menu {
     width: 100%;
     max-width: 320px;
+  }
+  
+  .contact-modal-overlay {
+    padding: var(--spacing-md);
+  }
+  
+  .contact-modal {
+    padding: var(--spacing-xl);
+    max-width: 100%;
+  }
+  
+  .contact-modal-icon {
+    width: 56px;
+    height: 56px;
+  }
+  
+  .contact-modal-icon i {
+    font-size: 1.5rem;
+  }
+  
+  .contact-modal-title {
+    font-size: 1.25rem;
+  }
+  
+  .email-actions {
+    flex-direction: column;
+  }
+  
+  .email-action-btn {
+    justify-content: center;
   }
 }
 </style> 
