@@ -2,14 +2,15 @@ import RoadViewModeView from '@/features/game/single/main/views/RoadViewMainView
 import RoadViewPractice from '@/features/game/single/roadview/views/PracticeView.vue'
 import RoadViewRank from '@/features/game/single/roadview/views/RankView.vue'
 
+
 const roadViewRoutes = [
     {
         path: '/roadView/main',
         name: "RoadViewModeView",
         component: RoadViewModeView
     },
-    { 
-        path:'/roadView/practice',
+    {
+        path: '/roadView/practice',
         name: "RoadViewPractice",
         component: RoadViewPractice
     },
@@ -17,7 +18,8 @@ const roadViewRoutes = [
         path: '/roadView/rank',
         name: "RoadViewRank",
         component: RoadViewRank
-    }
+    },
+
 ];
 
 export default roadViewRoutes;

@@ -59,6 +59,10 @@ class MainService {
   /**
    * 메인 페이지 데이터 조회
    * 로그인 여부와 관계없이 호출 가능 (선택적 인증)
+   * 
+   * 참고: 백엔드 응답에 gameConfig가 포함될 수 있으나 더 이상 사용하지 않음
+   * gameModeStatus만 사용합니다.
+   * 
    * @returns {Promise<ApiResponse<MainPageResponse>>} API 응답 데이터
    */
   async getMainPageData() {

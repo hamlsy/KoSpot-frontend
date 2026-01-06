@@ -37,12 +37,12 @@
       <!-- 중앙 컨텐츠 -->
       <main class="main-content-wrapper">
         <!-- 히어로 섹션과 배너 래퍼 -->
-        <div class="hero-banner-wrapper" :class="{ 'has-banner': displayBanners && displayBanners.length > 0 }">
+        <div class="hero-banner-wrapper" :class="{ 'has-banner': bannersLoaded && displayBanners && displayBanners.length > 0 }">
           <!-- 히어로 섹션 -->
           <HeroSection @open-tutorial="showTutorial = true" />
 
           <!-- Featured Challenge Banner Carousel -->
-          <div v-if="displayBanners && displayBanners.length > 0" class="banner-carousel">
+          <div v-if="bannersLoaded && displayBanners && displayBanners.length > 0" class="banner-carousel">
         <div
           class="banner-container"
           :style="{ transform: `translateX(-${currentBanner * 100}%)` }"
@@ -436,20 +436,11 @@ const gameModeStatus = ref({
 
 // 배너 데이터
 const banners = ref([]);
+const bannersLoaded = ref(false);
 
-// 기본 배너 데이터
-const defaultBanner = {
-  id: 'default-kospot',
-  badge: '소개',
-  title: 'KoSpot에 오신 것을 환영합니다!',
-  description: '대한민국 곳곳을 탐험하는 지리 게임을 즐겨보세요',
-  image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=1200&h=400&fit=crop',
-  link: ''
-};
-
-// 표시할 배너 (배너가 없으면 기본 배너 사용)
+// 표시할 배너 (실제 배너 데이터가 있을 때만 반환)
 const displayBanners = computed(() => {
-  return banners.value && banners.value.length > 0 ? banners.value : [defaultBanner];
+  return banners.value && banners.value.length > 0 ? banners.value : [];
 });
 
 // 공지사항 데이터
@@ -475,6 +466,9 @@ async function loadMainPageData() {
     
     if (response.isSuccess && response.result) {
       const result = response.result;
+      
+      // 참고: 백엔드 응답에 gameConfig가 포함될 수 있으나 더 이상 사용하지 않음
+      // gameModeStatus만 사용합니다
       
       // 사용자 정보 업데이트 (myInfo 객체에서 가져오기)
       if (result.myInfo) {
@@ -529,6 +523,8 @@ async function loadMainPageData() {
         // 배너가 없으면 빈 배열
         banners.value = [];
       }
+      // 배너 로드 완료 플래그 설정
+      bannersLoaded.value = true;
       
       // 공지사항 데이터 변환 및 업데이트
       if (result.recentNotices && Array.isArray(result.recentNotices)) {
@@ -549,6 +545,7 @@ async function loadMainPageData() {
     gameModeStatus.value = fallbackData.gameModeStatus;
     recentNotices.value = mainService.transformNoticesForUI(fallbackData.recentNotices);
     banners.value = []; // 배너 데이터 없음
+    bannersLoaded.value = true; // 배너 로드 완료 (빈 배열이지만 로드 완료로 표시)
     
     // 사용자에게 에러 알림
     showErrorToast('데이터를 불러오는데 실패했습니다. 기본 데이터를 표시합니다.');

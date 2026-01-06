@@ -6,6 +6,7 @@ import { apiClient } from 'src/core/api/apiClient.js';
 
 /**
  * 배너 관련 API 엔드포인트
+ * 기본 경로: /admin/banners
  */
 const BANNER_ENDPOINTS = {
   GET_BANNERS: '/admin/banners',
@@ -31,7 +32,7 @@ class BannerAdminService {
       const response = await apiClient.get(BANNER_ENDPOINTS.GET_BANNERS);
       
       console.log('✅ 배너 목록 조회 성공:', response.data);
-      return this._transformBannersData(response.data.data || []);
+      return this._transformBannersData(response.data.result || []);
     } catch (error) {
       console.error('❌ 배너 목록 조회 실패:', error);
       this._handleApiError(error, '배너 목록 조회에 실패했습니다.');
@@ -172,9 +173,34 @@ class BannerAdminService {
       description: banner.description || '',
       displayOrder: banner.displayOrder || 0,
       isActive: banner.isActive ?? true,
-      createdAt: banner.createdAt,
-      updatedAt: banner.updatedAt
+      createdAt: banner.createdAt || null,
+      updatedAt: banner.updatedAt || null
     }));
+  }
+
+  /**
+   * 날짜 포맷팅 (YYYY.MM.DD HH:mm)
+   * @param {string} dateString - ISO 8601 형식의 날짜 문자열
+   * @returns {string} 포맷된 날짜 문자열
+   */
+  formatDate(dateString) {
+    if (!dateString) return '-';
+    
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return dateString;
+      
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      
+      return `${year}.${month}.${day} ${hours}:${minutes}`;
+    } catch (error) {
+      console.error('날짜 포맷팅 실패:', error);
+      return dateString;
+    }
   }
 
   /**
