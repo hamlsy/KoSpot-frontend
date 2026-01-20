@@ -3,11 +3,13 @@
     <div class="header-content">
       <!-- 상단: 방 기본 정보 -->
       <div class="room-info-section">
-        <div class="room-meta">    
+        <div class="room-meta">
           <div class="room-badges">
-            <div class="privacy-badge" :class="{ 'private': roomData.isPrivate }">
-              <i :class="roomData.isPrivate ? 'fas fa-lock' : 'fas fa-lock-open'"></i>
-              {{ roomData.isPrivate ? '비공개' : '공개' }}
+            <div class="privacy-badge" :class="{ private: roomData.isPrivate }">
+              <i
+                :class="roomData.isPrivate ? 'fas fa-lock' : 'fas fa-lock-open'"
+              ></i>
+              {{ roomData.isPrivate ? "비공개" : "공개" }}
             </div>
             <div class="team-badge" v-if="isTeamMode">
               <i class="fas fa-users"></i>
@@ -15,10 +17,10 @@
             </div>
           </div>
         </div>
-        
+
         <h2 class="room-title">{{ roomData.title }}</h2>
       </div>
-      
+
       <!-- 하단: 게임 정보 및 버튼 -->
       <div class="header-actions">
         <!-- 게임 정보 카드 -->
@@ -32,7 +34,7 @@
               <div class="info-value">{{ gameModeName }}</div>
             </div>
           </div>
-          
+
           <div class="game-info-item">
             <div class="info-icon">
               <i class="fas fa-redo-alt"></i>
@@ -42,7 +44,7 @@
               <div class="info-value">{{ roomData.totalRounds }}회</div>
             </div>
           </div>
-          
+
           <div class="game-info-item">
             <div class="info-icon">
               <i class="fas fa-clock"></i>
@@ -52,12 +54,22 @@
               <div class="info-value">{{ roomData.timeLimit }}초</div>
             </div>
           </div>
+          
+          <div class="game-info-item">
+            <div class="info-icon">
+              <i class="fas fa-map-marker-alt"></i>
+            </div>
+            <div class="info-content">
+              <div class="info-label">지명 공개</div>
+              <div class="info-value">{{ roomData.isPoiNameVisible !== false ? '공개' : '비공개' }}</div>
+            </div>
+          </div>
         </div>
-        
+
         <!-- 버튼 그룹 -->
         <div class="header-buttons">
-          <button 
-            class="action-button chat-toggle-button" 
+          <button
+            class="action-button chat-toggle-button"
             @click="$emit('toggle-chat')"
             title="채팅 토글"
             v-show="showChatToggle"
@@ -65,12 +77,12 @@
             <i class="fas fa-comments"></i>
             <span>채팅</span>
             <div class="chat-notification-mini" v-if="unreadMessages > 0">
-              {{ unreadMessages > 9 ? '9+' : unreadMessages }}
+              {{ unreadMessages > 9 ? "9+" : unreadMessages }}
             </div>
           </button>
 
-          <button 
-            class="action-button settings-button" 
+          <button
+            class="action-button settings-button"
             @click="$emit('open-settings')"
             title="방 설정"
             v-if="isHost"
@@ -78,22 +90,22 @@
             <i class="fas fa-cog"></i>
             <span>설정</span>
           </button>
-          
-          <button 
-            class="action-button leave-button" 
+
+          <button
+            class="action-button leave-button"
             @click="leaveRoomWithConfirm"
             title="방 나가기"
           >
             <i class="fas fa-sign-out-alt"></i>
             <span>나가기</span>
           </button>
-          
-          <button 
-            v-if="showStartButton" 
-            class="action-button start-button" 
-            :disabled="startButtonDisabled" 
+
+          <button
+            v-if="showStartButton"
+            class="action-button start-button"
+            :disabled="startButtonDisabled"
             @click="$emit('start-game')"
-            :class="{ 'disabled': startButtonDisabled }"
+            :class="{ disabled: startButtonDisabled }"
             title="게임 시작"
           >
             <i class="fas fa-play"></i>
@@ -106,84 +118,96 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits, computed } from 'vue';
+import { defineProps, defineEmits, computed } from "vue";
 
 const props = defineProps({
   roomData: {
     type: Object,
-    required: true
+    required: true,
   },
   isHost: {
     type: Boolean,
-    default: false
+    default: false,
   },
   canStartGame: {
     type: Boolean,
-    default: false
+    default: false,
   },
   unreadMessages: {
     type: Number,
-    default: 0
+    default: 0,
   },
   isTeamMode: {
     type: Boolean,
-    default: false
+    default: false,
   },
   showChatToggle: {
     type: Boolean,
-    default: false
+    default: false,
   },
   isDummyMode: {
     type: Boolean,
-    default: false
+    default: false,
   },
   isStarting: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 });
 
-const emit = defineEmits(['open-settings', 'leave-room', 'start-game', 'toggle-chat']);
+const emit = defineEmits([
+  "open-settings",
+  "leave-room",
+  "start-game",
+  "toggle-chat",
+]);
 
 const gameModeName = computed(() => {
-  switch(props.roomData.gameMode) {
-    case 'roadview':
-      return '로드뷰';
-    case 'photo':
-      return '사진';
+  // 백엔드에서 대문자(ROADVIEW)로 올 수 있으므로 소문자로 변환하여 비교
+  const mode = (props.roomData.gameMode || "").toLowerCase();
+  switch (mode) {
+    case "roadview":
+      return "로드뷰";
+    case "photo":
+      return "사진";
     default:
-      return '게임';
+      return "게임";
   }
 });
 
 const modeIcon = computed(() => {
-  switch(props.roomData.gameMode) {
-    case 'roadview':
-      return 'fas fa-street-view';
-    case 'photo':
-      return 'fas fa-image';
+  // 백엔드에서 대문자(ROADVIEW)로 올 수 있으므로 소문자로 변환하여 비교
+  const mode = (props.roomData.gameMode || "").toLowerCase();
+  switch (mode) {
+    case "roadview":
+      return "fas fa-street-view";
+    case "photo":
+      return "fas fa-image";
     default:
-      return 'fas fa-gamepad';
+      return "fas fa-gamepad";
   }
 });
 
 const showStartButton = computed(() => props.isHost || props.isDummyMode);
-const startButtonDisabled = computed(() => props.isStarting || (!props.canStartGame && !props.isDummyMode));
+const startButtonDisabled = computed(
+  () => props.isStarting || (!props.canStartGame && !props.isDummyMode),
+);
 
 const copyRoomId = () => {
-  navigator.clipboard.writeText(props.roomData.id)
+  navigator.clipboard
+    .writeText(props.roomData.id)
     .then(() => {
       // TODO: Add toast notification
-      console.log('Room ID copied to clipboard');
+      console.log("Room ID copied to clipboard");
     })
-    .catch(err => {
-      console.error('Failed to copy room ID: ', err);
+    .catch((err) => {
+      console.error("Failed to copy room ID: ", err);
     });
 };
 
 const leaveRoomWithConfirm = () => {
-  if (confirm('정말 방을 나가시겠습니까?')) {
-    emit('leave-room');
+  if (confirm("정말 방을 나가시겠습니까?")) {
+    emit("leave-room");
   }
 };
 </script>
@@ -201,7 +225,7 @@ const leaveRoomWithConfirm = () => {
 }
 
 .room-header::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -252,7 +276,7 @@ const leaveRoomWithConfirm = () => {
   font-weight: 700;
   color: #1e293b;
   letter-spacing: 0.5px;
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
 }
 
 .copy-button {
@@ -283,7 +307,8 @@ const leaveRoomWithConfirm = () => {
   gap: 0.4rem;
 }
 
-.privacy-badge, .team-badge {
+.privacy-badge,
+.team-badge {
   display: flex;
   align-items: center;
   gap: 0.3rem;
@@ -333,7 +358,7 @@ const leaveRoomWithConfirm = () => {
 /* Game info compact */
 .game-info-compact {
   display: grid;
-  grid-template-columns: repeat(3, minmax(140px, 1fr));
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
   gap: 1rem;
   width: 100%;
 }
@@ -491,18 +516,40 @@ const leaveRoomWithConfirm = () => {
     padding: 0.6rem 0.75rem;
     border-radius: 14px;
   }
-  .header-content { gap: 0.6rem; }
-  .room-info-section { gap: 0.3rem; }
-  .room-title { font-size: 1.05rem; }
+  .header-content {
+    gap: 0.6rem;
+  }
+  .room-info-section {
+    gap: 0.3rem;
+  }
+  .room-title {
+    font-size: 1.05rem;
+  }
   .game-info-compact {
     grid-template-columns: repeat(2, minmax(140px, 1fr));
     gap: 0.75rem;
   }
-  .info-icon { width: 28px; height: 28px; font-size: 0.8rem; }
-  .info-value { font-size: 0.75rem; }
-  .header-actions { flex-direction: column; align-items: stretch; gap: 0.5rem; }
-  .header-buttons { justify-content: center; }
-  .action-button { padding: 0.4rem 0.7rem; font-size: 0.73rem; border-radius: 9px; }
+  .info-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 0.8rem;
+  }
+  .info-value {
+    font-size: 0.75rem;
+  }
+  .header-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  .header-buttons {
+    justify-content: center;
+  }
+  .action-button {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.73rem;
+    border-radius: 9px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -510,22 +557,26 @@ const leaveRoomWithConfirm = () => {
     padding: 0.5rem 0.6rem;
     border-radius: 12px;
   }
-  
+
   .room-title {
     font-size: 0.95rem;
   }
-  
+
   .game-info-compact {
     grid-template-columns: repeat(2, minmax(130px, 1fr));
     gap: 0.6rem;
   }
-  
+
   .header-buttons {
     width: 100%;
     justify-content: stretch;
   }
-  
-  .action-button { flex: 1; padding: 0.4rem; font-size: 0.72rem; }
+
+  .action-button {
+    flex: 1;
+    padding: 0.4rem;
+    font-size: 0.72rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -534,25 +585,28 @@ const leaveRoomWithConfirm = () => {
     align-items: flex-start;
     gap: 0.4rem;
   }
-  
+
   .room-id-badge {
     font-size: 0.75rem;
     padding: 0.3rem 0.6rem;
   }
-  
+
   .room-title {
     font-size: 0.9rem;
   }
-  
+
   .game-info-compact {
     grid-template-columns: repeat(1, minmax(0, 1fr));
     gap: 0.45rem;
   }
-  
+
   .action-button span {
     display: none;
   }
-  
-  .action-button { padding: 0.4rem; justify-content: center; }
+
+  .action-button {
+    padding: 0.4rem;
+    justify-content: center;
+  }
 }
 </style>
