@@ -7,31 +7,39 @@
         <span>{{ onlineUsers }}명 접속중</span>
       </div> -->
     </div>
-    
+
     <div class="chat-messages" ref="messageContainer">
-      <div 
-        v-for="(message, index) in messages" 
+      <div
+        v-for="(message, index) in messages"
         :key="message.id"
         class="message-wrapper"
-        :class="{ 
+        :class="{
           'system-message-wrapper': message.system,
           'my-message-wrapper': isMyMessage(message),
-          'other-message-wrapper': !message.system && !isMyMessage(message)
+          'other-message-wrapper': !message.system && !isMyMessage(message),
         }"
       >
         <!-- 시스템 메시지 -->
         <div v-if="message.system" class="system-message">
           <span class="system-content">{{ message.message }}</span>
         </div>
-        
+
         <!-- 일반 채팅 메시지 -->
-        <div v-else class="chat-message" :class="{ 'my-chat': isMyMessage(message) }">
+        <div
+          v-else
+          class="chat-message"
+          :class="{ 'my-chat': isMyMessage(message) }"
+        >
           <!-- 다른 사용자 메시지 -->
           <div v-if="!isMyMessage(message)" class="other-message">
             <div class="message-content-wrapper">
               <div class="message-info">
                 <span class="sender-name">{{ message.sender }}</span>
-                <span v-if="shouldShowTime(message, messages[index - 1])" class="message-time">{{ formatTime(message.timestamp) }}</span>
+                <span
+                  v-if="shouldShowTime(message, messages[index - 1])"
+                  class="message-time"
+                  >{{ formatTime(message.timestamp) }}</span
+                >
               </div>
               <div class="message-bubble other-bubble">
                 <span class="bubble-tail other-tail"></span>
@@ -39,12 +47,16 @@
               </div>
             </div>
           </div>
-          
+
           <!-- 내 메시지 -->
           <div v-else-if="isMyMessage(message)" class="my-message">
             <div class="my-content-wrapper">
               <div class="my-message-info">
-                <span v-if="shouldShowTime(message, messages[index - 1])" class="message-time">{{ formatTime(message.timestamp) }}</span>
+                <span
+                  v-if="shouldShowTime(message, messages[index - 1])"
+                  class="message-time"
+                  >{{ formatTime(message.timestamp) }}</span
+                >
               </div>
               <div class="message-bubble my-bubble">
                 {{ message.message }}
@@ -55,22 +67,22 @@
         </div>
       </div>
     </div>
-    
+
     <div class="chat-input">
       <div class="input-wrapper">
-        <input 
-          type="text" 
-          v-model="newMessage" 
-          placeholder="메시지를 입력하세요..." 
+        <input
+          type="text"
+          v-model="newMessage"
+          placeholder="메시지를 입력하세요..."
           @keydown.stop
-          @keydown.enter="sendMessage"
+          @keydown="handleKeydown"
           @focus="handleInputFocus"
           @blur="handleInputBlur"
           ref="chatInput"
         />
-        <button 
-          class="send-button" 
-          @click="sendMessage" 
+        <button
+          class="send-button"
+          @click="sendMessage"
           :disabled="!newMessage.trim()"
           type="button"
         >
@@ -78,9 +90,9 @@
         </button>
       </div>
       <!-- 모바일에서 채팅창이 열렸을 때만 닫기 버튼 표시 -->
-      <button 
-        v-if="showMobileClose" 
-        class="close-chat-button" 
+      <button
+        v-if="showMobileClose"
+        class="close-chat-button"
         @click="closeChat"
         type="button"
       >
@@ -93,36 +105,36 @@
 <script>
 export default {
   name: "MultiplayerLobbyChatWindow",
-  
+
   props: {
     messages: {
       type: Array,
-      required: true
+      required: true,
     },
     currentUserId: {
       type: String,
-      default: ''
+      default: "",
     },
     showMobileClose: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
-  
+
   data() {
     return {
-      newMessage: '',
+      newMessage: "",
       onlineUsers: 37, // 테스트 데이터, 실제로는 서버에서 받아와야 함
       currentMemberId: null,
-      isInputFocused: false
+      isInputFocused: false,
     };
   },
-  
+
   mounted() {
     this.initializeCurrentUser();
     this.scrollToBottom();
   },
-  
+
   watch: {
     messages: {
       handler() {
@@ -130,98 +142,127 @@ export default {
           this.scrollToBottom();
         });
       },
-      deep: true
+      deep: true,
     },
     // currentUserId props 변경을 감지하여 memberId 업데이트
     currentUserId: {
       handler(newValue) {
         this.initializeCurrentUser();
       },
-      immediate: true
-    }
+      immediate: true,
+    },
   },
-  
+
   updated() {
     this.scrollToBottom();
   },
-  
+
   methods: {
     initializeCurrentUser() {
       // localStorage에서 memberId 가져오기
-      const localStorageMemberId = localStorage.getItem('memberId');
-      
+      const localStorageMemberId = localStorage.getItem("memberId");
+
       // props로 전달받은 currentUserId 확인
       const propsUserId = this.currentUserId;
-      
+
       // localStorage의 memberId를 우선 사용, 없으면 props 사용
       this.currentMemberId = localStorageMemberId || propsUserId;
     },
-    
+
+    /**
+     * Handle keydown event with IME composition check
+     * This prevents double message sending on MacOS when using Korean IME
+     */
+    handleKeydown(event) {
+      // IME 조합 중이면 무시 (한글 등 조합형 문자 입력 시)
+      // isComposing: 표준 속성으로 조합 중인지 확인
+      // keyCode === 229: 일부 브라우저에서 IME 조합 중임을 나타내는 레거시 코드
+      if (event.isComposing || event.keyCode === 229) {
+        return;
+      }
+
+      // Enter 키가 아니면 무시
+      if (event.key !== "Enter") {
+        return;
+      }
+
+      // Shift+Enter는 줄바꿈으로 처리 (메시지 전송하지 않음)
+      if (event.shiftKey) {
+        return;
+      }
+
+      event.preventDefault();
+      this.sendMessage();
+    },
+
     sendMessage() {
       if (!this.newMessage.trim()) return;
-      
-      this.$emit('send-message', this.newMessage);
-      this.newMessage = '';
+
+      this.$emit("send-message", this.newMessage);
+      this.newMessage = "";
     },
-    
+
     handleInputFocus() {
       this.isInputFocused = true;
     },
-    
+
     handleInputBlur() {
       this.isInputFocused = false;
     },
-    
+
     closeChat() {
-      this.$emit('close');
+      this.$emit("close");
     },
-    
+
     scrollToBottom() {
       const messageContainer = this.$refs.messageContainer;
       if (messageContainer) {
         messageContainer.scrollTop = messageContainer.scrollHeight;
       }
     },
-    
+
     formatTime(timestamp) {
       const date = new Date(timestamp);
       let hours = date.getHours();
-      const minutes = date.getMinutes().toString().padStart(2, '0');
-      const ampm = hours >= 12 ? '오후' : '오전';
-      
+      const minutes = date.getMinutes().toString().padStart(2, "0");
+      const ampm = hours >= 12 ? "오후" : "오전";
+
       hours = hours % 12;
       hours = hours ? hours : 12; // 0시는 12시로 표시
-      
+
       return `${ampm} ${hours}:${minutes}`;
     },
-    
+
     isMyMessage(message) {
       if (message.system) return false;
-      
+
       // senderId와 현재 사용자 memberId 비교
       if (this.currentMemberId && message.senderId) {
-        const isMyMsg = String(this.currentMemberId) === String(message.senderId);
+        const isMyMsg =
+          String(this.currentMemberId) === String(message.senderId);
         return isMyMsg;
       }
-      
+
       return false;
     },
-    
+
     shouldShowTime(message, previousMessage) {
       if (!previousMessage) return true; // 첫 메시지는 항상 표시
       if (message.system) return false; // 시스템 메시지는 시간 표시 안 함
-      
+
       const currentTime = new Date(message.timestamp);
       const prevTime = new Date(previousMessage.timestamp);
-      
+
       // 같은 분인지 확인 (년, 월, 일, 시, 분 비교)
-      return currentTime.getFullYear() !== prevTime.getFullYear() ||
-             currentTime.getMonth() !== prevTime.getMonth() ||
-             currentTime.getDate() !== prevTime.getDate() ||
-             currentTime.getHours() !== prevTime.getHours() ||
-             currentTime.getMinutes() !== prevTime.getMinutes();
-    }
-  }
+      return (
+        currentTime.getFullYear() !== prevTime.getFullYear() ||
+        currentTime.getMonth() !== prevTime.getMonth() ||
+        currentTime.getDate() !== prevTime.getDate() ||
+        currentTime.getHours() !== prevTime.getHours() ||
+        currentTime.getMinutes() !== prevTime.getMinutes()
+      );
+    },
+  },
 };
 </script>
 
@@ -258,7 +299,7 @@ export default {
 }
 
 .chat-title::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -4px;
   left: 0;
@@ -287,8 +328,13 @@ export default {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 
 .chat-messages {
@@ -432,7 +478,7 @@ export default {
 }
 
 .other-tail::before {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -1px;
   left: 1px;
@@ -602,24 +648,24 @@ export default {
   .chat-header {
     padding: 0.8rem 1rem;
   }
-  
+
   .chat-messages {
     padding: 0.6rem;
   }
-  
+
   .chat-message {
     max-width: 85%;
   }
-  
+
   .chat-input {
     padding: 0.8rem;
   }
-  
+
   .message-bubble {
     padding: 0.45rem 0.7rem;
     font-size: 0.8rem;
   }
-  
+
   .sender-name {
     font-size: 0.7rem;
   }
@@ -629,23 +675,24 @@ export default {
   .chat-title {
     font-size: 1rem;
   }
-  
+
   .online-users {
     font-size: 0.75rem;
   }
-  
+
   .chat-input input {
     padding: 0.6rem 0.9rem;
     font-size: 0.8rem;
   }
-  
-  .send-button, .close-chat-button {
+
+  .send-button,
+  .close-chat-button {
     width: 32px;
     height: 32px;
   }
-  
+
   .send-button i {
     font-size: 0.75rem;
   }
 }
-</style> 
+</style>
