@@ -39,7 +39,7 @@
         <!-- 히어로 섹션과 배너 래퍼 -->
         <div class="hero-banner-wrapper" :class="{ 'has-banner': bannersLoaded && displayBanners && displayBanners.length > 0 }">
           <!-- 히어로 섹션 -->
-          <HeroSection @open-tutorial="showTutorial = true" />
+          <HeroSection @open-tutorial="showTutorial = false" />
 
           <!-- Featured Challenge Banner Carousel -->
           <div v-if="bannersLoaded && displayBanners && displayBanners.length > 0" class="banner-carousel">
