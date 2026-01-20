@@ -56,13 +56,43 @@ const gameStore = {
   
   // 게임 상태 초기화
   initGame() {
+    // 라운드 및 게임 진행 상태 초기화
     this.state.currentRound = 1;
+    this.state.totalRounds = 5;
+    this.state.remainingTime = 120;
     this.state.roundEnded = false;
     this.state.hasSubmittedGuess = false;
     this.state.showRoundResults = false;
     this.state.showGameResults = false;
     this.state.guessPosition = null;
     this.state.isLoading = false;
+    this.state.canSubmitGuess = true;
+    
+    // 채팅 메시지 초기화 (이전 게임의 채팅이 남지 않도록)
+    this.state.chatMessages = [];
+    this.state.teamChatMessages = {};
+    
+    // 플레이어 관련 상태 초기화
+    this.state.players = [];
+    this.state.teams = [];
+    this.state.playerGuesses = [];
+    this.state.playersGuesses = [];
+    this.state.topPlayer = {};
+    
+    // 위치 정보 초기화
+    this.state.currentLocation = null;
+    this.state.actualLocation = null;
+    this.state.locationInfo = {
+      name: '',
+      description: '',
+      image: '',
+      fact: '',
+      poiName: '',
+      fullAddress: ''
+    };
+    
+    // 사용자 추측 초기화
+    this.state.userGuess = null;
   },
   
   // 라운드 종료 처리
