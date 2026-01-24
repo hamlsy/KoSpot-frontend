@@ -120,14 +120,18 @@
 
       <!-- 종료 확인 모달 -->
       <div v-if="showExitConfirmation" class="modal-overlay">
-        <div class="modal-content">
-          <h3>게임 종료</h3>
-          <p>정말 게임을 종료하시겠습니까?</p>
+        <div class="modal-content exit-modal">
+          <div class="exit-modal-icon">
+            <i class="fas fa-door-open"></i>
+          </div>
+          <h3>잠깐만요!</h3>
+          <p>지금 나가면 랭크 포인트가 차감될 수 있어요.</p>
+          <p class="exit-confirm-text">계속 플레이하시겠어요?</p>
           <div class="modal-buttons">
-            <button class="cancel-btn" @click="showExitConfirmation = false">
-              취소
+            <button class="confirm-btn stay-btn" @click="showExitConfirmation = false">
+              계속 하기
             </button>
-            <button class="confirm-btn" @click="confirmExit">확인</button>
+            <button class="cancel-btn" @click="confirmExit">나가기</button>
           </div>
         </div>
       </div>
@@ -732,9 +736,14 @@ export default {
 
     // 게임 종료
     exitGame() {
-      // 타이머 정리
-      this.clearAllTimers();
-      this.$router.push("/roadView/main");
+      // 게임이 진행 중이고 결과 화면이 아닌 경우 확인 모달 표시
+      if (this.isGameStarted && !this.showResult) {
+        this.showExitConfirmation = true;
+      } else {
+        // 게임 시작 전이거나 결과 화면인 경우 바로 나가기
+        this.clearAllTimers();
+        this.$router.push("/roadView/main");
+      }
     },
 
     // 게임 종료 확인
@@ -877,6 +886,14 @@ export default {
   /* 헤더 높이 (reset-btn 위치 계산용) */
   height: 56px;
   box-sizing: border-box;
+}
+
+.game-header h2 {
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 /* 초기 위치로 돌아가기 버튼 (헤더 바로 밑, 우측 상단) */
@@ -1090,6 +1107,56 @@ export default {
   color: #333;
 }
 
+/* Exit Modal 스타일 */
+.exit-modal {
+  padding: 24px 30px 30px;
+}
+
+.exit-modal-icon {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 16px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.exit-modal-icon i {
+  font-size: 26px;
+  color: #3b82f6;
+}
+
+.exit-modal h3 {
+  margin-bottom: 12px;
+  font-size: 1.3rem;
+  color: #1f2937;
+}
+
+.exit-modal p {
+  margin: 0 0 8px 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.exit-confirm-text {
+  margin-top: 4px !important;
+  font-size: 0.9rem !important;
+  color: #9ca3af !important;
+}
+
+.stay-btn {
+  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+  color: white !important;
+}
+
+.stay-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(59, 130, 246, 0.4) !important;
+}
+
 .modal-buttons {
   display: flex;
   justify-content: center;
@@ -1130,14 +1197,6 @@ export default {
   .top-ads-container {
     padding: var(--spacing-xs) 0;
   }
-  
-  .game-header {
-    /* top은 동적으로 바인딩됨 */
-  }
-  
-  .timer-container {
-    /* top은 동적으로 바인딩됨 */
-  }
 }
 
 @media (max-width: 480px) {
@@ -1147,7 +1206,6 @@ export default {
   
   .game-header {
     padding: 10px;
-    /* top은 동적으로 바인딩됨 */
   }
 
   .game-status {
@@ -1161,10 +1219,6 @@ export default {
     font-size: 0.9rem;
     bottom: 20px;
     right: 20px;
-  }
-  
-  .timer-container {
-    /* top은 동적으로 바인딩됨 */
   }
 }
 

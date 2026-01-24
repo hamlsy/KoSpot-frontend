@@ -57,3 +57,11 @@
   .notice-category.이벤트 {
     background: #f59e0b;
   }
+
+  .notice-category.공지 {
+    background: #3b82f6;
+  }
+
+  .notice-category.일반 {
+    background: #6b7280;
+  }

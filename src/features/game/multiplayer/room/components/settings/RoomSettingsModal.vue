@@ -183,7 +183,7 @@
                 <span class="toggle-description">(좌표 지역 명이 공개됩니다.)</span>
               </div>
               <div class="toggle-switch">
-                <input type="checkbox" v-model="formData.isPoiNameVisible" />
+                <input type="checkbox" v-model="formData.poiNameVisible" />
                 <span class="toggle-slider"></span>
               </div>
             </label>
@@ -256,7 +256,7 @@ const formData = ref({
   timeLimit: 180,
   maxPlayers: 8,
   isPrivate: false,
-  isPoiNameVisible: true,
+  poiNameVisible: true,
   password: ''
 });
 
@@ -316,7 +316,7 @@ onMounted(() => {
       timeLimit: props.roomData.timeLimit || 180,
       maxPlayers: props.roomData.maxPlayers || 8,
       isPrivate: props.roomData.isPrivate || false,
-      isPoiNameVisible: props.roomData.isPoiNameVisible !== false,
+      poiNameVisible: props.roomData.poiNameVisible !== false,
       password: props.roomData.password || ''
     };
   }
