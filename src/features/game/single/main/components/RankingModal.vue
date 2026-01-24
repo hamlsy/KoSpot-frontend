@@ -375,7 +375,7 @@ watch(() => props.show, (newVal) => {
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  transition: all 0.2s;
+  transition: background-color 0.2s, color 0.2s;
 }
 
 .close-button:hover {
@@ -386,37 +386,31 @@ watch(() => props.show, (newVal) => {
 /* 티어 탭 스타일 */
 .tier-tabs {
   display: flex;
-  padding: 16px 24px;
+  flex-wrap: wrap;
+  padding: 12px 20px;
   gap: 8px;
   border-bottom: 1px solid #e5e7eb;
   background: #f9fafb;
-  overflow-x: auto;
-  scrollbar-width: thin;
+  flex-shrink: 0;
 }
 
-.tier-tabs::-webkit-scrollbar {
-  height: 4px;
-}
 
-.tier-tabs::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 2px;
-}
 
 .tier-tab {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
+  gap: 6px;
+  padding: 8px 12px;
   border: 2px solid transparent;
-  border-radius: 12px;
+  border-radius: 10px;
   background: white;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.3s, transform 0.3s, box-shadow 0.3s;
   white-space: nowrap;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   color: #6b7280;
+  flex-shrink: 0;
 }
 
 .tier-tab:hover {
@@ -472,8 +466,7 @@ watch(() => props.show, (newVal) => {
 .modal-body {
   flex: 1;
   overflow-y: auto;
-  padding: 24px 32px;
-  min-height: 400px;
+  padding: 20px 32px;
 }
 
 .loading-container,
@@ -569,7 +562,7 @@ watch(() => props.show, (newVal) => {
   padding: 16px;
   background: #f9fafb;
   border-radius: 12px;
-  transition: all 0.2s;
+  transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
   cursor: pointer;
 }
 
@@ -758,7 +751,7 @@ watch(() => props.show, (newVal) => {
   border-radius: 8px;
   cursor: pointer;
   color: #6b7280;
-  transition: all 0.2s;
+  transition: background-color 0.2s, border-color 0.2s;
 }
 
 .page-button:hover:not(:disabled) {
@@ -784,7 +777,7 @@ watch(() => props.show, (newVal) => {
   cursor: pointer;
   color: #6b7280;
   min-width: 40px;
-  transition: all 0.2s;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
 }
 
 .page-number:hover {
@@ -839,17 +832,18 @@ watch(() => props.show, (newVal) => {
   }
 
   .tier-tabs {
-    padding: 12px 16px;
+    padding: 10px 12px;
     gap: 6px;
   }
 
   .tier-tab {
-    padding: 8px 12px;
+    padding: 6px 10px;
     font-size: 12px;
+    gap: 4px;
   }
 
   .tier-icon i {
-    font-size: 14px;
+    font-size: 12px;
   }
 
   .player-item {

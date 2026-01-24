@@ -12,6 +12,7 @@ const NOTICE_ENDPOINTS = {
   // 공지사항 CRUD
   GET_ALL_NOTICES: '/notice',
   GET_NOTICE_BY_ID: (id) => `/notice/${id}`,
+  GET_NOTICE_MARKDOWN: (id) => `/notice/${id}/markdown`, // 수정용 마크다운 조회
   CREATE_NOTICE: '/notice',
   UPDATE_NOTICE: (id) => `/notice/${id}`,
   DELETE_NOTICE: (id) => `/notice/${id}`,
@@ -78,11 +79,11 @@ class NoticeService {
   async getAllNotices(page = 0) {
     try {
       console.log('📤 공지사항 목록 조회 요청:', { page });
-      
+
       const response = await apiClient.get(NOTICE_ENDPOINTS.GET_ALL_NOTICES, {
         params: { page }
       });
-      
+
       console.log('✅ 공지사항 목록 조회 성공:', response.data);
       return response.data;
     } catch (error) {
@@ -100,14 +101,35 @@ class NoticeService {
   async getNoticeById(noticeId) {
     try {
       console.log('📤 공지사항 상세 조회 요청:', noticeId);
-      
+
       const response = await apiClient.get(NOTICE_ENDPOINTS.GET_NOTICE_BY_ID(noticeId));
-      
+
       console.log('✅ 공지사항 상세 조회 성공:', response.data);
       return response.data;
     } catch (error) {
       console.error('❌ 공지사항 상세 조회 실패:', error);
       this._handleApiError(error, '공지사항 조회에 실패했습니다.');
+      throw error;
+    }
+  }
+
+  /**
+   * 공지사항 수정용 마크다운 내용 조회
+   * @param {number} noticeId - 공지사항 ID
+   * @returns {Promise<ApiResponse<NoticeMarkdownResponse>>} API 응답 데이터
+   * @description 공지사항 수정 시 기존 마크다운 원본 내용을 조회합니다.
+   */
+  async getNoticeMarkdown(noticeId) {
+    try {
+      console.log('📤 공지사항 마크다운 조회 요청:', noticeId);
+
+      const response = await apiClient.get(NOTICE_ENDPOINTS.GET_NOTICE_MARKDOWN(noticeId));
+
+      console.log('✅ 공지사항 마크다운 조회 성공:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ 공지사항 마크다운 조회 실패:', error);
+      this._handleApiError(error, '공지사항 마크다운 조회에 실패했습니다.');
       throw error;
     }
   }
@@ -120,18 +142,18 @@ class NoticeService {
   async createNotice(noticeData) {
     try {
       console.log('📤 공지사항 생성 요청:', noticeData);
-      
+
       // 데이터 유효성 검사
       this._validateNoticeData(noticeData, true);
-      
+
       // contentMd로 변환하여 전송 (contentMd 필드로 전송)
       const requestData = {
         title: noticeData.title.trim(),
         contentMd: noticeData.contentMd.trim()
       };
-      
+
       const response = await apiClient.post(NOTICE_ENDPOINTS.CREATE_NOTICE, requestData);
-      
+
       console.log('✅ 공지사항 생성 성공:', response.data);
       return response.data;
     } catch (error) {
@@ -150,18 +172,18 @@ class NoticeService {
   async updateNotice(noticeId, noticeData) {
     try {
       console.log('📤 공지사항 수정 요청:', { noticeId, noticeData });
-      
+
       // 데이터 유효성 검사
       this._validateNoticeData(noticeData, false);
-      
+
       // contentMd로 변환하여 전송 (contentMd 필드로 전송)
       const requestData = {
         title: noticeData.title.trim(),
         contentMd: noticeData.contentMd.trim()
       };
-      
+
       const response = await apiClient.put(NOTICE_ENDPOINTS.UPDATE_NOTICE(noticeId), requestData);
-      
+
       console.log('✅ 공지사항 수정 성공:', response.data);
       return response.data;
     } catch (error) {
@@ -179,9 +201,9 @@ class NoticeService {
   async deleteNotice(noticeId) {
     try {
       console.log('📤 공지사항 삭제 요청:', noticeId);
-      
+
       const response = await apiClient.delete(NOTICE_ENDPOINTS.DELETE_NOTICE(noticeId));
-      
+
       console.log('✅ 공지사항 삭제 성공:', response.data);
       return response.data;
     } catch (error) {
@@ -199,27 +221,27 @@ class NoticeService {
   async uploadNoticeImage(file) {
     try {
       console.log('📤 공지사항 이미지 업로드 요청:', file.name);
-      
+
       // 파일 유효성 검사
       if (!file || !(file instanceof File)) {
         throw new Error('유효한 파일을 선택해주세요.');
       }
-      
+
       if (!file.type.startsWith('image/')) {
         throw new Error('이미지 파일만 업로드할 수 있습니다.');
       }
-      
+
       // FormData 생성
       const formData = new FormData();
       formData.append('file', file);
-      
+
       // multipart/form-data로 전송 (Content-Type 헤더는 자동 설정)
       const response = await apiClient.post(NOTICE_ENDPOINTS.UPLOAD_NOTICE_IMAGE, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
-      
+
       console.log('✅ 공지사항 이미지 업로드 성공:', response.data);
       return response.data;
     } catch (error) {
@@ -238,23 +260,23 @@ class NoticeService {
    */
   _validateNoticeData(noticeData, isCreate = true) {
     const { title, contentMd } = noticeData;
-    
+
     if (!title || typeof title !== 'string' || title.trim().length === 0) {
       throw new Error('공지사항 제목을 입력해주세요.');
     }
-    
+
     if (title.length > 100) {
       throw new Error('공지사항 제목은 100자를 초과할 수 없습니다.');
     }
-    
+
     if (!contentMd || typeof contentMd !== 'string' || contentMd.trim().length === 0) {
       throw new Error('공지사항 내용을 입력해주세요.');
     }
-    
+
     if (contentMd.length > 5000) {
       throw new Error('공지사항 내용은 5000자를 초과할 수 없습니다.');
     }
-    
+
     return true;
   }
 
@@ -269,7 +291,7 @@ class NoticeService {
       // 서버에서 응답을 받았지만 에러 상태코드인 경우
       const { status, data } = error.response;
       console.error(`HTTP ${status} 에러:`, data);
-      
+
       // 서버에서 제공하는 에러 메시지가 있으면 사용
       if (data?.message) {
         throw new Error(data.message);
@@ -279,7 +301,7 @@ class NoticeService {
       console.error('네트워크 에러:', error.request);
       throw new Error('서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.');
     }
-    
+
     // 기본 에러 메시지
     throw new Error(defaultMessage);
   }
@@ -295,11 +317,11 @@ class NoticeService {
       if (isNaN(date.getTime())) {
         return dateString; // 잘못된 날짜 형식인 경우 원본 반환
       }
-      
+
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
-      
+
       return `${year}.${month}.${day}`;
     } catch (error) {
       console.error('날짜 포맷팅 실패:', error);
@@ -317,7 +339,7 @@ class NoticeService {
       const date = new Date(dateString);
       const now = new Date();
       const diffInSeconds = Math.floor((now - date) / 1000);
-      
+
       if (diffInSeconds < 60) {
         return '방금 전';
       } else if (diffInSeconds < 3600) {
@@ -348,11 +370,11 @@ class NoticeService {
     if (!text || typeof text !== 'string') {
       return '';
     }
-    
+
     if (text.length <= maxLength) {
       return text;
     }
-    
+
     return text.substring(0, maxLength).trim() + '...';
   }
 
@@ -365,16 +387,16 @@ class NoticeService {
     if (!title || typeof title !== 'string') {
       return '공지';
     }
-    
+
     const titleLower = title.toLowerCase();
-    
+
     // 특정 키워드가 있는 경우에만 다른 카테고리 반환 (하위 호환성)
     if (titleLower.includes('이벤트') || titleLower.includes('event')) {
       return '이벤트';
     } else if (titleLower.includes('업데이트') || titleLower.includes('update')) {
       return '업데이트';
     }
-    
+
     // 기본값: 공지
     return '공지';
   }

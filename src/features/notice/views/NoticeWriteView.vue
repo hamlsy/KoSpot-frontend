@@ -287,19 +287,16 @@ const loadNoticeForEdit = async () => {
       throw new Error('잘못된 공지사항 ID입니다.')
     }
     
-    const response = await noticeService.getNoticeById(noticeId)
+    // 수정용 마크다운 API 호출 (GET /notice/{id}/markdown)
+    const response = await noticeService.getNoticeMarkdown(noticeId)
     
     if (response.isSuccess) {
       const notice = response.result
       formData.title = notice.title
-      // 편집 모드에서는 contentHtml을 받지만, 편집 시에는 마크다운이 필요할 수 있음
-      // 백엔드에서 contentMd를 제공하지 않으면 contentHtml을 그대로 사용
-      // 하지만 일반적으로 편집 시에는 원본 마크다운이 필요하므로, 
-      // 백엔드 API 응답에 contentMd가 포함되어 있다고 가정
-      // 만약 없다면 contentHtml을 그대로 사용 (하지만 이는 HTML이므로 문제가 될 수 있음)
-      formData.content = notice.contentMd || notice.content || ''
+      // 백엔드에서 markdownContent 필드로 마크다운 원본 반환
+      formData.content = notice.markdownContent || ''
       
-      console.log('편집용 공지사항 로드 완료:', notice)
+      console.log('편집용 공지사항 마크다운 로드 완료:', notice)
     } else {
       throw new Error(response.message || '공지사항을 불러올 수 없습니다.')
     }

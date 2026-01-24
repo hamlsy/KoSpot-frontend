@@ -181,16 +181,29 @@ const userProfile = ref({
   isAdmin: false
 })
 
-// 메인 페이지 데이터 로드하여 관리자 여부 확인
+// 메인 페이지 데이터 로드하여 사용자 정보 및 관리자 여부 확인
 const loadUserProfileFromMain = async () => {
   try {
     const response = await mainService.getMainPageData()
     
     if (response.isSuccess && response.result) {
-      // 수정: result.myInfo.isAdmin 사용
-      const isAdminValue = response.result.myInfo?.isAdmin || false
-      userProfile.value.isAdmin = isAdminValue
-      isAdmin.value = isAdminValue
+      const myInfo = response.result.myInfo
+      if (myInfo) {
+        // 관리자 여부 업데이트
+        userProfile.value.isAdmin = myInfo.isAdmin || false
+        isAdmin.value = myInfo.isAdmin || false
+        
+        // 사용자 프로필 정보 업데이트 (nickname, email, equippedMarkerImageUrl)
+        if (myInfo.nickname) {
+          userProfile.value.name = myInfo.nickname
+        }
+        if (myInfo.email) {
+          userProfile.value.email = myInfo.email
+        }
+        if (myInfo.equippedMarkerImageUrl) {
+          userProfile.value.avatar = myInfo.equippedMarkerImageUrl
+        }
+      }
     }
   } catch (error) {
     console.error('사용자 정보 로드 실패:', error)

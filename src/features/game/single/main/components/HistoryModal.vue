@@ -286,7 +286,7 @@ watch(() => props.show, (newVal) => {
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  transition: all 0.2s;
+  transition: background-color 0.2s, color 0.2s;
 }
 
 .close-button:hover {
@@ -297,8 +297,7 @@ watch(() => props.show, (newVal) => {
 .modal-body {
   flex: 1;
   overflow-y: auto;
-  padding: 24px 32px;
-  min-height: 400px;
+  padding: 20px 32px;
 }
 
 .loading-container,
@@ -333,7 +332,7 @@ watch(() => props.show, (newVal) => {
   padding: 16px;
   background: #f9fafb;
   border-radius: 12px;
-  transition: all 0.2s;
+  transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 
 .history-item:hover {
@@ -445,7 +444,7 @@ watch(() => props.show, (newVal) => {
   border-radius: 8px;
   cursor: pointer;
   color: #6b7280;
-  transition: all 0.2s;
+  transition: background-color 0.2s, border-color 0.2s;
 }
 
 .page-button:hover:not(:disabled) {
@@ -471,7 +470,7 @@ watch(() => props.show, (newVal) => {
   cursor: pointer;
   color: #6b7280;
   min-width: 40px;
-  transition: all 0.2s;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
 }
 
 .page-number:hover {

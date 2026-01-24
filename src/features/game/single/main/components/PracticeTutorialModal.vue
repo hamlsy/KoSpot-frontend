@@ -172,13 +172,12 @@ const completeTutorial = () => {
   border-radius: 24px;
   width: 100%;
   max-width: 700px;
-  min-height: 500px;
-  max-height: 85vh;
+  max-height: 95vh;
   position: relative;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
-  padding: 1rem;
+  padding: 0.75rem;
   overflow: hidden;
 }
 
@@ -187,7 +186,7 @@ const completeTutorial = () => {
   display: flex;
   justify-content: center;
   gap: 12px;
-  padding: 20px;
+  padding: 12px;
   flex-shrink: 0;
 }
 
@@ -197,7 +196,7 @@ const completeTutorial = () => {
   border-radius: 50%;
   background: #e5e7eb;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s, width 0.2s;
 }
 
 .dot.active {
@@ -223,7 +222,7 @@ const completeTutorial = () => {
   color: #6b7280;
   font-size: 1.1rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s, color 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -238,14 +237,13 @@ const completeTutorial = () => {
 /* 슬라이드 래퍼 */
 .slide-wrapper {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   min-height: 0;
 }
 
 /* 슬라이드 컨텐츠 */
 .slide-content {
-  padding: 0 20px 20px;
+  padding: 0 16px 12px;
   animation: slideIn 0.3s ease-out;
   text-align: center;
 }
@@ -318,7 +316,7 @@ const completeTutorial = () => {
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
   display: flex;
   align-items: center;
   gap: 6px;

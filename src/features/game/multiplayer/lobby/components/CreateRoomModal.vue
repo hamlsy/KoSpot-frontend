@@ -178,7 +178,7 @@
                 <span class="toggle-description">(좌표 지역 명이 공개됩니다.)</span>
               </div>
               <div class="toggle-switch">
-                <input type="checkbox" v-model="gameSettings.isPoiNameVisible" />
+                <input type="checkbox" v-model="gameSettings.poiNameVisible" />
                 <span class="toggle-slider"></span>
               </div>
             </label>
@@ -243,7 +243,7 @@ export default {
         isPrivate: false,
         allowSpectators: true,
         useVoiceChat: false,
-        isPoiNameVisible: true,
+        poiNameVisible: true,
       },
     };
   },
@@ -283,7 +283,7 @@ export default {
         playerMatchTypeKey: playerMatchTypeKey,
         maxPlayers: this.maxPlayers,
         privateRoom: this.gameSettings.isPrivate,
-        isPoiNameVisible: this.gameSettings.isPoiNameVisible === false ? false : true
+        poiNameVisible: this.gameSettings.poiNameVisible === false ? false : true
       };
 
       this.$emit("create-room", roomData);
