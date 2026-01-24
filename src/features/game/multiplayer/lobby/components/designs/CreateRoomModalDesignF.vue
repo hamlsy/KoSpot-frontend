@@ -239,7 +239,7 @@ const createRoom = () => {
     playerMatchTypeKey: gameType.value,
     maxPlayers: maxPlayers.value,
     privateRoom: isPrivate.value,
-    isPoiNameVisible: isPoiVisible.value
+    poiNameVisible: isPoiVisible.value
   });
 };
 </script>

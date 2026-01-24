@@ -176,8 +176,8 @@
               
               <div 
                 class="hud-toggle"
-                :class="{ active: gameSettings.isPoiNameVisible }"
-                @click="gameSettings.isPoiNameVisible = !gameSettings.isPoiNameVisible"
+                :class="{ active: gameSettings.poiNameVisible }"
+                @click="gameSettings.poiNameVisible = !gameSettings.poiNameVisible"
               >
                 <div class="toggle-icon">
                   <i class="fas fa-map-marker-alt"></i>
@@ -248,7 +248,7 @@ export default {
       password: '',
       gameSettings: {
         isPrivate: false,
-        isPoiNameVisible: true
+        poiNameVisible: true
       }
     };
   },
@@ -280,7 +280,7 @@ export default {
         playerMatchTypeKey: this.gameType,
         maxPlayers: this.maxPlayers,
         privateRoom: this.gameSettings.isPrivate,
-        isPoiNameVisible: this.gameSettings.isPoiNameVisible
+        poiNameVisible: this.gameSettings.poiNameVisible
       };
       
       this.$emit('create-room', roomData);

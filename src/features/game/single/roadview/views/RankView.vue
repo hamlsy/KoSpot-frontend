@@ -132,7 +132,10 @@
           <p>지금 나가면 랭크 포인트가 차감될 수 있어요.</p>
           <p class="exit-confirm-text">계속 플레이하시겠어요?</p>
           <div class="modal-buttons">
-            <button class="confirm-btn stay-btn" @click="showExitConfirmation = false">
+            <button
+              class="confirm-btn stay-btn"
+              @click="showExitConfirmation = false"
+            >
               계속 하기
             </button>
             <button class="cancel-btn" @click="confirmExit">나가기</button>
@@ -900,18 +903,11 @@ export default {
 }
 
 .game-header h2 {
-<<<<<<< HEAD
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
-=======
   color: white;
   font-size: 1.2rem;
   font-weight: 600;
   margin: 0;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
->>>>>>> 74cd3eb17542f5f97aec2633e4ddb6add68cb992
 }
 
 /* 초기 위치로 돌아가기 버튼 (헤더 바로 밑, 우측 상단) */
@@ -1134,7 +1130,11 @@ export default {
   width: 60px;
   height: 60px;
   margin: 0 auto 16px;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.15) 0%,
+    rgba(37, 99, 235, 0.1) 100%
+  );
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -1215,7 +1215,6 @@ export default {
   .top-ads-container {
     padding: var(--spacing-xs) 0;
   }
-<<<<<<< HEAD
 
   .game-header {
     /* top은 동적으로 바인딩됨 */
@@ -1224,8 +1223,6 @@ export default {
   .timer-container {
     /* top은 동적으로 바인딩됨 */
   }
-=======
->>>>>>> 74cd3eb17542f5f97aec2633e4ddb6add68cb992
 }
 
 @media (max-width: 480px) {
@@ -1249,13 +1246,10 @@ export default {
     bottom: 20px;
     right: 20px;
   }
-<<<<<<< HEAD
 
   .timer-container {
     /* top은 동적으로 바인딩됨 */
   }
-=======
->>>>>>> 74cd3eb17542f5f97aec2633e4ddb6add68cb992
 }
 
 /* 로드뷰 토스트 메시지 */

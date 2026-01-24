@@ -103,6 +103,9 @@ class RoomWebSocketService {
    * @private
    */
   async _subscribeToRoomChannels(roomId, eventHandlers) {
+    // 기존 구독이 있으면 먼저 해제 (게임 재시작 시 stale 핸들러 문제 방지)
+    await this._unsubscribeFromRoomChannels(roomId);
+    
     const subscriptions = [];
 
     // 플레이어 목록 채널 구독 (통합 알림)

@@ -54,14 +54,16 @@
               <div class="info-value">{{ roomData.timeLimit }}초</div>
             </div>
           </div>
-          
+
           <div class="game-info-item">
             <div class="info-icon">
               <i class="fas fa-map-marker-alt"></i>
             </div>
             <div class="info-content">
               <div class="info-label">지명 공개</div>
-              <div class="info-value">{{ roomData.isPoiNameVisible !== false ? '공개' : '비공개' }}</div>
+              <div class="info-value">
+                {{ roomData.poiNameVisible !== false ? "공개" : "비공개" }}
+              </div>
             </div>
           </div>
         </div>
@@ -79,6 +81,15 @@
             <div class="chat-notification-mini" v-if="unreadMessages > 0">
               {{ unreadMessages > 9 ? "9+" : unreadMessages }}
             </div>
+          </button>
+
+          <button
+            class="action-button refresh-button"
+            @click="$emit('refresh-room')"
+            title="새로고침"
+          >
+            <i class="fas fa-sync-alt"></i>
+            <span>새로고침</span>
           </button>
 
           <button
@@ -160,6 +171,7 @@ const emit = defineEmits([
   "leave-room",
   "start-game",
   "toggle-chat",
+  "refresh-room",
 ]);
 
 const gameModeName = computed(() => {
@@ -470,6 +482,19 @@ const leaveRoomWithConfirm = () => {
   color: #334155;
   transform: translateY(-1px);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.refresh-button {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #059669;
+  border: 1px solid rgba(5, 150, 105, 0.2);
+}
+
+.refresh-button:hover {
+  background: linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%);
+  color: #047857;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(5, 150, 105, 0.2);
 }
 
 .leave-button {

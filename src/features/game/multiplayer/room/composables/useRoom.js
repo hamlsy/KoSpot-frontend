@@ -218,7 +218,7 @@ export function useRoom(props, emit, options = {}) {
         isPrivate: roomDetail.privateRoom ?? localRoomData.value.isPrivate,
         maxPlayers: roomDetail.maxPlayers ?? localRoomData.value.maxPlayers,
         totalRounds: roomDetail.totalRounds ?? roomDetail.rounds ?? localRoomData.value.totalRounds ?? localRoomData.value.rounds ?? 5,
-        isPoiNameVisible: roomDetail.isPoiNameVisible ?? localRoomData.value.isPoiNameVisible ?? true
+        poiNameVisible: roomDetail.poiNameVisible ?? localRoomData.value.poiNameVisible ?? true
       };
       console.log('✅ 방 정보 로딩 완료:', localRoomData.value.title);
 
@@ -609,7 +609,7 @@ export function useRoom(props, emit, options = {}) {
         timeLimit: settings.timeLimit !== undefined ? settings.timeLimit : localRoomData.value.timeLimit,
         totalRounds: settings.totalRounds !== undefined ? settings.totalRounds : (settings.rounds !== undefined ? settings.rounds : localRoomData.value.totalRounds || localRoomData.value.rounds),
         maxPlayers: settings.maxPlayers !== undefined ? settings.maxPlayers : localRoomData.value.maxPlayers,
-        isPoiNameVisible: settings.isPoiNameVisible !== undefined ? settings.isPoiNameVisible : localRoomData.value.isPoiNameVisible
+        poiNameVisible: settings.poiNameVisible !== undefined ? settings.poiNameVisible : localRoomData.value.poiNameVisible
       };
       
       await roomApiService.updateGameRoom(localRoomData.value.id, updateData);

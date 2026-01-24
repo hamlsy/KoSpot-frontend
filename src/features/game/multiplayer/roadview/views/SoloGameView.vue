@@ -356,11 +356,11 @@ export default {
       roomId: this.roomId,
     });
 
-    // isPoiNameVisible 초기화 (네비게이션 상태에서 가져오기, 기본 true)
+    // poiNameVisible 초기화 (네비게이션 상태에서 가져오기, 기본 true)
     try {
       const navState = typeof history !== "undefined" ? history.state : null;
       const roomData = navState?.roomData || {};
-      this.isPoiNameVisibleLocal = roomData.isPoiNameVisible !== false;
+      this.isPoiNameVisibleLocal = roomData.poiNameVisible !== false;
     } catch (e) {
       this.isPoiNameVisibleLocal = true;
     }
@@ -581,11 +581,12 @@ export default {
       if (!this.roomId) {
         return;
       }
-      // RoomView에서 이미 구독되어 있으므로, 핸들러만 설정 (skipSubscribe = true)
+      // 직접 구독하여 로딩 상태 메시지를 받도록 함 (skipSubscribe = false)
+      // 게임 재시작 시에도 정상적으로 로딩 상태를 수신하기 위함
       soloGameWebSocket.setupLoadingSubscription(
         this.roomId,
         this.handleLoadingStatus,
-        true,
+        false,
       );
     },
 
@@ -2059,7 +2060,7 @@ export default {
                 isPrivate: roomDetail.privateRoom ?? false,
                 maxPlayers: roomDetail.maxPlayers ?? 8,
                 totalRounds: roomDetail.totalRounds ?? 5,
-                isPoiNameVisible: roomDetail.isPoiNameVisible ?? true,
+                poiNameVisible: roomDetail.poiNameVisible ?? true,
                 currentPlayerCount: roomDetail.connectedPlayers?.length ?? 0,
                 allowOverride: true, // RoomView에서 이 데이터로 덮어쓰기 허용
               },
