@@ -4,7 +4,7 @@
     <div class="top-ads-container">
       <Adsense :ad-slot="'6033902133'" @ad-loaded="onAdLoaded" />
     </div>
-    
+
     <!-- 헤더 -->
     <div class="game-header" :style="{ top: headerTop }">
       <button class="back-btn" @click="exitGame">
@@ -17,7 +17,11 @@
     </div>
 
     <!-- 타이머 표시 -->
-    <div v-if="isGameStarted && !showResult" class="timer-container" :style="{ top: timerTop }">
+    <div
+      v-if="isGameStarted && !showResult"
+      class="timer-container"
+      :style="{ top: timerTop }"
+    >
       <div class="timer" :class="{ 'timer-warning': remainingTime <= 30 }">
         <i class="fas fa-clock"></i>
         <span>{{ formatTime(remainingTime) }}</span>
@@ -141,13 +145,13 @@
 </template>
 
 <script>
-import RoadViewGame from 'src/features/game/single/roadview/components/gameplay/RoadViewGame.vue'
-import PhoneFrame from 'src/features/game/shared/components/Phone/PhoneFrame.vue'
+import RoadViewGame from "src/features/game/single/roadview/components/gameplay/RoadViewGame.vue";
+import PhoneFrame from "src/features/game/shared/components/Phone/PhoneFrame.vue";
 import CountdownOverlay from "@/features/game/shared/components/Common/CountdownOverlay.vue";
 import IntroOverlay from "@/features/game/shared/components/Common/IntroOverlay.vue";
-import ResultOverlay from 'src/features/game/single/roadview/components/Result/ResultOverlay.vue';
+import ResultOverlay from "src/features/game/single/roadview/components/Result/ResultOverlay.vue";
 import Adsense from "@/features/game/shared/components/Common/Adsense.vue";
-import { roadViewApiService } from 'src/features/game/single/roadview/services/roadViewApi.service.js';
+import { roadViewApiService } from "src/features/game/single/roadview/services/roadViewApi.service.js";
 
 export default {
   name: "RoadViewRank",
@@ -188,7 +192,7 @@ export default {
       guessedLocation: null,
       errorCount: 0, // 로드뷰 로드 오류 카운트
       maxErrorRetry: 3, // 최대 재시도 횟수
-      
+
       // API 관련
       gameId: null, // 백엔드에서 받은 게임 ID (Number)
       markerImageUrl: null, // 마커 이미지 URL
@@ -225,7 +229,7 @@ export default {
       timerInterval: null,
       currentRankPoints: 1000, // 예시 값
       rankPointChange: 0,
-      
+
       // 랭크 티어/레벨 관련 (API 응답)
       previousRatingScore: 0,
       currentRatingScore: 0,
@@ -237,10 +241,10 @@ export default {
       // 타이머 관련
       isGameStarted: false,
       remainingTime: 180, // 3분 (초 단위)
-      
+
       // 광고 관련
       hasAd: false, // 광고 표시 여부
-      
+
       locationDescriptions: {
         서울: "대한민국의 수도이자 최대 도시로, 현대적인 건물과 고궁이 공존하는 곳입니다.",
         부산: "대한민국 제2의 도시이자 최대 항구도시로, 해운대와 광안리 해변으로 유명합니다.",
@@ -258,17 +262,17 @@ export default {
   computed: {
     // 헤더 위치 계산
     headerTop() {
-      return this.hasAd ? '90px' : '0';
+      return this.hasAd ? "90px" : "0";
     },
     // 타이머 컨테이너 위치 계산 (헤더 아래 70px)
     timerTop() {
-      return this.hasAd ? '160px' : '70px';
+      return this.hasAd ? "160px" : "70px";
     },
     // reset 버튼 위치 계산 (헤더 바로 밑)
     // 광고(90px) + 헤더(56px) + 여백(12px) = 158px (광고 있을 때)
     // 헤더(56px) + 여백(12px) = 68px (광고 없을 때)
     resetBtnTop() {
-      return this.hasAd ? '158px' : '68px';
+      return this.hasAd ? "158px" : "68px";
     },
   },
   mounted() {
@@ -282,7 +286,10 @@ export default {
   methods: {
     // 로드뷰 초기 위치로 돌아가기
     resetRoadViewPosition() {
-      if (this.$refs.roadViewGameRef && this.$refs.roadViewGameRef.resetToInitial) {
+      if (
+        this.$refs.roadViewGameRef &&
+        this.$refs.roadViewGameRef.resetToInitial
+      ) {
         this.$refs.roadViewGameRef.resetToInitial();
       }
     },
@@ -322,7 +329,7 @@ export default {
       const wasOpen = this.isMapOpen;
       // 상태 변경
       this.isMapOpen = !this.isMapOpen;
-      
+
       // 지도가 열릴 때 (false -> true) 최초 한 번만 초기화
       if (!wasOpen && this.isMapOpen && !this.mapInitialized) {
         // PhoneFrame이 마운트된 후 초기화 실행
@@ -400,34 +407,40 @@ export default {
       try {
         // 백엔드 API 호출하여 랭크 게임 시작
         const response = await roadViewApiService.startRankGame();
-        
+
         if (response.isSuccess && response.result) {
-          const { gameId, targetLat, targetLng, markerImageUrl, poiName, fullAddress } = response.result;
-          
+          const {
+            gameId,
+            targetLat,
+            targetLng,
+            markerImageUrl,
+            poiName,
+            fullAddress,
+          } = response.result;
+
           // API 응답 데이터를 컴포넌트 상태에 저장
           // gameId를 숫자로 변환하여 저장 (백엔드 Long 타입)
           this.gameId = roadViewApiService.convertGameIdToNumber(gameId);
           this.markerImageUrl = markerImageUrl;
           this.poiName = poiName || null; // POI 이름 저장
           this.fullAddress = fullAddress || null; // 전체 주소 저장
-          
+
           // 암호화된 좌표를 복호화
           const decryptedLat = roadViewApiService.decryptCoordinate(targetLat);
           const decryptedLng = roadViewApiService.decryptCoordinate(targetLng);
-          
+
           this.currentLocation = {
             lat: decryptedLat,
-            lng: decryptedLng
+            lng: decryptedLng,
           };
-          
-          
+
           // currentLocation이 설정된 후 PhoneFrame의 지도 초기화 보장
           this.$nextTick(() => {
             if (this.$refs.phoneFrame) {
               // 지도가 열려있으면 리사이즈, 닫혀있으면 초기화만 보장
               this.$refs.phoneFrame.ensureMapInitialized();
               this.mapInitialized = true; // 초기화 완료 플래그 설정
-              
+
               // 지도가 열려있으면 리사이즈
               if (this.isMapOpen) {
                 setTimeout(() => {
@@ -440,12 +453,12 @@ export default {
             }
           });
         } else {
-          throw new Error(response.message || '게임 시작에 실패했습니다.');
+          throw new Error(response.message || "게임 시작에 실패했습니다.");
         }
       } catch (error) {
         console.error("게임 시작 API 호출 실패:", error);
         this.showToastMessage("게임을 시작할 수 없습니다. 다시 시도해주세요.");
-        
+
         // API 실패 시 더미 데이터로 폴백
         this.fallbackToDummyData();
       } finally {
@@ -456,7 +469,7 @@ export default {
     // API 실패 시 더미 데이터로 폴백
     fallbackToDummyData() {
       console.warn("더미 데이터로 폴백");
-      
+
       // 더미 데이터: 로드뷰가 있는 것으로 확인된 좌표들
       const knownLocations = [
         { lat: 37.566826, lng: 126.978656 }, // 서울시청
@@ -473,18 +486,18 @@ export default {
 
       const randomIndex = Math.floor(Math.random() * knownLocations.length);
       this.currentLocation = knownLocations[randomIndex];
-      
+
       // 더미 게임 ID 생성 (Number 타입)
       this.gameId = Date.now();
       this.markerImageUrl = null;
-      
+
       // currentLocation이 설정된 후 PhoneFrame의 지도 초기화 보장
       this.$nextTick(() => {
         if (this.$refs.phoneFrame) {
           // 지도가 열려있으면 리사이즈, 닫혀있으면 초기화만 보장
           this.$refs.phoneFrame.ensureMapInitialized();
           this.mapInitialized = true; // 초기화 완료 플래그 설정
-          
+
           // 지도가 열려있으면 리사이즈
           if (this.isMapOpen) {
             setTimeout(() => {
@@ -496,8 +509,6 @@ export default {
           }
         }
       });
-      
-    
     },
 
     // 결과 화면 표시 메서드
@@ -521,13 +532,12 @@ export default {
     calculateRankPointChange() {
       // API 호출로 이미 랭크 포인트가 설정된 경우 그대로 사용
       if (this.rankPointChange !== 0) {
-        
         return;
       }
 
       // API 실패 시 더미 데이터로 폴백
       console.warn("더미 랭크 포인트 계산 사용");
-      
+
       // 점수에 따라 랭크 포인트 변화 계산
       if (this.score >= 90) {
         this.rankPointChange = 25;
@@ -581,7 +591,6 @@ export default {
     // 결과 지도 초기화 - ResultMapSection 컴포넌트로 이동됨
     initResultMap() {
       // 이제 ResultMapSection 컴포넌트에서 처리함
-      
     },
 
     // 결과 화면 닫기
@@ -629,11 +638,14 @@ export default {
         position.lat,
         position.lng,
         this.currentLocation.lat,
-        this.currentLocation.lng
+        this.currentLocation.lng,
       );
 
       // 로컬 점수 계산 (임시, 백엔드에서 최종 점수 계산)
-      const localScore = Math.max(0, Math.floor(100 - Math.sqrt(distance) * 10));
+      const localScore = Math.max(
+        0,
+        Math.floor(100 - Math.sqrt(distance) * 10),
+      );
 
       // 게임 결과 저장 (백엔드 API 호출 전 임시 저장)
       this.answerDistance = distance;
@@ -662,23 +674,21 @@ export default {
 
       try {
         // 답변 소요 시간 계산 (초 단위)
-        const answerTime = this.gameStartTime 
-          ? (Date.now() - this.gameStartTime) / 1000 
+        const answerTime = this.gameStartTime
+          ? (Date.now() - this.gameStartTime) / 1000
           : this.elapsedTime;
 
         const endData = {
           gameId: this.gameId, // Number 타입
           submittedLat: position.lat, // Number 타입
           submittedLng: position.lng, // Number 타입
-          answerTime: answerTime // Number 타입 (초)
+          answerTime: answerTime, // Number 타입 (초)
         };
 
-        
-
         const response = await roadViewApiService.endRankGame(endData);
-        
+
         if (response.isSuccess && response.result) {
-          const { 
+          const {
             nickname,
             score,
             answerDistance,
@@ -690,9 +700,9 @@ export default {
             currentRankTier,
             currentRankLevel,
             poiName,
-            fullAddress
+            fullAddress,
           } = response.result;
-          
+
           // 백엔드에서 계산된 점수와 랭킹 정보로 업데이트
           this.nickname = nickname;
           this.score = score;
@@ -701,19 +711,18 @@ export default {
           this.currentRatingScore = currentRatingScore;
           this.rankPointChange = ratingScoreChange;
           this.currentRankPoints = currentRatingScore; // 현재 레이팅 점수 표시
-          
+
           // 티어/레벨 정보 저장
           this.previousRankTier = previousRankTier;
           this.previousRankLevel = previousRankLevel;
           this.currentRankTier = currentRankTier;
           this.currentRankLevel = currentRankLevel;
-          
+
           // POI 이름과 전체 주소 업데이트 (종료 응답에 포함된 경우)
           if (poiName) this.poiName = poiName;
           if (fullAddress) this.fullAddress = fullAddress;
-          
         } else {
-          throw new Error(response.message || '게임 결과 처리에 실패했습니다.');
+          throw new Error(response.message || "게임 결과 처리에 실패했습니다.");
         }
       } catch (error) {
         console.error("게임 종료 API 호출 중 오류:", error);
@@ -756,7 +765,7 @@ export default {
         this.isMapOpen = true;
       } else {
         this.showToastMessage(
-          `로드뷰 로드 실패 (${this.errorCount}/${this.maxErrorRetry}), 새 위치를 시도합니다...`
+          `로드뷰 로드 실패 (${this.errorCount}/${this.maxErrorRetry}), 새 위치를 시도합니다...`,
         );
         this.fetchGameLocationData();
       }
@@ -802,10 +811,10 @@ export default {
       this.gameStarted = true;
       this.isGameStarted = true;
       this.remainingTime = 180; // 3분
-      
+
       // 게임 시작 시간 기록 (답변 시간 계산용)
       this.gameStartTime = Date.now();
-      
+
       this.startTimer();
     },
 
@@ -826,7 +835,9 @@ export default {
       } catch (error) {
         console.error("지도 재로딩 실패:", error);
         if (showToast) {
-          this.showToastMessage("지도 재로딩에 실패했습니다. 다시 시도해주세요.");
+          this.showToastMessage(
+            "지도 재로딩에 실패했습니다. 다시 시도해주세요.",
+          );
         }
       }
     },
@@ -870,13 +881,20 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(0, 0, 0, 0.85);
   color: white;
   backdrop-filter: blur(5px);
   transition: top 0.3s ease;
   /* 헤더 높이 (reset-btn 위치 계산용) */
   height: 56px;
   box-sizing: border-box;
+}
+
+.game-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
 /* 초기 위치로 돌아가기 버튼 (헤더 바로 밑, 우측 상단) */
@@ -1130,11 +1148,11 @@ export default {
   .top-ads-container {
     padding: var(--spacing-xs) 0;
   }
-  
+
   .game-header {
     /* top은 동적으로 바인딩됨 */
   }
-  
+
   .timer-container {
     /* top은 동적으로 바인딩됨 */
   }
@@ -1144,7 +1162,7 @@ export default {
   .top-ads-container {
     padding: 4px 0;
   }
-  
+
   .game-header {
     padding: 10px;
     /* top은 동적으로 바인딩됨 */
@@ -1162,7 +1180,7 @@ export default {
     bottom: 20px;
     right: 20px;
   }
-  
+
   .timer-container {
     /* top은 동적으로 바인딩됨 */
   }

@@ -44,6 +44,7 @@
     color: white;
     width: fit-content;
     margin-bottom: 0.7rem;
+    background: #6b7280; /* 기본 배경색 (매칭되지 않는 카테고리용) */
   }
   
   .notice-category.업데이트 {

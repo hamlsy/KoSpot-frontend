@@ -18,6 +18,11 @@ const noticeRoutes = [
         name: "NoticeWriteView",
         component: NoticeWriteView
     },
+    {
+        path: '/noticeEdit/:id',
+        name: "NoticeEdit",
+        component: NoticeWriteView
+    },
 ]
 
 export default noticeRoutes;
