@@ -139,7 +139,7 @@ const dummyRoomData = computed(() => ({
   hostId: currentUserId,
   currentPlayerCount: dummyPlayers.value.length,
   createdAt: new Date().toISOString(),
-  isPoiNameVisible: true
+  poiNameVisible: true
 }));
 
 // 더미 플레이어 목록

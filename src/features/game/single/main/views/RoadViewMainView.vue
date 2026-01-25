@@ -21,8 +21,8 @@
 
     <main class="main-content">
       <!-- Google Ads Space -->
-      <section class="google-ads-space">
-        <Adsense :ad-slot="'6033902133'" />
+      <section class="google-ads-space" v-show="hasAd">
+        <Adsense :ad-slot="'6033902133'" @ad-loaded="onAdLoaded" />
       </section>
 
       <!-- Game Modes Section -->
@@ -198,6 +198,12 @@
                 <p>랭크 정보를 불러오는 중...</p>
               </div>
             </div>
+
+            <!-- 참고 안내 메시지 -->
+            <div class="info-note">
+              <i class="fas fa-info-circle"></i>
+              <span>게임 중 이탈 시 랭크 포인트가 차감될 수 있어요.</span>
+            </div>
           </div>
 
           <button
@@ -272,6 +278,14 @@ const showThemeModePopup = ref(false);
 const showHistoryModal = ref(false);
 const showRankingModal = ref(false);
 const showPracticeTutorial = ref(false);
+
+// 광고 로드 상태
+const hasAd = ref(false);
+
+// 광고 로드 이벤트 핸들러
+function onAdLoaded(loaded) {
+  hasAd.value = loaded;
+}
 
 // API 데이터 상태
 const rankInfo = ref(null);
@@ -729,28 +743,28 @@ function startThemeGame(gameData) {
 .practice-mode-options {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
+  gap: 0.75rem;
 }
 
 .region-selector {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--spacing-md);
+  gap: 0.5rem;
   width: 100%;
 }
 
 @media (max-width: 640px) {
   .practice-mode-options {
-    gap: 0.75rem;
-  }
-
-  .region-selector {
     gap: 0.5rem;
   }
 
+  .region-selector {
+    gap: 0.4rem;
+  }
+
   .region-selector button {
-    padding: 0.5rem 0.6rem;
-    font-size: 0.82rem;
+    padding: 0.45rem 0.5rem;
+    font-size: 0.8rem;
   }
 }
 
@@ -759,6 +773,26 @@ function startThemeGame(gameData) {
   margin: var(--spacing-xl) 0;
   padding: 0 var(--spacing-lg);
   width: 100%;
+}
+
+/* 참고 안내 스타일 */
+.info-note {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(37, 99, 235, 0.04) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 10px;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.info-note i {
+  color: #3b82f6;
+  font-size: 1rem;
+  flex-shrink: 0;
 }
 
 .popup-header {

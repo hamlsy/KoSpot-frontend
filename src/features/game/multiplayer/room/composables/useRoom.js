@@ -218,7 +218,7 @@ export function useRoom(props, emit, options = {}) {
         isPrivate: roomDetail.privateRoom ?? localRoomData.value.isPrivate,
         maxPlayers: roomDetail.maxPlayers ?? localRoomData.value.maxPlayers,
         totalRounds: roomDetail.totalRounds ?? roomDetail.rounds ?? localRoomData.value.totalRounds ?? localRoomData.value.rounds ?? 5,
-        isPoiNameVisible: roomDetail.isPoiNameVisible ?? localRoomData.value.isPoiNameVisible ?? true
+        poiNameVisible: roomDetail.poiNameVisible ?? localRoomData.value.poiNameVisible ?? true
       };
       console.log('✅ 방 정보 로딩 완료:', localRoomData.value.title);
 
@@ -609,7 +609,7 @@ export function useRoom(props, emit, options = {}) {
         timeLimit: settings.timeLimit !== undefined ? settings.timeLimit : localRoomData.value.timeLimit,
         totalRounds: settings.totalRounds !== undefined ? settings.totalRounds : (settings.rounds !== undefined ? settings.rounds : localRoomData.value.totalRounds || localRoomData.value.rounds),
         maxPlayers: settings.maxPlayers !== undefined ? settings.maxPlayers : localRoomData.value.maxPlayers,
-        isPoiNameVisible: settings.isPoiNameVisible !== undefined ? settings.isPoiNameVisible : localRoomData.value.isPoiNameVisible
+        poiNameVisible: settings.poiNameVisible !== undefined ? settings.poiNameVisible : localRoomData.value.poiNameVisible
       };
       
       await roomApiService.updateGameRoom(localRoomData.value.id, updateData);
@@ -625,8 +625,8 @@ export function useRoom(props, emit, options = {}) {
         console.warn('⚠️ WebSocket 방 설정 변경 알림 실패');
       }
       
-      // 시스템 메시지 추가
-      roomChat.addSystemMessage('방 설정이 변경되었습니다.');
+      // 시스템 메시지 및 알림은 WebSocket으로 설정 변경 메시지를 받을 때 표시됨 (handleGameRoomSettingsUpdate)
+      // 방장에게 중복 알림을 방지하기 위해 여기서는 알림을 표시하지 않음
       
       // 기존 emit 유지 (하위 호환성)
       emit('update-room-settings', transformedSettings);
@@ -732,9 +732,8 @@ export function useRoom(props, emit, options = {}) {
       await roomApiService.startGame(localRoomData.value.id);
       requestSucceeded = true;
       roomChat.addSystemMessage('방장이 게임 시작을 요청했습니다. 잠시 후 게임이 시작됩니다.');
-      if (toastRef?.value) {
-        toastRef.value.showGameStartNotification();
-      }
+      // 알림은 WebSocket으로 게임 시작 카운트다운 메시지를 받을 때 표시됨 (handleGameStartCountdown)
+      // 방장에게 중복 알림을 방지하기 위해 여기서는 알림을 표시하지 않음
       return true;
     } catch (error) {
       console.error('❌ 게임 시작 요청 처리 실패:', error);

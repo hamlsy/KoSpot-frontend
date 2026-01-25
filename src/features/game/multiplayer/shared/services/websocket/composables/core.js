@@ -437,10 +437,10 @@ const subscribe = (topic, callback) => {
     timestamp: new Date().toISOString()
   });
   
-  // 이미 구독 중인 경우 기존 구독 ID 반환
+  // 이미 구독 중인 경우 기존 구독 해제 후 새로 구독 (핸들러 업데이트를 위해)
   if (activeSubscriptions.value.has(topic)) {
-    log(`⚠️ 이미 ${topic}에 구독 중입니다.`);
-    return topic;
+    log(`🔄 ${topic} 재구독: 기존 구독 해제 후 새 핸들러로 구독`);
+    unsubscribe(topic);
   }
   
   // 실제 구독 처리

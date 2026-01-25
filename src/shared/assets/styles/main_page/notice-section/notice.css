@@ -44,6 +44,7 @@
     color: white;
     width: fit-content;
     margin-bottom: 0.7rem;
+    background: #6b7280; /* 기본 배경색 (매칭되지 않는 카테고리용) */
   }
   
   .notice-category.업데이트 {
@@ -56,4 +57,12 @@
   
   .notice-category.이벤트 {
     background: #f59e0b;
+  }
+
+  .notice-category.공지 {
+    background: #3b82f6;
+  }
+
+  .notice-category.일반 {
+    background: #6b7280;
   }

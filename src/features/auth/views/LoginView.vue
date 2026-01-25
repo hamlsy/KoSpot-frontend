@@ -29,12 +29,12 @@
         </button>
         
         <!-- Naver Login Button -->
-        <!-- <button @click="socialLogin('naver')" class="social-button naver">
+        <button @click="socialLogin('naver')" class="social-button naver">
           <div class="social-icon-wrapper naver">
             <span class="naver-icon">N</span>
           </div>
           <span class="social-text naver">네이버 로그인</span>
-        </button> -->
+        </button> 
         
         <!-- Google Login Button -->
         <!-- <button @click="handleGoogleSignIn" class="google-btn">

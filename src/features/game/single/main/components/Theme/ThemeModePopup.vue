@@ -434,8 +434,7 @@ export default {
   border-radius: 24px;
   width: 90%;
   max-width: 1000px;
-  height: 80vh;
-  max-height: 700px;
+  max-height: 90vh;
   overflow: hidden;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   display: flex;
@@ -466,7 +465,7 @@ export default {
   font-size: 1.2rem;
   color: #64748b;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s, color 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -752,7 +751,7 @@ export default {
   padding: 0.8rem;
   border-radius: 8px;
   background: #f8fafc;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s, transform 0.2s;
   width: 100%;
   min-width: 0;
 }
@@ -833,7 +832,7 @@ export default {
   padding: 1rem;
   border-radius: 12px;
   background: #f8fafc;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s;
 }
 
 .achievement-item.achieved {
