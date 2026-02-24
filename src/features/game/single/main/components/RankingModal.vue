@@ -335,7 +335,10 @@ watch(() => props.show, (newVal) => {
   align-items: center;
   z-index: 1000;
   padding: 20px;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  transform: translateZ(0);
+  contain: layout paint;
 }
 
 .ranking-modal-content {
@@ -347,6 +350,9 @@ watch(() => props.show, (newVal) => {
   display: flex;
   flex-direction: column;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  contain: layout paint;
 }
 
 .modal-header {
@@ -800,7 +806,8 @@ watch(() => props.show, (newVal) => {
 /* 애니메이션 */
 .modal-fade-enter-active,
 .modal-fade-leave-active {
-  transition: opacity 0.3s;
+  transition: opacity 0.22s ease;
+  will-change: opacity;
 }
 
 .modal-fade-enter-from,
@@ -810,12 +817,29 @@ watch(() => props.show, (newVal) => {
 
 .modal-fade-enter-active .ranking-modal-content,
 .modal-fade-leave-active .ranking-modal-content {
-  transition: transform 0.3s;
+  transition: transform 0.26s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.22s ease;
+  will-change: transform, opacity;
 }
 
 .modal-fade-enter-from .ranking-modal-content,
 .modal-fade-leave-to .ranking-modal-content {
-  transform: scale(0.9);
+  transform: translate3d(0, 12px, 0) scale(0.96);
+  opacity: 0;
+}
+
+.modal-fade-enter-to .ranking-modal-content,
+.modal-fade-leave-from .ranking-modal-content {
+  transform: translate3d(0, 0, 0) scale(1);
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-fade-enter-active,
+  .modal-fade-leave-active,
+  .modal-fade-enter-active .ranking-modal-content,
+  .modal-fade-leave-active .ranking-modal-content {
+    transition-duration: 0.01ms;
+  }
 }
 
 /* 반응형 */
