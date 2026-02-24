@@ -1,7 +1,19 @@
 <template>
   <div v-if="show" class="result-overlay">
     <div class="result-content">
-      <h2>공유 게임 결과</h2>
+      <div class="result-header">
+        <div class="header-icon">
+          <i class="fas fa-flag-checkered"></i>
+        </div>
+        <h2>공유 게임 결과</h2>
+        <p class="header-subtitle">친구와 점수를 비교해보세요</p>
+      </div>
+
+      <div class="outcome-banner" :class="`outcome-${comparisonOutcome}`">
+        <p class="outcome-label">{{ outcomeLabel }}</p>
+        <strong class="outcome-message">{{ outcomeMessage }}</strong>
+        <p class="outcome-delta">점수 차이: {{ scoreDeltaAbs }}점</p>
+      </div>
 
       <div class="comparison-grid">
         <div class="compare-card source">
@@ -17,13 +29,6 @@
         </div>
       </div>
 
-      <div class="delta-box">
-        <p>
-          점수 비교:
-          <strong>{{ scoreDeltaText }}</strong>
-        </p>
-      </div>
-
       <ResultMapSection
         :currentLocation="currentLocation"
         :guessedLocation="guessedLocation"
@@ -31,13 +36,12 @@
       />
 
       <div class="cta-box">
-        <p>더 많은 기능을 이용하려면 로그인해 주세요.</p>
-        <button class="login-btn" @click="$emit('login')">로그인 하러가기</button>
+        <p class="cta-copy">더 많은 기능을 이용하려면 로그인해 주세요.</p>
+        <button class="login-btn" type="button" @click="$emit('login')">로그인하고 더 플레이하기</button>
       </div>
 
       <div class="result-buttons">
-        <button class="restart-btn" @click="$emit('restart')">다시하기</button>
-        <button class="exit-btn" @click="$emit('exit')">종료하기</button>
+        <button class="restart-btn" type="button" @click="$emit('restart')">다시하기</button>
       </div>
     </div>
   </div>
@@ -51,7 +55,7 @@ export default {
   components: {
     ResultMapSection,
   },
-  emits: ["restart", "exit", "login"],
+  emits: ["restart", "login"],
   props: {
     show: {
       type: Boolean,
@@ -91,12 +95,33 @@ export default {
     },
   },
   computed: {
-    scoreDeltaText() {
+    comparisonOutcome() {
       const delta = this.myScore - this.sharerScore;
       if (delta === 0) {
-        return "동점";
+        return "tie";
       }
-      return delta > 0 ? `내가 ${delta}점 높음` : `${Math.abs(delta)}점 낮음`;
+      return delta > 0 ? "win" : "lose";
+    },
+    scoreDeltaAbs() {
+      return Math.abs(this.myScore - this.sharerScore);
+    },
+    outcomeLabel() {
+      if (this.comparisonOutcome === "win") {
+        return "승리";
+      }
+      if (this.comparisonOutcome === "tie") {
+        return "무승부";
+      }
+      return "재도전";
+    },
+    outcomeMessage() {
+      if (this.comparisonOutcome === "win") {
+        return "축하합니다! 공유 받은 게임에서 승리했어요!";
+      }
+      if (this.comparisonOutcome === "tie") {
+        return "무승부입니다! 거의 같은 실력이에요.";
+      }
+      return "아쉽지만 다음 라운드에서 역전해보세요!";
     },
   },
 };
@@ -111,24 +136,98 @@ export default {
   align-items: center;
   background-color: rgba(17, 24, 39, 0.8);
   z-index: 25;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(3px);
+  animation: overlay-fade-in 240ms ease;
 }
 
 .result-content {
   background: #ffffff;
   border-radius: 20px;
-  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.28);
-  padding: 26px;
+  box-shadow: 0 14px 24px rgba(15, 23, 42, 0.2);
+  padding: 24px;
   width: 92%;
   max-width: 680px;
   max-height: 90vh;
   overflow-y: auto;
+  animation: content-rise-in 280ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform, opacity;
+}
+
+.result-header {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: 16px;
+  padding: 16px;
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.header-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 8px;
+  background: #2563eb;
+  color: #ffffff;
 }
 
 h2 {
-  margin: 0 0 14px;
+  margin: 0;
   color: #111827;
   text-align: center;
+}
+
+.header-subtitle {
+  margin: 6px 0 0;
+  color: #1e3a8a;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.outcome-banner {
+  border-radius: 14px;
+  padding: 12px;
+  margin-bottom: 12px;
+  border: 1px solid transparent;
+  text-align: center;
+}
+
+.outcome-win {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+}
+
+.outcome-tie {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.outcome-lose {
+  background: #fff7ed;
+  border-color: #fdba74;
+}
+
+.outcome-label {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #374151;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.outcome-message {
+  display: block;
+  margin-top: 4px;
+  color: #111827;
+}
+
+.outcome-delta {
+  margin: 4px 0 0;
+  color: #4b5563;
+  font-size: 0.86rem;
 }
 
 .comparison-grid {
@@ -188,55 +287,92 @@ h2 {
   margin-top: 14px;
   border-radius: 14px;
   padding: 14px;
-  background: #f0f9ff;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
   border: 1px solid #93c5fd;
   text-align: center;
 }
 
-.cta-box p {
+.cta-copy {
   margin: 0 0 10px;
   color: #111827;
+  font-weight: 600;
 }
 
 .login-btn {
   border: none;
   border-radius: 12px;
-  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
   color: #ffffff;
   font-weight: 700;
-  padding: 10px 14px;
+  padding: 12px 16px;
   cursor: pointer;
+  width: 100%;
+  box-shadow: 0 8px 16px rgba(29, 78, 216, 0.28);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.login-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px rgba(29, 78, 216, 0.33);
+}
+
+.login-btn:focus-visible,
+.restart-btn:focus-visible {
+  outline: 2px solid #111827;
+  outline-offset: 2px;
 }
 
 .result-buttons {
   margin-top: 14px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 10px;
 }
 
-.restart-btn,
-.exit-btn {
+.restart-btn {
   border: none;
   border-radius: 12px;
-  color: #ffffff;
+  color: #111827;
   font-weight: 700;
   padding: 11px;
   cursor: pointer;
-}
-
-.restart-btn {
-  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-}
-
-.exit-btn {
-  background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
 }
 
 @media (max-width: 768px) {
-  .comparison-grid,
-  .result-buttons {
+  .comparison-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .result-overlay,
+  .result-content,
+  .login-btn {
+    animation: none;
+    transition: none;
+    transform: none;
+  }
+}
+
+@keyframes overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes content-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

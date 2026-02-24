@@ -1,5 +1,5 @@
 <template>
-  <button class="share-btn" :disabled="disabled" :aria-label="buttonText" @click="$emit('share')">
+  <button type="button" class="share-btn" :disabled="disabled" :aria-label="buttonText" @click="$emit('share')">
     <i class="fas fa-share-nodes"></i>
     <span>{{ disabled ? "링크 생성 중..." : buttonText }}</span>
   </button>

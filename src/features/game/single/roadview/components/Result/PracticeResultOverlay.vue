@@ -50,10 +50,10 @@
       <div class="result-buttons">
         <div class="share-action">
           <p class="share-helper-text">다른 친구들도 플레이할 수 있게 이 게임을 공유해보세요!</p>
-          <ShareGameButton buttonText="게임 공유" :disabled="shareLoading" @share="$emit('share')" />
+          <ShareGameButton :buttonText="shareButtonText" :disabled="shareLoading" @share="$emit('share')" />
         </div>
-        <button class="restart-btn" @click="$emit('restart')">다시하기</button>
-        <button class="exit-btn" @click="$emit('exit')">종료하기</button>
+        <button class="restart-btn" type="button" @click="$emit('restart')">다시하기</button>
+        <button class="exit-btn" type="button" @click="$emit('exit')">종료하기</button>
       </div>
     </div>
   </div>
@@ -114,6 +114,10 @@ export default {
     shareLoading: {
       type: Boolean,
       default: false,
+    },
+    shareButtonText: {
+      type: String,
+      default: "게임 공유",
     },
   },
   computed: {
@@ -229,19 +233,24 @@ export default {
 .result-buttons {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
   margin-top: 20px;
+  align-items: stretch;
 }
 
 .share-action {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 10px;
 }
 
 .share-helper-text {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   font-weight: 500;
   color: #6b7280;
   text-align: left;
@@ -250,6 +259,7 @@ export default {
 
 .share-action :deep(.share-btn) {
   width: 100%;
+  min-height: 44px;
 }
 
 .restart-btn,
@@ -261,14 +271,29 @@ export default {
   font-weight: 700;
   font-size: 0.95rem;
   color: #ffffff;
+  min-height: 44px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .restart-btn {
   background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  box-shadow: 0 6px 12px rgba(16, 185, 129, 0.22);
 }
 
 .exit-btn {
   background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+  box-shadow: 0 6px 12px rgba(239, 68, 68, 0.2);
+}
+
+.restart-btn:hover,
+.exit-btn:hover {
+  transform: translateY(-1px);
+}
+
+.restart-btn:focus-visible,
+.exit-btn:focus-visible {
+  outline: 2px solid #111827;
+  outline-offset: 2px;
 }
 
 @media (max-width: 768px) {
