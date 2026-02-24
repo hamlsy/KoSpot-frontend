@@ -144,6 +144,7 @@
         :guessedLocation="guessedLocation"
         :markerImageUrl="markerImageUrl"
         :shareLoading="isShareLoading"
+        :shareButtonText="isShareCopied ? '복사완료!' : '게임 공유'"
         @share="shareGame"
         @restart="nextRound"
         @exit="exitGame"
@@ -162,7 +163,6 @@
         :markerImageUrl="markerImageUrl"
         @login="goToLogin"
         @restart="nextRound"
-        @exit="exitGame"
       />
 
       <!-- 종료 확인 모달 -->
@@ -327,6 +327,9 @@ export default {
       // 공유 게임 관련
       isSharedRecipientMode: false,
       isShareLoading: false,
+      isShareCopied: false,
+      shareCopiedResetTimer: null,
+      isComponentActive: true,
       sharedSource: {
         nickname: "공유 플레이어",
         score: 0,
@@ -407,7 +410,10 @@ export default {
     // 게임 위치 데이터는 실제 "시작하기" 클릭 시 로드 (endIntro에서 호출)
   },
   beforeUnmount() {
+    this.isComponentActive = false;
     this.clearAllTimers();
+    this.clearShareCopiedTimer();
+    this.clearToastTimer();
   },
   methods: {
     // 로드뷰 초기 위치로 돌아가기
@@ -511,6 +517,10 @@ export default {
         return;
       }
 
+      if (this.isShareLoading) {
+        return;
+      }
+
       this.isShareLoading = true;
       try {
         const payload = {
@@ -531,6 +541,9 @@ export default {
         };
 
         const apiResponse = await roadViewApiService.createPracticeShareLink(payload);
+        if (!this.isComponentActive) {
+          return;
+        }
         let shareUrl = apiResponse?.result?.shareUrl;
 
         if (!shareUrl) {
@@ -543,12 +556,38 @@ export default {
         }
 
         await this.copyToClipboard(shareUrl);
+        if (!this.isComponentActive) {
+          return;
+        }
+        this.isShareCopied = true;
+        this.clearShareCopiedTimer();
+        this.shareCopiedResetTimer = setTimeout(() => {
+          if (!this.isComponentActive) {
+            return;
+          }
+          this.isShareCopied = false;
+          this.shareCopiedResetTimer = null;
+        }, 1600);
         this.showToastMessage("링크가 복사되었습니다.");
       } catch (error) {
+        if (!this.isComponentActive) {
+          return;
+        }
         console.error("공유 링크 생성 실패:", error);
+        this.isShareCopied = false;
+        this.clearShareCopiedTimer();
         this.showToastMessage("링크 복사에 실패했습니다. 다시 시도해주세요.");
       } finally {
-        this.isShareLoading = false;
+        if (this.isComponentActive) {
+          this.isShareLoading = false;
+        }
+      }
+    },
+
+    clearShareCopiedTimer() {
+      if (this.shareCopiedResetTimer) {
+        clearTimeout(this.shareCopiedResetTimer);
+        this.shareCopiedResetTimer = null;
       }
     },
 
@@ -577,10 +616,12 @@ export default {
     resetGame() {
       // 타이머 정리
       this.clearTimer();
+      this.clearShareCopiedTimer();
 
       // 상태 초기화
       this.showResult = false;
       this.isMapOpen = false;
+      this.isShareCopied = false;
       this.guessedLocation = null;
       this.distance = null;
       this.score = 0;
@@ -614,6 +655,14 @@ export default {
     clearAllTimers() {
       // 타이머 정리
       this.clearTimer();
+      this.clearToastTimer();
+    },
+
+    clearToastTimer() {
+      if (this.toastTimeout) {
+        clearTimeout(this.toastTimeout);
+        this.toastTimeout = null;
+      }
     },
 
     // 지도 토글
@@ -1138,6 +1187,9 @@ export default {
 
     // 다음 라운드 시작
     nextRound() {
+      this.isComponentActive = false;
+      this.isShareCopied = false;
+      this.clearShareCopiedTimer();
       // 페이지 새로고침으로 게임을 완전히 초기화
       window.location.reload();
     },
@@ -1146,6 +1198,10 @@ export default {
     exitGame() {
       // 타이머 정리
       this.clearTimer();
+      this.isComponentActive = false;
+      this.isShareCopied = false;
+      this.clearShareCopiedTimer();
+      this.clearToastTimer();
       this.$router.push("/roadView/main");
     },
 
@@ -1265,15 +1321,21 @@ export default {
 
     // 토스트 메시지 표시
     showToastMessage(message) {
-      if (this.toastTimeout) {
-        clearTimeout(this.toastTimeout);
+      if (!this.isComponentActive) {
+        return;
       }
+
+      this.clearToastTimer();
 
       this.toastMessage = message;
       this.showToast = true;
 
       this.toastTimeout = setTimeout(() => {
+        if (!this.isComponentActive) {
+          return;
+        }
         this.showToast = false;
+        this.toastTimeout = null;
       }, 3000);
     },
 
