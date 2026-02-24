@@ -1,7 +1,7 @@
 <template>
-  <button class="share-btn" :disabled="disabled" @click="$emit('share')">
+  <button class="share-btn" :disabled="disabled" :aria-label="buttonText" @click="$emit('share')">
     <i class="fas fa-share-nodes"></i>
-    <span>{{ disabled ? "링크 생성 중..." : "게임 공유" }}</span>
+    <span>{{ disabled ? "링크 생성 중..." : buttonText }}</span>
   </button>
 </template>
 
@@ -12,6 +12,10 @@ export default {
     disabled: {
       type: Boolean,
       default: false,
+    },
+    buttonText: {
+      type: String,
+      default: "게임 공유",
     },
   },
   emits: ["share"],

@@ -48,7 +48,10 @@
       />
 
       <div class="result-buttons">
-        <ShareGameButton :disabled="shareLoading" @share="$emit('share')" />
+        <div class="share-action">
+          <p class="share-helper-text">다른 친구들도 플레이할 수 있게 이 게임을 공유해보세요!</p>
+          <ShareGameButton buttonText="게임 공유" :disabled="shareLoading" @share="$emit('share')" />
+        </div>
         <button class="restart-btn" @click="$emit('restart')">다시하기</button>
         <button class="exit-btn" @click="$emit('exit')">종료하기</button>
       </div>
@@ -228,6 +231,25 @@ export default {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin-top: 20px;
+}
+
+.share-action {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.share-helper-text {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+  text-align: left;
+  line-height: 1.35;
+}
+
+.share-action :deep(.share-btn) {
+  width: 100%;
 }
 
 .restart-btn,
