@@ -1,75 +1,79 @@
 <template>
-  <div v-if="show" class="tutorial-overlay" @click.self="skipTutorial">
-    <div class="tutorial-container">
-      <!-- 진행 표시기 -->
-      <div class="progress-dots">
-        <span
-          v-for="(slide, index) in slides"
-          :key="index"
-          class="dot"
-          :class="{ active: currentSlide === index }"
-          @click="goToSlide(index)"
-        ></span>
-      </div>
+  <transition name="tutorial-modal-fade">
+    <div v-if="show" class="tutorial-overlay" @click.self="skipTutorial">
+      <div class="tutorial-container">
+        <!-- 진행 표시기 -->
+        <div class="progress-dots">
+          <span
+            v-for="(slide, index) in slides"
+            :key="index"
+            class="dot"
+            :class="{ active: currentSlide === index }"
+            @click="goToSlide(index)"
+          ></span>
+        </div>
 
-      <!-- 닫기 버튼 -->
-      <button class="close-button" @click="skipTutorial" title="건너뛰기">
-        <i class="fas fa-times"></i>
-      </button>
+        <!-- 닫기 버튼 -->
+        <button class="close-button" @click="skipTutorial" title="건너뛰기">
+          <i class="fas fa-times"></i>
+        </button>
 
-      <!-- 슬라이드 래퍼 -->
-      <div class="slide-wrapper">
-        <div :key="currentSlide" class="slide-content">
-          <!-- 슬라이드 이미지 -->
-          <div class="slide-image-container">
-            <img
-              :src="currentSlideImage"
-              :alt="slides[currentSlide].title"
-              class="slide-image"
-            />
-          </div>
+        <!-- 슬라이드 래퍼 -->
+        <div class="slide-wrapper">
+          <transition :name="slideTransitionName" mode="out-in">
+            <div :key="currentSlide" class="slide-content">
+              <!-- 슬라이드 이미지 -->
+              <div class="slide-image-container">
+                <img
+                  :src="currentSlideImage"
+                  :alt="slides[currentSlide].title"
+                  class="slide-image"
+                />
+              </div>
 
-          <!-- 슬라이드 설명 -->
-          <div class="slide-description">
-            <h3 class="slide-title">{{ slides[currentSlide].title }}</h3>
-            <p class="slide-text">{{ slides[currentSlide].description }}</p>
-          </div>
+              <!-- 슬라이드 설명 -->
+              <div class="slide-description">
+                <h3 class="slide-title">{{ slides[currentSlide].title }}</h3>
+                <p class="slide-text">{{ slides[currentSlide].description }}</p>
+              </div>
+            </div>
+          </transition>
+        </div>
+
+        <!-- 네비게이션 버튼 -->
+        <div class="navigation-controls">
+          <button
+            v-if="currentSlide > 0"
+            class="nav-button prev-button"
+            @click="prevSlide"
+          >
+            <i class="fas fa-chevron-left"></i>
+            <span>이전</span>
+          </button>
+          <button
+            v-if="currentSlide < slides.length - 1"
+            class="nav-button next-button"
+            @click="nextSlide"
+          >
+            <span>다음</span>
+            <i class="fas fa-chevron-right"></i>
+          </button>
+          <button
+            v-if="currentSlide === slides.length - 1"
+            class="nav-button complete-button"
+            @click="completeTutorial"
+          >
+            <span>시작하기</span>
+            <i class="fas fa-check"></i>
+          </button>
         </div>
       </div>
-
-      <!-- 네비게이션 버튼 -->
-      <div class="navigation-controls">
-        <button
-          v-if="currentSlide > 0"
-          class="nav-button prev-button"
-          @click="prevSlide"
-        >
-          <i class="fas fa-chevron-left"></i>
-          <span>이전</span>
-        </button>
-        <button
-          v-if="currentSlide < slides.length - 1"
-          class="nav-button next-button"
-          @click="nextSlide"
-        >
-          <span>다음</span>
-          <i class="fas fa-chevron-right"></i>
-        </button>
-        <button
-          v-if="currentSlide === slides.length - 1"
-          class="nav-button complete-button"
-          @click="completeTutorial"
-        >
-          <span>시작하기</span>
-          <i class="fas fa-check"></i>
-        </button>
-      </div>
     </div>
-  </div>
+  </transition>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import Tutorial1 from '@/shared/assets/images/tutorial/practice/tutorial_1.png';
 import Tutorial2 from '@/shared/assets/images/tutorial/practice/tutorial_2.png';
 import Tutorial4 from '@/shared/assets/images/tutorial/practice/tutorial_4.png';
@@ -85,6 +89,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'complete']);
 
 const currentSlide = ref(0);
+const slideDirection = ref('next');
 
 // 튜토리얼 슬라이드 데이터
 const slides = [
@@ -115,6 +120,10 @@ const currentSlideImage = computed(() => {
   return slides[currentSlide.value]?.image || '';
 });
 
+const slideTransitionName = computed(() => {
+  return slideDirection.value === 'prev' ? 'slide-swap-prev' : 'slide-swap-next';
+});
+
 // 이미지 사전 로딩
 onMounted(() => {
   slides.forEach(slide => {
@@ -125,19 +134,32 @@ onMounted(() => {
 
 const nextSlide = () => {
   if (currentSlide.value < slides.length - 1) {
+    slideDirection.value = 'next';
     currentSlide.value++;
   }
 };
 
 const prevSlide = () => {
   if (currentSlide.value > 0) {
+    slideDirection.value = 'prev';
     currentSlide.value--;
   }
 };
 
 const goToSlide = (index) => {
+  if (index === currentSlide.value || index < 0 || index >= slides.length) {
+    return;
+  }
+  slideDirection.value = index > currentSlide.value ? 'next' : 'prev';
   currentSlide.value = index;
 };
+
+watch(() => props.show, (isOpen) => {
+  if (isOpen) {
+    currentSlide.value = 0;
+    slideDirection.value = 'next';
+  }
+});
 
 const skipTutorial = () => {
   emit('close');
@@ -157,13 +179,16 @@ const completeTutorial = () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1100;
   padding: 20px;
+  transform: translateZ(0);
+  contain: paint;
 }
 
 /* 튜토리얼 컨테이너 */
@@ -179,6 +204,38 @@ const completeTutorial = () => {
   flex-direction: column;
   padding: 0.75rem;
   overflow: hidden;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  contain: layout paint;
+}
+
+.tutorial-modal-fade-enter-active,
+.tutorial-modal-fade-leave-active {
+  transition: opacity 0.2s ease;
+  will-change: opacity;
+}
+
+.tutorial-modal-fade-enter-from,
+.tutorial-modal-fade-leave-to {
+  opacity: 0;
+}
+
+.tutorial-modal-fade-enter-active .tutorial-container,
+.tutorial-modal-fade-leave-active .tutorial-container {
+  transition: transform 0.24s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.2s ease;
+  will-change: transform, opacity;
+}
+
+.tutorial-modal-fade-enter-from .tutorial-container,
+.tutorial-modal-fade-leave-to .tutorial-container {
+  transform: translate3d(0, 12px, 0) scale(0.97);
+  opacity: 0;
+}
+
+.tutorial-modal-fade-enter-to .tutorial-container,
+.tutorial-modal-fade-leave-from .tutorial-container {
+  transform: translate3d(0, 0, 0) scale(1);
+  opacity: 1;
 }
 
 /* 진행 표시기 */
@@ -196,7 +253,7 @@ const completeTutorial = () => {
   border-radius: 50%;
   background: #e5e7eb;
   cursor: pointer;
-  transition: background-color 0.2s, width 0.2s;
+  transition: background-color 0.18s ease, width 0.18s ease;
 }
 
 .dot.active {
@@ -239,24 +296,51 @@ const completeTutorial = () => {
   flex: 1;
   overflow: hidden;
   min-height: 0;
+  position: relative;
 }
 
 /* 슬라이드 컨텐츠 */
 .slide-content {
   padding: 0 16px 12px;
-  animation: slideIn 0.3s ease-out;
   text-align: center;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+.slide-swap-next-enter-active,
+.slide-swap-next-leave-active,
+.slide-swap-prev-enter-active,
+.slide-swap-prev-leave-active {
+  transition: transform 0.2s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.18s ease;
+  will-change: transform, opacity;
+}
+
+.slide-swap-next-enter-from {
+  transform: translate3d(20px, 0, 0);
+  opacity: 0;
+}
+
+.slide-swap-next-leave-to {
+  transform: translate3d(-14px, 0, 0);
+  opacity: 0;
+}
+
+.slide-swap-prev-enter-from {
+  transform: translate3d(-20px, 0, 0);
+  opacity: 0;
+}
+
+.slide-swap-prev-leave-to {
+  transform: translate3d(14px, 0, 0);
+  opacity: 0;
+}
+
+.slide-swap-next-enter-to,
+.slide-swap-next-leave-from,
+.slide-swap-prev-enter-to,
+.slide-swap-prev-leave-from {
+  transform: translate3d(0, 0, 0);
+  opacity: 1;
 }
 
 /* 이미지 컨테이너 */
@@ -316,7 +400,7 @@ const completeTutorial = () => {
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -360,6 +444,19 @@ const completeTutorial = () => {
 
 .complete-button:hover {
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-modal-fade-enter-active,
+  .tutorial-modal-fade-leave-active,
+  .tutorial-modal-fade-enter-active .tutorial-container,
+  .tutorial-modal-fade-leave-active .tutorial-container,
+  .slide-swap-next-enter-active,
+  .slide-swap-next-leave-active,
+  .slide-swap-prev-enter-active,
+  .slide-swap-prev-leave-active {
+    transition-duration: 0.01ms;
+  }
 }
 
 /* 반응형 - 태블릿 */
