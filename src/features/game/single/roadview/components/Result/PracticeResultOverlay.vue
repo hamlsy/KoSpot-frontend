@@ -411,7 +411,7 @@ export default {
   flex-shrink: 0;
   padding: 9px 16px;
   font-size: 0.85rem;
-  min-height: unset;
+  min-height: auto;
 }
 
 /* ═══════════════════════════════════════

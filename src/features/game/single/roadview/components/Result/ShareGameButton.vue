@@ -6,7 +6,7 @@
     :aria-label="buttonText"
     @click="$emit('share')"
   >
-    <i class="fas fa-share-nodes"></i>
+    <i class="fas fa-share-alt"></i>
     <span>{{ disabled ? "링크 생성 중..." : buttonText }}</span>
   </button>
 </template>
@@ -30,7 +30,17 @@ export default {
 
 <style scoped>
 .share-btn {
+  /* Safari <button> UA 스타일 완전 리셋 */
+  -webkit-appearance: none;
+  appearance: none;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
   padding: 12px 18px;
+  min-height: 44px; /* iOS 터치 타겟 권고 최소 크기 */
   border: none;
   border-radius: 14px;
   cursor: pointer;
@@ -38,10 +48,6 @@ export default {
   font-size: 0.95rem;
   color: #111827;
   background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
   transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
   box-shadow: 0 6px 14px rgba(245, 158, 11, 0.28);
 }
