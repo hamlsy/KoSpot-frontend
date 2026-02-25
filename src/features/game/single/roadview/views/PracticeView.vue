@@ -196,6 +196,7 @@ import Adsense from "@/features/game/shared/components/Common/Adsense.vue";
 import { roadViewApiService } from "src/features/game/single/roadview/services/roadViewApi.service.js";
 import PracticeResultOverlay from "src/features/game/single/roadview/components/Result/PracticeResultOverlay.vue";
 import SharedPracticeResultOverlay from "src/features/game/single/roadview/components/Result/SharedPracticeResultOverlay.vue";
+import { calculateHaversineDistance, calculateScore } from "src/features/game/single/roadview/utils/scoreCalculator.js";
 
 export default {
   name: "RoadViewPractice",
@@ -490,24 +491,28 @@ export default {
         return;
       }
 
+      // 단축 키 우선, 구버전 키 폴백 (하위 호환)
+      const regionId = parsedPayload.r || parsedPayload.regionId || "seoul";
+      const sido = parsedPayload.s || parsedPayload.sido || "SEOUL";
+      const poiName = parsedPayload.p !== undefined ? parsedPayload.p : (parsedPayload.poiName || null);
+      const fullAddress = parsedPayload.a !== undefined ? parsedPayload.a : (parsedPayload.fullAddress || null);
+      const source = parsedPayload.src || parsedPayload.source || {};
+      const nickname = source.nn || source.nickname || "공유 플레이어";
+      const score = Number(source.sc !== undefined ? source.sc : (source.score || 0));
+      const hintsUsed = Number(source.h !== undefined ? source.h : (source.hintsUsed || 0));
+
       this.isSharedRecipientMode = true;
-      this.currentSidoKey = parsedPayload.sido || "SEOUL";
+      this.currentSidoKey = sido;
       this.sharedTargetLocation = {
         lat: parsedPayload.location.lat,
         lng: parsedPayload.location.lng,
       };
       this.selectedRegion =
-        this.regions.find(
-          (region) => region.id === (parsedPayload.regionId || "seoul"),
-        ) || this.regions[0];
+        this.regions.find((region) => region.id === regionId) || this.regions[0];
       this.gameTitle = `${this.selectedRegion.name} 로드뷰 공유게임`;
-      this.poiName = parsedPayload.poiName || null;
-      this.fullAddress = parsedPayload.fullAddress || null;
-      this.sharedSource = {
-        nickname: parsedPayload.source?.nickname || "공유 플레이어",
-        score: Number(parsedPayload.source?.score || 0),
-        hintsUsed: Number(parsedPayload.source?.hintsUsed || 0),
-      };
+      this.poiName = poiName;
+      this.fullAddress = fullAddress;
+      this.sharedSource = { nickname, score, hintsUsed };
     },
 
     parseShareToken(token) {
@@ -517,15 +522,24 @@ export default {
           escape(window.atob(normalizedToken)),
         );
         const parsed = JSON.parse(decodedText);
+
+        // 단축 키(v2) 또는 구버전 키(v1) 모두 허용
+        const location = parsed.location ||
+          (parsed.la !== undefined && parsed.lo !== undefined
+            ? { lat: parsed.la, lng: parsed.lo }
+            : null);
+
         if (
           !parsed ||
-          !parsed.location ||
-          Number.isNaN(parsed.location.lat) ||
-          Number.isNaN(parsed.location.lng)
+          !location ||
+          Number.isNaN(location.lat) ||
+          Number.isNaN(location.lng)
         ) {
           return null;
         }
-        return parsed;
+
+        // location 필드를 정규화하여 반환
+        return { ...parsed, location };
       } catch (error) {
         console.error("공유 토큰 파싱 실패:", error);
         return null;
@@ -533,8 +547,23 @@ export default {
     },
 
     buildShareToken(payload) {
+      // v2: 단축 키로 직렬화하여 URL 길이를 최소화
+      const compressed = {
+        v: 2,
+        r: payload.regionId,
+        s: payload.sido,
+        la: payload.location.lat,
+        lo: payload.location.lng,
+        p: payload.poiName,
+        a: payload.fullAddress,
+        src: {
+          nn: payload.source.nickname,
+          sc: payload.source.score,
+          h: payload.source.hintsUsed,
+        },
+      };
       const encoded = window.btoa(
-        unescape(encodeURIComponent(JSON.stringify(payload))),
+        unescape(encodeURIComponent(JSON.stringify(compressed))),
       );
       return encoded.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
     },
@@ -626,24 +655,20 @@ export default {
     },
 
     async copyToClipboard(value) {
+      // 1순위: Clipboard API (모던 브라우저 / HTTPS)
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(value);
         return;
       }
 
-      const textArea = document.createElement("textarea");
-      textArea.value = value;
-      textArea.style.position = "fixed";
-      textArea.style.opacity = "0";
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-
-      const isCopied = document.execCommand("copy");
-      document.body.removeChild(textArea);
-      if (!isCopied) {
-        throw new Error("clipboard copy failed");
+      // 2순위: Web Share API — Safari iOS에서 네이티브 공유 시트 표시
+      if (typeof navigator.share === "function") {
+        await navigator.share({ url: value });
+        return;
       }
+
+      // 3순위: prompt 다이얼로그 — 사용자가 직접 복사 (최후 fallback)
+      window.prompt("아래 링크를 복사하세요 (Ctrl+C / Cmd+C):", value);
     },
 
     // 게임 상태 초기화
@@ -1061,19 +1086,16 @@ export default {
       // 타이머 정리
       this.clearTimer();
 
-      // 거리 계산
-      const distance = this.calculateDistance(
+      // 거리 계산 (Haversine 공식, 백엔드 DistanceCalculator 동일)
+      const distance = calculateHaversineDistance(
         position.lat,
         position.lng,
         this.currentLocation.lat,
         this.currentLocation.lng,
       );
 
-      // 로컬 점수 계산 (임시, 백엔드에서 최종 점수 계산)
-      const localScore = Math.max(
-        0,
-        Math.floor(100 - Math.sqrt(distance) * 10),
-      );
+      // 로컬 점수 계산 (백엔드 ScoreCalculator 동일 알고리즘)
+      const localScore = calculateScore(distance);
 
       // 게임 결과 저장 (백엔드 API 호출 전 임시 저장)
       this.distance = distance;
