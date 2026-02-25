@@ -4,7 +4,7 @@
     <div class="top-ads-container">
       <Adsense :ad-slot="'6033902133'" @ad-loaded="onAdLoaded" />
     </div>
-    
+
     <!-- 헤더 -->
     <div class="game-header" :style="{ top: headerTop }">
       <button class="back-btn" @click="exitGame">
@@ -133,65 +133,37 @@
         @countdown-complete="onCountdownComplete"
       />
 
-      <!-- 결과 화면 -->
-      <div v-if="showResult" class="result-overlay">
-        <div class="result-content">
-          <h2>결과</h2>
+      <PracticeResultOverlay
+        v-if="showResult && !isSharedRecipientMode"
+        :show="showResult"
+        :distance="distance"
+        :score="score"
+        :poiName="poiName"
+        :fullAddress="fullAddress"
+        :currentLocation="currentLocation"
+        :guessedLocation="guessedLocation"
+        :markerImageUrl="markerImageUrl"
+        :shareLoading="isShareLoading"
+        :shareButtonText="isShareCopied ? '복사완료!' : '게임 공유'"
+        @share="shareGame"
+        @restart="nextRound"
+        @exit="exitGame"
+      />
 
-          <!-- 결과 정보 -->
-          <div class="result-info">
-            <div class="info-item">
-              <div class="info-icon"><i class="fas fa-ruler"></i></div>
-              <div class="info-value">{{ distance.toFixed(2) }} km</div>
-              <div class="info-label"> 떨어진 거리</div>
-            </div>
-
-            <div class="info-item">
-              <div class="info-icon"><i class="fas fa-star"></i></div>
-              <div class="info-value">{{ score }}</div>
-              <div class="info-label"> 점수</div>
-            </div>
-
-            <div class="info-item" v-if="isRankMode">
-              <div class="info-icon"><i class="fas fa-clock"></i></div>
-              <div class="info-value">
-                {{ formatTime(180 - timeRemaining) }}
-              </div>
-              <div class="info-label"> 소요 시간</div>
-            </div>
-          </div>
-
-          <!-- 정답 위치 정보 -->
-          <div v-if="poiName || fullAddress" class="answer-location-info">
-            <div v-if="poiName" class="poi-info">
-              <div class="poi-icon">
-                <i class="fas fa-map-marker-alt"></i>
-              </div>
-              <div class="poi-text">
-                <div class="poi-label">정답 위치</div>
-                <div class="poi-name">{{ poiName }}</div>
-              </div>
-            </div>
-            <div v-if="fullAddress" class="address-info">
-              <div class="address-icon">
-                <i class="fas fa-home"></i>
-              </div>
-              <div class="address-text">
-                <div class="address-label">상세 주소</div>
-                <div class="address-value">{{ fullAddress }}</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 결과 지도 -->
-          <div class="result-map" ref="resultMapElement"></div>
-          <!-- 결과 버튼 -->
-          <div class="result-buttons">
-            <button class="restart-btn" @click="nextRound">다시하기</button>
-            <button class="exit-btn" @click="exitGame">종료하기</button>
-          </div>
-        </div>
-      </div>
+      <SharedPracticeResultOverlay
+        v-if="showResult && isSharedRecipientMode"
+        :show="showResult"
+        :sharerNickname="sharedSource.nickname"
+        :sharerScore="sharedSource.score"
+        :sharerHintsUsed="sharedSource.hintsUsed"
+        :myScore="score"
+        :myHintsUsed="usedHints"
+        :currentLocation="currentLocation"
+        :guessedLocation="guessedLocation"
+        :markerImageUrl="markerImageUrl"
+        @login="goToLogin"
+        @restart="nextRound"
+      />
 
       <!-- 종료 확인 모달 -->
       <div v-if="showExitConfirmation" class="modal-overlay">
@@ -216,13 +188,14 @@
 </template>
 
 <script>
-import RoadViewGame from 'src/features/game/single/roadview/components/gameplay/RoadViewGame.vue'
-import PhoneFrame from 'src/features/game/shared/components/Phone/PhoneFrame.vue'
+import RoadViewGame from "src/features/game/single/roadview/components/gameplay/RoadViewGame.vue";
+import PhoneFrame from "src/features/game/shared/components/Phone/PhoneFrame.vue";
 import CountdownOverlay from "@/features/game/shared/components/Common/CountdownOverlay.vue";
 import IntroOverlay from "@/features/game/shared/components/Common/IntroOverlay.vue";
 import Adsense from "@/features/game/shared/components/Common/Adsense.vue";
-import { roadViewApiService } from 'src/features/game/single/roadview/services/roadViewApi.service.js';
-import { getUserMarkerSize, getResultMarkerSize } from '@/core/constants/markerSizes.js';
+import { roadViewApiService } from "src/features/game/single/roadview/services/roadViewApi.service.js";
+import PracticeResultOverlay from "src/features/game/single/roadview/components/Result/PracticeResultOverlay.vue";
+import SharedPracticeResultOverlay from "src/features/game/single/roadview/components/Result/SharedPracticeResultOverlay.vue";
 
 export default {
   name: "RoadViewPractice",
@@ -232,6 +205,8 @@ export default {
     CountdownOverlay,
     IntroOverlay,
     Adsense,
+    PracticeResultOverlay,
+    SharedPracticeResultOverlay,
   },
   props: {
     isRankMode: {
@@ -248,7 +223,8 @@ export default {
       //인트로 관련
       gameTitle: "로드뷰 연습게임",
       gameContent: "현재 보이는 로드뷰의 위치를 지도에서 찾아보세요.",
-      gameDescription: '지도를 열고 위치를 클릭한 후 "위치 선택" 버튼을 눌러 정답을 확인하세요.',
+      gameDescription:
+        '지도를 열고 위치를 클릭한 후 "위치 선택" 버튼을 눌러 정답을 확인하세요.',
 
       // 게임 화면 관련
       isMapOpen: false,
@@ -265,7 +241,7 @@ export default {
       guessedLocation: null,
       errorCount: 0, // 로드뷰 로드 오류 카운트
       maxErrorRetry: 3, // 최대 재시도 횟수
-      
+
       // API 관련
       gameId: null, // 백엔드에서 받은 게임 ID (Number)
       markerImageUrl: null, // 마커 이미지 URL
@@ -303,26 +279,26 @@ export default {
           centerLng: 127.5183,
         },
       ],
-      
+
       // 백엔드 sido key를 한글 지역명으로 변환하는 매핑
       sidoKeyToRegionNameMapping: {
-        "SEOUL": "서울",
-        "BUSAN": "부산", 
-        "DAEGU": "대구",
-        "INCHEON": "인천",
-        "GWANGJU": "광주",
-        "DAEJEON": "대전",
-        "ULSAN": "울산",
-        "SEJONG": "세종",
-        "GYEONGGI": "경기",
-        "GANGWON": "강원",
-        "CHUNGBUK": "충북",
-        "CHUNGNAM": "충남",
-        "JEONBUK": "전북",
-        "JEONNAM": "전남",
-        "GYEONGBUK": "경북",
-        "GYEONGNAM": "경남",
-        "JEJU": "제주"
+        SEOUL: "서울",
+        BUSAN: "부산",
+        DAEGU: "대구",
+        INCHEON: "인천",
+        GWANGJU: "광주",
+        DAEJEON: "대전",
+        ULSAN: "울산",
+        SEJONG: "세종",
+        GYEONGGI: "경기",
+        GANGWON: "강원",
+        CHUNGBUK: "충북",
+        CHUNGNAM: "충남",
+        JEONBUK: "전북",
+        JEONNAM: "전남",
+        GYEONGBUK: "경북",
+        GYEONGNAM: "경남",
+        JEJU: "제주",
       },
       selectedRegion: {
         name: "서울",
@@ -348,49 +324,73 @@ export default {
 
       // 광고 관련
       hasAd: false, // 광고 표시 여부
+
+      // 공유 게임 관련
+      isSharedRecipientMode: false,
+      isShareLoading: false,
+      isShareCopied: false,
+      shareCopiedResetTimer: null,
+      isComponentActive: true,
+      sharedSource: {
+        nickname: "공유 플레이어",
+        score: 0,
+        hintsUsed: 0,
+      },
+      sharedTargetLocation: null,
+
+      // TODO: 백엔드 endPracticeGame 응답에 nickname 필드 추가 시 이 값을 사용
+      // API 응답(endGameWithApi)에서 받아온 플레이어 닉네임. 없으면 null.
+      playerNickname: null,
     };
   },
   computed: {
     // 헤더 위치 계산
     headerTop() {
-      return this.hasAd ? '90px' : '0';
+      return this.hasAd ? "90px" : "0";
     },
     // reset 버튼 위치 계산 (헤더 바로 밑)
     resetBtnTop() {
       // 광고(90px) + 헤더(56px) + 여백(12px) = 158px (광고 있을 때)
       // 헤더(56px) + 여백(12px) = 68px (광고 없을 때)
-      return this.hasAd ? '158px' : '68px';
+      return this.hasAd ? "158px" : "68px";
+    },
+    usedHints() {
+      return 3 - this.hintCount;
     },
   },
   mounted() {
+    const shareToken = this.$route.query.shareToken;
+    if (shareToken) {
+      this.initializeSharedMode(shareToken);
+      return;
+    }
+
     // 쿼리 파라미터에서 sido key 받기
     const sidoKey = this.$route.query.sido;
-    
+
     if (sidoKey) {
       // sido key로부터 지역 정보 설정
       const regionName = this.sidoKeyToRegionNameMapping[sidoKey];
       if (regionName) {
         // sido key를 데이터에 저장 (API 호출 시 사용)
         this.currentSidoKey = sidoKey;
-        
+
         // 지역 이름으로 selectedRegion 설정
         const matchedRegion = this.regions.find((r) => r.name === regionName);
         if (matchedRegion) {
           this.selectedRegion = matchedRegion;
         } else {
           // 매칭되지 않으면 기본값 설정
-          this.selectedRegion = { 
-            id: sidoKey.toLowerCase(), 
-            name: regionName, 
-            centerLat: 37.5665, 
-            centerLng: 126.978 
+          this.selectedRegion = {
+            id: sidoKey.toLowerCase(),
+            name: regionName,
+            centerLat: 37.5665,
+            centerLng: 126.978,
           };
         }
-        
+
         // 게임 제목을 지역명으로 업데이트
         this.gameTitle = `${regionName} 로드뷰 연습게임`;
-        
-        
       } else {
         console.warn("알 수 없는 sido key:", sidoKey);
         this.selectedRegion = this.regions[0]; // 기본값: 서울
@@ -402,10 +402,10 @@ export default {
       this.selectedRegion =
         this.regions.find((r) => r.id === this.region.toLowerCase()) ||
         this.regions[0];
-      
+
       // props 기반으로 sido key 설정 (폴백용)
       this.currentSidoKey = "SEOUL"; // 기본값
-      
+
       // 게임 제목을 지역명으로 업데이트
       this.gameTitle = `${this.selectedRegion.name} 로드뷰 연습게임`;
     }
@@ -413,12 +413,18 @@ export default {
     // 게임 위치 데이터는 실제 "시작하기" 클릭 시 로드 (endIntro에서 호출)
   },
   beforeUnmount() {
+    this.isComponentActive = false;
     this.clearAllTimers();
+    this.clearShareCopiedTimer();
+    this.clearToastTimer();
   },
   methods: {
     // 로드뷰 초기 위치로 돌아가기
     resetRoadViewPosition() {
-      if (this.$refs.roadViewGameRef && this.$refs.roadViewGameRef.resetToInitial) {
+      if (
+        this.$refs.roadViewGameRef &&
+        this.$refs.roadViewGameRef.resetToInitial
+      ) {
         this.$refs.roadViewGameRef.resetToInitial();
       }
     },
@@ -429,23 +435,227 @@ export default {
     },
 
     // 게임 시작
-    endIntro() {
+    async endIntro() {
       this.showIntro = false;
       this.showCountdown = true;
 
-      // 시작 버튼 클릭 시 게임 시작 API 호출
-      // 사전 로드가 필요할 수 있으므로 현재 위치가 없거나 새 게임을 강제 시작
+      // 공유 링크 진입 시에는 API 재요청 대신 공유된 좌표를 그대로 사용합니다.
+      if (this.isSharedRecipientMode && this.sharedTargetLocation) {
+        try {
+          const response = await roadViewApiService.startSharedPracticeGame(
+            this.$route.query.shareToken,
+          );
+          if (
+            response?.isSuccess &&
+            response.result?.targetLat &&
+            response.result?.targetLng
+          ) {
+            this.currentLocation = {
+              lat: roadViewApiService.decryptCoordinate(
+                response.result.targetLat,
+              ),
+              lng: roadViewApiService.decryptCoordinate(
+                response.result.targetLng,
+              ),
+            };
+            this.gameId = roadViewApiService.convertGameIdToNumber(
+              response.result.gameId,
+            );
+          } else {
+            this.currentLocation = { ...this.sharedTargetLocation };
+          }
+        } catch (error) {
+          this.currentLocation = { ...this.sharedTargetLocation };
+        }
+
+        this.$nextTick(() => {
+          if (this.$refs.phoneFrame) {
+            this.$refs.phoneFrame.ensureMapInitialized();
+          }
+        });
+        return;
+      }
+
       this.fetchGameLocationData();
+    },
+
+    initializeSharedMode(shareToken) {
+      const parsedPayload = this.parseShareToken(shareToken);
+      if (!parsedPayload || !parsedPayload.location) {
+        this.showToastMessage("유효하지 않은 공유 링크입니다.");
+        this.$router.replace({
+          path: "/roadView/practice",
+          query: { sido: "SEOUL" },
+        });
+        return;
+      }
+
+      this.isSharedRecipientMode = true;
+      this.currentSidoKey = parsedPayload.sido || "SEOUL";
+      this.sharedTargetLocation = {
+        lat: parsedPayload.location.lat,
+        lng: parsedPayload.location.lng,
+      };
+      this.selectedRegion =
+        this.regions.find(
+          (region) => region.id === (parsedPayload.regionId || "seoul"),
+        ) || this.regions[0];
+      this.gameTitle = `${this.selectedRegion.name} 로드뷰 공유게임`;
+      this.poiName = parsedPayload.poiName || null;
+      this.fullAddress = parsedPayload.fullAddress || null;
+      this.sharedSource = {
+        nickname: parsedPayload.source?.nickname || "공유 플레이어",
+        score: Number(parsedPayload.source?.score || 0),
+        hintsUsed: Number(parsedPayload.source?.hintsUsed || 0),
+      };
+    },
+
+    parseShareToken(token) {
+      try {
+        const normalizedToken = token.replace(/-/g, "+").replace(/_/g, "/");
+        const decodedText = decodeURIComponent(
+          escape(window.atob(normalizedToken)),
+        );
+        const parsed = JSON.parse(decodedText);
+        if (
+          !parsed ||
+          !parsed.location ||
+          Number.isNaN(parsed.location.lat) ||
+          Number.isNaN(parsed.location.lng)
+        ) {
+          return null;
+        }
+        return parsed;
+      } catch (error) {
+        console.error("공유 토큰 파싱 실패:", error);
+        return null;
+      }
+    },
+
+    buildShareToken(payload) {
+      const encoded = window.btoa(
+        unescape(encodeURIComponent(JSON.stringify(payload))),
+      );
+      return encoded.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    },
+
+    async shareGame() {
+      if (!this.currentLocation) {
+        this.showToastMessage("공유할 게임 데이터가 없습니다.");
+        return;
+      }
+
+      if (this.isShareLoading) {
+        return;
+      }
+
+      this.isShareLoading = true;
+      try {
+        const payload = {
+          version: 1,
+          regionId: this.selectedRegion?.id || "seoul",
+          sido: this.currentSidoKey || "SEOUL",
+          location: {
+            lat: this.currentLocation.lat,
+            lng: this.currentLocation.lng,
+          },
+          poiName: this.poiName,
+          fullAddress: this.fullAddress,
+          source: {
+            // 우선순위: 1) API 응답 nickname, 2) localStorage, 3) 폴백
+            nickname:
+              this.playerNickname ||
+              localStorage.getItem("nickname") ||
+              "익명 플레이어",
+            score: this.score,
+            hintsUsed: this.usedHints,
+          },
+        };
+
+        const apiResponse = await roadViewApiService.createPracticeShareLink(
+          payload,
+        );
+        if (!this.isComponentActive) {
+          return;
+        }
+        let shareUrl = apiResponse?.result?.shareUrl;
+
+        if (!shareUrl) {
+          const token = this.buildShareToken(payload);
+          const routeData = this.$router.resolve({
+            path: "/roadView/practice",
+            query: { shareToken: token },
+          });
+          shareUrl = `${window.location.origin}${routeData.href}`;
+        }
+
+        await this.copyToClipboard(shareUrl);
+        if (!this.isComponentActive) {
+          return;
+        }
+        this.isShareCopied = true;
+        this.clearShareCopiedTimer();
+        this.shareCopiedResetTimer = setTimeout(() => {
+          if (!this.isComponentActive) {
+            return;
+          }
+          this.isShareCopied = false;
+          this.shareCopiedResetTimer = null;
+        }, 1600);
+        this.showToastMessage("링크가 복사되었습니다.");
+      } catch (error) {
+        if (!this.isComponentActive) {
+          return;
+        }
+        console.error("공유 링크 생성 실패:", error);
+        this.isShareCopied = false;
+        this.clearShareCopiedTimer();
+        this.showToastMessage("링크 복사에 실패했습니다. 다시 시도해주세요.");
+      } finally {
+        if (this.isComponentActive) {
+          this.isShareLoading = false;
+        }
+      }
+    },
+
+    clearShareCopiedTimer() {
+      if (this.shareCopiedResetTimer) {
+        clearTimeout(this.shareCopiedResetTimer);
+        this.shareCopiedResetTimer = null;
+      }
+    },
+
+    async copyToClipboard(value) {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(value);
+        return;
+      }
+
+      const textArea = document.createElement("textarea");
+      textArea.value = value;
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+
+      const isCopied = document.execCommand("copy");
+      document.body.removeChild(textArea);
+      if (!isCopied) {
+        throw new Error("clipboard copy failed");
+      }
     },
 
     // 게임 상태 초기화
     resetGame() {
       // 타이머 정리
       this.clearTimer();
+      this.clearShareCopiedTimer();
 
       // 상태 초기화
       this.showResult = false;
       this.isMapOpen = false;
+      this.isShareCopied = false;
       this.guessedLocation = null;
       this.distance = null;
       this.score = 0;
@@ -479,6 +689,14 @@ export default {
     clearAllTimers() {
       // 타이머 정리
       this.clearTimer();
+      this.clearToastTimer();
+    },
+
+    clearToastTimer() {
+      if (this.toastTimeout) {
+        clearTimeout(this.toastTimeout);
+        this.toastTimeout = null;
+      }
     },
 
     // 지도 토글
@@ -493,13 +711,13 @@ export default {
           if (this.$refs.phoneFrame) {
             this.$refs.phoneFrame.ensureMapInitialized();
           }
-          
+
           // 지도가 초기화될 때까지 기다린 후 리사이즈
           setTimeout(() => {
             const mapInstance = this.$refs.phoneFrame.getMapInstance();
             if (mapInstance) {
               mapInstance.relayout();
-              
+
               // 힌트 원 재표시
               if (this.hintCircle) {
                 this.hintCircle.setMap(mapInstance);
@@ -509,9 +727,8 @@ export default {
         });
       } else {
         // 지도를 닫을 때는 인라인 스타일에서 자동으로 z-index가 -1로 설정됨
-        
         // hintCircle 객체는 그대로 유지, 다음에 지도가 열렸을 때 다시 표시
-      }  
+      }
     },
 
     // 힌트 사용
@@ -537,16 +754,16 @@ export default {
       // 맵 컴포넌트가 없는 경우 중단
       if (!this.$refs.phoneFrame) {
         this.showToastMessage(
-          "지도를 불러오는 중입니다. 잠시 후 다시 시도해주세요."
+          "지도를 불러오는 중입니다. 잠시 후 다시 시도해주세요.",
         );
         return;
       }
-      
+
       // PhoneFrame 컴포넌트의 getMapInstance() 메서드를 사용하여 맵 인스턴스를 가져옴
       const map = this.$refs.phoneFrame.getMapInstance();
       if (!map) {
         this.showToastMessage(
-          "지도를 불러오는 중입니다. 잠시 후 다시 시도해주세요."
+          "지도를 불러오는 중입니다. 잠시 후 다시 시도해주세요.",
         );
         return;
       }
@@ -562,35 +779,41 @@ export default {
       }
 
       // kakao 객체가 정의되어 있는지 확인
-      if (typeof kakao === 'undefined') {
-        console.error('Kakao Maps SDK is not loaded');
-        this.showToastMessage('지도를 불러오는 중 오류가 발생했습니다.');
+      if (typeof kakao === "undefined") {
+        console.error("Kakao Maps SDK is not loaded");
+        this.showToastMessage("지도를 불러오는 중 오류가 발생했습니다.");
         return;
       }
-      
+
       // 정답 위치 좌표
       const actualPosition = new kakao.maps.LatLng(
         this.currentLocation.lat,
-        this.currentLocation.lng
+        this.currentLocation.lng,
       );
-      
+
       // 랜덤한 원 생성 (정답 위치를 포함하는)
       // 1. 랜덤한 각도 생성 (0-360도)
       const randomAngle = Math.random() * 360;
-      
+
       // 2. 랜덤한 거리 생성 (0부터 힌트 반경의 70%까지)
       // 힌트 반경의 70%까지만 이동하여 정답이 항상 원 안에 포함되도록 함
       const maxDistance = this.hintRadius * 0.7;
       const randomDistance = Math.random() * maxDistance;
-      
+
       // 3. 랜덤한 위치 계산 (정답으로부터 랜덤한 각도와 거리만큼 떨어진 지점)
       // 위도 1도 = 약 111km, 경도 1도 = 약 111km * cos(위도)
-      const randomLat = this.currentLocation.lat + (randomDistance / 111000) * Math.cos(this.deg2rad(randomAngle));
-      const randomLng = this.currentLocation.lng + (randomDistance / (111000 * Math.cos(this.deg2rad(this.currentLocation.lat)))) * Math.sin(this.deg2rad(randomAngle));
-      
+      const randomLat =
+        this.currentLocation.lat +
+        (randomDistance / 111000) * Math.cos(this.deg2rad(randomAngle));
+      const randomLng =
+        this.currentLocation.lng +
+        (randomDistance /
+          (111000 * Math.cos(this.deg2rad(this.currentLocation.lat)))) *
+          Math.sin(this.deg2rad(randomAngle));
+
       // 랜덤한 원의 중심점
       const circleCenter = new kakao.maps.LatLng(randomLat, randomLng);
-      
+
       // 힌트 원 생성 (랜덤한 위치에 중심을 둔 원)
       this.hintCircle = new kakao.maps.Circle({
         center: circleCenter,
@@ -605,7 +828,7 @@ export default {
       });
 
       // 힌트 원이 보이도록 지도 이동 (원의 중심으로)
-      
+
       // map.setCenter(circleCenter);
 
       // 힌트 반경 조정 (힌트를 사용할 때마다 원이 작아짐)
@@ -635,7 +858,7 @@ export default {
 
       // 힌트 사용 메시지 표시
       this.showToastMessage(
-        `힌트를 사용했습니다. (남은 힌트: ${this.hintCount}/3)`
+        `힌트를 사용했습니다. (남은 힌트: ${this.hintCount}/3)`,
       );
     },
 
@@ -694,48 +917,58 @@ export default {
       try {
         // 현재 설정된 sido key 사용 (쿼리 파라미터에서 받은 값)
         const sido = this.currentSidoKey || "SEOUL";
-        
+
         // 백엔드 API 호출하여 연습 게임 시작 (최대 5번 재시도)
         const response = await roadViewApiService.startPracticeGame(sido);
-        
+
         if (response.isSuccess && response.result) {
-          const { gameId, targetLat, targetLng, markerImageUrl, poiName, fullAddress } = response.result;
-          
+          const {
+            gameId,
+            targetLat,
+            targetLng,
+            markerImageUrl,
+            poiName,
+            fullAddress,
+          } = response.result;
+
           // 좌표 유효성 검사
           if (!targetLat || !targetLng) {
-            throw new Error('좌표 데이터가 유효하지 않습니다.');
+            throw new Error("좌표 데이터가 유효하지 않습니다.");
           }
-          
+
           // API 응답 데이터를 컴포넌트 상태에 저장
           // gameId를 숫자로 변환하여 저장 (백엔드 Long 타입)
           this.gameId = roadViewApiService.convertGameIdToNumber(gameId);
           this.markerImageUrl = markerImageUrl;
-          this.poiName = poiName || this.poiName || '';
+          this.poiName = poiName || this.poiName || "";
           this.fullAddress = fullAddress || null;
-          
+
           // 암호화된 좌표를 복호화
           const decryptedLat = roadViewApiService.decryptCoordinate(targetLat);
           const decryptedLng = roadViewApiService.decryptCoordinate(targetLng);
-          
+
           // 복호화된 좌표 유효성 검사
           if (isNaN(decryptedLat) || isNaN(decryptedLng)) {
-            throw new Error('좌표 복호화에 실패했습니다.');
+            throw new Error("좌표 복호화에 실패했습니다.");
           }
-          
+
           // coordinate를 확실하게 받은 후에만 currentLocation 설정
           this.currentLocation = {
             lat: decryptedLat,
-            lng: decryptedLng
+            lng: decryptedLng,
           };
-          
-          console.log("✅ 좌표 수신 완료, 로드뷰 표시 준비:", this.currentLocation);
-          
+
+          console.log(
+            "✅ 좌표 수신 완료, 로드뷰 표시 준비:",
+            this.currentLocation,
+          );
+
           // currentLocation이 설정된 후 PhoneFrame의 지도 초기화 보장
           this.$nextTick(() => {
             if (this.$refs.phoneFrame) {
               // 지도가 열려있으면 리사이즈, 닫혀있으면 초기화만 보장
               this.$refs.phoneFrame.ensureMapInitialized();
-              
+
               // 지도가 열려있으면 리사이즈
               if (this.isMapOpen) {
                 setTimeout(() => {
@@ -747,15 +980,14 @@ export default {
               }
             }
           });
-          
         } else {
-          throw new Error(response.message || '연습 게임 시작에 실패했습니다.');
+          throw new Error(response.message || "연습 게임 시작에 실패했습니다.");
         }
       } catch (error) {
         console.error("연습 게임 시작 API 호출 최종 실패:", error);
         // 5번 시도 후 모두 실패한 경우에만 에러 메시지 표시
         this.showToastMessage("게임을 시작할 수 없습니다. 다시 시도해주세요.");
-        
+
         // API 실패 시 더미 데이터로 폴백
         this.fallbackToDummyData();
       } finally {
@@ -766,19 +998,19 @@ export default {
     // API 실패 시 더미 데이터로 폴백
     fallbackToDummyData() {
       console.warn("더미 데이터로 폴백");
-      
+
       // 더미 데이터: 로드뷰가 있는 것으로 확인된 좌표들
       const knownLocations = [
-        { lat: 37.566826, lng: 126.978656, name: '서울시청' },
-        { lat: 37.551229, lng: 126.988205, name: '남산타워' },
-        { lat: 37.570975, lng: 126.976999, name: '광화문' },
-        { lat: 37.512809, lng: 127.058984, name: '삼성역' },
-        { lat: 35.179682, lng: 129.075087, name: '부산 해운대' },
-        { lat: 35.158831, lng: 129.160007, name: '부산 광안리' },
-        { lat: 35.10146, lng: 129.032364, name: '부산 서면' },
-        { lat: 37.456769, lng: 126.705528, name: '인천 송도' },
-        { lat: 33.249293, lng: 126.560693, name: '제주 올레길' },
-        { lat: 33.4507, lng: 126.570667, name: '제주 시내' },
+        { lat: 37.566826, lng: 126.978656, name: "서울시청" },
+        { lat: 37.551229, lng: 126.988205, name: "남산타워" },
+        { lat: 37.570975, lng: 126.976999, name: "광화문" },
+        { lat: 37.512809, lng: 127.058984, name: "삼성역" },
+        { lat: 35.179682, lng: 129.075087, name: "부산 해운대" },
+        { lat: 35.158831, lng: 129.160007, name: "부산 광안리" },
+        { lat: 35.10146, lng: 129.032364, name: "부산 서면" },
+        { lat: 37.456769, lng: 126.705528, name: "인천 송도" },
+        { lat: 33.249293, lng: 126.560693, name: "제주 올레길" },
+        { lat: 33.4507, lng: 126.570667, name: "제주 시내" },
       ];
 
       // 지역에 맞는 위치 선택
@@ -795,20 +1027,20 @@ export default {
       const randomIndex = Math.floor(Math.random() * filteredLocations.length);
       const chosen = filteredLocations[randomIndex];
       this.currentLocation = { lat: chosen.lat, lng: chosen.lng };
-      this.poiName = chosen.name || this.poiName || '';
-      
+      this.poiName = chosen.name || this.poiName || "";
+
       // 더미 게임 ID 생성 (Number 타입)
       this.gameId = Date.now();
       this.markerImageUrl = null;
-      
+
       console.log("더미 데이터로 선택된 위치:", this.currentLocation);
-      
+
       // currentLocation이 설정된 후 PhoneFrame의 지도 초기화 보장
       this.$nextTick(() => {
         if (this.$refs.phoneFrame) {
           // 지도가 열려있으면 리사이즈, 닫혀있으면 초기화만 보장
           this.$refs.phoneFrame.ensureMapInitialized();
-          
+
           // 지도가 열려있으면 리사이즈
           if (this.isMapOpen) {
             setTimeout(() => {
@@ -834,11 +1066,14 @@ export default {
         position.lat,
         position.lng,
         this.currentLocation.lat,
-        this.currentLocation.lng
+        this.currentLocation.lng,
       );
 
       // 로컬 점수 계산 (임시, 백엔드에서 최종 점수 계산)
-      const localScore = Math.max(0, Math.floor(100 - Math.sqrt(distance) * 10));
+      const localScore = Math.max(
+        0,
+        Math.floor(100 - Math.sqrt(distance) * 10),
+      );
 
       // 게임 결과 저장 (백엔드 API 호출 전 임시 저장)
       this.distance = distance;
@@ -857,10 +1092,47 @@ export default {
       // 결과 화면 표시
       this.showResult = true;
 
-      // 결과 지도 초기화
-      this.$nextTick(() => {
-        this.initResultMap(position);
-      });
+      if (this.isSharedRecipientMode) {
+        this.showSharedComparison(position, localScore);
+      }
+    },
+
+    async showSharedComparison(position, localScore) {
+      try {
+        const payload = {
+          gameId: this.gameId,
+          shareToken: this.$route.query.shareToken,
+          submittedLat: position.lat,
+          submittedLng: position.lng,
+          answerTime: this.gameStartTime
+            ? (Date.now() - this.gameStartTime) / 1000
+            : this.elapsedTime,
+          hintsUsed: this.usedHints,
+        };
+        const response = await roadViewApiService.endSharedPracticeGame(
+          payload,
+        );
+        if (response?.isSuccess && response.result) {
+          this.sharedSource = {
+            nickname:
+              response.result.sharerNickname || this.sharedSource.nickname,
+            score: Number(
+              response.result.sharerScore || this.sharedSource.score,
+            ),
+            hintsUsed: Number(
+              response.result.sharerHintUsedCount ||
+                this.sharedSource.hintsUsed,
+            ),
+          };
+          if (typeof response.result.score === "number") {
+            this.score = response.result.score;
+          }
+        } else {
+          this.score = localScore;
+        }
+      } catch (error) {
+        console.error("공유 게임 결과 비교 API 실패:", error);
+      }
     },
 
     // 백엔드 API로 게임 종료
@@ -872,33 +1144,35 @@ export default {
 
       try {
         // 답변 소요 시간 계산 (초 단위)
-        const answerTime = this.gameStartTime 
-          ? (Date.now() - this.gameStartTime) / 1000 
+        const answerTime = this.gameStartTime
+          ? (Date.now() - this.gameStartTime) / 1000
           : this.elapsedTime;
 
         const endData = {
           gameId: this.gameId, // Number 타입
           submittedLat: position.lat, // Number 타입
           submittedLng: position.lng, // Number 타입
-          answerTime: answerTime // Number 타입 (초)
+          answerTime: answerTime, // Number 타입 (초)
         };
 
         console.log("게임 종료 요청 데이터:", endData);
 
         const response = await roadViewApiService.endPracticeGame(endData);
-        
+
         if (response.isSuccess && response.result) {
-          const { score, poiName, fullAddress } = response.result;
-          
+          const { score, poiName, fullAddress, nickname } = response.result;
+
           // 백엔드에서 계산된 점수로 업데이트
           this.score = score;
-          
+
           // POI 이름과 전체 주소 업데이트 (종료 응답에 포함된 경우)
           if (poiName) this.poiName = poiName;
           if (fullAddress) this.fullAddress = fullAddress;
-          
+
+          // TODO: 백엔드 응답에 nickname 필드가 추가되면 여기서 저장됨
+          if (nickname) this.playerNickname = nickname;
         } else {
-          throw new Error(response.message || '게임 결과 처리에 실패했습니다.');
+          throw new Error(response.message || "게임 결과 처리에 실패했습니다.");
         }
       } catch (error) {
         console.error("게임 종료 API 호출 중 오류:", error);
@@ -906,86 +1180,13 @@ export default {
       }
     },
 
-    // 결과 지도 초기화
-    initResultMap(guessPosition) {
-      if (!window.kakao || !window.kakao.maps) return;
-
-      const resultMapContainer = this.$refs.resultMapElement;
-      if (!resultMapContainer) return;
-
-      const resultMap = new kakao.maps.Map(resultMapContainer, {
-        center: new kakao.maps.LatLng(
-          (guessPosition.lat + this.currentLocation.lat) / 2,
-          (guessPosition.lng + this.currentLocation.lng) / 2
-        ),
-        level: 8,
+    goToLogin() {
+      this.$router.push({
+        path: "/loginPage",
+        query: {
+          redirect: this.$route.fullPath,
+        },
       });
-
-      // 사용자 마커 (장착한 마커 이미지 사용)
-      if (this.markerImageUrl) {
-        // 사용자가 장착한 마커 이미지가 있는 경우
-        const userMarkerImage = new kakao.maps.MarkerImage(
-          this.markerImageUrl,
-          getUserMarkerSize(kakao)
-        );
-        new kakao.maps.Marker({
-          position: new kakao.maps.LatLng(guessPosition.lat, guessPosition.lng),
-          map: resultMap,
-          image: userMarkerImage,
-        });
-      } else {
-        // 기본 마커 사용
-        new kakao.maps.Marker({
-          position: new kakao.maps.LatLng(guessPosition.lat, guessPosition.lng),
-          map: resultMap,
-        });
-      }
-
-      // 실제 위치 마커 (location-flag.png 사용 - RankView와 동일)
-      const answerImageSrc = require('@/shared/assets/images/marker/location-flag.png');
-      const answerMarkerImage = new kakao.maps.MarkerImage(
-        answerImageSrc,
-        getResultMarkerSize(kakao)
-      );
-
-      new kakao.maps.Marker({
-        position: new kakao.maps.LatLng(
-          this.currentLocation.lat,
-          this.currentLocation.lng
-        ),
-        map: resultMap,
-        image: answerMarkerImage,
-      });
-
-      // 선 그리기
-      const polyline = new kakao.maps.Polyline({
-        path: [
-          new kakao.maps.LatLng(guessPosition.lat, guessPosition.lng),
-          new kakao.maps.LatLng(
-            this.currentLocation.lat,
-            this.currentLocation.lng
-          ),
-        ],
-        strokeWeight: 3,
-        strokeColor: "#5B9DFF",
-        strokeOpacity: 0.7,
-        strokeStyle: "solid",
-      });
-
-      polyline.setMap(resultMap);
-
-      // 지도 범위 재설정
-      const bounds = new kakao.maps.LatLngBounds();
-      bounds.extend(
-        new kakao.maps.LatLng(guessPosition.lat, guessPosition.lng)
-      );
-      bounds.extend(
-        new kakao.maps.LatLng(
-          this.currentLocation.lat,
-          this.currentLocation.lng
-        )
-      );
-      resultMap.setBounds(bounds);
     },
 
     // Spot 버튼 클릭 시 마커 위치 확인
@@ -1049,6 +1250,9 @@ export default {
 
     // 다음 라운드 시작
     nextRound() {
+      this.isComponentActive = false;
+      this.isShareCopied = false;
+      this.clearShareCopiedTimer();
       // 페이지 새로고침으로 게임을 완전히 초기화
       window.location.reload();
     },
@@ -1057,6 +1261,10 @@ export default {
     exitGame() {
       // 타이머 정리
       this.clearTimer();
+      this.isComponentActive = false;
+      this.isShareCopied = false;
+      this.clearShareCopiedTimer();
+      this.clearToastTimer();
       this.$router.push("/roadView/main");
     },
 
@@ -1074,7 +1282,6 @@ export default {
 
     // 로드뷰 로드 완료 이벤트 핸들러
     onRoadViewLoaded(data) {
-    
       this.errorCount = 0; // 에러 카운트 초기화
     },
 
@@ -1082,48 +1289,60 @@ export default {
     async onRoadViewError() {
       console.error("로드뷰 로드 오류, 좌표 재발급 시도");
       this.errorCount++;
-      
+
+      if (this.isSharedRecipientMode) {
+        this.showToastMessage(
+          "공유 게임 좌표에서 로드뷰를 찾을 수 없습니다. 지도 모드로 전환합니다.",
+        );
+        this.isMapOpen = true;
+        return;
+      }
+
       // gameId가 있으면 재발급 API 호출 (최대 5번 재시도)
       if (this.gameId) {
         try {
-          this.showToastMessage("로드뷰를 찾을 수 없어 새로운 좌표를 요청합니다...");
-          
+          this.showToastMessage(
+            "로드뷰를 찾을 수 없어 새로운 좌표를 요청합니다...",
+          );
+
           // coordinate를 받을 때까지 로드뷰를 표시하지 않도록 currentLocation 초기화
           this.currentLocation = null;
-          
+
           // 최대 5번 재시도하는 reissueCoordinate 호출
-          const response = await roadViewApiService.reissueCoordinate(this.gameId);
-          
+          const response = await roadViewApiService.reissueCoordinate(
+            this.gameId,
+          );
+
           if (response.isSuccess && response.result) {
             const { targetLat, targetLng } = response.result;
-            
+
             // 좌표 유효성 검사
             if (!targetLat || !targetLng) {
-              throw new Error('좌표 데이터가 유효하지 않습니다.');
+              throw new Error("좌표 데이터가 유효하지 않습니다.");
             }
-            
+
             // 암호화된 좌표를 복호화
-            const decryptedLat = roadViewApiService.decryptCoordinate(targetLat);
-            const decryptedLng = roadViewApiService.decryptCoordinate(targetLng);
-            
+            const decryptedLat =
+              roadViewApiService.decryptCoordinate(targetLat);
+            const decryptedLng =
+              roadViewApiService.decryptCoordinate(targetLng);
+
             // 복호화된 좌표 유효성 검사
             if (isNaN(decryptedLat) || isNaN(decryptedLng)) {
-              throw new Error('좌표 복호화에 실패했습니다.');
+              throw new Error("좌표 복호화에 실패했습니다.");
             }
-            
+
             // coordinate를 확실하게 받은 후에만 currentLocation 설정
             this.currentLocation = {
               lat: decryptedLat,
-              lng: decryptedLng
+              lng: decryptedLng,
             };
-            
-          
-            
+
             // currentLocation이 설정된 후 PhoneFrame의 지도 초기화 보장
             this.$nextTick(() => {
               if (this.$refs.phoneFrame) {
                 this.$refs.phoneFrame.ensureMapInitialized();
-                
+
                 if (this.isMapOpen) {
                   setTimeout(() => {
                     const mapInstance = this.$refs.phoneFrame.getMapInstance();
@@ -1134,22 +1353,24 @@ export default {
                 }
               }
             });
-            
+
             this.errorCount = 0; // 성공 시 에러 카운트 초기화
             this.showToastMessage("새로운 좌표로 로드뷰를 다시 시도합니다.");
           } else {
-            throw new Error(response.message || '좌표 재발급에 실패했습니다.');
+            throw new Error(response.message || "좌표 재발급에 실패했습니다.");
           }
         } catch (error) {
           console.error("좌표 재발급 최종 실패 (5회 시도):", error);
-          
+
           // 5번 시도 후 모두 실패한 경우에만 에러 처리
           if (this.errorCount > this.maxErrorRetry) {
-            this.showToastMessage("로드뷰를 찾을 수 없어 지도 모드로 전환합니다.");
+            this.showToastMessage(
+              "로드뷰를 찾을 수 없어 지도 모드로 전환합니다.",
+            );
             this.isMapOpen = true;
           } else {
             this.showToastMessage(
-              `로드뷰 로드 실패 (${this.errorCount}/${this.maxErrorRetry}), 새 위치를 시도합니다...`
+              `로드뷰 로드 실패 (${this.errorCount}/${this.maxErrorRetry}), 새 위치를 시도합니다...`,
             );
             this.fetchGameLocationData();
           }
@@ -1157,11 +1378,13 @@ export default {
       } else {
         // gameId가 없으면 기존 로직 사용
         if (this.errorCount > this.maxErrorRetry) {
-          this.showToastMessage("로드뷰를 찾을 수 없어 지도 모드로 전환합니다.");
+          this.showToastMessage(
+            "로드뷰를 찾을 수 없어 지도 모드로 전환합니다.",
+          );
           this.isMapOpen = true;
         } else {
           this.showToastMessage(
-            `로드뷰 로드 실패 (${this.errorCount}/${this.maxErrorRetry}), 새 위치를 시도합니다...`
+            `로드뷰 로드 실패 (${this.errorCount}/${this.maxErrorRetry}), 새 위치를 시도합니다...`,
           );
           this.fetchGameLocationData();
         }
@@ -1170,15 +1393,21 @@ export default {
 
     // 토스트 메시지 표시
     showToastMessage(message) {
-      if (this.toastTimeout) {
-        clearTimeout(this.toastTimeout);
+      if (!this.isComponentActive) {
+        return;
       }
+
+      this.clearToastTimer();
 
       this.toastMessage = message;
       this.showToast = true;
 
       this.toastTimeout = setTimeout(() => {
+        if (!this.isComponentActive) {
+          return;
+        }
         this.showToast = false;
+        this.toastTimeout = null;
       }, 3000);
     },
 
@@ -1242,7 +1471,6 @@ export default {
       }
 
       try {
-      
         this.$refs.phoneFrame.reloadMap();
         if (showToast) {
           this.showToastMessage("지도를 재로딩합니다...");
@@ -1250,7 +1478,9 @@ export default {
       } catch (error) {
         console.error("지도 재로딩 실패:", error);
         if (showToast) {
-          this.showToastMessage("지도 재로딩에 실패했습니다. 다시 시도해주세요.");
+          this.showToastMessage(
+            "지도 재로딩에 실패했습니다. 다시 시도해주세요.",
+          );
         }
       }
     },
@@ -1495,157 +1725,6 @@ export default {
   font-size: 1.1rem;
 }
 
-/* 결과 화면 */
-.result-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: rgba(0, 0, 0, 0.8);
-  z-index: 25;
-  backdrop-filter: blur(5px);
-}
-
-.result-content {
-  background-color: white;
-  padding: 35px;
-  border-radius: 20px;
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
-  text-align: center;
-  max-width: 600px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-  animation: popIn 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-}
-
-@keyframes popIn {
-  0% {
-    transform: scale(0.8);
-    opacity: 0;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.result-content h2 {
-  margin-top: 0;
-  color: #333;
-  font-size: 1.8rem;
-}
-
-.result-info {
-  margin: 25px 0;
-}
-
-.info-item {
-  display: flex;
-  gap: 8px; 
-  flex-direction: row;
-  align-items: center;
-}
-
-.info-icon {
-  font-size: 1.2rem;
-  margin-bottom: 5px;
-}
-
-.info-value {
-  font-size: 1.7rem;
-  font-weight: bold;
-  color: #2ecc71;
-}
-
-.info-label {
-  color: #7f8c8d;
-  font-size: 0.9rem;
-}
-
-.result-map {
-  width: 100%;
-  height: 300px;
-  margin: 25px 0;
-  border-radius: 15px;
-  overflow: hidden;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-}
-
-.rank-change {
-  margin: 20px 0;
-  padding: 20px;
-  background-color: #f9f9f9;
-  border-radius: 15px;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-}
-
-.rank-icon {
-  font-size: 1.2rem;
-  margin-bottom: 5px;
-}
-
-.rank-value {
-  font-size: 1.3rem;
-  font-weight: bold;
-}
-
-.rank-value.positive {
-  color: #2ecc71;
-}
-
-.rank-value.negative {
-  color: #e74c3c;
-}
-
-.rank-current {
-  color: #7f8c8d;
-  font-size: 0.9rem;
-}
-
-.result-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-top: 25px;
-}
-
-.restart-btn,
-.exit-btn {
-  padding: 12px 25px;
-  border: none;
-  border-radius: 25px;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
-.restart-btn {
-  background: linear-gradient(135deg, #3498db, #2980b9);
-  color: white;
-}
-
-.restart-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 15px rgba(52, 152, 219, 0.4);
-}
-
-.result-buttons .exit-btn {
-  background: linear-gradient(135deg, #e74c3c, #c0392b);
-  color: white;
-}
-
-.result-buttons .exit-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 15px rgba(231, 76, 60, 0.4);
-}
-
 /* 모달 */
 .modal-overlay {
   position: absolute;
@@ -1714,18 +1793,11 @@ export default {
 
 /* 반응형 디자인 */
 @media (max-width: 768px) {
-  .result-map {
-    height: 250px;
-  }
 }
 
 @media (max-width: 768px) {
   .top-ads-container {
     padding: var(--spacing-xs) 0;
-  }
-  
-  .game-header {
-    /* top은 동적으로 바인딩됨 */
   }
 }
 
@@ -1733,7 +1805,7 @@ export default {
   .top-ads-container {
     padding: 4px 0;
   }
-  
+
   .game-header {
     padding: 10px;
     /* top은 동적으로 바인딩됨 */
@@ -1743,19 +1815,6 @@ export default {
     flex-direction: column;
     align-items: flex-end;
     gap: 5px;
-  }
-
-  .result-map {
-    height: 200px;
-  }
-
-  .result-content {
-    padding: 25px;
-  }
-
-  .result-buttons {
-    flex-direction: column;
-    gap: 15px;
   }
 
   .map-toggle {
@@ -1833,95 +1892,5 @@ export default {
 
 .phone-hint-button i {
   font-size: 0.9rem;
-}
-
-/* 정답 위치 정보 스타일 */
-.answer-location-info {
-  margin: 20px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.poi-info,
-.address-info {
-  background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
-  border: 2px solid #93c5fd;
-  padding: 14px 18px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-  transition: all 0.3s ease;
-}
-
-.poi-info:hover,
-.address-info:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.2);
-}
-
-.poi-icon,
-.address-icon {
-  width: 42px;
-  height: 42px;
-  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-  color: white;
-  flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
-}
-
-.poi-text,
-.address-text {
-  flex: 1;
-}
-
-.poi-label,
-.address-label {
-  font-size: 0.75rem;
-  color: #1e40af;
-  margin-bottom: 4px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.poi-name,
-.address-value {
-  font-size: 1rem;
-  color: #1e3a8a;
-  font-weight: 700;
-  letter-spacing: -0.3px;
-  line-height: 1.4;
-}
-
-@media (max-width: 480px) {
-  .answer-location-info {
-    margin: 15px 0;
-    gap: 10px;
-  }
-
-  .poi-info,
-  .address-info {
-    padding: 12px 15px;
-  }
-
-  .poi-icon,
-  .address-icon {
-    width: 38px;
-    height: 38px;
-    font-size: 1rem;
-  }
-
-  .poi-name,
-  .address-value {
-    font-size: 0.9rem;
-  }
 }
 </style>

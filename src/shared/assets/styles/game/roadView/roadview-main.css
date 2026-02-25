@@ -412,12 +412,11 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(15, 23, 42, 0.75);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  backdrop-filter: blur(8px);
 }
 
 .popup-content {
@@ -499,7 +498,7 @@
   background: #f1f5f9;
   border: none;
   cursor: pointer;
-  transition: background-color 0.3s, box-shadow 0.3s, color 0.3s;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
   font-size: 0.9rem;
   color: #334155;
   font-weight: 500;
@@ -736,17 +735,18 @@
 
 .popup-slide-enter-active,
 .popup-slide-leave-active {
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.22s ease, transform 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
 }
 
 .popup-slide-enter-from {
   opacity: 0;
-  transform: translateY(30px);
+  transform: translateY(20px);
 }
 
 .popup-slide-leave-to {
   opacity: 0;
-  transform: translateY(30px);
+  transform: translateY(20px);
 }
 
 /* 튜토리얼 페이드 트랜지션 */

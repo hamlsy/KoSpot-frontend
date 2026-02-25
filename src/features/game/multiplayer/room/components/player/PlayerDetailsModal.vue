@@ -291,12 +291,15 @@ const formatJoinDate = (dateString) => {
   right: 0;
   bottom: 0;
   background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
   padding: 1rem;
+  transform: translateZ(0);
+  contain: paint;
 }
 
 /* 모달 컨테이너 */
@@ -311,6 +314,9 @@ const formatJoinDate = (dateString) => {
   box-shadow: 
     0 25px 50px -12px rgba(0, 0, 0, 0.25),
     0 0 0 1px rgba(255, 255, 255, 0.1);
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  contain: layout paint;
 }
 
 /* 닫기 버튼 */
@@ -720,59 +726,41 @@ const formatJoinDate = (dateString) => {
 }
 
 /* 모달 애니메이션 */
-.modal-fade-enter-active {
-  animation: modal-fade-in 0.3s ease-out;
-}
-
+.modal-fade-enter-active,
 .modal-fade-leave-active {
-  animation: modal-fade-out 0.2s ease-in;
+  transition: opacity 0.22s ease;
+  will-change: opacity;
 }
 
-.modal-fade-enter-active .player-details-modal {
-  animation: modal-slide-in 0.3s ease-out;
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
 }
 
+.modal-fade-enter-active .player-details-modal,
 .modal-fade-leave-active .player-details-modal {
-  animation: modal-slide-out 0.2s ease-in;
+  transition: transform 0.24s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.22s ease;
+  will-change: transform, opacity;
 }
 
-@keyframes modal-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+.modal-fade-enter-from .player-details-modal,
+.modal-fade-leave-to .player-details-modal {
+  transform: translate3d(0, 10px, 0) scale(0.96);
+  opacity: 0;
 }
 
-@keyframes modal-fade-out {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
+.modal-fade-enter-to .player-details-modal,
+.modal-fade-leave-from .player-details-modal {
+  transform: translate3d(0, 0, 0) scale(1);
+  opacity: 1;
 }
 
-@keyframes modal-slide-in {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-@keyframes modal-slide-out {
-  from {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: scale(0.95) translateY(10px);
+@media (prefers-reduced-motion: reduce) {
+  .modal-fade-enter-active,
+  .modal-fade-leave-active,
+  .modal-fade-enter-active .player-details-modal,
+  .modal-fade-leave-active .player-details-modal {
+    transition-duration: 0.01ms;
   }
 }
 

@@ -19,6 +19,9 @@ const ROADVIEW_ENDPOINTS = {
   PRACTICE: {
     START: '/roadView/practice/start',
     END: '/roadView/practice/end',
+    SHARE: '/roadView/practice/share',
+    SHARED_START: '/roadView/practice/shared/start',
+    SHARED_END: '/roadView/practice/shared/end',
   },
   // 공통 (연습/랭크 공통 사용)
   REISSUE: '/roadView/{gameId}/reissue-coordinate',
@@ -211,6 +214,52 @@ class RoadViewApiService {
       console.error('❌ 연습 게임 종료 실패:', error);
       this._handleApiError(error, '연습 게임 종료에 실패했습니다.');
       throw error;
+    }
+  }
+
+  /**
+   * 연습 게임 공유 링크 생성
+   * @param {Object} payload - 공유 생성 데이터
+   * @returns {Promise<Object|null>} API 응답 데이터
+   */
+  async createPracticeShareLink(payload) {
+    try {
+      const response = await apiClient.post(ROADVIEW_ENDPOINTS.PRACTICE.SHARE, payload);
+      return response.data;
+    } catch (error) {
+      // 공유 API 미구현 환경에서는 프론트 fallback 토큰을 사용하기 위해 null 반환
+      console.warn('연습 게임 공유 링크 API 호출 실패, fallback 사용:', error?.message || error);
+      return null;
+    }
+  }
+
+  /**
+   * 공유 링크로 연습 게임 시작
+   * @param {string} shareToken - 공유 토큰
+   * @returns {Promise<Object>} API 응답 데이터
+   */
+  async startSharedPracticeGame(shareToken) {
+    try {
+      const response = await apiClient.post(ROADVIEW_ENDPOINTS.PRACTICE.SHARED_START, { shareToken });
+      return response.data;
+    } catch (error) {
+      console.error('❌ 공유 연습 게임 시작 실패:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 공유 연습 게임 종료 및 비교 결과 조회
+   * @param {Object} payload - 공유 결과 제출 데이터
+   * @returns {Promise<Object|null>} API 응답 데이터
+   */
+  async endSharedPracticeGame(payload) {
+    try {
+      const response = await apiClient.post(ROADVIEW_ENDPOINTS.PRACTICE.SHARED_END, payload);
+      return response.data;
+    } catch (error) {
+      console.warn('공유 연습 결과 API 호출 실패, 로컬 비교 사용:', error?.message || error);
+      return null;
     }
   }
 
