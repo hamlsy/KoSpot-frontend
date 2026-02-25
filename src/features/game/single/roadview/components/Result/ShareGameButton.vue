@@ -1,5 +1,11 @@
 <template>
-  <button type="button" class="share-btn" :disabled="disabled" :aria-label="buttonText" @click="$emit('share')">
+  <button
+    type="button"
+    class="share-btn"
+    :disabled="disabled"
+    :aria-label="buttonText"
+    @click="$emit('share')"
+  >
     <i class="fas fa-share-nodes"></i>
     <span>{{ disabled ? "링크 생성 중..." : buttonText }}</span>
   </button>
@@ -30,19 +36,19 @@ export default {
   cursor: pointer;
   font-weight: 700;
   font-size: 0.95rem;
-  color: #ffffff;
-  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  color: #111827;
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
-  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 6px 14px rgba(245, 158, 11, 0.28);
 }
 
 .share-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 8px 16px rgba(245, 158, 11, 0.38);
 }
 
 .share-btn:disabled {

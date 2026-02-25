@@ -1337,10 +1337,11 @@ export default {
         this.gameStore.state.locationInfo.poiName = poiName;
         // BaseGameView prop용 currentPoiName 업데이트
         this.currentPoiName = poiName;
-      } else {
-        // poiName이 없으면 빈 문자열로 초기화
+      } else if (!isReIssue) {
+        // 새 라운드 시작 시에만 초기화 (재발급 시에는 기존 poiName 유지)
         this.currentPoiName = "";
       }
+      // isReIssue && !poiName: currentPoiName을 그대로 유지 (변경 없음)
 
       // 라운드 시간 설정
       if (message.roundTime != null) {

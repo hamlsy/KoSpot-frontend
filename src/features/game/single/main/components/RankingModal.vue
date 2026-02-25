@@ -18,7 +18,7 @@
             :class="[
               'tier-tab',
               { active: selectedTier === tier.value },
-              `tier-${tier.value.toLowerCase()}`
+              `tier-${tier.value.toLowerCase()}`,
             ]"
           >
             <span class="tier-icon">
@@ -47,9 +47,15 @@
               </div>
               <div class="my-rank-info">
                 <div class="my-rank-tier">
-                  <div class="rank-badge" :class="`tier-${myRank.rankTier.toLowerCase()}`">
+                  <div
+                    class="rank-badge"
+                    :class="`tier-${myRank.rankTier.toLowerCase()}`"
+                  >
                     <i :class="getTierIcon(myRank.rankTier)"></i>
-                    <span>{{ formatTierName(myRank.rankTier) }} {{ formatLevel(myRank.rankLevel) }}</span>
+                    <span
+                      >{{ formatTierName(myRank.rankTier) }}
+                      {{ formatLevel(myRank.rankLevel) }}</span
+                    >
                   </div>
                 </div>
                 <div class="my-rank-details">
@@ -59,7 +65,9 @@
                   </div>
                   <div class="my-rank-item">
                     <span class="label">레이팅 점수</span>
-                    <span class="value">{{ formatNumber(myRank.ratingScore) }}</span>
+                    <span class="value">{{
+                      formatNumber(myRank.ratingScore)
+                    }}</span>
                   </div>
                 </div>
               </div>
@@ -73,20 +81,34 @@
                 class="player-item"
                 :class="{
                   'with-border': index !== players.length - 1,
-                  'is-me': myRank && player.nickname === myRank.nickname
+                  'is-me': myRank && player.nickname === myRank.nickname,
                 }"
                 @click="showPlayerDetails(player)"
               >
-                <div class="player-rank">{{ currentPage * 20 + index + 1 }}</div>
+                <div class="player-rank">
+                  {{ currentPage * 20 + index + 1 }}
+                </div>
                 <div class="player-info">
-                  <div class="player-tier-badge" :class="`tier-${player.rankTier.toLowerCase()}`">
+                  <div
+                    class="player-tier-badge"
+                    :class="`tier-${player.rankTier.toLowerCase()}`"
+                  >
                     <i :class="getTierIcon(player.rankTier)"></i>
-                    <span>{{ formatTierName(player.rankTier) }} {{ formatLevel(player.rankLevel) }}</span>
+                    <span
+                      >{{ formatTierName(player.rankTier) }}
+                      {{ formatLevel(player.rankLevel) }}</span
+                    >
                   </div>
                   <span class="player-nickname">{{ player.nickname }}</span>
-                  <span v-if="myRank && player.nickname === myRank.nickname" class="my-badge">나</span>
+                  <span
+                    v-if="myRank && player.nickname === myRank.nickname"
+                    class="my-badge"
+                    >나</span
+                  >
                 </div>
-                <div class="player-rating">{{ formatNumber(player.ratingScore) }}</div>
+                <div class="player-rating">
+                  {{ formatNumber(player.ratingScore) }}
+                </div>
               </div>
 
               <div v-if="players.length === 0" class="no-players">
@@ -106,7 +128,7 @@
             >
               <i class="fas fa-chevron-left"></i>
             </button>
-            
+
             <div class="page-numbers">
               <button
                 v-for="page in visiblePages"
@@ -127,10 +149,8 @@
               <i class="fas fa-chevron-right"></i>
             </button>
           </div>
-          
-          <div class="pagination-info">
-            {{ currentPage + 1 }} 페이지
-          </div>
+
+          <div class="pagination-info">{{ currentPage + 1 }} 페이지</div>
         </div>
       </div>
     </div>
@@ -147,36 +167,36 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
-import rankingService from '@/features/game/shared/services/ranking.service.js';
-import PlayerDetailsModal from '@/features/game/multiplayer/room/components/player/PlayerDetailsModal.vue';
+import { ref, computed, watch } from "vue";
+import rankingService from "@/features/game/shared/services/ranking.service.js";
+import PlayerDetailsModal from "@/features/game/multiplayer/room/components/player/PlayerDetailsModal.vue";
 
 const props = defineProps({
   show: {
     type: Boolean,
-    required: true
+    required: true,
   },
   gameMode: {
     type: String,
     required: true,
-    default: 'ROADVIEW'
+    default: "ROADVIEW",
   },
   initialRankTier: {
     type: String,
-    default: 'BRONZE'
-  }
+    default: "BRONZE",
+  },
 });
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(["close"]);
 
 // 티어 목록
 const tierList = [
-  { value: 'BRONZE', label: '브론즈' },
-  { value: 'SILVER', label: '실버' },
-  { value: 'GOLD', label: '골드' },
-  { value: 'PLATINUM', label: '플래티넘' },
-  { value: 'DIAMOND', label: '다이아몬드' },
-  { value: 'MASTER', label: '마스터' }
+  { value: "BRONZE", label: "브론즈" },
+  { value: "SILVER", label: "실버" },
+  { value: "GOLD", label: "골드" },
+  { value: "PLATINUM", label: "플래티넘" },
+  { value: "DIAMOND", label: "다이아몬드" },
+  { value: "MASTER", label: "마스터" },
 ];
 
 // 상태
@@ -193,14 +213,16 @@ const isPlayerDetailsOpen = ref(false);
 
 // 현재 사용자 ID (localStorage에서 가져오기)
 const currentUserId = computed(() => {
-  return localStorage.getItem('memberId') || '';
+  return localStorage.getItem("memberId") || "";
 });
 
 // 페이징 관련 computed
 const hasNextPage = computed(() => players.value.length >= 20);
 const hasPagination = computed(() => {
   // 플레이어가 있고, 첫 페이지가 아니거나 다음 페이지가 있으면 페이징 표시
-  return players.value.length > 0 && (currentPage.value > 0 || hasNextPage.value);
+  return (
+    players.value.length > 0 && (currentPage.value > 0 || hasNextPage.value)
+  );
 });
 
 // 보이는 페이지 번호 계산 (0부터 시작하지만 표시는 1부터)
@@ -209,7 +231,10 @@ const visiblePages = computed(() => {
   const current = currentPage.value + 1; // 표시용으로 1부터 시작
   const start = Math.max(1, current - Math.floor(maxVisible / 2));
   const end = start + maxVisible - 1;
-  return Array.from({ length: Math.min(maxVisible, end - start + 1) }, (_, i) => start + i);
+  return Array.from(
+    { length: Math.min(maxVisible, end - start + 1) },
+    (_, i) => start + i,
+  );
 });
 
 // 티어 선택
@@ -226,13 +251,13 @@ async function fetchRanking(tier, page = 0) {
 
   try {
     const result = await rankingService.getRanking(props.gameMode, tier, page);
-    
+
     myRank.value = result.myRank;
     players.value = result.players || [];
     currentPage.value = page;
   } catch (err) {
-    console.error('랭킹 조회 중 오류:', err);
-    error.value = '랭킹을 불러오는데 실패했습니다.';
+    console.error("랭킹 조회 중 오류:", err);
+    error.value = "랭킹을 불러오는데 실패했습니다.";
     myRank.value = null;
     players.value = [];
   } finally {
@@ -249,7 +274,7 @@ function goToPage(page) {
 
 // 모달 닫기
 function close() {
-  emit('close');
+  emit("close");
 }
 
 // 플레이어 상세 정보 표시
@@ -258,7 +283,7 @@ function showPlayerDetails(player) {
   selectedPlayer.value = {
     id: player.memberId,
     memberId: player.memberId,
-    nickname: player.nickname
+    nickname: player.nickname,
   };
   isPlayerDetailsOpen.value = true;
 }
@@ -272,25 +297,25 @@ function closePlayerDetails() {
 // 티어 아이콘 가져오기
 function getTierIcon(tier) {
   const iconMap = {
-    BRONZE: 'fas fa-trophy bronze',
-    SILVER: 'fas fa-trophy silver',
-    GOLD: 'fas fa-trophy gold',
-    PLATINUM: 'fas fa-trophy platinum',
-    DIAMOND: 'fas fa-trophy diamond',
-    MASTER: 'fas fa-crown master'
+    BRONZE: "fas fa-trophy bronze",
+    SILVER: "fas fa-trophy silver",
+    GOLD: "fas fa-trophy gold",
+    PLATINUM: "fas fa-trophy platinum",
+    DIAMOND: "fas fa-trophy diamond",
+    MASTER: "fas fa-crown master",
   };
-  return iconMap[tier] || 'fas fa-trophy';
+  return iconMap[tier] || "fas fa-trophy";
 }
 
 // 티어 이름 포맷팅
 function formatTierName(tier) {
   const nameMap = {
-    BRONZE: '브론즈',
-    SILVER: '실버',
-    GOLD: '골드',
-    PLATINUM: '플래티넘',
-    DIAMOND: '다이아몬드',
-    MASTER: '마스터'
+    BRONZE: "브론즈",
+    SILVER: "실버",
+    GOLD: "골드",
+    PLATINUM: "플래티넘",
+    DIAMOND: "다이아몬드",
+    MASTER: "마스터",
   };
   return nameMap[tier] || tier;
 }
@@ -298,11 +323,11 @@ function formatTierName(tier) {
 // 레벨 포맷팅 (ONE -> 1)
 function formatLevel(level) {
   const levelMap = {
-    ONE: '1',
-    TWO: '2',
-    THREE: '3',
-    FOUR: '4',
-    FIVE: '5'
+    ONE: "1",
+    TWO: "2",
+    THREE: "3",
+    FOUR: "4",
+    FIVE: "5",
   };
   return levelMap[level] || level;
 }
@@ -313,13 +338,16 @@ function formatNumber(number) {
 }
 
 // 모달이 열릴 때 초기 데이터 로드
-watch(() => props.show, (newVal) => {
-  if (newVal) {
-    selectedTier.value = props.initialRankTier;
-    currentPage.value = 0;
-    fetchRanking(props.initialRankTier, 0);
-  }
-});
+watch(
+  () => props.show,
+  (newVal) => {
+    if (newVal) {
+      selectedTier.value = props.initialRankTier;
+      currentPage.value = 0;
+      fetchRanking(props.initialRankTier, 0);
+    }
+  },
+);
 </script>
 
 <style scoped>
@@ -329,14 +357,12 @@ watch(() => props.show, (newVal) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(0, 0, 0, 0.82);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
   padding: 20px;
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
   transform: translateZ(0);
   contain: layout paint;
 }
@@ -400,8 +426,6 @@ watch(() => props.show, (newVal) => {
   flex-shrink: 0;
 }
 
-
-
 .tier-tab {
   display: flex;
   align-items: center;
@@ -411,7 +435,8 @@ watch(() => props.show, (newVal) => {
   border-radius: 10px;
   background: white;
   cursor: pointer;
-  transition: background-color 0.3s, transform 0.3s, box-shadow 0.3s;
+  transition: background-color 0.15s ease, transform 0.15s ease,
+    box-shadow 0.15s ease;
   white-space: nowrap;
   font-weight: 600;
   font-size: 13px;
@@ -579,7 +604,11 @@ watch(() => props.show, (newVal) => {
 }
 
 .player-item.is-me {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 197, 253, 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.1) 0%,
+    rgba(147, 197, 253, 0.05) 100%
+  );
   border: 2px solid #3b82f6;
 }
 
@@ -619,37 +648,61 @@ watch(() => props.show, (newVal) => {
 }
 
 .player-tier-badge.tier-bronze {
-  background: linear-gradient(135deg, rgba(146, 64, 14, 0.15) 0%, rgba(180, 83, 9, 0.1) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(146, 64, 14, 0.15) 0%,
+    rgba(180, 83, 9, 0.1) 100%
+  );
   color: #92400e;
   border: 1px solid rgba(146, 64, 14, 0.3);
 }
 
 .player-tier-badge.tier-silver {
-  background: linear-gradient(135deg, rgba(100, 116, 139, 0.15) 0%, rgba(148, 163, 184, 0.1) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(100, 116, 139, 0.15) 0%,
+    rgba(148, 163, 184, 0.1) 100%
+  );
   color: #64748b;
   border: 1px solid rgba(100, 116, 139, 0.3);
 }
 
 .player-tier-badge.tier-gold {
-  background: linear-gradient(135deg, rgba(202, 138, 4, 0.15) 0%, rgba(251, 191, 36, 0.1) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(202, 138, 4, 0.15) 0%,
+    rgba(251, 191, 36, 0.1) 100%
+  );
   color: #ca8a04;
   border: 1px solid rgba(202, 138, 4, 0.3);
 }
 
 .player-tier-badge.tier-platinum {
-  background: linear-gradient(135deg, rgba(8, 145, 178, 0.15) 0%, rgba(6, 182, 212, 0.1) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(8, 145, 178, 0.15) 0%,
+    rgba(6, 182, 212, 0.1) 100%
+  );
   color: #0891b2;
   border: 1px solid rgba(8, 145, 178, 0.3);
 }
 
 .player-tier-badge.tier-diamond {
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(59, 130, 246, 0.1) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(14, 165, 233, 0.15) 0%,
+    rgba(59, 130, 246, 0.1) 100%
+  );
   color: #0ea5e9;
   border: 1px solid rgba(14, 165, 233, 0.3);
 }
 
 .player-tier-badge.tier-master {
-  background: linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, rgba(168, 85, 247, 0.1) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(124, 58, 237, 0.15) 0%,
+    rgba(168, 85, 247, 0.1) 100%
+  );
   color: #7c3aed;
   border: 1px solid rgba(124, 58, 237, 0.3);
 }
@@ -817,7 +870,8 @@ watch(() => props.show, (newVal) => {
 
 .modal-fade-enter-active .ranking-modal-content,
 .modal-fade-leave-active .ranking-modal-content {
-  transition: transform 0.26s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.22s ease;
+  transition: transform 0.26s cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 0.22s ease;
   will-change: transform, opacity;
 }
 
@@ -896,4 +950,3 @@ watch(() => props.show, (newVal) => {
   }
 }
 </style>
-

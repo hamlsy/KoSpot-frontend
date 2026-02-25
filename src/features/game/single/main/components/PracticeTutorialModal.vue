@@ -73,60 +73,66 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
-import Tutorial1 from '@/shared/assets/images/tutorial/practice/tutorial_1.png';
-import Tutorial2 from '@/shared/assets/images/tutorial/practice/tutorial_2.png';
-import Tutorial4 from '@/shared/assets/images/tutorial/practice/tutorial_4.png';
-import Tutorial5 from '@/shared/assets/images/tutorial/practice/tutorial_5.png';
+import { ref, onMounted, computed, watch } from "vue";
+import Tutorial1 from "@/shared/assets/images/tutorial/practice/tutorial_1.png";
+import Tutorial2 from "@/shared/assets/images/tutorial/practice/tutorial_2.png";
+import Tutorial4 from "@/shared/assets/images/tutorial/practice/tutorial_4.png";
+import Tutorial5 from "@/shared/assets/images/tutorial/practice/tutorial_5.png";
 
 const props = defineProps({
   show: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 });
 
-const emit = defineEmits(['close', 'complete']);
+const emit = defineEmits(["close", "complete"]);
 
 const currentSlide = ref(0);
-const slideDirection = ref('next');
+const slideDirection = ref("next");
 
 // 튜토리얼 슬라이드 데이터
 const slides = [
   {
-    title: '로드뷰 연습 게임',
-    description: '현재 보이는 로드뷰 화면의 위치를 지도에서 찾아보세요. 주변 건물과 풍경을 자세히 관찰하면 힌트를 얻을 수 있습니다.',
-    image: Tutorial1
+    title: "로드뷰 연습 게임",
+    description:
+      "현재 보이는 로드뷰 화면의 위치를 지도에서 찾아보세요. 주변 건물과 풍경을 자세히 관찰하면 힌트를 얻을 수 있습니다.",
+    image: Tutorial1,
   },
   {
-    title: '지도 열기',
-    description: '"지도 열기" 버튼을 눌러 한국 지도를 확인하세요. 지도에서 로드뷰 위치를 추측하여 마커를 놓을 수 있습니다.',
-    image: Tutorial2
+    title: "지도 열기",
+    description:
+      '"지도 열기" 버튼을 눌러 한국 지도를 확인하세요. 지도에서 로드뷰 위치를 추측하여 마커를 놓을 수 있습니다.',
+    image: Tutorial2,
   },
   {
-    title: '힌트 활용',
-    description: '힌트 버튼을 사용하면 정답 위치 주변에 원형 힌트가 표시됩니다. 힌트는 총 3번 사용할 수 있으며, 각 힌트마다 더 정확한 위치를 알려줍니다.',
-    image: Tutorial4
+    title: "힌트 활용",
+    description:
+      "힌트 버튼을 사용하면 정답 위치 주변에 원형 힌트가 표시됩니다. 힌트는 총 3번 사용할 수 있으며, 각 힌트마다 더 정확한 위치를 알려줍니다.",
+    image: Tutorial4,
   },
   {
-    title: '위치 선택',
-    description: '지도에서 예상되는 위치를 클릭하여 마커를 놓고 "Spot!" 버튼을 눌러 정답을 확인하세요. 실제 위치와 가까울수록 높은 점수를 받습니다!',
-    image: Tutorial5
-  }
+    title: "위치 선택",
+    description:
+      '지도에서 예상되는 위치를 클릭하여 마커를 놓고 "Spot!" 버튼을 눌러 정답을 확인하세요. 실제 위치와 가까울수록 높은 점수를 받습니다!',
+    image: Tutorial5,
+  },
 ];
 
 // 현재 슬라이드 이미지
 const currentSlideImage = computed(() => {
-  return slides[currentSlide.value]?.image || '';
+  return slides[currentSlide.value]?.image || "";
 });
 
 const slideTransitionName = computed(() => {
-  return slideDirection.value === 'prev' ? 'slide-swap-prev' : 'slide-swap-next';
+  return slideDirection.value === "prev"
+    ? "slide-swap-prev"
+    : "slide-swap-next";
 });
 
 // 이미지 사전 로딩
 onMounted(() => {
-  slides.forEach(slide => {
+  slides.forEach((slide) => {
     const img = new Image();
     img.src = slide.image;
   });
@@ -134,14 +140,14 @@ onMounted(() => {
 
 const nextSlide = () => {
   if (currentSlide.value < slides.length - 1) {
-    slideDirection.value = 'next';
+    slideDirection.value = "next";
     currentSlide.value++;
   }
 };
 
 const prevSlide = () => {
   if (currentSlide.value > 0) {
-    slideDirection.value = 'prev';
+    slideDirection.value = "prev";
     currentSlide.value--;
   }
 };
@@ -150,24 +156,27 @@ const goToSlide = (index) => {
   if (index === currentSlide.value || index < 0 || index >= slides.length) {
     return;
   }
-  slideDirection.value = index > currentSlide.value ? 'next' : 'prev';
+  slideDirection.value = index > currentSlide.value ? "next" : "prev";
   currentSlide.value = index;
 };
 
-watch(() => props.show, (isOpen) => {
-  if (isOpen) {
-    currentSlide.value = 0;
-    slideDirection.value = 'next';
-  }
-});
+watch(
+  () => props.show,
+  (isOpen) => {
+    if (isOpen) {
+      currentSlide.value = 0;
+      slideDirection.value = "next";
+    }
+  },
+);
 
 const skipTutorial = () => {
-  emit('close');
+  emit("close");
 };
 
 const completeTutorial = () => {
-  emit('complete');
-  emit('close');
+  emit("complete");
+  emit("close");
 };
 </script>
 
@@ -179,9 +188,7 @@ const completeTutorial = () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -211,7 +218,7 @@ const completeTutorial = () => {
 
 .tutorial-modal-fade-enter-active,
 .tutorial-modal-fade-leave-active {
-  transition: opacity 0.2s ease;
+  transition: opacity 0.12s ease;
   will-change: opacity;
 }
 
@@ -222,7 +229,8 @@ const completeTutorial = () => {
 
 .tutorial-modal-fade-enter-active .tutorial-container,
 .tutorial-modal-fade-leave-active .tutorial-container {
-  transition: transform 0.24s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.2s ease;
+  transition: transform 0.18s cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 0.12s ease;
   will-change: transform, opacity;
 }
 
@@ -305,13 +313,15 @@ const completeTutorial = () => {
   text-align: center;
   transform: translateZ(0);
   backface-visibility: hidden;
+  will-change: transform, opacity;
 }
 
 .slide-swap-next-enter-active,
 .slide-swap-next-leave-active,
 .slide-swap-prev-enter-active,
 .slide-swap-prev-leave-active {
-  transition: transform 0.2s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.18s ease;
+  transition: transform 0.1s cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 0.1s ease;
   will-change: transform, opacity;
 }
 
@@ -349,15 +359,27 @@ const completeTutorial = () => {
   max-width: 500px;
   margin: 0 auto 24px;
   border-radius: 16px;
-  overflow: hidden;
+  /* overflow: hidden; */
+  border-radius: 13px;
   background: #f3f4f6;
+  aspect-ratio: 16 / 9;
+  position: relative;
+}
+
+.slide-image-container::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  pointer-events: none;
 }
 
 .slide-image {
   width: 100%;
   height: auto;
   display: block;
+  border-radius: 13px;
   object-fit: cover;
 }
 
@@ -400,7 +422,8 @@ const completeTutorial = () => {
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease,
+    background-color 0.18s ease;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -455,7 +478,7 @@ const completeTutorial = () => {
   .slide-swap-next-leave-active,
   .slide-swap-prev-enter-active,
   .slide-swap-prev-leave-active {
-    transition-duration: 0.01ms;
+    transition-duration: 0.01ms !important;
   }
 }
 
