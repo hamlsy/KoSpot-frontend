@@ -112,7 +112,7 @@
               </div>
 
               <div v-if="players.length === 0" class="no-players">
-                <p>랭킹 데이터가 없습니다.</p>
+                <p>플레이어 정보가 없습니다.</p>
               </div>
             </div>
           </div>
@@ -206,6 +206,7 @@ const players = ref([]);
 const loading = ref(false);
 const error = ref(null);
 const currentPage = ref(0);
+const totalPages = ref(1);
 
 // PlayerDetailsModal 상태
 const selectedPlayer = ref(null);
@@ -217,12 +218,10 @@ const currentUserId = computed(() => {
 });
 
 // 페이징 관련 computed
-const hasNextPage = computed(() => players.value.length >= 20);
+const hasNextPage = computed(() => currentPage.value < totalPages.value - 1);
 const hasPagination = computed(() => {
-  // 플레이어가 있고, 첫 페이지가 아니거나 다음 페이지가 있으면 페이징 표시
-  return (
-    players.value.length > 0 && (currentPage.value > 0 || hasNextPage.value)
-  );
+  // 총 페이지가 2 이상이거나 현재 페이지가 0보다 크면 표시
+  return totalPages.value > 1 || currentPage.value > 0;
 });
 
 // 보이는 페이지 번호 계산 (0부터 시작하지만 표시는 1부터)
@@ -230,9 +229,9 @@ const visiblePages = computed(() => {
   const maxVisible = 5;
   const current = currentPage.value + 1; // 표시용으로 1부터 시작
   const start = Math.max(1, current - Math.floor(maxVisible / 2));
-  const end = start + maxVisible - 1;
+  const end = Math.min(totalPages.value, start + maxVisible - 1); // totalPages로 상한선 제한
   return Array.from(
-    { length: Math.min(maxVisible, end - start + 1) },
+    { length: end - start + 1 },
     (_, i) => start + i,
   );
 });
@@ -254,6 +253,7 @@ async function fetchRanking(tier, page = 0) {
 
     myRank.value = result.myRank;
     players.value = result.players || [];
+    totalPages.value = result.totalPages ?? 1;
     currentPage.value = page;
   } catch (err) {
     console.error("랭킹 조회 중 오류:", err);
@@ -267,7 +267,7 @@ async function fetchRanking(tier, page = 0) {
 
 // 페이지 이동
 function goToPage(page) {
-  if (page >= 0) {
+  if (page >= 0 && page < totalPages.value) {
     fetchRanking(selectedTier.value, page);
   }
 }
