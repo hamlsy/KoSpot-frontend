@@ -18,7 +18,7 @@
           <div class="notif-toast__content">
             <div class="notif-toast__label">{{ getNotificationMeta(toast.type).label }}</div>
             <div class="notif-toast__title">{{ toast.title }}</div>
-            <div v-if="toast.message" class="notif-toast__message">{{ toast.message }}</div>
+            <div v-if="toast.content" class="notif-toast__message">{{ toast.content }}</div>
           </div>
 
           <!-- 닫기 버튼 -->

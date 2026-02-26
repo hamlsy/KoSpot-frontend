@@ -30,7 +30,7 @@
     <div v-else-if="store.sortedNotifications.length > 0" class="notif-dropdown__list" ref="listRef">
       <div
         v-for="notification in store.sortedNotifications"
-        :key="notification.id"
+        :key="notification.notificationId"
         class="notif-item"
         :class="{ 'notif-item--unread': !notification.isRead }"
         @click="handleNotificationClick(notification)"
@@ -53,7 +53,7 @@
             <span class="notif-item__time">{{ formatTime(notification.createdAt) }}</span>
           </div>
           <div class="notif-item__title">{{ notification.title }}</div>
-          <div v-if="notification.message" class="notif-item__message">{{ notification.message }}</div>
+          <div v-if="notification.content" class="notif-item__message">{{ notification.content }}</div>
         </div>
 
         <!-- 미읽음 점 -->
@@ -122,8 +122,17 @@ const formatTime = (dateStr) => {
  */
 const handleNotificationClick = async (notification) => {
   if (!notification.isRead) {
-    await store.markAsRead(notification.id);
+    await store.markAsRead(notification.notificationId);
   }
+
+  // NOTICE 타입 → noticeId로 공지사항 상세 이동
+  if (notification.type === 'NOTICE' && notification.sourceId) {
+    emit('close');
+    router.push(`/notice/${notification.sourceId}`);
+    return;
+  }
+
+  // 직접 link 필드가 있는 경우 (추후 확장용)
   if (notification.link) {
     emit('close');
     router.push(notification.link);

@@ -4,27 +4,26 @@
  */
 
 export const NOTIFICATION_TYPE = {
-    NOTICE: 'NOTICE',
-    SYSTEM: 'SYSTEM',
-    FRIEND_REQUEST: 'FRIEND_REQUEST',
-    // 추후 추가될 타입들...
+    ADMIN_MESSAGE: 'ADMIN_MESSAGE',   // 관리자 메시지
+    NOTICE: 'NOTICE',                 // 공지사항 업로드 알림
+    FRIEND_REQUEST: 'FRIEND_REQUEST', // 친구 요청 알림 (추후 연동)
 };
 
 /**
  * 알림 타입별 표시 메타데이터
  */
 export const NOTIFICATION_TYPE_META = {
-    [NOTIFICATION_TYPE.NOTICE]: {
-        label: '공지사항',
-        icon: 'fas fa-bullhorn',
-        color: '#3b82f6',
-        bgColor: 'rgba(59, 130, 246, 0.1)',
-    },
-    [NOTIFICATION_TYPE.SYSTEM]: {
+    [NOTIFICATION_TYPE.ADMIN_MESSAGE]: {
         label: '시스템 메시지',
-        icon: 'fas fa-cog',
+        icon: 'fas fa-bullhorn',
         color: '#6366f1',
         bgColor: 'rgba(99, 102, 241, 0.1)',
+    },
+    [NOTIFICATION_TYPE.NOTICE]: {
+        label: '공지사항',
+        icon: 'fas fa-bell',
+        color: '#3b82f6',
+        bgColor: 'rgba(59, 130, 246, 0.1)',
     },
     [NOTIFICATION_TYPE.FRIEND_REQUEST]: {
         label: '친구 요청',
@@ -49,13 +48,18 @@ export const getNotificationMeta = (type) => {
 };
 
 /**
- * WebSocket 구독 채널 (추후 백엔드 확정 시 변경)
+ * WebSocket 구독 채널
  */
-export const NOTIFICATION_WS_CHANNEL = '/user/queue/notifications';
+export const NOTIFICATION_WS_CHANNELS = {
+    /** 전역 알림 (공지사항/시스템 브로드캐스트) */
+    GLOBAL: '/topic/notification/global',
+    /** 개인 알림 (관리자 메시지/친구 요청 등) */
+    PERSONAL: '/user/queue/notification',
+};
 
 export default {
     NOTIFICATION_TYPE,
     NOTIFICATION_TYPE_META,
     getNotificationMeta,
-    NOTIFICATION_WS_CHANNEL,
+    NOTIFICATION_WS_CHANNELS,
 };

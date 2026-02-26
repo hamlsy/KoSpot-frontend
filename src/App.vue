@@ -71,6 +71,16 @@ const handleStorageChange = (e) => {
   if (e.key === 'accessToken' || e.key === 'refreshToken') {
     console.log('📦 Storage 변경 감지:', e.key);
     checkAndStartTokenService();
+
+    if (e.key === 'accessToken') {
+      if (e.newValue) {
+        // 로그인 → 알림 WebSocket 연결 + 미읽은 수 갱신
+        connectNotifications();
+      } else {
+        // 로그아웃 → 알림 WebSocket 해제
+        disconnectNotifications();
+      }
+    }
   }
 };
 
