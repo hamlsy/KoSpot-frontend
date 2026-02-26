@@ -28,6 +28,31 @@
               <span class="tutorial-text">게임 소개</span>
             </button>
             
+            <!-- 알림 아이콘 (로그인 시에만 표시) -->
+            <div v-if="actualIsLoggedIn" class="notification-wrapper" ref="notificationWrapperRef">
+              <button
+                class="notification-button"
+                @click="toggleNotificationDropdown"
+                title="알림"
+                :class="{ 'notification-button--active': showNotificationDropdown }"
+                aria-label="알림 보기"
+              >
+                <i class="fas fa-bell"></i>
+                <span
+                  v-if="notificationUnreadCount > 0"
+                  class="notification-badge"
+                >
+                  {{ notificationUnreadCount > 99 ? '99+' : notificationUnreadCount }}
+                </span>
+              </button>
+
+              <!-- 알림 드롭다운 -->
+              <NotificationDropdown
+                :is-open="showNotificationDropdown"
+                @close="closeNotificationDropdown"
+              />
+            </div>
+
             <!-- 다크모드 토글 버튼 (웹에만 표시) -->
             <!-- <button class="theme-toggle desktop-only" @click="toggleTheme" :title="isDarkMode ? '라이트 모드로 전환' : '다크 모드로 전환'">
               <i class="fas" :class="isDarkMode ? 'fa-sun' : 'fa-moon'"></i>
@@ -181,9 +206,14 @@
 <script>
 import { tokenRefreshService } from '@/core/services/tokenRefresh.service.js';
 import { useTheme } from '@/core/composables/useTheme.js';
+import { useNotificationStore } from '@/store/modules/notificationStore.js';
+import NotificationDropdown from '@/core/components/NotificationDropdown.vue';
 
 export default {
   name: 'NavigationBar',
+  components: {
+    NotificationDropdown,
+  },
   props: {
     isLoggedIn: {
       type: Boolean,
@@ -208,10 +238,12 @@ export default {
   },
   setup() {
     const { isDarkMode, toggleTheme } = useTheme();
+    const notificationStore = useNotificationStore();
     
     return {
       isDarkMode,
-      toggleTheme
+      toggleTheme,
+      notificationStore,
     };
   },
   data() {
@@ -219,7 +251,7 @@ export default {
       showProfileMenu: false,
       showContactModal: false,
       emailCopied: false,
-      unreadNotifications: 3,
+      showNotificationDropdown: false,
       userProfile: {
         name: "김코스팟",
         email: "user@kospot.com",
@@ -237,6 +269,10 @@ export default {
     // 실제 로그인 상태 (props 또는 토큰 확인)
     actualIsLoggedIn() {
       return this.isLoggedIn || this.hasToken;
+    },
+    // 미읽은 알림 수 (Pinia 스토어에서)
+    notificationUnreadCount() {
+      return this.notificationStore.unreadCount;
     },
     // 메인 페이지인지 확인
     isMainPage() {
@@ -281,6 +317,15 @@ export default {
     if (this.hasToken && !this.actualIsLoggedIn) {
       this.checkAuthStatus();
     }
+    // 알림 미읽은 수 초기 로드 (로그인 상태일 때)
+    if (this.hasToken) {
+      this.notificationStore.fetchUnreadCount();
+    }
+    // 외부 클릭으로 알림 드롭다운 닫기
+    document.addEventListener('click', this.handleGlobalClick);
+  },
+  beforeUnmount() {
+    document.removeEventListener('click', this.handleGlobalClick);
   },
   methods: {
     toggleProfileMenu() {
@@ -295,8 +340,20 @@ export default {
       this.showProfileMenu = false;
       document.body.style.overflow = "";
     },
-    openNotifications() {
-      // 알림 메뉴 열기 로직
+    toggleNotificationDropdown() {
+      this.showNotificationDropdown = !this.showNotificationDropdown;
+      if (this.showNotificationDropdown) {
+        this.notificationStore.fetchNotifications();
+      }
+    },
+    closeNotificationDropdown() {
+      this.showNotificationDropdown = false;
+    },
+    handleGlobalClick(event) {
+      const wrapper = this.$refs.notificationWrapperRef;
+      if (wrapper && !wrapper.contains(event.target)) {
+        this.showNotificationDropdown = false;
+      }
     },
     openTutorial() {
       this.$emit('open-tutorial');
@@ -631,6 +688,64 @@ export default {
   font-weight: 700;
   color: white;
   letter-spacing: 0.02em;
+}
+
+/* 알림 버튼 */
+.notification-wrapper {
+  position: relative;
+}
+
+.notification-button {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-hover);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.notification-button:hover,
+.notification-button--active {
+  background: rgba(51, 251, 232, 0.1);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.notification-button i {
+  font-size: 1rem;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: white;
+  font-size: 0.6rem;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--color-surface);
+  animation: badge-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  line-height: 1;
+}
+
+@keyframes badge-bounce {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 /* 오버레이 스타일 */
