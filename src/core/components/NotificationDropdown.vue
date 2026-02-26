@@ -128,7 +128,7 @@ const handleNotificationClick = async (notification) => {
   // NOTICE 타입 → noticeId로 공지사항 상세 이동
   if (notification.type === 'NOTICE' && notification.sourceId) {
     emit('close');
-    router.push(`/notice/${notification.sourceId}`);
+    router.push(`/noticeDetail/${notification.sourceId}`);
     return;
   }
 

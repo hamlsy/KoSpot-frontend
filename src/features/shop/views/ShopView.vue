@@ -170,6 +170,7 @@ import PurchaseCompleteModal from '@/features/shop/components/PurchaseCompleteMo
 import NavigationBar from '@/core/components/NavigationBar.vue'
 import { shopService } from '@/features/shop/services/shop.service.js'
 import { userService } from '@/features/user/services/user.service.js'
+import { mainService } from '@/features/main/services/main.service.js'
 
 export default {
   name: 'ShopView',
@@ -232,7 +233,11 @@ export default {
         icon: type.icon,
         disabled: type.disabled
       }))
-      await this.loadUserCoins()
+      // 병렬 로드: 코인+내비바 정보, 아이템
+      await Promise.all([
+        this.loadUserCoins(),
+        this.loadNavUserInfo()
+      ])
       await this.loadItems()
     },
 
@@ -240,19 +245,30 @@ export default {
       try {
         const response = await userService.getProfile()
         if (response.isSuccess && response.result) {
-          const result = response.result
-          this.userCoins = result.currentPoint || 0
-          // NavigationBar에 전달할 사용자 정보 구성
-          this.navUserInfo = {
-            name: result.nickname || result.name || '',
-            email: result.email || '',
-            avatar: result.profileImageUrl || result.avatar || null,
-            isAdmin: localStorage.getItem('isAdmin') === 'true' || false
-          }
+          this.userCoins = response.result.currentPoint || 0
         }
       } catch (error) {
         console.error('코인 정보 로드 실패:', error)
         this.userCoins = 0
+      }
+    },
+
+    // NavigationBar 프로필 정보를 mainService를 통해 로드
+    // (MainView, NoticeListView와 동일한 방식 - equippedMarkerImageUrl 포함)
+    async loadNavUserInfo() {
+      try {
+        const response = await mainService.getMainPageData()
+        if (response.isSuccess && response.result?.myInfo) {
+          const myInfo = response.result.myInfo
+          this.navUserInfo = {
+            name: myInfo.nickname || '',
+            email: myInfo.email || '',
+            avatar: myInfo.equippedMarkerImageUrl || null,
+            isAdmin: myInfo.isAdmin || false
+          }
+        }
+      } catch (error) {
+        console.error('내비바 사용자 정보 로드 실패:', error)
       }
     },
 
