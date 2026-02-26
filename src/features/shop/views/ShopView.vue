@@ -183,6 +183,8 @@ export default {
   data() {
     return {
       userCoins: 0,
+      ownedItems: [],
+      equippedItems: [],
       navUserInfo: {},
       currentCategory: 'markers',
       currentFilter: 'all',
@@ -233,23 +235,28 @@ export default {
         icon: type.icon,
         disabled: type.disabled
       }))
-      // 병렬 로드: 코인+내비바 정보, 아이템
+      // 병렬 로드: 코인+내비바 정보, 상점 정보 아이템
       await Promise.all([
-        this.loadUserCoins(),
+        this.loadShopInfo(),
         this.loadNavUserInfo()
       ])
       await this.loadItems()
     },
 
-    async loadUserCoins() {
+    async loadShopInfo() {
       try {
-        const response = await userService.getProfile()
+        const response = await shopService.getShopInfo()
         if (response.isSuccess && response.result) {
-          this.userCoins = response.result.currentPoint || 0
+          const result = response.result
+          this.userCoins = result.currentPoint || 0
+          this.ownedItems = result.ownedItems || []
+          this.equippedItems = result.equippedItems || []
         }
       } catch (error) {
-        console.error('코인 정보 로드 실패:', error)
+        console.error('상점 정보 로드 실패:', error)
         this.userCoins = 0
+        this.ownedItems = []
+        this.equippedItems = []
       }
     },
 
@@ -282,9 +289,24 @@ export default {
         const response = await shopService.getItemsByType(itemTypeKey)
 
         if (response.isSuccess) {
-          const items = response.result.map(item =>
-            shopService.convertApiToUiFormat(item, this.currentCategory)
-          )
+          const items = response.result.map(item => {
+            const uiItem = shopService.convertApiToUiFormat(item, this.currentCategory)
+            
+            // shopInfo 기반으로 보유/장착 여부 오버라이드
+            const ownedItem = this.ownedItems.find(oi => oi.name === item.name || (oi.itemId && oi.itemId === item.itemId))
+            if (ownedItem) {
+              uiItem.owned = true
+              uiItem.memberItemId = ownedItem.memberItemId
+              // 장착 여부 확인
+              const isEquipped = this.equippedItems.some(ei => ei.memberItemId === ownedItem.memberItemId) || ownedItem.equipped
+              uiItem.equipped = isEquipped
+            } else {
+              uiItem.owned = false
+              uiItem.equipped = false
+            }
+
+            return uiItem
+          })
           this.apiItems = { ...this.apiItems, [this.currentCategory]: items }
         }
       } catch (error) {
@@ -324,15 +346,19 @@ export default {
         this.loading = true
         const response = await shopService.purchaseItem(this.selectedItem.itemId)
         if (response.isSuccess) {
-          this.userCoins -= this.selectedItem.price
+          // 서버 데이터 최신화
+          await this.loadShopInfo()
+          
           const items = this.apiItems[this.currentCategory]
           const idx = items.findIndex(i => i.itemId === this.selectedItem.itemId)
           if (idx !== -1) {
             items[idx].owned = true
-            items[idx].memberItemId = response.result?.memberItemId
+            // 새롭게 갱신된 보유 아이템에서 memberItemId를 찾아서 할당
+            const updatedOwnedItem = this.ownedItems.find(oi => oi.name === items[idx].name || oi.itemId === items[idx].itemId)
+            if (updatedOwnedItem) items[idx].memberItemId = updatedOwnedItem.memberItemId
           }
           // alert() 대신 완료 모달 표시
-          this.completedItem = { ...this.selectedItem, memberItemId: response.result?.memberItemId }
+          this.completedItem = { ...this.selectedItem, memberItemId: items[idx]?.memberItemId || response.result?.memberItemId }
           this.showCompleteModal = true
         }
       } catch (error) {
@@ -368,6 +394,9 @@ export default {
         this.loading = true
         const response = await shopService.equipItem(item.memberItemId)
         if (response.isSuccess) {
+          // 상태 최신화
+          await this.loadShopInfo()
+          
           const items = this.apiItems[this.currentCategory]
           items.forEach(i => { if (i.memberItemId) i.equipped = false })
           const idx = items.findIndex(i => i.memberItemId === item.memberItemId)

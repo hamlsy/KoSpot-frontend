@@ -78,12 +78,12 @@ class UserService {
   async setNickname(nickname) {
     try {
       console.log('📤 닉네임 설정 요청:', nickname);
-      
+
       // RequestParam으로 전달하기 위해 params 사용
       const response = await apiClient.post('/member/set-nickname', null, {
         params: { nickname }
       });
-      
+
       console.log('✅ 닉네임 설정 성공:', response.data);
       return response.data;
     } catch (error) {
@@ -101,9 +101,9 @@ class UserService {
   async getInventory() {
     try {
       console.log('📤 인벤토리 조회 요청');
-      
+
       const response = await apiClient.get('/memberItem/inventory');
-      
+
       console.log('✅ 인벤토리 조회 성공:', response.data);
       return response.data;
     } catch (error) {
@@ -122,9 +122,9 @@ class UserService {
   async getItemsByType(itemType) {
     try {
       console.log('📤 타입별 아이템 조회 요청:', itemType);
-      
+
       const response = await apiClient.get(`/memberItem/${itemType}`);
-      
+
       console.log('✅ 타입별 아이템 조회 성공:', response.data);
       return response.data;
     } catch (error) {
@@ -143,9 +143,9 @@ class UserService {
   async equipItem(memberItemId) {
     try {
       console.log('📤 아이템 장착 요청:', memberItemId);
-      
-      const response = await apiClient.get(`/memberItem/${memberItemId}`);
-      
+
+      const response = await apiClient.put(`/memberItem/${memberItemId}`);
+
       console.log('✅ 아이템 장착 성공:', response.data);
       return response.data;
     } catch (error) {
@@ -218,11 +218,11 @@ class UserService {
       if (isNaN(date.getTime())) {
         return '-';
       }
-      
+
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
-      
+
       return `${year}.${month}.${day}`;
     } catch (error) {
       console.error('날짜 포맷팅 실패:', error);
@@ -252,7 +252,7 @@ class UserService {
     if (error.response) {
       const { status, data } = error.response;
       console.error(`HTTP ${status} 에러:`, data);
-      
+
       if (data?.message) {
         throw new Error(data.message);
       }
@@ -260,7 +260,7 @@ class UserService {
       console.error('네트워크 에러:', error.request);
       throw new Error('서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.');
     }
-    
+
     throw new Error(defaultMessage);
   }
 }
