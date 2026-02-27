@@ -1329,6 +1329,9 @@ export default {
 
           // coordinate를 받을 때까지 로드뷰를 표시하지 않도록 currentLocation 초기화
           this.currentLocation = null;
+          // POI 이름도 즉시 초기화하여 헤더가 "지명 불러오는 중..." placeholder를 표시하게 함
+          this.poiName = null;
+          this.fullAddress = null;
 
           // 최대 5번 재시도하는 reissueCoordinate 호출
           const response = await roadViewApiService.reissueCoordinate(
@@ -1336,7 +1339,7 @@ export default {
           );
 
           if (response.isSuccess && response.result) {
-            const { targetLat, targetLng } = response.result;
+            const { targetLat, targetLng, poiName, fullAddress } = response.result;
 
             // 좌표 유효성 검사
             if (!targetLat || !targetLng) {
@@ -1359,6 +1362,10 @@ export default {
               lat: decryptedLat,
               lng: decryptedLng,
             };
+
+            // 새로운 좌표의 POI 이름과 주소 업데이트
+            if (poiName) this.poiName = poiName;
+            if (fullAddress) this.fullAddress = fullAddress;
 
             // currentLocation이 설정된 후 PhoneFrame의 지도 초기화 보장
             this.$nextTick(() => {
