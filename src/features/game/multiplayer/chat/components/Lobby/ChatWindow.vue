@@ -74,8 +74,9 @@
           type="text"
           v-model="newMessage"
           placeholder="메시지를 입력하세요..."
-          @keydown.stop
-          @keydown="handleKeydown"
+          @keyup.enter="handleEnter"
+          @compositionstart="onCompositionStart"
+          @compositionend="onCompositionEnd"
           @focus="handleInputFocus"
           @blur="handleInputBlur"
           ref="chatInput"
@@ -127,6 +128,7 @@ export default {
       onlineUsers: 37, // 테스트 데이터, 실제로는 서버에서 받아와야 함
       currentMemberId: null,
       isInputFocused: false,
+      isComposing: false,
     };
   },
 
@@ -169,20 +171,24 @@ export default {
       this.currentMemberId = localStorageMemberId || propsUserId;
     },
 
-    /**
-     * Handle keydown event with IME composition check
-     * This prevents double message sending on MacOS when using Korean IME
-     */
-    handleKeydown(event) {
-      // IME 조합 중이면 무시 (한글 등 조합형 문자 입력 시)
-      // isComposing: 표준 속성으로 조합 중인지 확인
-      // keyCode === 229: 일부 브라우저에서 IME 조합 중임을 나타내는 레거시 코드
-      if (event.isComposing || event.keyCode === 229) {
-        return;
-      }
+    onCompositionStart() {
+      this.isComposing = true;
+    },
 
-      // Enter 키가 아니면 무시
-      if (event.key !== "Enter") {
+    onCompositionEnd(event) {
+      // Mac Chrome에서 한글 입력 시 조합 완료와 동시에 엔터 이벤트가 발생할 수 있으므로,
+      // 상태 해제를 미세하게 지연시킵니다.
+      setTimeout(() => {
+        this.isComposing = false;
+      }, 50);
+    },
+
+    /**
+     * Handle enter key event to send message
+     */
+    handleEnter(event) {
+      // IME 조합 중이거나, 이제 막 끝난 상태면 무시
+      if (this.isComposing || event.isComposing) {
         return;
       }
 
