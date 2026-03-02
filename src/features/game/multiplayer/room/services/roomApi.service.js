@@ -31,13 +31,13 @@ class RoomApiService {
    */
   async getRoomList(page = 0) {
     try {
-      
-      
+
+
       const response = await apiClient.get(ROOM_ENDPOINTS.GET_ROOMS, {
         params: { page }
       });
-      
-    
+
+
       return this._transformRoomListData(response.data.data || []);
     } catch (error) {
       console.error('❌ 게임 방 목록 조회 실패:', error);
@@ -61,11 +61,11 @@ class RoomApiService {
    */
   async createGameRoom(roomData) {
     try {
-    
-      
+
+
       const response = await apiClient.post(ROOM_ENDPOINTS.CREATE_ROOM, roomData);
-      
-      
+
+
       // response.data.result에서 방 정보 반환
       return response.data.result;
     } catch (error) {
@@ -83,12 +83,12 @@ class RoomApiService {
    */
   async joinGameRoom(roomId, password = '') {
     try {
-      
-      
+
+
       const requestData = password ? { password } : {};
       const response = await apiClient.post(ROOM_ENDPOINTS.JOIN_ROOM(roomId), requestData);
-      
-      
+
+
       return response.data;
     } catch (error) {
       console.error('❌ 게임 방 참여 실패:', error);
@@ -113,11 +113,8 @@ class RoomApiService {
    */
   async updateGameRoom(roomId, updateData) {
     try {
-      console.log('📤 게임 방 수정 요청:', { roomId, updateData });
-      
       const response = await apiClient.put(ROOM_ENDPOINTS.UPDATE_ROOM(roomId), updateData);
-      
-      console.log('✅ 게임 방 수정 성공:', response.data);
+
       return response.data.data;
     } catch (error) {
       console.error('❌ 게임 방 수정 실패:', error);
@@ -133,11 +130,8 @@ class RoomApiService {
    */
   async leaveGameRoom(roomId) {
     try {
-      console.log('📤 게임 방 퇴장 요청:', { roomId });
-      
       const response = await apiClient.delete(ROOM_ENDPOINTS.LEAVE_ROOM(roomId));
-      
-      console.log('✅ 게임 방 퇴장 성공:', response.data);
+
       return response.data;
     } catch (error) {
       console.error('❌ 게임 방 퇴장 실패:', error);
@@ -154,17 +148,14 @@ class RoomApiService {
    */
   async kickPlayer(roomId, targetPlayerId) {
     try {
-      console.log('📤 플레이어 강퇴 요청:', { roomId, targetPlayerId });
-      
       const requestData = {
         targetPlayerId: targetPlayerId
       };
-      
+
       const response = await apiClient.delete(ROOM_ENDPOINTS.KICK_PLAYER(roomId), {
         data: requestData
       });
-      
-      console.log('✅ 플레이어 강퇴 성공:', response.data);
+
       return response.data;
     } catch (error) {
       console.error('❌ 플레이어 강퇴 실패:', error);
@@ -181,11 +172,9 @@ class RoomApiService {
    */
   async startGame(roomId) {
     try {
-      console.log('📤 게임 시작 요청:', { roomId });
-      
       const response = await apiClient.post(ROOM_ENDPOINTS.START_GAME(roomId));
 
-      
+
       return response.data;
     } catch (error) {
       console.error('❌ 게임 시작 요청 실패:', error);
@@ -205,11 +194,8 @@ class RoomApiService {
    */
   async checkGameAccess(roomId) {
     try {
-      console.log('📤 게임 방 접근 권한 확인 요청:', { roomId });
-      
       const response = await apiClient.get(ROOM_ENDPOINTS.CHECK_ACCESS(roomId));
-      
-      console.log('✅ 게임 방 접근 권한 확인 성공:', response.data);
+
       return response.data.result;
     } catch (error) {
       console.error('❌ 게임 방 접근 권한 확인 실패:', error);
@@ -271,7 +257,7 @@ class RoomApiService {
     if (error.response) {
       // 서버에서 응답을 받았지만 에러 상태 코드
       const { status, data } = error.response;
-      
+
       switch (status) {
         case 400:
           console.error('📛 잘못된 요청:', data.message || defaultMessage);
