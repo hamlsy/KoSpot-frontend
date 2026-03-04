@@ -384,6 +384,8 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '@/core/composables/useAuth.js';
+import { useFriendStore } from '@/features/friend/stores/friend.store.js';
+import { isFriendSocketConnected } from '@/features/friend/services/friendWebSocket.service.js';
 import NavigationBar from '@/core/components/NavigationBar.vue'
 import UserLoginCard from '@/features/main/components/UserLoginCard.vue'
 import IntroTutorialModal from '@/features/intro/components/IntroTutorialModal.vue'
@@ -397,6 +399,9 @@ const router = useRouter();
 
 // 인증 컴포저블
 const { logout: logoutAuth } = useAuth();
+
+// 친구 스토어
+const friendStore = useFriendStore();
 
 // 반응형 상태 정의
 // JWT 토큰 확인
@@ -556,10 +561,17 @@ async function loadMainPageData() {
 }
 
 // 컴포넌트 마운트 시 실행
-onMounted(() => {
+onMounted(async () => {
   loadMainPageData();
   startBannerRotation();
   window.addEventListener('resize', handleResize);
+
+  // 친구 소켓: MainView 진입 시 연결 안되어 있으면 연결
+  const token = localStorage.getItem('accessToken');
+  if (token && !isFriendSocketConnected()) {
+    await friendStore.initSocket();
+  }
+  // TODO: STOMP 소켓 구독은 미돈본 API 확정 후 이곳에 추가
 });
 
 // 컴포넌트 언마운트 전 실행

@@ -16,7 +16,6 @@ import RoomViewHUD from '@/features/game/multiplayer/room/views/RoomViewHUD.vue'
 import DesignFTest from '@/features/game/multiplayer/views/DesignFTest.vue'
 import LobbyViewDesignF from '@/features/game/multiplayer/lobby/views/LobbyViewDesignF.vue'
 import RoomViewDesignF from '@/features/game/multiplayer/room/views/RoomViewDesignF.vue'
-import FriendSystem from '@/features/friend/view/FriendSystem.vue'
 
 const devRoutes = [
     {
@@ -164,11 +163,6 @@ const devRoutes = [
             markerImageUrl: null,
         },
     },
-    {
-        path: '/frientTest',
-        name: "FrientTest",
-        component: FriendSystem
-    }
 ];
 
 export default devRoutes;

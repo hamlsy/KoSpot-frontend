@@ -53,6 +53,15 @@
               />
             </div>
 
+            <!-- 친구 토글 버튼 (로그인 시에만 표시) -->
+            <FriendToggleButton
+              v-if="actualIsLoggedIn"
+              :is-open="friendStore.isPanelOpen"
+              :has-notification="friendStore.hasAnyNotification"
+              :notification-count="friendStore.totalNotificationCount"
+              @toggle="friendStore.togglePanel"
+            />
+
             <!-- 다크모드 토글 버튼 (웹에만 표시) -->
             <!-- <button class="theme-toggle desktop-only" @click="toggleTheme" :title="isDarkMode ? '라이트 모드로 전환' : '다크 모드로 전환'">
               <i class="fas" :class="isDarkMode ? 'fa-sun' : 'fa-moon'"></i>
@@ -199,6 +208,39 @@
         </nav>
       </div>
     </transition>
+
+    <!-- 친구 패널 -->
+    <FriendPanel
+      v-if="actualIsLoggedIn"
+      :is-open="friendStore.isPanelOpen"
+      :friends="friendStore.friends"
+      :pending-requests="friendStore.pendingRequests"
+      @close="friendStore.closePanel"
+      @open-chat="handleOpenChat"
+      @open-user-search="friendStore.openSearch"
+      @accept-request="friendStore.acceptFriendRequest"
+      @decline-request="friendStore.declineFriendRequest"
+    />
+
+    <!-- 사용자 검색 모달 -->
+    <UserSearchModal
+      v-if="actualIsLoggedIn"
+      :is-open="friendStore.isSearchOpen"
+      @close="friendStore.closeSearch"
+    />
+
+    <!-- 채팅 창들 (최대 3개) -->
+    <FriendChatWindow
+      v-for="(chat, index) in friendStore.openChats"
+      :key="chat.friend.id"
+      :is-open="true"
+      :friend="chat.friend"
+      :messages="chat.messages"
+      :is-loading="chat.isLoading"
+      :style="{ right: (20 + index * 320) + 'px' }"
+      @close="friendStore.closeChatRoom(chat.friend.id)"
+      @send-message="handleSendMessage"
+    />
   </div>
 </template>
 
@@ -207,12 +249,21 @@
 import { tokenRefreshService } from '@/core/services/tokenRefresh.service.js';
 import { useTheme } from '@/core/composables/useTheme.js';
 import { useNotificationStore } from '@/store/modules/notificationStore.js';
+import { useFriendStore } from '@/features/friend/stores/friend.store.js';
 import NotificationDropdown from '@/core/components/NotificationDropdown.vue';
+import FriendToggleButton from '@/features/friend/components/FriendToggleButton.vue';
+import FriendPanel from '@/features/friend/components/FriendPanel.vue';
+import UserSearchModal from '@/features/friend/components/UserSearchModal.vue';
+import FriendChatWindow from '@/features/friend/components/FriendChatWindow.vue';
 
 export default {
   name: 'NavigationBar',
   components: {
     NotificationDropdown,
+    FriendToggleButton,
+    FriendPanel,
+    UserSearchModal,
+    FriendChatWindow,
   },
   props: {
     isLoggedIn: {
@@ -239,11 +290,13 @@ export default {
   setup() {
     const { isDarkMode, toggleTheme } = useTheme();
     const notificationStore = useNotificationStore();
+    const friendStore = useFriendStore();
     
     return {
       isDarkMode,
       toggleTheme,
       notificationStore,
+      friendStore,
     };
   },
   data() {
@@ -320,6 +373,8 @@ export default {
     // 알림 미읽은 수 초기 로드 (로그인 상태일 때)
     if (this.hasToken) {
       this.notificationStore.fetchUnreadCount();
+      // 친구 초기 데이터 로드 (친구 목록 + 받은 요청)
+      this.friendStore.loadInitialData();
     }
     // 외부 클릭으로 알림 드롭다운 닫기
     document.addEventListener('click', this.handleGlobalClick);
@@ -328,6 +383,27 @@ export default {
     document.removeEventListener('click', this.handleGlobalClick);
   },
   methods: {
+    /**
+     * 친구 채팅창 열기 핸들러
+     */
+    async handleOpenChat(friend) {
+      let myMemberId = null;
+      try {
+        const raw = localStorage.getItem('memberInfo');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          myMemberId = parsed.memberId ?? parsed.id ?? null;
+        }
+      } catch { /* Ignore */ }
+      await this.friendStore.openChatRoom(friend, myMemberId);
+    },
+    /**
+     * FriendChatWindow의 @send-message 이벤트 처리
+     * payload: { friendId, text }
+     */
+    handleSendMessage({ friendId, text }) {
+      this.friendStore.sendMessage(friendId, text);
+    },
     toggleProfileMenu() {
       this.showProfileMenu = !this.showProfileMenu;
       if (this.showProfileMenu) {
@@ -452,9 +528,12 @@ export default {
     // 로그아웃 처리
     handleLogout() {
       // 토큰 갱신 서비스 중지
-      console.log('🛑 로그아웃: 토큰 갱신 서비스 중지');
       tokenRefreshService.stop();
-      
+
+      // 친구 WebSocket 해제 및 상태 초기화
+      this.friendStore.destroySocket();
+      this.friendStore.reset();
+
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('memberId');
