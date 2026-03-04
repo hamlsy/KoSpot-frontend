@@ -39,7 +39,7 @@
       </div>
 
       <div class="header-right col-md-4">
-        <!-- 플레이어 리스트 토글 버튼 (항상 표시) -->
+        <!-- 플레이어 리스트 토글 버튼 (모바일/태블릿 전용 - 데스크톱에서는 날개 버튼으로 대체) -->
         <button 
           class="player-list-toggle-btn"
           @click="togglePlayerList"
@@ -72,9 +72,27 @@
     <!-- 게임 메인 영역 -->
     <div class="game-content" :class="{ 'chat-open': isChatOpen }">
       <!-- 왼쪽 패널: 플레이어 목록 (토글 가능) -->
-      <div class="left-panel" :class="{ 
+      <div
+        class="left-panel-wrapper"
+        v-if="!isMobile && !isResponsiveMode"
+      >
+        <div class="left-panel" :class="{ 'hidden': !isPlayerListOpen }">
+          <slot name="player-list" :close-player-list="closePlayerList" :is-mobile="false"> </slot>
+        </div>
+        <!-- 날개 버튼 (데스크톱 전용) -->
+        <button
+          class="wing-toggle-btn"
+          @click="togglePlayerList"
+          :title="isPlayerListOpen ? '플레이어 목록 닫기' : '플레이어 목록 열기'"
+          :aria-label="isPlayerListOpen ? '플레이어 목록 닫기' : '플레이어 목록 열기'"
+        >
+          <i class="fas" :class="isPlayerListOpen ? 'fa-chevron-left' : 'fa-chevron-right'"></i>
+        </button>
+      </div>
+      <!-- 모바일에서는 기존 방식대로 -->
+      <div v-else class="left-panel" :class="{
         'hidden': !isPlayerListOpen,
-        'mobile-open': isMobile && isPlayerListOpen 
+        'mobile-open': isMobile && isPlayerListOpen
       }">
         <slot name="player-list" :close-player-list="closePlayerList" :is-mobile="isMobile"> </slot>
       </div>
@@ -1447,6 +1465,7 @@ export default {
 }
 
 .round-progress {
+  width: 100%; /* 데스크톱에서도 프로그레스바 가로 너비 확보 */
   height: 8px;
   background-color: rgba(255, 255, 255, 0.2);
   border-radius: 4px;
@@ -1514,6 +1533,57 @@ export default {
   }
 }
 
+/* ====================================================
+   날개 버튼 래퍼 (데스크톱 전용)
+   - 패널과 날개 버튼을 나란히 배치
+   ==================================================== */
+.left-panel-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  flex-shrink: 0;
+  position: relative;
+}
+
+/* 날개 버튼 */
+.wing-toggle-btn {
+  /* 패널 중앙에 세로로 세워진 버튼 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  min-width: 18px;
+  align-self: stretch;
+  border: none;
+  background: rgba(34, 40, 49, 0.65);
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  z-index: 10;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.12);
+  border-radius: 0 8px 8px 0;
+  flex-shrink: 0;
+}
+
+.wing-toggle-btn:hover {
+  background: rgba(79, 70, 229, 0.85);
+  color: #fff;
+  box-shadow: 2px 0 12px rgba(79, 70, 229, 0.3);
+}
+
+.wing-toggle-btn:active {
+  background: rgba(79, 70, 229, 1);
+}
+
+.wing-toggle-btn i {
+  font-size: 0.6rem;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
 /* 왼쪽 패널: 플레이어 목록 */
 .left-panel {
   width: 250px;
@@ -1524,24 +1594,25 @@ export default {
   max-height: calc(100vh - 160px);
   display: flex;
   flex-direction: column;
-  border-radius: 10px;
+  border-radius: 10px 0 0 10px; /* 날개 버튼에 맞춰 우측 radius 제거 */
   /* 개별 속성별 애니메이션 설정 */
-  transition: 
+  transition:
     width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow 0.2s ease-out,
-    overflow 0.1s ease-out;
+    opacity 0.2s ease-out;
 }
 
 /* 데스크톱에서 숨김 상태 */
 .left-panel.hidden {
   width: 0;
   overflow: hidden;
+  opacity: 0;
   box-shadow: none;
   /* 숨김 시 더 빠른 애니메이션 */
-  transition: 
-    width 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.1s ease-in,
-    overflow 0.05s ease-in;
+  transition:
+    width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.15s ease-in,
+    box-shadow 0.1s ease-in;
 }
 
 /* 모바일에서만 플레이어 리스트가 닫힐 때 적용 */
@@ -2180,9 +2251,14 @@ export default {
   .header-right .player-list-toggle-btn {
     display: none !important;
   }
+
+  /* 태블릿/모바일에서는 날개 버튼 wrapper 숨김 (하단바 사용) */
+  .left-panel-wrapper {
+    display: none !important;
+  }
 }
 
-/* 플레이어 리스트 토글 버튼 (항상 표시) */
+/* 플레이어 리스트 토글 버튼 (모바일/태블릿, 데스크톱에서는 날개 버튼으로 대체) */
 .player-list-toggle-btn {
   background: linear-gradient(135deg, #4CAF50, #45a049);
   color: white;
@@ -2192,7 +2268,7 @@ export default {
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  display: flex; /* 항상 표시 */
+  display: none; /* 데스크톱에서 숨김: 날개 버튼 사용 */
   align-items: center;
   gap: 0.5rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -2200,6 +2276,13 @@ export default {
   margin-right: 1rem;
   min-width: 100px;
   justify-content: center;
+}
+
+/* 모바일/태블릿에서는 헤더 토글 버튼 표시 */
+@media (max-width: 992px) {
+  .player-list-toggle-btn {
+    display: flex;
+  }
 }
 
 .player-list-toggle-btn:hover {

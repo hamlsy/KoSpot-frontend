@@ -310,8 +310,7 @@ export default {
         email: "user@kospot.com",
         avatar: null,
         isAdmin: false
-      },
-      isDevMode: true
+      }
     };
   },
   computed: {
@@ -359,13 +358,8 @@ export default {
       immediate: true,
       deep: true
     },
-    '$route'() {
-      // 라우트 변경 시 개발 모드 확인
-      this.checkDevMode();
-    }
   },
   mounted() {
-    this.checkDevMode();
     // 토큰이 있으면 사용자 정보 조회
     if (this.hasToken) {
       this.checkAuthStatus();
@@ -473,43 +467,6 @@ export default {
       // window.location.href = '/main';
       
       this.$router.push('/main');
-    },
-    // 개발 모드 확인 (API 연결 실패 시)
-    async checkDevMode() {
-      // 개발 모드 감지는 초기 로드 시 한 번만 수행
-      if (this.$route.matched.length === 0) {
-        return;
-      }
-      
-      try {
-        // API 연결 테스트 (타임아웃 2초)
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => {
-          controller.abort();
-        }, 2000);
-        
-        const testResponse = await fetch('/api/main', { 
-          method: 'GET',
-          signal: controller.signal,
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (testResponse.ok) {
-          this.isDevMode = false;
-        } else {
-          // API 응답이 실패하면 개발 모드로 간주
-          this.isDevMode = true;
-          console.log('🔧 개발 모드 감지: API 응답 실패');
-        }
-      } catch (error) {
-        // 네트워크 에러, 타임아웃, 또는 CORS 에러 시 개발 모드로 간주
-        this.isDevMode = true;
-        console.log('🔧 개발 모드 감지: API 연결 실패', error.name || error.message);
-      }
     },
     // 인증 상태 확인
     async checkAuthStatus() {
