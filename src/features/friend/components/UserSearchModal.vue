@@ -163,10 +163,7 @@ export default {
       clearTimeout(this.searchTimer)
     },
     onInput() {
-      clearTimeout(this.searchTimer)
-      if (this.query.trim().length >= 2) {
-        this.searchTimer = setTimeout(() => this.search(), 500)
-      }
+      // 타이머 제거: 사용자가 명시적으로 엔터나 검색 버튼을 클릭할 때만 검색되도록 수정
     },
     async search() {
       if (!this.query.trim() || this.isSearching) return
@@ -178,13 +175,15 @@ export default {
         const response = await apiClient.get('/member/search', {
           params: { nickname: this.lastQuery },
         })
-        const rawResults = response.data?.data ?? response.data ?? []
+        const rawData = response.data?.result ?? response.data?.data ?? []
+        const rawResults = Array.isArray(rawData) ? rawData : []
+
         this.searchResults = rawResults.map((u) => ({
           id: u.memberId ?? u.id,
           nickname: u.nickname,
           avatarColor: u.markerImageUrl ?? this._colorFromNickname(u.nickname),
-          isFriend: u.isFriend ?? false,
-          requestSent: u.requestSent ?? false,
+          isFriend: u.friend ?? u.isFriend ?? false,
+          requestSent: u.requestSend ?? u.requestSent ?? false,
         }))
       } catch (error) {
         console.error('❌ 회원 검색 실패:', error)
