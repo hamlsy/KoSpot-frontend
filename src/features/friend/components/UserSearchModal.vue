@@ -125,12 +125,15 @@
 </template>
 
 <script>
+import { apiClient } from '@/core/api/apiClient.js';
+import friendService from '../services/friend.service.js';
+
 export default {
   name: 'UserSearchModal',
   props: {
     isOpen: { type: Boolean, default: false },
   },
-  emits: ['close', 'send-request'],
+  emits: ['close'],
   data() {
     return {
       query: '',
@@ -157,9 +160,9 @@ export default {
       this.searchResults = []
       this.hasSearched = false
       this.isSearching = false
+      clearTimeout(this.searchTimer)
     },
     onInput() {
-      // 디바운스 처리
       clearTimeout(this.searchTimer)
       if (this.query.trim().length >= 2) {
         this.searchTimer = setTimeout(() => this.search(), 500)
@@ -170,28 +173,47 @@ export default {
       this.isSearching = true
       this.lastQuery = this.query.trim()
 
-      // 실제 API 호출 위치 (부모에서 처리하거나 store 사용)
-      // 여기서는 emit으로 부모에게 위임 후 결과를 props로 받아야 함
-      // 데모용 시뮬레이션
-      await new Promise(r => setTimeout(r, 600))
-      this.isSearching = false
-      this.hasSearched = true
-
-      // 데모 결과 (실제 사용시 API 응답으로 교체)
-      this.searchResults = this.query.toLowerCase().includes('test') ? [] : [
-        {
-          id: 1,
-          nickname: this.query,
-          userId: 'usr_' + Math.random().toString(36).substr(2, 6),
-          avatarColor: '#33fbe8',
-          isFriend: false,
-          requestSent: false,
-        },
-      ]
+      try {
+        // 닉네임으로 회원 검색 API 호출
+        const response = await apiClient.get('/members/search', {
+          params: { nickname: this.lastQuery },
+        })
+        const rawResults = response.data?.data ?? response.data ?? []
+        this.searchResults = rawResults.map((u) => ({
+          id: u.memberId ?? u.id,
+          nickname: u.nickname,
+          userId: u.loginId ?? String(u.memberId ?? u.id),
+          avatarColor: u.profileImageUrl ?? this._colorFromNickname(u.nickname),
+          isFriend: u.isFriend ?? false,
+          requestSent: u.requestSent ?? false,
+        }))
+      } catch (error) {
+        console.error('❌ 회원 검색 실패:', error)
+        this.searchResults = []
+      } finally {
+        this.isSearching = false
+        this.hasSearched = true
+      }
     },
-    sendRequest(user) {
-      this.$emit('send-request', user)
-      user.requestSent = true
+    async sendRequest(user) {
+      if (user.requestSent || user.isFriend) return
+      try {
+        await friendService.sendFriendRequest(user.id)
+        user.requestSent = true
+      } catch (error) {
+        console.error('❌ 친구 요청 전송 실패:', error)
+      }
+    },
+    _colorFromNickname(nickname) {
+      const palette = [
+        '#33fbe8', '#f59e0b', '#10b981', '#8b5cf6',
+        '#ef4444', '#3b82f6', '#ec4899', '#14b8a6',
+      ]
+      let hash = 0
+      for (let i = 0; i < (nickname?.length ?? 0); i++) {
+        hash = (hash * 31 + nickname.charCodeAt(i)) % palette.length
+      }
+      return palette[Math.abs(hash)]
     },
   },
 }

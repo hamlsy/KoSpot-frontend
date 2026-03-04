@@ -10,6 +10,7 @@ import { tokenRefreshService } from '@/core/services/tokenRefresh.service.js';
 import { useTheme } from '@/core/composables/useTheme.js';
 import NotificationToast from '@/core/components/NotificationToast.vue';
 import { useNotificationStore } from '@/store/modules/notificationStore.js';
+import { useFriendStore } from '@/features/friend/stores/friend.store.js';
 import {
   connectNotificationSocket,
   disconnectNotificationSocket,
@@ -19,6 +20,7 @@ import {
 useTheme();
 
 const notificationStore = useNotificationStore();
+const friendStore = useFriendStore();
 
 /**
  * 알림 WebSocket 연결 (토큰 있을 때만)
@@ -33,6 +35,10 @@ const connectNotifications = () => {
 
   // 미읽은 수 초기 로드
   notificationStore.fetchUnreadCount();
+
+  // 친구 채팅 WebSocket 연결 + 초기 데이터 로드
+  friendStore.initSocket();
+  friendStore.loadInitialData();
 };
 
 /**
@@ -41,6 +47,10 @@ const connectNotifications = () => {
 const disconnectNotifications = () => {
   disconnectNotificationSocket();
   notificationStore.reset();
+
+  // 친구 소켓 해제 및 상태 초기화
+  friendStore.destroySocket();
+  friendStore.reset();
 };
 
 // 토큰 체크 및 서비스 시작

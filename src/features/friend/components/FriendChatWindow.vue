@@ -34,7 +34,13 @@
       <div v-show="!isMinimized" class="chat-body">
         <!-- 메시지 목록 -->
         <div ref="messageList" class="messages-list">
-          <div v-if="messages.length === 0" class="chat-empty">
+          <!-- 채팅 기록 로딩 중 -->
+          <div v-if="isLoading" class="chat-loading">
+            <span class="chat-loading-spinner"></span>
+            <p>대화 기록을 불러오는 중...</p>
+          </div>
+
+          <div v-else-if="messages.length === 0" class="chat-empty">
             <span class="chat-empty-icon">◈</span>
             <p>{{ friend.nickname }}님과 대화를 시작해보세요</p>
           </div>
@@ -106,6 +112,7 @@ export default {
     isOpen: { type: Boolean, default: false },
     friend: { type: Object, default: null },
     messages: { type: Array, default: () => [] },
+    isLoading: { type: Boolean, default: false },
   },
   emits: ['close', 'send-message'],
   data() {
@@ -449,6 +456,32 @@ export default {
 
 .send-btn:disabled { cursor: not-allowed; }
 .send-btn svg { width: 15px; height: 15px; }
+
+/* 일로딩 */
+.chat-loading {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+  height: 100%;
+}
+
+.chat-loading p { margin: 0; }
+
+.chat-loading-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* 채팅 창 트랜지션 */
 .chat-slide-enter-active {
