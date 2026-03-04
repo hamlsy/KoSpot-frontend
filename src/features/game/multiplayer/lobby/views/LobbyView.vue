@@ -1,30 +1,8 @@
 <template>
   <div class="multiplayer-container">
-    <!-- 헤더 -->
-    <header class="header">
-      <div class="header-content">
-        <button class="back-button" @click="$router.push('/main')">
-          <i class="fas fa-arrow-left"></i>
-        </button>
-        <div class="logo-container">
-          <img src="/images/logo/kospot_logo_1-removebg.png" alt="KoSpot" class="header-logo" />
-        </div>
-        <div class="header-right">
-          <h3>멀티플레이어 로비</h3>
-          <!-- 개발 모드 토글 버튼 (관리자에게만 표시) -->
-          <button 
-            v-if="isAdmin && isDevelopment"
-            class="dev-mode-toggle"
-            @click="toggleDevMode"
-            :class="{ 'active': useDummyData }"
-            :title="useDummyData ? '개발 모드 끄기' : '개발 모드 켜기'"
-          >
-            <i class="fas" :class="useDummyData ? 'fa-database' : 'fa-wifi'"></i>
-            <span>{{ useDummyData ? 'DEV' : 'API' }}</span>
-          </button>
-        </div>
-      </div>
-    </header>
+    <!-- 일관 네비게이션바 -->
+    <NavigationBar />
+
 
     <main class="main-content">
       <!-- 모바일 채팅 토글 버튼 -->
@@ -118,6 +96,7 @@ import { useRouter, onBeforeRouteLeave } from 'vue-router';
 import { useAuth } from '@/core/composables/useAuth.js';
 import useGlobalLobbyWebSocketService from '../services/useGlobalLobbyWebSocketService';
 import { useLobbyRoom } from '../composables/useLobbyRoom.js';
+import NavigationBar from '@/core/components/NavigationBar.vue';
 import GameRoomList from '../components/RoomList.vue';
 import ChatWindow from '../../chat/components/Lobby/ChatWindow.vue';
 import CreateRoomModal from '../components/CreateRoomModal.vue';
@@ -398,131 +377,11 @@ onBeforeUnmount(async () => {
   background-color: var(--color-background);
 }
 
-/* 헤더 스타일 */
-.header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 80px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--color-border);
-  z-index: 100;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
-  transition: all var(--transition-normal);
-}
-
-.header-content {
-  max-width: 1400px;
-  margin: 0 auto;
-  height: 100%;
-  padding: 0 var(--spacing-xl);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.back-button {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-md);
-  background: rgba(37, 99, 235, 0.05);
-  border: 1px solid rgba(37, 99, 235, 0.1);
-  color: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
-}
-
-.back-button:hover {
-  background: var(--color-primary);
-  color: white;
-  transform: translateX(-4px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
-}
-
-.logo-container {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.header-logo {
-  height: 50px;
-  width: auto;
-  filter: drop-shadow(0 2px 8px rgba(37, 99, 235, 0.15));
-  transition: transform var(--transition-normal);
-}
-
-.header-logo:hover {
-  transform: scale(1.05);
-}
-
-.header-right {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-}
-
-.header-right h3 {
-  margin: 0;
-  font-family: var(--font-heading);
-  font-size: var(--font-size-h3);
-  font-weight: 700;
-  color: var(--color-text-primary);
-  letter-spacing: -0.01em;
-}
-
-/* 개발 모드 토글 버튼 */
-.dev-mode-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 0.9rem;
-  background: rgba(107, 114, 128, 0.08);
-  border: 1px solid rgba(107, 114, 128, 0.15);
-  border-radius: var(--radius-md);
-  color: var(--color-text-secondary);
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--transition-normal);
-}
-
-.dev-mode-toggle i {
-  font-size: 0.75rem;
-}
-
-.dev-mode-toggle span {
-  font-size: 0.7rem;
-  letter-spacing: 0.05em;
-}
-
-.dev-mode-toggle:hover {
-  background: rgba(107, 114, 128, 0.12);
-  transform: translateY(-2px);
-}
-
-.dev-mode-toggle.active {
-  background: linear-gradient(135deg, var(--color-primary) 0%, #1d4ed8 100%);
-  border-color: var(--color-primary);
-  color: white;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
-}
-
-.dev-mode-toggle.active:hover {
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
-}
 
 /* 메인 콘텐츠 스타일 */
+
 .main-content {
-  padding: 100px var(--spacing-xl) var(--spacing-xl);
+  padding: 80px var(--spacing-xl) var(--spacing-xl);
   max-width: 1400px;
   margin: 0 auto;
 }
@@ -679,7 +538,7 @@ onBeforeUnmount(async () => {
 /* 에러 토스트 */
 .error-toast {
   position: fixed;
-  top: 100px;
+  top: 70px;
   right: 20px;
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: white;
@@ -739,7 +598,7 @@ onBeforeUnmount(async () => {
 /* 더미 데이터 모드 토스트 */
 .dummy-mode-toast {
   position: fixed;
-  top: 100px;
+  top: 70px;
   left: var(--spacing-xl);
   background: linear-gradient(135deg, var(--color-primary) 0%, #1d4ed8 100%);
   color: white;

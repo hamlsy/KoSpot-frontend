@@ -175,15 +175,14 @@ export default {
 
       try {
         // 닉네임으로 회원 검색 API 호출
-        const response = await apiClient.get('/members/search', {
+        const response = await apiClient.get('/member/search', {
           params: { nickname: this.lastQuery },
         })
         const rawResults = response.data?.data ?? response.data ?? []
         this.searchResults = rawResults.map((u) => ({
           id: u.memberId ?? u.id,
           nickname: u.nickname,
-          userId: u.loginId ?? String(u.memberId ?? u.id),
-          avatarColor: u.profileImageUrl ?? this._colorFromNickname(u.nickname),
+          avatarColor: u.markerImageUrl ?? this._colorFromNickname(u.nickname),
           isFriend: u.isFriend ?? false,
           requestSent: u.requestSent ?? false,
         }))
@@ -327,7 +326,7 @@ export default {
   outline: none;
 }
 
-.modal-input::placeholder { color: var(--color-text-tertiary); }
+/* .modal-input::placeholder { color: var(--color-text-tertiary); } */
 
 .search-execute-btn {
   display: flex;

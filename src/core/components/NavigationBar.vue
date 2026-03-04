@@ -366,15 +366,14 @@ export default {
   },
   mounted() {
     this.checkDevMode();
-    // 토큰이 있으면 사용자 정보 업데이트
-    if (this.hasToken && !this.actualIsLoggedIn) {
+    // 토큰이 있으면 사용자 정보 조회
+    if (this.hasToken) {
       this.checkAuthStatus();
     }
-    // 알림 미읽은 수 초기 로드 (로그인 상태일 때)
+    // 알림 미읽은 수 초기 로드
+    // 친구 목록/소켓 초기화는 App.vue에서 전역으로 처리됨
     if (this.hasToken) {
       this.notificationStore.fetchUnreadCount();
-      // 친구 초기 데이터 로드 (친구 목록 + 받은 요청)
-      this.friendStore.loadInitialData();
     }
     // 외부 클릭으로 알림 드롭다운 닫기
     document.addEventListener('click', this.handleGlobalClick);
@@ -514,14 +513,28 @@ export default {
     },
     // 인증 상태 확인
     async checkAuthStatus() {
+      // 부모 컴포넌트(MainView, ShopView 등)가 프로필 정보를 내려준 경우 생략
+      if (this.userInfo && this.userInfo.name && this.userInfo.name !== "김코스팟") {
+        return;
+      }
+      
       const token = localStorage.getItem('accessToken');
       if (token) {
-        // 토큰이 있으면 사용자 정보 조회 시도
         try {
-          // API 호출은 필요 시 구현
-          // 현재는 props로 전달받은 userInfo 사용
+          // MainView에서 저장해둔 사용자 정보를 불러와서 사용
+          const storedProfile = localStorage.getItem('userProfile');
+          if (storedProfile) {
+            const parsedProfile = JSON.parse(storedProfile);
+            this.userProfile = {
+              ...this.userProfile,
+              name: parsedProfile.name || this.userProfile.name,
+              email: parsedProfile.email || this.userProfile.email,
+              avatar: parsedProfile.avatar || this.userProfile.avatar,
+              isAdmin: parsedProfile.isAdmin || false
+            };
+          }
         } catch (error) {
-          console.error('인증 상태 확인 실패:', error);
+          console.error('로컬스토리지에서 프로필 불러오기 실패:', error);
         }
       }
     },
@@ -537,6 +550,7 @@ export default {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('memberId');
+      localStorage.removeItem('userProfile');
       this.userProfile = {
         name: "",
         email: "",

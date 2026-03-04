@@ -384,8 +384,6 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '@/core/composables/useAuth.js';
-import { useFriendStore } from '@/features/friend/stores/friend.store.js';
-import { isFriendSocketConnected } from '@/features/friend/services/friendWebSocket.service.js';
 import NavigationBar from '@/core/components/NavigationBar.vue'
 import UserLoginCard from '@/features/main/components/UserLoginCard.vue'
 import IntroTutorialModal from '@/features/intro/components/IntroTutorialModal.vue'
@@ -399,9 +397,6 @@ const router = useRouter();
 
 // 인증 컴포저블
 const { logout: logoutAuth } = useAuth();
-
-// 친구 스토어
-const friendStore = useFriendStore();
 
 // 반응형 상태 정의
 // JWT 토큰 확인
@@ -510,6 +505,9 @@ async function loadMainPageData() {
           isFirstVisited.value = false;
           userProfile.value.isFirstVisited = false;
         }
+
+        // 받아온 프로필 정보를 다른 페이지(Lobby 등)에서 재사용할 수 있도록 저장
+        localStorage.setItem('userProfile', JSON.stringify(userProfile.value));
       }
       
       // 게임 모드 상태 업데이트
@@ -561,17 +559,11 @@ async function loadMainPageData() {
 }
 
 // 컴포넌트 마운트 시 실행
-onMounted(async () => {
+onMounted(() => {
   loadMainPageData();
   startBannerRotation();
   window.addEventListener('resize', handleResize);
-
-  // 친구 소켓: MainView 진입 시 연결 안되어 있으면 연결
-  const token = localStorage.getItem('accessToken');
-  if (token && !isFriendSocketConnected()) {
-    await friendStore.initSocket();
-  }
-  // TODO: STOMP 소켓 구독은 미돈본 API 확정 후 이곳에 추가
+  // 친구 소켓 및 구독은 App.vue에서 전역으로 관리됨
 });
 
 // 컴포넌트 언마운트 전 실행

@@ -5,60 +5,76 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
+import { onMounted, onBeforeUnmount, ref } from 'vue';
 import { tokenRefreshService } from '@/core/services/tokenRefresh.service.js';
 import { useTheme } from '@/core/composables/useTheme.js';
 import NotificationToast from '@/core/components/NotificationToast.vue';
 import { useNotificationStore } from '@/store/modules/notificationStore.js';
+import { useFriendStore } from '@/features/friend/stores/friend.store.js';
 import {
   connectNotificationSocket,
   disconnectNotificationSocket,
 } from '@/core/services/notificationWebSocket.service.js';
+import { isFriendSocketConnected } from '@/features/friend/services/friendWebSocket.service.js';
 
 // 테마 초기화
 useTheme();
 
 const notificationStore = useNotificationStore();
+const friendStore = useFriendStore();
+
+// ─── 알림 + 친구 WebSocket 전역 연결 ─────────────────────────────────────
 
 /**
- * 알림 WebSocket 연결 (토큰 있을 때만)
+ * 로그인 상태일 때 모든 WebSocket을 연결하고 초기 데이터를 로드합니다.
+ * - 앱 최초 로드 (이미 로그인된 경우)
+ * - 다른 탭에서 로그인 감지 시
+ * - 5초 인터벌에서 소켓이 끊어진 경우 재연결 시
  */
-const connectNotifications = () => {
+const connectAll = async () => {
   const token = localStorage.getItem('accessToken');
   if (!token) return;
 
+  // 1. 알림 WebSocket 연결 (서비스 내부에서 중복 연결 방지)
   connectNotificationSocket((notification) => {
     notificationStore.addNotification(notification);
   });
-
-  // 미읽은 수 초기 로드
   notificationStore.fetchUnreadCount();
+
+  // 2. 친구 WebSocket 연결 (미연결 상태일 때만)
+  if (!isFriendSocketConnected()) {
+    await friendStore.initSocket();
+  }
+
+  // 3. 친구 초기 데이터 로드 (친구 목록 + 받은 요청)
+  //    데이터가 아직 없을 때만 로드하여 불필요한 중복 요청 방지
+  if (friendStore.friends.length === 0 && !friendStore.isLoading) {
+    await friendStore.loadInitialData();
+  }
 };
 
 /**
- * 알림 WebSocket 해제 (로그아웃 시)
+ * 로그아웃 / 앱 종료 시 모든 WebSocket을 해제합니다.
  */
-const disconnectNotifications = () => {
+const disconnectAll = () => {
   disconnectNotificationSocket();
   notificationStore.reset();
+
+  friendStore.destroySocket();
+  friendStore.reset();
 };
 
-// 토큰 체크 및 서비스 시작
+// ─── 토큰 서비스 ──────────────────────────────────────────────────────────
+
 const checkAndStartTokenService = () => {
   const accessToken = localStorage.getItem('accessToken');
   const refreshToken = localStorage.getItem('refreshToken');
-  
+
   if (accessToken && refreshToken) {
-    // 이미 실행 중이면 아무것도 하지 않음 (중복 방지)
-    if (tokenRefreshService.refreshInterval) {
-      // 이미 실행 중이므로 로그 없이 그냥 return
-      return;
-    }
-    
+    if (tokenRefreshService.refreshInterval) return;
     console.log('🚀 토큰 갱신 서비스 시작');
     tokenRefreshService.start();
   } else {
-    // 토큰이 없으면 중지
     if (tokenRefreshService.refreshInterval) {
       console.log('🛑 토큰 없음: 갱신 서비스 중지');
       tokenRefreshService.stop();
@@ -66,54 +82,52 @@ const checkAndStartTokenService = () => {
   }
 };
 
-// Storage 이벤트 리스너 (다른 탭에서의 변경 감지)
+// ─── Storage 이벤트 (다른 탭에서의 로그인/로그아웃 감지) ─────────────────
+
 const handleStorageChange = (e) => {
   if (e.key === 'accessToken' || e.key === 'refreshToken') {
-    console.log('📦 Storage 변경 감지:', e.key);
     checkAndStartTokenService();
 
     if (e.key === 'accessToken') {
       if (e.newValue) {
-        // 로그인 → 알림 WebSocket 연결 + 미읽은 수 갱신
-        connectNotifications();
+        // 다른 탭에서 로그인 → 모든 WebSocket 연결
+        connectAll();
       } else {
-        // 로그아웃 → 알림 WebSocket 해제
-        disconnectNotifications();
+        // 다른 탭에서 로그아웃 → 모든 WebSocket 해제
+        disconnectAll();
       }
     }
   }
 };
 
-// 주기적으로 토큰 상태 체크 (동일 탭에서의 변경 감지)
+// ─── 주기적 상태 체크 (동일 탭 로그인/소켓 자동 재연결) ─────────────────
+
 const tokenCheckInterval = ref(null);
 
-onMounted(() => {
-  // 앱 시작 시 토큰 서비스 체크 및 시작
+onMounted(async () => {
   checkAndStartTokenService();
 
-  // 알림 WebSocket 연결 시도
-  connectNotifications();
-  
-  // Storage 이벤트 리스너 등록 (다른 탭에서의 변경 감지)
+  // 앱 시작 시 모든 WebSocket 연결 시도 (이미 로그인된 경우)
+  await connectAll();
+
   window.addEventListener('storage', handleStorageChange);
-  
-  // 5초마다 토큰 상태 체크 (동일 탭에서의 로그인/로그아웃 감지)
-  tokenCheckInterval.value = setInterval(() => {
+
+  // 5초마다: 토큰 서비스 체크 + 소켓 자동 재연결
+  // → 동일 탭에서 로그인하거나 소켓이 끊어진 경우를 자동 복구
+  tokenCheckInterval.value = setInterval(async () => {
     checkAndStartTokenService();
+
+    const token = localStorage.getItem('accessToken');
+    if (token && !isFriendSocketConnected()) {
+      await connectAll();
+    }
   }, 5000);
 });
 
 onBeforeUnmount(() => {
-  // 앱 종료 시 토큰 갱신 서비스 중지
   tokenRefreshService.stop();
-  
-  // 알림 WebSocket 해제
-  disconnectNotifications();
-
-  // 이벤트 리스너 제거
+  disconnectAll();
   window.removeEventListener('storage', handleStorageChange);
-  
-  // 인터밸 정리
   if (tokenCheckInterval.value) {
     clearInterval(tokenCheckInterval.value);
   }
