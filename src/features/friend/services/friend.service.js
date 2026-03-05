@@ -13,6 +13,7 @@ const FRIEND_ENDPOINTS = {
     GET_ALL_FRIENDS: '/friends',
     SEND_REQUEST: '/friends/requests',
     APPROVE_REQUEST: (requestId) => `/friends/requests/${requestId}/approve`,
+    REJECT_REQUEST: (requestId) => `/friends/requests/${requestId}/reject`,
     GET_INCOMING_REQUESTS: '/friends/requests/incoming',
     DELETE_FRIEND: (friendMemberId) => `/friends/${friendMemberId}`,
 
@@ -80,6 +81,27 @@ class FriendService {
         } catch (error) {
             console.error('❌ 친구 요청 승인 실패:', error);
             this._handleApiError(error, '친구 요청을 승인하는데 실패했습니다.');
+            throw error;
+        }
+    }
+
+    /**
+     * 친구 요청 거절
+     * @param {number} requestId - 거절할 친구 요청 ID
+     * @returns {Promise<ApiResponse<FriendRequestActionResponse>>} API 응답 데이터
+     */
+    async rejectFriendRequest(requestId) {
+        try {
+            if (!requestId) {
+                throw new Error('거절할 요청 ID가 필요합니다.');
+            }
+
+            const response = await apiClient.patch(FRIEND_ENDPOINTS.REJECT_REQUEST(requestId));
+
+            return response.data;
+        } catch (error) {
+            console.error('❌ 친구 요청 거절 실패:', error);
+            this._handleApiError(error, '친구 요청을 거절하는데 실패했습니다.');
             throw error;
         }
     }

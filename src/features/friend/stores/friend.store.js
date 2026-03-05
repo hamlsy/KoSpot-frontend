@@ -167,13 +167,12 @@ export const useFriendStore = defineStore('friend', () => {
     }
 
     /**
-     * 친구 요청 거절 (친구 삭제 API로 처리)
+     * 친구 요청 거절
      * @param {{ id: number, senderMemberId: number }} req
      */
     async function declineFriendRequest(req) {
         try {
-            // 거절은 백엔드 정책에 따름: 현재는 요청 송신자를 친구 삭제 방식으로 처리
-            await friendService.deleteFriend(req.senderMemberId);
+            await friendService.rejectFriendRequest(req.id);
             pendingRequests.value = pendingRequests.value.filter((r) => r.id !== req.id);
         } catch (error) {
             console.error('❌ 친구 요청 거절 실패:', error);

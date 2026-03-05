@@ -43,9 +43,6 @@
     <!-- 메인 게임 영역 -->
     <template #main>
       <!-- 팀 투표 마커 버블 -->
-    </template>
-    <!-- 팀전 결과 모달 -->
-    <template #results>
       <team-game-results
         v-if="gameStore.state.showGameResults"
         :visible="gameStore.state.showGameResults"
@@ -55,10 +52,9 @@
         @play-again="restartGame"
         @exit="exitToLobby"
       />
-
       <!-- 라운드 결과 화면 -->
       <round-results
-        v-if="gameStore.state.roundEnded"
+        v-else-if="gameStore.state.roundEnded"
         :players="gameStore.state.players"
         :actual-location="
           gameStore.state.actualLocation || { lat: 37.5665, lng: 126.978 }
@@ -86,7 +82,9 @@
         @request-next-round="requestNextRound"
         @finish-game="finishGame"
       />
-
+    </template>
+    <!-- 팀전 결과 모달 -->
+    <template #results>
       <!-- 토스트 메시지 -->
       <div class="toast-container" v-if="showToastFlag">
         <div class="toast-message">
