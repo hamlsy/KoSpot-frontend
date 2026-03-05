@@ -5,10 +5,13 @@
  * 이 서비스는 1:1 친구 채팅 전용 실시간 웹소켓 통신을 담당합니다.
  * (친구 요청 등 일반 알림은 notificationWebSocket.service.js 에서 담당)
  *
- * 발송 채널:
- *   - /app/friends.chat.send
+ * 발송 채널 (MessageMapping):
+ *   - /app/chat-rooms.{roomId}.chat
+ *     payload: { content: string }
+ *
  * 구독 채널:
- *   - /topic/friends/chat-room/{roomId}
+ *   - /topic/friends/chat-rooms/{roomId}
+ *     응답: { messageId, senderMemberId, content, createdAt }
  */
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
@@ -18,8 +21,10 @@ const subscriptions = new Map(); // roomId → STOMP subscription
 let currentRoomId = null;
 
 const WS_ENDPOINT = '/ws';
-const SEND_ENDPOINT = '/app/friends.chat.send';
-const SUBSCRIBE_TOPIC_PREFIX = '/topic/friends/chat-room/';
+// roomId는 destination에 포함: /app/chat-rooms.{roomId}.chat
+const SEND_ENDPOINT_TEMPLATE = (roomId) => `/app/chat-rooms.${roomId}.chat`;
+// 서버의 FriendChatChannelConstants: /topic/friends/chat-rooms/{roomId}
+const SUBSCRIBE_TOPIC_PREFIX = '/topic/friend/chat-rooms/';
 
 /**
  * STOMP 연결 설정
@@ -93,11 +98,7 @@ export const subscribeToChatRoom = (roomId, onMessageReceived) => {
         return;
     }
 
-    // 이미 다른 방에 접속 중이면 이전 방 구독 해제
-    if (currentRoomId && currentRoomId !== roomId) {
-        unsubscribeFromChatRoom(currentRoomId);
-    }
-
+    // 이미 구독 중이면 중복 구독 방지 (다중 채팅창 동시 지원)
     if (subscriptions.has(roomId)) {
         return;
     }
@@ -162,14 +163,18 @@ export const sendChatMessage = (roomId, content) => {
         throw new Error('메시지 내용을 입력해주세요.');
     }
 
+    // roomId는 destination에 포함 → body에는 content만 전송
+    // 백엔드: @MessageMapping("/chat-rooms.{roomId}.chat")
+    // 백엔드 payload: ChatMessageDto.Friend { content }
     const payload = {
-        roomId: Number(roomId),
         content: content.trim(),
     };
 
+    const destination = SEND_ENDPOINT_TEMPLATE(Number(roomId));
+
     try {
         stompClient.publish({
-            destination: SEND_ENDPOINT,
+            destination,
             body: JSON.stringify(payload),
         });
     } catch (error) {

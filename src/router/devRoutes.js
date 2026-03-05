@@ -8,18 +8,9 @@ import SoloGameView from '@/features/game/multiplayer/roadview/views/SoloGameVie
 import RoomView from '@/features/game/multiplayer/room/views/RoomView.vue'
 import DevTestPage from '@/dummy/DevTestPage.vue'
 import ResultOverlay from '@/features/game/single/roadview/components/Result/ResultOverlay.vue'
-import DesignTestView from '@/features/game/multiplayer/roadview/views/DesignTestView.vue'
 
 
 const devRoutes = [
-    {
-        path: '/design-test',
-        name: "DesignTestView",
-        component: DesignTestView,
-        meta: {
-            title: 'RoundResults 디자인 테스트'
-        }
-    },
 
     {
         path: '/temp-login',

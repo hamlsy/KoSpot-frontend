@@ -14,6 +14,8 @@
           <!-- 네비게이션 추가 - 웹 전용 -->
           <div class="main-nav desktop-only">
             <router-link :to="{ name: 'NoticeListView' }" class="nav-link">공지사항</router-link>
+            <!-- 상점 -->
+            <router-link to="/shop" class="nav-link">상점</router-link>
             <!-- 로그인한 경우에만 마이페이지 표시 -->
             <router-link v-if="actualIsLoggedIn" to="/myProfile" class="nav-link">마이페이지</router-link>
             <!-- 버그/문의 -->
@@ -174,35 +176,54 @@
 
         <!-- 모바일용 내비게이션 메뉴 추가 -->
         <nav class="mobile-nav" v-if="actualIsLoggedIn">
-          <!-- 다크모드 토글 비활성화 -->
-          <!-- <div class="menu-item theme-menu-item" @click="toggleTheme">
-            <i class="fas" :class="isDarkMode ? 'fa-sun' : 'fa-moon'"></i>
-            {{ isDarkMode ? '라이트 모드' : '다크 모드' }}
-          </div>
-          
-          <div class="menu-divider"></div> -->
-          
-          <router-link :to="{ name: 'NoticeListView' }" class="menu-item">
-            <i class="fas fa-bullhorn"></i>
+          <!-- 게임 섹션 -->
+          <div class="menu-section-label">게임</div>
+          <router-link to="/roadView/main" class="menu-item" @click="closeProfileMenu">
+            <span class="menu-icon-wrap menu-icon-roadview"><i class="fas fa-street-view"></i></span>
+            로드뷰 모드
+          </router-link>
+          <router-link to="/lobby" class="menu-item" @click="closeProfileMenu">
+            <span class="menu-icon-wrap menu-icon-multi"><i class="fas fa-users"></i></span>
+            멀티플레이어
+          </router-link>
+
+          <div class="menu-divider"></div>
+
+          <!-- 소셜 섹션 -->
+          <div class="menu-section-label">소셜</div>
+          <router-link to="/shopMain" class="menu-item" @click="closeProfileMenu">
+            <span class="menu-icon-wrap menu-icon-shop"><i class="fas fa-shopping-bag"></i></span>
+            상점
+          </router-link>
+          <a href="#" class="menu-item" @click.prevent="() => { closeProfileMenu(); friendStore.openPanel(); }">
+            <span class="menu-icon-wrap menu-icon-friend"><i class="fas fa-user-friends"></i></span>
+            친구
+          </a>
+          <router-link :to="{ name: 'NoticeListView' }" class="menu-item" @click="closeProfileMenu">
+            <span class="menu-icon-wrap menu-icon-notice"><i class="fas fa-bullhorn"></i></span>
             공지사항
           </router-link>
-          <router-link to="/myProfile" class="menu-item">
-            <i class="fas fa-user-circle"></i>
-            마이페이지
-          </router-link>
           <a href="#" class="menu-item" @click.prevent="openContactModalFromSidebar">
-            <i class="fas fa-envelope"></i>
+            <span class="menu-icon-wrap menu-icon-contact"><i class="fas fa-envelope"></i></span>
             버그/문의
           </a>
+
           <div class="menu-divider"></div>
+
+          <!-- 계정 섹션 -->
+          <div class="menu-section-label">계정</div>
+          <router-link to="/myProfile" class="menu-item" @click="closeProfileMenu">
+            <span class="menu-icon-wrap menu-icon-profile"><i class="fas fa-user-circle"></i></span>
+            마이페이지
+          </router-link>
           <a href="#" class="menu-item" @click.prevent="handleLogout">
-            <i class="fas fa-sign-out-alt"></i>
+            <span class="menu-icon-wrap menu-icon-logout"><i class="fas fa-sign-out-alt"></i></span>
             로그아웃
           </a>
           
           <!-- 관리자 페이지 링크 추가 -->
-          <router-link v-if="actualIsAdmin" to="/admin" class="menu-item admin-menu-item">
-            <i class="fas fa-user-shield"></i>
+          <router-link v-if="actualIsAdmin" to="/admin" class="menu-item admin-menu-item" @click="closeProfileMenu">
+            <span class="menu-icon-wrap menu-icon-admin"><i class="fas fa-user-shield"></i></span>
             관리자 페이지
           </router-link>
         </nav>
@@ -825,10 +846,12 @@ export default {
   width: 320px;
   background: var(--color-surface);
   z-index: 9999;
-  padding: var(--spacing-xl);
+  padding: var(--spacing-xl) var(--spacing-xl) 0;
   overflow-y: auto;
   box-shadow: var(--shadow-xl);
   border-left: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
 }
 
 .profile-header {
@@ -892,46 +915,86 @@ export default {
 .mobile-nav {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: 2px;
+  padding: 0.75rem 0.75rem 1.5rem;
+  flex: 1;
+}
+
+/* 섹션 레이블 */
+.menu-section-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-tertiary, #9ca3af);
+  padding: 0.75rem 0.4rem 0.3rem;
+  margin-top: 0.25rem;
 }
 
 .menu-item {
   display: flex;
   align-items: center;
-  padding: var(--spacing-md);
+  padding: 0.55rem 0.5rem;
   color: var(--color-text-primary);
   text-decoration: none;
   font-weight: 500;
-  gap: var(--spacing-md);
-  border-radius: var(--radius-md);
-  transition: all var(--transition-normal);
+  font-size: 0.9rem;
+  gap: 0.75rem;
+  border-radius: 10px;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
 }
 
-.menu-item:hover {
+.menu-item:hover,
+.menu-item.router-link-active {
   background: var(--color-surface-hover);
-  transform: translateX(4px);
+  color: var(--color-primary);
+  transform: translateX(2px);
 }
 
 .menu-item i {
   width: 20px;
   text-align: center;
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: var(--color-text-secondary);
 }
+
+/* 아이콘 래퍼 */
+.menu-icon-wrap {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.menu-item:hover .menu-icon-wrap {
+  transform: scale(1.08);
+}
+
+/* 아이콘 색상 */
+.menu-icon-roadview { background: rgba(102, 126, 234, 0.12); color: #667eea; }
+.menu-icon-multi    { background: rgba(16, 185, 129, 0.12);  color: #10b981; }
+.menu-icon-shop     { background: rgba(245, 158, 11, 0.12);  color: #f59e0b; }
+.menu-icon-friend   { background: rgba(236, 72, 153, 0.12);  color: #ec4899; }
+.menu-icon-notice   { background: rgba(59, 130, 246, 0.12);  color: #3b82f6; }
+.menu-icon-contact  { background: rgba(20, 184, 166, 0.12);  color: #14b8a6; }
+.menu-icon-profile  { background: rgba(99, 102, 241, 0.12);  color: #6366f1; }
+.menu-icon-logout   { background: rgba(239, 68, 68, 0.12);   color: #ef4444; }
+.menu-icon-admin    { background: rgba(99, 102, 241, 0.14);  color: #6366f1; }
 
 .menu-divider {
   height: 1px;
   background: var(--color-border);
-  margin: var(--spacing-md) 0;
+  margin: 0.4rem 0.4rem;
 }
 
 .admin-menu-item {
   color: var(--color-accent) !important;
   font-weight: 600;
-}
-
-.admin-menu-item i {
-  color: var(--color-accent);
 }
 
 .temp-login-menu-item {

@@ -16,9 +16,6 @@
         class="icon-path"
       />
     </svg>
-
-    <!-- 활성화 언더라인 -->
-    <span class="active-line"></span>
   </button>
 </template>
 
@@ -44,79 +41,70 @@ export default {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600&display=swap');
-
 .friend-toggle-btn {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  background: transparent;
-  border: none;
-  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  /* background: var(--color-surface, #ffffff); */
+  background: var(--color-surface-hover);
+  border: 1.5px solid var(--color-border, #e5e7eb);
+  border-radius: 50%;
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.15s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
   outline: none;
+  /* box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08); */
 }
 
 .friend-toggle-btn:hover {
-  background: var(--color-surface-hover);
-  transform: scale(1.05);
+  background: var(--color-surface-hover, #f3f4f6);
+  border-color: var(--color-primary, #667eea);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.18);
+  transform: scale(1.08);
 }
 
 .friend-toggle-btn:hover .icon-path {
-  fill: var(--color-primary);
+  fill: var(--color-primary, #667eea);
 }
 
 .friend-toggle-btn.active {
-  background: var(--color-surface-hover);
+  background: var(--color-primary, #667eea);
+  border-color: var(--color-primary, #667eea);
+  box-shadow: 0 2px 12px rgba(102, 126, 234, 0.35);
 }
 
 .friend-toggle-btn.active .icon-path {
-  fill: var(--color-primary);
-}
-
-.friend-toggle-btn.active .active-line {
-  width: 60%;
-  opacity: 1;
+  fill: #ffffff;
 }
 
 .friend-icon {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
 }
 
 .icon-path {
-  fill: var(--color-text-secondary);
-  transition: fill 0.2s ease, filter 0.2s ease;
-}
-
-/* 활성화 언더라인 */
-.active-line {
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 2px;
-  background: var(--color-primary);
-  border-radius: 1px;
-  opacity: 0;
-  transition: width 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
+  fill: var(--color-text-secondary, #6b7280);
+  transition: fill 0.2s ease;
 }
 
 /* 알림 뱃지 */
 .notification-badge {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 12px;
-  height: 12px;
-  background: var(--color-error);
+  top: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  background: var(--color-error, #ef4444);
   border-radius: 50%;
-  border: 2px solid var(--color-surface);
+  border: 2px solid var(--color-surface, #ffffff);
   z-index: 1;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
 }
 </style>

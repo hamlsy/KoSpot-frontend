@@ -10,6 +10,8 @@ import {
     disconnectFriendSocket,
     sendChatMessage as wsSendMessage,
     isFriendSocketConnected,
+    subscribeToChatRoom,
+    unsubscribeFromChatRoom,
 } from '../services/friendWebSocket.service.js';
 
 export const useFriendStore = defineStore('friend', () => {
@@ -96,7 +98,12 @@ export const useFriendStore = defineStore('friend', () => {
             id: raw.messageId ?? raw.id ?? messageIdCounter.value++,
             text: raw.content,
             isMine: raw.senderMemberId === myMemberId || raw.isMine === true,
-            timestamp: raw.sentAt ? new Date(raw.sentAt).getTime() : Date.now(),
+            // 필드명: 서버는 createdAt 사용. sentAt이 없으면 createdAt 시도, 그도 없으면 Date.now()
+            timestamp: raw.createdAt
+                ? new Date(raw.createdAt).getTime()
+                : raw.sentAt
+                    ? new Date(raw.sentAt).getTime()
+                    : Date.now(),
         };
     }
 
@@ -115,15 +122,27 @@ export const useFriendStore = defineStore('friend', () => {
             ]);
 
             if (friendsRes.status === 'fulfilled') {
-                const rawFriends = friendsRes.value?.data ?? friendsRes.value ?? [];
-                friends.value = rawFriends.map(_mapFriend);
+                let rawFriends = friendsRes.value;
+                if (rawFriends && !Array.isArray(rawFriends) && rawFriends.result) {
+                    rawFriends = rawFriends.result;
+                } else if (rawFriends && !Array.isArray(rawFriends) && rawFriends.data) {
+                    rawFriends = rawFriends.data;
+                }
+                const resultArr = Array.isArray(rawFriends) ? rawFriends : [];
+                friends.value = resultArr.map(_mapFriend);
             } else {
                 console.error('❌ 친구 목록 로드 실패:', friendsRes.reason);
             }
 
             if (requestsRes.status === 'fulfilled') {
-                const rawRequests = requestsRes.value?.data ?? requestsRes.value ?? [];
-                pendingRequests.value = rawRequests.map((r) => ({
+                let rawRequests = requestsRes.value;
+                if (rawRequests && !Array.isArray(rawRequests) && rawRequests.result) {
+                    rawRequests = rawRequests.result;
+                } else if (rawRequests && !Array.isArray(rawRequests) && rawRequests.data) {
+                    rawRequests = rawRequests.data;
+                }
+                const resultArr = Array.isArray(rawRequests) ? rawRequests : [];
+                pendingRequests.value = resultArr.map((r) => ({
                     id: r.requestId ?? r.id,
                     nickname: r.senderNickname ?? r.nickname,
                     avatarColor: r.senderProfileImageUrl ?? _generateAvatarColor(r.senderNickname ?? r.nickname),
@@ -212,22 +231,59 @@ export const useFriendStore = defineStore('friend', () => {
         try {
             // 1. 채팅방 조회 또는 생성
             const roomRes = await friendService.getOrCreateChatRoom(friend.id);
-            const roomId = roomRes?.data?.chatRoomId ?? roomRes?.chatRoomId;
-            chatEntry.roomId = roomId;
+            let roomId = null;
+            if (roomRes?.result?.roomId) roomId = roomRes.result.roomId;
+            else if (roomRes?.roomId) roomId = roomRes.roomId;
+            else if (roomRes?.result?.chatRoomId) roomId = roomRes.result.chatRoomId;
+            else roomId = roomRes?.data?.chatRoomId ?? roomRes?.chatRoomId;
 
             // 2. 기존 메시지 로드
+            let loadedMessages = [];
             if (roomId) {
                 const msgRes = await friendService.getChatMessages(roomId);
-                const rawMessages = msgRes?.data ?? msgRes ?? [];
+                let rawMessages = msgRes;
+                if (rawMessages && !Array.isArray(rawMessages) && rawMessages.result) {
+                    rawMessages = rawMessages.result;
+                } else if (rawMessages && !Array.isArray(rawMessages) && rawMessages.data) {
+                    rawMessages = rawMessages.data;
+                }
+                const msgArr = Array.isArray(rawMessages) ? rawMessages : [];
+
                 // 서버는 최신순으로 줄 수 있으므로 오래된 순 정렬
-                chatEntry.messages = rawMessages
+                loadedMessages = msgArr
                     .map((m) => _mapMessage(m, myMemberId))
                     .sort((a, b) => a.timestamp - b.timestamp);
             }
+
+            // Pinia 반응형 보장: 인덱스로 찾아서 직접 할당
+            const idx = openChats.value.findIndex((c) => c.friend.id === friend.id);
+            if (idx !== -1) {
+                if (roomId) openChats.value[idx].roomId = roomId;
+                openChats.value[idx].messages = loadedMessages;
+                openChats.value[idx].isLoading = false;
+            }
+
+            // 3. STOMP 채팅방 구독
+            if (roomId) {
+                let resolvedMyId = myMemberId;
+                if (!resolvedMyId) {
+                    try {
+                        const raw = localStorage.getItem('memberInfo');
+                        if (raw) {
+                            const parsed = JSON.parse(raw);
+                            resolvedMyId = parsed.memberId ?? parsed.id ?? null;
+                        }
+                    } catch (_) { /* Ignore */ }
+                }
+                subscribeToChatRoom(roomId, (rawMsg) => {
+                    onMessageReceived(roomId, rawMsg, resolvedMyId);
+                });
+            }
         } catch (error) {
             console.error('❌ 채팅방 열기 실패:', error);
-        } finally {
-            chatEntry.isLoading = false;
+            // 실패 시에도 isLoading 해제
+            const idx = openChats.value.findIndex((c) => c.friend.id === friend.id);
+            if (idx !== -1) openChats.value[idx].isLoading = false;
         }
 
         // 읽음 처리
@@ -240,6 +296,11 @@ export const useFriendStore = defineStore('friend', () => {
      * @param {number} friendId
      */
     function closeChatRoom(friendId) {
+        const chat = openChats.value.find((c) => c.friend.id === friendId);
+        // 🔑 채팅창을 닫을 때 해당 채팅방의 STOMP 구독 해제
+        if (chat?.roomId) {
+            unsubscribeFromChatRoom(chat.roomId);
+        }
         openChats.value = openChats.value.filter((c) => c.friend.id !== friendId);
     }
 
@@ -335,6 +396,10 @@ export const useFriendStore = defineStore('friend', () => {
         isPanelOpen.value = !isPanelOpen.value;
     }
 
+    function openPanel() {
+        isPanelOpen.value = true;
+    }
+
     function closePanel() {
         isPanelOpen.value = false;
     }
@@ -382,6 +447,7 @@ export const useFriendStore = defineStore('friend', () => {
         onMessageReceived,
         // Panel / Modal
         togglePanel,
+        openPanel,
         closePanel,
         openSearch,
         closeSearch,

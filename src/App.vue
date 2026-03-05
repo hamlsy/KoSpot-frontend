@@ -15,6 +15,7 @@ import {
   connectNotificationSocket,
   disconnectNotificationSocket,
 } from '@/core/services/notificationWebSocket.service.js';
+import { NOTIFICATION_TYPE } from '@/core/constants/notificationTypes.js';
 import { isFriendSocketConnected } from '@/features/friend/services/friendWebSocket.service.js';
 
 // 테마 초기화
@@ -38,6 +39,11 @@ const connectAll = async () => {
   // 1. 알림 WebSocket 연결 (서비스 내부에서 중복 연결 방지)
   connectNotificationSocket((notification) => {
     notificationStore.addNotification(notification);
+
+    // 새 친구 요청 알림이 온 경우, 친구 패널(Store)의 상태도 갱신합니다.
+    if (notification.type === NOTIFICATION_TYPE.FRIEND_REQUEST) {
+      friendStore.loadInitialData(); // 최신 친구 목록 및 받은 요청 재조회
+    }
   });
   notificationStore.fetchUnreadCount();
 

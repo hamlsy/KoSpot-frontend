@@ -155,39 +155,35 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 
-interface PlayerResult {
-  playerId: string;
-  nickname: string;
-  markerImageUrl?: string;
-  totalScore?: number;
-  earnedPoint: number;
-  finalRank: number;
-}
-
-interface Props {
-  playerResults: PlayerResult[];
-  currentUserId: string;
-  totalRounds?: number;
-  totalGameTime?: number;
-  gameMessage?: string;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  playerResults: () => [],
-  totalRounds: 5,
-  totalGameTime: 0,
-  gameMessage: ''
+const props = defineProps({
+  playerResults: {
+    type: Array,
+    default: () => []
+  },
+  currentUserId: {
+    type: String,
+    required: true
+  },
+  totalRounds: {
+    type: Number,
+    default: 5
+  },
+  totalGameTime: {
+    type: Number,
+    default: 0
+  },
+  gameMessage: {
+    type: String,
+    default: ''
+  }
 });
 
-const emit = defineEmits<{
-  'exit-to-lobby': [];
-  'play-again': [];
-}>();
+const emit = defineEmits(['exit-to-lobby', 'play-again']);
 
-const autoExitTimer = ref<ReturnType<typeof setInterval> | null>(null);
+const autoExitTimer = ref(null);
 const autoExitRemaining = ref(30);
 
 const sortedPlayers = computed(() =>
@@ -196,11 +192,11 @@ const sortedPlayers = computed(() =>
 
 const podium = computed(() => sortedPlayers.value.slice(0, 3));
 
-function formatScore(score: number): string {
+function formatScore(score) {
   return score.toLocaleString();
 }
 
-function formatTime(seconds: number): string {
+function formatTime(seconds) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${s.toString().padStart(2, '0')}`;
