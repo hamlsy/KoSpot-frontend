@@ -41,6 +41,9 @@ export const useFriendStore = defineStore('friend', () => {
     const isLoading = ref(false);
     const messageIdCounter = ref(1000);
 
+    /** z-index 포커스 카운터 (창 클릭 시 해당 창을 최상단으로 올리기 위한 단조 증가 카운터) */
+    const zIndexCounter = ref(1100);
+
     // ─── Getters ─────────────────────────────────────────────
 
     /** 친구 요청 또는 안읽은 채팅이 있으면 true */
@@ -225,6 +228,7 @@ export const useFriendStore = defineStore('friend', () => {
             roomId: null,
             messages: [],
             isLoading: true,
+            zIndex: ++zIndexCounter.value,
         };
         openChats.value.push(chatEntry);
 
@@ -389,6 +393,17 @@ export const useFriendStore = defineStore('friend', () => {
 
     // ─── Panel / Modal State Actions ────────────────────────
 
+    /**
+     * 채팅창 포커스 (클릭한 창을 z-index 최상단으로)
+     * @param {number} friendId
+     */
+    function bringToFront(friendId) {
+        const chat = openChats.value.find((c) => c.friend.id === friendId);
+        if (chat) {
+            chat.zIndex = ++zIndexCounter.value;
+        }
+    }
+
     function togglePanel() {
         isPanelOpen.value = !isPanelOpen.value;
     }
@@ -437,6 +452,7 @@ export const useFriendStore = defineStore('friend', () => {
         declineFriendRequest,
         openChatRoom,
         closeChatRoom,
+        bringToFront,
         // WebSocket Actions
         initSocket,
         destroySocket,

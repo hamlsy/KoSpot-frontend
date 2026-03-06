@@ -1540,46 +1540,59 @@ export default {
 .left-panel-wrapper {
   display: flex;
   flex-direction: row;
-  align-items: stretch;
+  align-items: flex-start;
   flex-shrink: 0;
   position: relative;
+  /* 패널이 닫혀도 날개 버튼 공간(22px) 확보 */
+  min-width: 22px;
 }
 
-/* 날개 버튼 */
+/* 날개 버튼 (데스크톱 전용 컴팩트 탭) */
 .wing-toggle-btn {
-  /* 패널 중앙에 세로로 세워진 버튼 */
+  position: absolute;
+  /* 패널 오른쪽 바깥 상단에 고정 */
+  top: 16px;
+  right: -22px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  min-width: 18px;
-  align-self: stretch;
+  width: 22px;
+  height: 44px;
   border: none;
-  background: rgba(34, 40, 49, 0.65);
-  color: rgba(255, 255, 255, 0.85);
+  background: rgba(30, 36, 50, 0.72);
+  color: rgba(255, 255, 255, 0.9);
   cursor: pointer;
   z-index: 10;
+  border-radius: 0 10px 10px 0;
+  box-shadow: 3px 0 12px rgba(0, 0, 0, 0.18);
   transition:
     background 0.2s ease,
     color 0.2s ease,
-    box-shadow 0.2s ease;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.12);
-  border-radius: 0 8px 8px 0;
-  flex-shrink: 0;
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
+  backdrop-filter: blur(6px);
+}
+
+/* 패널이 닫혔을 때: 버튼을 wrapper 왼쪽 끝에 붙임 */
+.left-panel-wrapper:has(.left-panel.hidden) .wing-toggle-btn {
+  right: auto;
+  left: 0;
 }
 
 .wing-toggle-btn:hover {
-  background: rgba(79, 70, 229, 0.85);
+  background: rgba(79, 70, 229, 0.9);
   color: #fff;
-  box-shadow: 2px 0 12px rgba(79, 70, 229, 0.3);
+  box-shadow: 3px 0 16px rgba(79, 70, 229, 0.35);
+  transform: translateX(2px);
 }
 
 .wing-toggle-btn:active {
   background: rgba(79, 70, 229, 1);
+  transform: translateX(1px);
 }
 
 .wing-toggle-btn i {
-  font-size: 0.6rem;
+  font-size: 0.65rem;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
 }
@@ -1594,7 +1607,7 @@ export default {
   max-height: calc(100vh - 160px);
   display: flex;
   flex-direction: column;
-  border-radius: 10px 0 0 10px; /* 날개 버튼에 맞춰 우측 radius 제거 */
+  border-radius: 10px; /* 날개 버튼이 absolute이므로 전체 radius 적용 */
   /* 개별 속성별 애니메이션 설정 */
   transition:
     width 0.3s cubic-bezier(0.4, 0, 0.2, 1),

@@ -258,9 +258,12 @@
       :friend="chat.friend"
       :messages="chat.messages"
       :is-loading="chat.isLoading"
-      :style="{ right: (20 + index * 320) + 'px' }"
+      :initial-x="computeChatInitialX(index)"
+      :initial-y="computeChatInitialY()"
+      :z-index="chat.zIndex"
       @close="friendStore.closeChatRoom(chat.friend.id)"
       @send-message="handleSendMessage"
+      @focus="friendStore.bringToFront(chat.friend.id)"
     />
   </div>
 </template>
@@ -417,6 +420,25 @@ export default {
      */
     handleSendMessage({ friendId, text }) {
       this.friendStore.sendMessage(friendId, text);
+    },
+    /**
+     * 채팅창 초기 X 위치 계산 (화면 우하단에서 index 만큼 왼쪽으로)
+     * 창 너비 300px + 간격 20px
+     */
+    computeChatInitialX(index) {
+      const W = window.innerWidth;
+      if (W <= 480) return 0; // 모바일 Bottom Sheet
+      const winW = 300;
+      const gap = 20;
+      return Math.max(0, W - (winW + gap) * (index + 1));
+    },
+    /**
+     * 채팅창 초기 Y 위치 계산 (화면 하단 20px 여백)
+     */
+    computeChatInitialY() {
+      const H = window.innerHeight;
+      if (window.innerWidth <= 480) return 0; // 모바일 Bottom Sheet
+      return Math.max(0, H - 440 - 20);
     },
     toggleProfileMenu() {
       this.showProfileMenu = !this.showProfileMenu;

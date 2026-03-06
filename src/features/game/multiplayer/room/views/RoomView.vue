@@ -17,8 +17,11 @@
           :unread-messages="unreadMessages"
           :is-team-mode="isTeamMode"
           :show-chat-toggle="isMobileView"
+          :friend-is-open="friendStore.isPanelOpen"
+          :friend-has-notification="friendStore.hasAnyNotification"
           @open-settings="openRoomSettings"
           @toggle-chat="handleToggleChat"
+          @toggle-friend="friendStore.togglePanel()"
           @leave-room="leaveRoom"
           @start-game="startGame"
           @refresh-room="handleRefreshRoom"
@@ -118,15 +121,6 @@
           @close="handleToggleChat"
         />
       </div>
-    </div>
-
-    <!-- 친구 플로팅 버튼 -->
-    <div class="friend-floating-area">
-      <FriendToggleButton
-        :is-open="friendStore.isPanelOpen"
-        :has-notification="friendStore.hasAnyNotification"
-        @toggle="friendStore.togglePanel()"
-      />
     </div>
 
     <!-- 친구 패널 -->

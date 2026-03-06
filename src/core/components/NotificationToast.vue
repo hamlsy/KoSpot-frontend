@@ -39,10 +39,13 @@
 
 <script setup>
 import { ref, watch, onUnmounted } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useNotificationStore } from '@/store/modules/notificationStore.js';
 import { getNotificationMeta } from '@/core/constants/notificationTypes.js';
 
 const store = useNotificationStore();
+// storeToRefs로 ref를 직접 추출 → .push() 시 즉시 watch 트리거
+const { toastQueue } = storeToRefs(store);
 const toasts = ref([]);
 const timers = new Map();
 
@@ -94,9 +97,9 @@ const removeToast = (toastId) => {
   }
 };
 
-// 스토어의 toastQueue 감시 → 새 알림이 들어오면 토스트 표시
+// storeToRefs로 추출한 ref를 직접 watch → .push()도 즉시 감지
 watch(
-  () => store.toastQueue,
+  toastQueue,
   (queue) => {
     queue.forEach((notification) => {
       const alreadyShowing = toasts.value.some((t) => t.toastId === notification.toastId);
