@@ -97,7 +97,7 @@ export const useFriendStore = defineStore('friend', () => {
         return {
             id: raw.messageId ?? raw.id ?? messageIdCounter.value++,
             text: raw.content,
-            isMine: raw.senderMemberId === myMemberId || raw.isMine === true,
+            isMine: String(raw.senderMemberId) === String(myMemberId) || raw.isMine === true,
             // 필드명: 서버는 createdAt 사용. sentAt이 없으면 createdAt 시도, 그도 없으면 Date.now()
             timestamp: raw.createdAt
                 ? new Date(raw.createdAt).getTime()
@@ -268,10 +268,15 @@ export const useFriendStore = defineStore('friend', () => {
                 let resolvedMyId = myMemberId;
                 if (!resolvedMyId) {
                     try {
-                        const raw = localStorage.getItem('memberInfo');
-                        if (raw) {
-                            const parsed = JSON.parse(raw);
-                            resolvedMyId = parsed.memberId ?? parsed.id ?? null;
+                        const directMemberId = localStorage.getItem('memberId');
+                        if (directMemberId) {
+                            resolvedMyId = directMemberId;
+                        } else {
+                            const raw = localStorage.getItem('memberInfo');
+                            if (raw) {
+                                const parsed = JSON.parse(raw);
+                                resolvedMyId = parsed.memberId ?? parsed.id ?? null;
+                            }
                         }
                     } catch (_) { /* Ignore */ }
                 }
@@ -345,14 +350,6 @@ export const useFriendStore = defineStore('friend', () => {
 
         // WebSocket 발송
         wsSendMessage(chat.roomId, text);
-
-        // 낙관적 UI 업데이트
-        chat.messages.push({
-            id: messageIdCounter.value++,
-            text,
-            isMine: true,
-            timestamp: Date.now(),
-        });
 
         // 친구 목록의 lastMessage 갱신
         const f = friends.value.find((f) => f.id === friendId);

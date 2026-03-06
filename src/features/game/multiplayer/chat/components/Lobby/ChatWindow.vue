@@ -28,22 +28,32 @@
         <div
           v-else
           class="chat-message"
-          :class="{ 'my-chat': isMyMessage(message) }"
+          :class="{
+            'my-chat': isMyMessage(message),
+            'grouped-message': !shouldShowSender(message, messages[index - 1])
+          }"
         >
           <!-- 다른 사용자 메시지 -->
           <div v-if="!isMyMessage(message)" class="other-message">
             <div class="message-content-wrapper">
-              <div class="message-info">
+              <div
+                v-if="shouldShowSender(message, messages[index - 1])"
+                class="message-info"
+              >
                 <span class="sender-name">{{ message.sender }}</span>
-                <span
-                  v-if="shouldShowTime(message, messages[index - 1])"
-                  class="message-time"
-                  >{{ formatTime(message.timestamp) }}</span
-                >
               </div>
-              <div class="message-bubble other-bubble">
-                <span class="bubble-tail other-tail"></span>
-                {{ message.message }}
+              <div class="message-bubble-row">
+                <div class="message-bubble other-bubble" :class="{ 'no-tail': !shouldShowSender(message, messages[index - 1]) }">
+                  <span
+                    v-if="shouldShowSender(message, messages[index - 1])"
+                    class="bubble-tail other-tail"
+                  ></span>
+                  {{ message.message }}
+                </div>
+                <span
+                  v-if="shouldShowTime(message, messages[index + 1])"
+                  class="message-time message-time-side"
+                >{{ formatTime(message.timestamp) }}</span>
               </div>
             </div>
           </div>
@@ -51,16 +61,18 @@
           <!-- 내 메시지 -->
           <div v-else-if="isMyMessage(message)" class="my-message">
             <div class="my-content-wrapper">
-              <div class="my-message-info">
+              <div class="message-bubble-row">
                 <span
-                  v-if="shouldShowTime(message, messages[index - 1])"
-                  class="message-time"
-                  >{{ formatTime(message.timestamp) }}</span
-                >
-              </div>
-              <div class="message-bubble my-bubble">
-                {{ message.message }}
-                <span class="bubble-tail my-tail"></span>
+                  v-if="shouldShowTime(message, messages[index + 1])"
+                  class="message-time message-time-side my-side"
+                >{{ formatTime(message.timestamp) }}</span>
+                <div class="message-bubble my-bubble" :class="{ 'no-tail': !shouldShowSender(message, messages[index - 1]) }">
+                  {{ message.message }}
+                  <span
+                    v-if="shouldShowSender(message, messages[index - 1])"
+                    class="bubble-tail my-tail"
+                  ></span>
+                </div>
               </div>
             </div>
           </div>
@@ -252,20 +264,29 @@ export default {
       return false;
     },
 
-    shouldShowTime(message, previousMessage) {
-      if (!previousMessage) return true; // 첫 메시지는 항상 표시
-      if (message.system) return false; // 시스템 메시지는 시간 표시 안 함
+    shouldShowSender(message, previousMessage) {
+      if (!previousMessage) return true;
+      if (message.system || previousMessage.system) return true;
+      return message.senderId !== previousMessage.senderId;
+    },
+
+    shouldShowTime(message, nextMessage) {
+      if (!nextMessage) return true; // 마지막 메시지는 항상 표시
+      if (message.system || nextMessage.system) return true;
+      
+      // 다음 메시지의 보낸이가 다르면 현재 메시지에 시간을 표시
+      if (message.senderId !== nextMessage.senderId) return true;
 
       const currentTime = new Date(message.timestamp);
-      const prevTime = new Date(previousMessage.timestamp);
+      const nextTime = new Date(nextMessage.timestamp);
 
-      // 같은 분인지 확인 (년, 월, 일, 시, 분 비교)
+      // 다음 메시지와 같은 분이면 표시 안 함, 다른 분이면 표시
       return (
-        currentTime.getFullYear() !== prevTime.getFullYear() ||
-        currentTime.getMonth() !== prevTime.getMonth() ||
-        currentTime.getDate() !== prevTime.getDate() ||
-        currentTime.getHours() !== prevTime.getHours() ||
-        currentTime.getMinutes() !== prevTime.getMinutes()
+        currentTime.getFullYear() !== nextTime.getFullYear() ||
+        currentTime.getMonth() !== nextTime.getMonth() ||
+        currentTime.getDate() !== nextTime.getDate() ||
+        currentTime.getHours() !== nextTime.getHours() ||
+        currentTime.getMinutes() !== nextTime.getMinutes()
       );
     },
   },
@@ -425,6 +446,8 @@ export default {
 .message-content-wrapper {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .message-info {
@@ -432,6 +455,7 @@ export default {
   align-items: center;
   gap: 0.4rem;
   margin-bottom: 0.2rem;
+  margin-left: 0.4rem;
 }
 
 .sender-name {
@@ -444,6 +468,17 @@ export default {
   font-size: 0.7rem;
   color: #9ca3af;
   font-weight: 500;
+  white-space: nowrap;
+}
+
+.message-bubble-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.4rem;
+}
+
+.message-time-side {
+  margin-bottom: 0.2rem;
 }
 
 /* 말풍선 공통 스타일 */
@@ -456,7 +491,7 @@ export default {
   word-wrap: break-word;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   transition: all 0.2s ease;
-  max-width: 100%;
+  max-width: fit-content;
 }
 
 .message-bubble:hover {
@@ -470,6 +505,10 @@ export default {
   color: #374151;
   border-bottom-left-radius: 4px;
   border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.other-bubble.no-tail {
+  border-bottom-left-radius: 14px;
 }
 
 .other-tail {
@@ -509,14 +548,8 @@ export default {
   max-width: 100%;
 }
 
-.my-message-info {
-  margin-bottom: 0.2rem;
-}
-
-.my-message-info .message-time {
-  font-size: 0.7rem;
-  color: #9ca3af;
-  margin-right: 0.3rem;
+.grouped-message {
+  margin-top: -0.1rem;
 }
 
 /* 내 말풍선 */
@@ -526,6 +559,10 @@ export default {
   border-bottom-right-radius: 4px;
   border: none;
   font-weight: 500;
+}
+
+.my-bubble.no-tail {
+  border-bottom-right-radius: 14px;
 }
 
 .my-tail {
