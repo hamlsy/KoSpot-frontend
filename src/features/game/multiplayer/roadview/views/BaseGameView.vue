@@ -1,1274 +1,1062 @@
 <template>
-  <div class="multiplayer-roadview-game">
-    <!-- 게임 헤더 -->
-    <div class="game-header row">
-      <div class="header-left col-md-4">
-        <button
-          v-if="showLeaveButton"
-          class="leave-game-button"
-          @click="$emit('leave-game')"
-          title="나가기"
-        >
-          <i class="fas fa-sign-out-alt"></i>
-        </button>
-        <div class="room-info" :class="{ 'without-button': !showLeaveButton }">
-          <div class="room-name">{{ roomData?.title || "방 이름 없음" }}</div>
-          <div class="game-mode">{{ gameMode === "team" ? "팀전" : "개인전" }}</div>
-        </div>
-      </div>
-
-      <div class="header-center col-md-4">
-        <div class="round-info">
-          <span class="round-number">
-            라운드 {{ gameStore.state.currentRound }}/{{
-              gameStore.state.totalRounds
-            }}
-          </span>
-          <div class="round-progress">
-            <div
-              class="progress-bar"
-              :style="{
-                width: `${
-                  (gameStore.state.currentRound / gameStore.state.totalRounds) *
-                  100
-                }%`,
-              }"
-            ></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="header-right col-md-4">
-        <!-- 플레이어 리스트 토글 버튼 (모바일/태블릿 전용 - 데스크톱에서는 날개 버튼으로 대체) -->
-        <button 
-          class="player-list-toggle-btn"
-          @click="togglePlayerList"
-          :class="{ 'active': isPlayerListOpen }"
-          :title="isPlayerListOpen ? '플레이어 목록 닫기' : '플레이어 목록 열기'"
-        >
-          <i class="fas fa-users"></i>
-          <span class="toggle-text">{{ isPlayerListOpen ? '목록 닫기' : '플레이어' }}</span>
-        </button>
-        
-        <!-- poiName 표시 (타이머 자리) -->
-        <div class="poi-name-display" v-if="isPoiNameVisible && poiName">
-          <span class="poi-label">지명:</span>
-          <span class="poi-text" :title="poiName">{{ poiName }}</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 타이머 컨테이너 (헤더 밑) - 라운드 종료 시 숨김 -->
-    <div class="timer-container" v-if="!showIntroOverlay && !showNextRoundOverlay && !gameStore.state.roundEnded">
-      <game-timer
-        :initialTime="gameStore.state.remainingTime"
-        :totalTime="totalTime"
-        :warning-threshold="30"
-        :danger-threshold="10"
-        :is-running="!showIntroOverlay && !showNextRoundOverlay && !useCustomWebSocket"
-      />
-    </div>
-
-    <!-- 게임 메인 영역 -->
-    <div class="game-content" :class="{ 'chat-open': isChatOpen }">
-      <!-- 왼쪽 패널: 플레이어 목록 (토글 가능) -->
-      <div
-        class="left-panel-wrapper"
-        v-if="!isMobile && !isResponsiveMode"
-      >
-        <div class="left-panel" :class="{ 'hidden': !isPlayerListOpen }">
-          <slot name="player-list" :close-player-list="closePlayerList" :is-mobile="false"> </slot>
-        </div>
-        <!-- 날개 버튼 (데스크톱 전용) -->
-        <button
-          class="wing-toggle-btn"
-          @click="togglePlayerList"
-          :title="isPlayerListOpen ? '플레이어 목록 닫기' : '플레이어 목록 열기'"
-          :aria-label="isPlayerListOpen ? '플레이어 목록 닫기' : '플레이어 목록 열기'"
-        >
-          <i class="fas" :class="isPlayerListOpen ? 'fa-chevron-left' : 'fa-chevron-right'"></i>
-        </button>
-      </div>
-      <!-- 모바일에서는 기존 방식대로 -->
-      <div v-else class="left-panel" :class="{
-        'hidden': !isPlayerListOpen,
-        'mobile-open': isMobile && isPlayerListOpen
-      }">
-        <slot name="player-list" :close-player-list="closePlayerList" :is-mobile="isMobile"> </slot>
-      </div>
-
-      <!-- 중앙 패널: 게임 화면 -->
-      <div class="main-panel">
-        <div class="game-view">
-
-          <!-- 멀티플레이어 인트로 오버레이 -->
-          <multiplayer-intro-overlay
-            v-if="showIntroOverlay && !showNextRoundOverlay"
-            :current-round="gameStore.state.currentRound"
-            :show-intro="showIntroOverlay"
-            :room-id="roomId"
-            :server-start-time="$parent.serverStartTime || 0"
-            @intro-complete="handleIntroComplete"
-          />
-          <!-- 다음 라운드 오버레이 -->
-          <multiplay-next-round-overlay
-            v-if="showNextRoundOverlay"
-            :current-round="gameStore.state.currentRound"
-            :show-intro="showNextRoundOverlay"
-            :user-rank="userRank"
-            :total-players="totalPlayers"
-            :room-id="roomId"
-            :server-start-time="$parent ? $parent.serverStartTime : 0"
-            @intro-complete="handleNextRoundComplete"
-          />
-
-          <!-- 메인 게임 영역 (로드뷰 또는 결과 컴포넌트) -->
-          <slot name="main">
-            <road-view
-              v-if="
-                !gameStore.state.roundEnded && 
-                gameStore.state.currentLocation
-              "
-              ref="roadViewRef"
-              :position="
-                gameStore.state.currentLocation || {
-                  lat: 37.5665,
-                  lng: 126.978,
-                }
-              "
-              :show-controls="true"
-              :prevent-mouse-events="gameStore.state.hasSubmittedGuess"
-              :suppress-error="suppressRoadviewError"
-              @load-complete="onViewLoaded"
-              @load-error="onViewLoadError"
-            />
-          </slot>
-
-          <!-- 초기 위치로 돌아가기 버튼 (헤더 바로 밑, 우측 상단) -->
-          <button
-            v-if="!gameStore.state.roundEnded && gameStore.state.currentLocation"
-            class="road-reset-btn"
-            @click="resetRoadViewPosition"
-            title="초기 위치로 돌아가기"
-          >
-            <i class="fas fa-rotate-right"></i>
-          </button>
-
-          <!-- 지도 버튼 -->
-          <!-- 채팅 토글 버튼 (모바일) -->
-          <button class="chat-toggle" @click="toggleChat">
-            <i class="fas" :class="isChatOpen ? 'fa-times' : 'fa-comments'"></i>
-            {{ isChatOpen ? "채팅 닫기" : "채팅 열기" }}
-          </button>
-
-          <button
-            class="map-toggle"
-            @click="toggleMap"
-            v-if="!gameStore.state.roundEnded"
-          >
-            <i class="fas fa-map-marked-alt"></i>
-            지도
-          </button>
-
-          
-        </div>
-      </div>
-
-      <!-- 오른쪽 패널: 채팅 -->
-      <div class="right-panel" :class="{ 'chat-open': isChatOpen }">
-        <slot name="chat" :close-chat="closeChat" :is-chat-open="isChatOpen"></slot>
-      </div>
-
-      <!-- 결과 모달 -->
-      <slot name="results" @request-next-round="handleRequestNextRound"></slot>
-    </div>
-
-    <!-- 휴대폰 프레임 -->
-    <PhoneFrame
-      :style="{ zIndex: isMapOpen && !gameStore.state.roundEnded ? 15 : -1 }"
-      :centerLocation="mapCenter || { lat: 37.5665, lng: 126.978 }"
-      :actualLocation="
-        gameStore.state.actualLocation || { lat: 37.5665, lng: 126.978 }
-      "
-      :showHintCircles="false"
-      :disabled="gameStore.state.roundEnded"
-      :showDistance="false"
-      :showActionButton="false"
-      :gameMode="'solo'"
-      :markerImageUrl="currentUserMarkerImageUrl"
-      :hasSubmitted="gameStore.state.hasSubmittedGuess"
-      :showReloadButton="isMapOpen && !gameStore.state.roundEnded"
-      @spot-answer="handlePhoneMapGuess"
-      ref="phoneFrame"
+  <div class="solo-game-container">
+    <PlayerLoadingOverlay
+      v-if="playerLoading.isActive"
+      :ready-count="playerLoading.readyCount"
+      :total-count="playerLoading.totalCount"
+      :players="playerLoading.players"
     />
+    <BaseMultiRoadViewGame
+      :room-id="roomId"
+      :game-mode="gameMode"
+      :is-team-mode="resolvedIsTeamMode"
+      :current-user-rank="currentUserRank"
+      :use-custom-websocket="isServerMode"
+      :show-leave-button="true"
+      :total-time="timeLimit"
+      :suppress-roadview-error="isRetryingRoadview"
+      :is-poi-name-visible="isPoiNameVisibleLocal"
+      :poi-name="currentPoiName"
+      :room-data="roomDataFromHistory"
+      :unread-chat-messages="unreadChatCount"
+      @leave-game="exitToLobby"
+      @guess-submitted="handleGuessSubmission"
+      @round-ended="handleRoundEnded"
+      @game-finished="handleGameFinished"
+      @next-round-ready="handleNextRoundReady"
+      @end-overlay="handleEndOverlay"
+      @game-started="handleGameStarted"
+      @round-data-received="handleRoundDataReceived"
+      @player-submitted="handlePlayerSubmitted"
+      @game-ended="handleGameEnded"
+      @roadview-load-error="handleRoadviewLoadError"
+      @chat-opened="resetUnreadChatCount"
+      ref="baseGame"
+    >
+      <!-- 모드별 플레이어 리스트 분기 -->
+      <template #player-list="{ closePlayerList, isMobile }">
+        <player-list
+          v-if="!resolvedIsTeamMode"
+          :players="localPlayers"
+          :current-user-id="currentUserId"
+          :show-scores="
+            gameStore.state.hasSubmittedGuess || gameStore.state.roundEnded
+          "
+          :round-ended="gameStore.state.roundEnded"
+          :player-chat-messages="playerChatMessages"
+          :is-mobile="isMobile"
+          @close-player-list="closePlayerList"
+        />
+        <team-players-list
+          v-else
+          :current-user-id="String(currentUserId || '')"
+          @close-player-list="closePlayerList"
+        />
+      </template>
+      <!-- 개인전 채팅창 -->
+      <template #chat="{ closeChat, isChatOpen }">
+        <chat-window
+          :messages="gameStore.state.chatMessages"
+          :show-mobile-close="isChatOpen"
+          @send-message="sendChatMessage"
+          @close="closeChat"
+        />
+      </template>
 
-    <!-- 토스트 메시지 -->
-    <div class="toast-message" :class="{ show: showToastFlag }">
-      {{ toastMessage }}
-    </div>
+      <!-- 메인 게임 영역 -->
+      <template #main>
+        <final-results
+          v-if="showGameResults"
+          :player-results="finalGameResult?.playerResults || []"
+          :current-user-id="currentUserId"
+          :total-rounds="gameStore.state.totalRounds"
+          :total-game-time="totalGameTime"
+          :game-message="finalGameResult?.message"
+          @play-again="restartGame"
+          @exit-to-lobby="exitToLobby"
+        />
+        <round-results
+          v-else-if="gameStore.state.roundEnded"
+          :players="localPlayers"
+          :is-team-mode="resolvedIsTeamMode"
+          :actual-location="
+            gameStore.state.actualLocation || { lat: 37.5665, lng: 126.978 }
+          "
+          :round="gameStore.state.currentRound"
+          :total-rounds="gameStore.state.totalRounds"
+          :current-user-id="currentUserId"
+          :location-name="gameStore.state.locationInfo.name"
+          :poi-name="gameStore.state.locationInfo.poiName || ''"
+          :full-address="gameStore.state.locationInfo.fullAddress || ''"
+          :player-guesses="gameStore.state.playerGuesses"
+          :top-player="gameStore.state.topPlayer"
+          :num-players-ready="0"
+          :total-players-in-room="
+            $refs.baseGame ? $refs.baseGame.totalPlayersInRoom : 0
+          "
+          :majority-threshold="0"
+          :players-ready-details="[]"
+          :is-mobile="$refs.baseGame ? $refs.baseGame.isMobile : false"
+          :server-countdown-seconds="soloGameFlow.transitionCountdown.value"
+          :is-server-mode="isServerMode"
+          @close="closeRoundResults"
+          @request-next-round="requestNextRound"
+          @finish-game="finishGame"
+          @toggle-player-list="togglePlayerList"
+          @toggle-chat="toggleChat"
+        />
+      </template>
 
-    <!-- 모바일 하단바 (반응형) -->
-    <div class="mobile-bottom-nav" v-if="isMobile || isResponsiveMode">
-      <button
-        class="bottom-nav-btn"
-        :class="{ 'active': isPlayerListOpen }"
-        @click="togglePlayerList"
-        title="플레이어 목록"
-      >
-        <div class="btn-icon">
-          <i class="fas fa-users"></i>
-        </div>
-        <span class="btn-label">플레이어</span>
-        <div class="active-indicator" v-if="isPlayerListOpen"></div>
-      </button>
-
-      <button
-        class="bottom-nav-btn"
-        :class="{ 'active': isMapOpen }"
-        @click="toggleMap"
-        v-if="!gameStore.state.roundEnded"
-        title="지도"
-      >
-        <div class="btn-icon">
-          <i class="fas" :class="isMapOpen ? 'fa-street-view' : 'fa-map-marked-alt'"></i>
-        </div>
-        <span class="btn-label">지도</span>
-        <div class="active-indicator" v-if="isMapOpen"></div>
-      </button>
-
-      <button
-        class="bottom-nav-btn"
-        :class="{ 'active': isChatOpen }"
-        @click="toggleChat"
-        title="채팅"
-      >
-        <div class="btn-icon">
-          <i class="fas" :class="isChatOpen ? 'fa-times' : 'fa-comments'"></i>
-          <div class="chat-notification-badge" v-if="!isChatOpen && unreadChatMessages > 0">
-            {{ unreadChatMessages > 9 ? '9+' : unreadChatMessages }}
-          </div>
-        </div>
-        <span class="btn-label">채팅</span>
-        <div class="active-indicator" v-if="isChatOpen"></div>
-      </button>
-    </div>
+      <!-- 게임 결과 모달 (이동됨) -->
+      <template #results>
+      </template>
+    </BaseMultiRoadViewGame>
   </div>
 </template>
 
 <script>
-import GameTimer from "@/features/game/shared/components/Common/Timer.vue";
-import RoadView from 'src/features/game/shared/components/roadview/RoadView.vue'
-import PhoneFrame from 'src/features/game/shared/components/Phone/PhoneFrame.vue'
-import MultiplayerIntroOverlay from "@/features/game/multiplayer/shared/components/intro/IntroOverlay.vue";
-import MultiplayNextRoundOverlay from "@/features/game/multiplayer/shared/components/intro/NextRoundOverlay.vue";
-import gameStore from "@/store/gameStore";
-import webSocketManager from "@/features/game/multiplayer/shared/services/websocket/composables/index.js";
-import { useRoomWebSocket } from "@/features/game/multiplayer/room/composables/useRoomWebSocket.js";
-import roomApiService from '@/features/game/multiplayer/room/services/roomApi.service.js';
+import BaseMultiRoadViewGame from "./BaseGameLayout.vue";
+import ChatWindow from "src/features/game/multiplayer/chat/components/Lobby/ChatWindow.vue";
+import RoundResults from "src/features/game/multiplayer/roadview/components/results/RoundResults.vue";
+import FinalResults from "src/features/game/multiplayer/roadview/components/results/FinalResults.vue";
+import PlayerList from "src/features/game/multiplayer/roadview/components/playerlist/SoloPlayerList.vue";
+import TeamPlayersList from "src/features/game/multiplayer/roadview/components/playerlist/TeamPlayersList.vue";
+import PlayerLoadingOverlay from "src/features/game/multiplayer/roadview/components/overlays/PlayerLoadingOverlay.vue";
 
+import gameStore from "src/store/gameStore.js";
+import { useSoloGameFlow } from "@/features/game/multiplayer/roadview/composables/useSoloGameFlow";
+import soloGameWebSocket from "@/features/game/multiplayer/roadview/services/soloGameWebSocket";
+import { mapGamePlayersToLocalPlayers } from "@/features/game/multiplayer/roadview/services/soloGamePlayerMapper";
+import { createSoloGameFlowCallbacks } from "@/features/game/multiplayer/roadview/services/soloGameFlowCallbacks";
+import {
+  applyDummyLocationToStore,
+  buildDummyFinalGameResult,
+  calculateAverageDistances as calculateAveragePlayerDistances,
+  calculatePlayerScores as calculateDummyPlayerScores,
+  calculateUserRankByScore,
+  createDummyRoundDataMessage,
+  appendPlayerGuess,
+  evaluateSubmissionProgress,
+  getColorByPlayerId,
+  getRandomDummyLocation,
+  processRoundDataState,
+  submitDummyAnswerState,
+} from "@/features/game/multiplayer/roadview/services/soloGameRuntimeService";
+import roomApiService from "@/features/game/multiplayer/room/services/roomApi.service.js";
 
 export default {
-  name: "BaseMultiRoadViewGame",
+  name: "BaseRoadViewGame",
 
   components: {
-    GameTimer,
-    RoadView,
-    PhoneFrame,
-    MultiplayerIntroOverlay,
-    MultiplayNextRoundOverlay,
+    BaseMultiRoadViewGame,
+    ChatWindow,
+    RoundResults,
+    FinalResults,
+    PlayerList,
+    TeamPlayersList,
+    PlayerLoadingOverlay,
   },
 
-  props: {
-    roomId: {
-      type: String,
-      required: true,
-      default: "room1",
-    },
-    // 게임 모드에 따라 필요한 추가 props
-    gameMode: {
-      type: String,
-      default: "solo",
-      validator: (value) => ["solo", "team"].includes(value),
-    },
-    currentUserRank: {
-      type: Number,
-      default: 1,
-    },
-    isTeamMode: {
-      type: Boolean,
-      default: false
-    },
-    // Solo 게임에서 useSoloGameFlow를 사용하는 경우
-    useCustomWebSocket: {
-      type: Boolean,
-      default: true
-    },
-    showLeaveButton: {
-      type: Boolean,
-      default: false
-    },
-    totalTime: {
-      type: Number,
-      default: 120
-    },
-    suppressRoadviewError: {
-      type: Boolean,
-      default: false
-    },
-    // 지명 공개 제어
-    isPoiNameVisible: {
-      type: Boolean,
-      default: true
-    },
-    // 현재 라운드의 지명 (roundInfo.poiName)
-    poiName: {
-      type: String,
-      default: ''
-    },
-    roomData: {
-      type: Object,
-      default: null
-    },
-    // 채팅 알림 카운트 (부모 컴포넌트에서 전달)
-    unreadChatMessages: {
-      type: Number,
-      default: 0
-    },
-  },
+  setup() {
+    // Solo 게임 플로우 composable 사용
+    // UI 콜백은 나중에 methods에서 this로 접근하기 위해 여기서는 전달하지 않음
+    const soloGameFlow = useSoloGameFlow(gameStore);
 
-  emits: ['leave-game', 'roadview-load-error', 'reset-chat-unread'],
-
-  provide() {
     return {
-      roomId: this.roomId,
-      isTeamMode: this.isTeamMode,
-      gameMode: this.gameMode,
-      gameStore: this.gameStore,
-      toggleMap: this.toggleMap,
-      handlePhoneMapGuess: this.handlePhoneMapGuess,
-      formatCoords: this.formatCoords,
-      calculateDistance: this.calculateDistance,
-      // 자식 컴포넌트에서 사용할 수 있는 메서드들
-      getRandomColor: this.getRandomColor,
+      soloGameFlow,
     };
-  },
-
-  inject: {
-    $super: {
-      default: () => ({}),
-    },
   },
 
   data() {
     return {
-      //room
       gameStore,
-      isMapOpen: false,
-      mapCenter: null,
-      isChatOpen: false,
-      isResponsiveMode: false,
-      mapInitialized: false,
-      showToastFlag: false,
-      // UI 상태 관리
-      isPlayerListOpen: window.innerWidth > 992, // 플레이어 리스트 표시 여부 (반응형에서는 기본 닫힘)
-      isMobile: false, // 모바일 화면 여부 (768px 이하)
-      toastMessage: "",
+      gameMode: "solo",
+      roomId: null,
+
+      // 더미 모드 관련
+      allPlayersSubmitted: false,
+      simulationTriggered: false,
+
+      // 게임 시간
+      currentUserRank: 1,
+      gameStartTime: null,
+      totalGameTime: 0,
+
+      // UI 관련
       toastTimeout: null,
-      // WebSocket 관련 상태
-      socketConnected: false,
-      gameSubscriptions: new Map(),
-      userGuessPosition: null,
-      userHasSubmitted: false,
-      showIntroOverlay: false,
-      showNextRoundOverlay: false,
-      userRank: 1,
-      totalPlayers: 1,
-      // 게임 진행 상태 
-      isGameStarted: false,
-      serverStartTime: 0,
-      // 라운드 타이머
-      roundTimer: null,
-      // 라운드별 지도 초기화 플래그 (라운드당 최초 1번만 초기화)
-      mapInitializedForRound: null, // 현재 초기화된 라운드 번호
+      playerChatMessages: {},
+
+      // 서버 모드 플래그
+      // 중요: 기본값은 항상 서버 모드(true)
+      // history.state?.dummyMode가 명시적으로 true일 때만 더미 모드(false)
+      // data() 함수에서 초기값을 설정하므로, history.state를 읽을 수 있음
+      isServerMode: (() => {
+        try {
+          const historyState =
+            typeof history !== "undefined" ? history.state : null;
+          const isExplicitlyDummyMode = historyState?.dummyMode === true;
+          const serverMode = !isExplicitlyDummyMode; // 더미 모드가 아니면 서버 모드 (기본값: true)
+          console.log("[Solo Game] data() - isServerMode 초기값 설정:", {
+            historyState,
+            dummyMode: historyState?.dummyMode,
+            isExplicitlyDummyMode,
+            serverMode,
+            "결론: 서버 모드": serverMode,
+          });
+          return serverMode;
+        } catch (error) {
+          console.error(
+            "[Solo Game] data() - isServerMode 초기값 설정 중 오류:",
+            error,
+          );
+          return true; // 오류 발생 시 기본값: 서버 모드
+        }
+      })(),
+      isDummyRuntime: (() => {
+        try {
+          const historyState =
+            typeof history !== "undefined" ? history.state : null;
+          const isExplicitlyDummyMode = historyState?.dummyMode === true;
+          return isExplicitlyDummyMode;
+        } catch (error) {
+          return false; // 오류 발생 시 기본값: 더미 모드 아님
+        }
+      })(),
+
+      // 게임 시간 제한
+      timeLimit: (() => {
+        try {
+          return (
+            (typeof history !== "undefined" && history.state?.timeLimit) || 120
+          );
+        } catch (error) {
+          return 120;
+        }
+      })(),
+      roomDataFromHistory: (() => {
+        try {
+          const navState =
+            typeof history !== "undefined" ? history.state : null;
+          return navState?.roomData || null;
+        } catch (error) {
+          return null;
+        }
+      })(),
+
+      // 로드뷰 재시도 중 여부
+      isRetryingRoadview: false,
+
+      // 플레이어 로딩 상태
+      playerLoading: {
+        isActive: true,
+        readyCount: 0,
+        totalCount: history.state?.expectedPlayers || 1,
+        players: [],
+      },
+
+      pendingIntroOverlay: false,
+
+      // 서버에서 받은 게임 플레이어 정보 (처음 게임 시작할 때 받는 정보)
+      // store에 담지 않고 SoloGameView에만 저장
+      gamePlayers: [],
+
+      // 게임 최종 결과 (gameStore 사용하지 않고 로컬 데이터로 관리)
+      finalGameResult: null,
+      showGameResults: false,
+
+      // 자동 로비 이동 상태
+      autoExitTimerId: null,
+      autoExitRemaining: 0,
+
+      // 지명 공개 관련 로컬 상태
+      isPoiNameVisibleLocal: true,
+      currentPoiName: "",
+
+      // 읽지 않은 채팅 메시지 카운트
+      unreadChatCount: 0,
+      // 이전 채팅 메시지 수 (새 메시지 감지용)
+      previousChatMessagesLength: 0,
     };
   },
 
   watch: {
-    // 라운드가 변경될 때 지도 초기화 플래그 리셋
-    'gameStore.state.currentRound'(newRound, oldRound) {
-      if (newRound !== oldRound && oldRound != null) {
-        console.log(`[BaseGameView] 라운드 변경 감지: ${oldRound} -> ${newRound}, 지도 초기화 플래그 리셋`);
-        this.mapInitializedForRound = null;
-      }
+    // 채팅 메시지가 추가될 때 읽지 않은 메시지 카운트 증가
+    "gameStore.state.chatMessages": {
+      handler(newMessages) {
+        // 새 메시지가 추가되었는지 확인
+        if (
+          newMessages &&
+          newMessages.length > this.previousChatMessagesLength
+        ) {
+          const newCount = newMessages.length - this.previousChatMessagesLength;
+          // 채팅창이 닫혀있을 때만 카운트 증가
+          const baseGame = this.$refs.baseGame;
+          if (baseGame && !baseGame.isChatOpen) {
+            this.unreadChatCount += newCount;
+          }
+        }
+        this.previousChatMessagesLength = newMessages?.length || 0;
+      },
+      deep: true,
     },
-    // useCustomWebSocket prop 변경 감지 (디버깅용)
-    useCustomWebSocket(newVal, oldVal) {
-      console.log('[BaseGameView] useCustomWebSocket prop 변경:', {
-        oldVal,
-        newVal,
-        type: typeof newVal
-      })
-    }
   },
 
   computed: {
-    totalPlayersInRoom() {
-      return this.gameStore.state.players?.length || 0;
+    resolvedIsTeamMode() {
+      return this.gameMode === "team";
     },
-    majorityThreshold() {
-      if (this.totalPlayersInRoom === 0) return 1; // Avoid division by zero, default to 1 if no players
-      return Math.ceil(this.totalPlayersInRoom / 2);
-    },
-    // 현재 사용자의 마커 이미지 URL
-    currentUserMarkerImageUrl() {
-      const currentUser = this.gameStore?.state?.currentUser
-      if (!currentUser) {
-        return null
+
+    // 현재 사용자 ID (안전하게 접근)
+    currentUserId() {
+      if (this.isDummyRuntime) {
+        return this.gameStore?.state?.currentUser?.id || null;
       }
-      // equippedMarker 또는 markerImageUrl 우선순위로 반환
-      return currentUser.equippedMarker || currentUser.markerImageUrl || null
+      // 서버 모드: localStorage에서 가져오거나 gamePlayers에서 찾기
+      const memberId = localStorage.getItem("memberId");
+      if (memberId) {
+        return memberId;
+      }
+      // gamePlayers에서 현재 사용자 찾기 (임시로 첫 번째 플레이어 또는 게임플레이어 정보에서)
+      return this.gameStore?.state?.currentUser?.id || null;
     },
-    // WebSocket 연결 상태
-    isWebSocketConnected() {
-      return webSocketManager.isConnected.value;
-    },
-    canSubmit() {
-      return (
-        !this.gameStore.state.hasSubmittedGuess &&
-        !this.gameStore.state.roundEnded
-      );
+
+    // 플레이어 리스트 컴포넌트에서 사용할 형식으로 변환
+    localPlayers() {
+      // 더미 모드에서는 gameStore.state.players 사용
+      if (this.isDummyRuntime) {
+        return this.gameStore.state.players || [];
+      }
+
+      return mapGamePlayersToLocalPlayers(this.gamePlayers);
     },
   },
 
   created() {
-    // useCustomWebSocket prop 값 확인
-    console.log('[BaseGameView] created - useCustomWebSocket prop:', {
-      useCustomWebSocket: this.useCustomWebSocket,
-      type: typeof this.useCustomWebSocket,
-      parent: this.$parent?.$options?.name || '알 수 없음'
-    })
-    
-    // 게임 중에도 WebSocket 연결 상태 확인 및 구독 설정
-    // Solo 게임에서 useSoloGameFlow를 사용하는 경우 건너뜀
-    // useCustomWebSocket이 명시적으로 false가 아니면 서버 모드로 간주
-    if (this.useCustomWebSocket !== true) {
-      console.log('[BaseGameView] useCustomWebSocket이 true가 아니므로 기본 WebSocket 초기화')
-      this.initializeWebSocketConnection();
+    // 게임 상태 초기화 (서버 모드/더미 모드 공통)
+    // 이전 게임 상태가 남아있지 않도록 항상 초기화
+    this.gameStore.initGame();
+
+    const resolvedRoomId = this.resolveRoomId();
+    if (resolvedRoomId) {
+      this.roomId = resolvedRoomId;
+    }
+
+    // 중요: 더미 모드 확인
+    // history.state?.dummyMode가 명시적으로 true인 경우에만 더미 모드
+    // 그 외의 모든 경우(undefined, null, false 등)는 서버 모드 (기본값)
+    const historyState = typeof history !== "undefined" ? history.state : null;
+    const isExplicitlyDummyMode = historyState?.dummyMode === true;
+
+    const roomData = historyState?.roomData || {};
+    const normalizedGameType = String(roomData.gameType || "").toLowerCase();
+    this.gameMode =
+      roomData.isTeamMode === true || normalizedGameType === "team"
+        ? "team"
+        : "solo";
+
+    // isServerMode 설정: 명시적으로 더미 모드가 아니면 서버 모드 (기본값: true)
+    this.isServerMode = !isExplicitlyDummyMode; // 더미 모드가 아니면 서버 모드
+    this.isDummyRuntime = isExplicitlyDummyMode;
+
+    console.log("[Solo Game] created - 모드 설정 (최종):", {
+      historyState: historyState,
+      dummyMode: historyState?.dummyMode,
+      isExplicitlyDummyMode,
+      isServerMode: this.isServerMode,
+      isDummyRuntime: this.isDummyRuntime,
+      "결론: 서버 모드": this.isServerMode,
+      roomId: this.roomId,
+    });
+
+    // poiNameVisible 초기화 (네비게이션 상태에서 가져오기, 기본 true)
+    try {
+      const navState = typeof history !== "undefined" ? history.state : null;
+      const navRoomData = navState?.roomData || {};
+      this.isPoiNameVisibleLocal = navRoomData.poiNameVisible !== false;
+    } catch (e) {
+      this.isPoiNameVisibleLocal = true;
+    }
+
+    // 더미 모드에서만 테스트 데이터 로드 (서버 모드에서는 서버에서 플레이어 데이터를 받음)
+    if (isExplicitlyDummyMode) {
+      console.log("[Solo Game] 더미 모드로 초기화");
+      this.gameStore.loadTestData(false);
+      this.initGame();
     } else {
-      console.log('[BaseGameView] useCustomWebSocket이 true이므로 서버 모드 - 기본 WebSocket 초기화 스킵')
+      console.log("[Solo Game] 서버 모드로 초기화 (기본값)");
+      // 서버 모드: 플레이어 리스트 초기화 (서버에서 받을 데이터만 사용)
+      // store에 플레이어 정보를 저장하지 않음 (gamePlayers에만 저장)
+      this.gameStore.state.players = [];
+      this.gamePlayers = []; // gamePlayers도 초기화
+
+      // 서버 모드: currentUser 초기화 (localStorage에서 가져오기)
+      const memberId = localStorage.getItem("memberId");
+      if (memberId && !this.gameStore.state.currentUser) {
+        this.gameStore.state.currentUser = {
+          id: memberId,
+          nickname: localStorage.getItem("nickname") || "플레이어",
+          markerImageUrl: null,
+          equippedMarker: null,
+        };
+      }
+    }
+
+    this.initializePlayerLoadingState();
+  },
+
+  // 강제 종료 시 탈퇴 처리
+  handleBeforeUnload() {
+    console.log("[Solo Game] 페이지 종료 감지 - 퇴장 처리 시도");
+
+    try {
+      const roomId = this.roomId;
+      const currentUserId = this.currentUserId;
+
+      if (!roomId || !currentUserId) {
+        console.warn(
+          "[Solo Game] roomId 또는 currentUserId가 없어 퇴장 처리를 건너뜁니다.",
+        );
+        return;
+      }
+
+      // fetch with keepalive를 사용하여 비동기적으로 퇴장 요청
+      // keepalive 옵션은 페이지가 닫혀도 요청이 보장됨
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "";
+      const leaveUrl = `${apiBaseUrl}/api/rooms/${roomId}/leave`;
+
+      try {
+        fetch(leaveUrl, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ memberId: currentUserId }),
+          keepalive: true, // 페이지가 닫혀도 요청 보장
+          credentials: "include", // 쿠키 포함
+        }).catch(() => {
+          // fetch 실패는 무시 (페이지가 닫히는 중이므로)
+        });
+
+        console.log("[Solo Game] ✅ fetch keepalive로 퇴장 요청 전송 시도");
+      } catch (error) {
+        console.warn("[Solo Game] ⚠️ fetch keepalive 전송 실패:", error);
+      }
+
+      // 구독 해제 시도 (동기적으로만 가능)
+      try {
+        this.cleanupSubscriptions();
+      } catch (error) {
+        console.error("[Solo Game] ❌ 구독 해제 실패:", error);
+      }
+    } catch (error) {
+      console.error("[Solo Game] ❌ beforeunload 퇴장 처리 중 오류:", error);
     }
   },
 
-  mounted() {
-    // 로딩 화면 제거
-    // 토스트 메시지 스타일 추가
-    this.addToastStyles();
-    this.checkResponsive();
-    window.addEventListener("resize", this.checkResponsive);
+  async mounted() {
+    // 게임 상태 명시적 초기화 (이전 게임 상태 완전 제거)
+    // showGameResults 등이 true로 남아있으면 게임 완료 화면이 표시될 수 있음
+    this.showGameResults = false; // 로컬 데이터 초기화
+    this.finalGameResult = null; // 로컬 데이터 초기화
+    this.gameStore.state.roundEnded = false;
+    this.gameStore.state.hasSubmittedGuess = false;
+    this.gameStore.state.showRoundResults = false;
+    this.gameStore.state.currentRound = 1;
+    this.gameStore.state.userGuess = null;
+    this.gameStore.state.playerGuesses = [];
+    this.gameStore.state.remainingTime = 120;
+
+    // 강제 종료 감지를 위한 beforeunload 이벤트 리스너 추가
+    window.addEventListener("beforeunload", this.handleBeforeUnload);
+
+    // 개발자모드 파라미터만 확인
+    // history.state?.dummyMode가 명시적으로 true인 경우에만 더미 모드
+    const isExplicitlyDummyMode = history.state?.dummyMode === true;
+
+    // created()에서 이미 설정했지만, 일관성을 위해 다시 확인
+    // computedIsServerMode가 실제 prop 값이므로 이것이 우선
+    const expectedServerMode = !isExplicitlyDummyMode;
+    if (this.isServerMode !== expectedServerMode) {
+      console.warn("[Solo Game] mounted - isServerMode 불일치 감지:", {
+        created에서설정: this.isServerMode,
+        현재계산값: expectedServerMode,
+        isExplicitlyDummyMode,
+        computedIsServerMode: this.computedIsServerMode,
+      });
+      this.isServerMode = expectedServerMode;
+      this.isDummyRuntime = isExplicitlyDummyMode;
+    }
+
+    const resolvedRoomId = this.resolveRoomId();
+    if (resolvedRoomId) {
+      this.roomId = resolvedRoomId;
+    }
+    this.initializePlayerLoadingState();
+
+    console.log("[Solo Game] mounted - 최종 모드:", {
+      historyState: history.state,
+      dummyMode: history.state?.dummyMode,
+      isExplicitlyDummyMode,
+      isServerMode: this.isServerMode,
+      isDummyRuntime: this.isDummyRuntime,
+      computedIsServerMode: this.computedIsServerMode, // 실제 prop 값
+      roomId: this.roomId,
+    });
+
+    if (isExplicitlyDummyMode) {
+      console.log("[Solo Game] 더미 모드로 게임 시작");
+      this.startDummyMode();
+      this.simulateDummyLoading();
+    } else {
+      console.log("[Solo Game] 서버 모드로 게임 시작");
+      try {
+        await this.startServerMode();
+      } catch (error) {
+        console.error("[Solo Game] 서버 모드 시작 실패:", error);
+        // 오류 시 더미 모드로 전환하지 않고 로비로 리다이렉트
+        alert("게임을 시작할 수 없습니다. 로비로 이동합니다.");
+        this.$router.replace("/lobby");
+      }
+    }
   },
 
   beforeUnmount() {
+    // 이벤트 리스너 정리
+    window.removeEventListener("beforeunload", this.handleBeforeUnload);
+
+    // 타이머 정리
+    this.clearTimer();
     if (this.toastTimeout) {
       clearTimeout(this.toastTimeout);
     }
-    window.removeEventListener("resize", this.checkResponsive);
-    this.disconnectWebSocket();
-    // 라운드 타이머 정리
-    this.clearRoundTimer();
+    // 자동 퇴장 카운트다운 정리
+    this.cancelAutoExitCountdown();
+
+    // 채팅 말풍선 정리
+    Object.values(this.playerChatMessages).forEach((chatData) => {
+      if (chatData.timer) {
+        clearTimeout(chatData.timer);
+      }
+    });
+
+    // 모든 구독 해제
+    this.cleanupSubscriptions();
+
+    console.log("[Solo Game] 컴포넌트 정리 완료");
   },
+
   methods: {
-    // 인트로 완료 처리
-    handleIntroComplete() {
-      this.showIntroOverlay = false;
-      this.handleEndOverlay();
+    // 읽지 않은 채팅 카운트 리셋
+    resetUnreadChatCount() {
+      this.unreadChatCount = 0;
     },
 
-    // 다음 라운드 인트로 완료 처리
-    handleNextRoundComplete() {
-      this.showNextRoundOverlay = false;
-      console.log("next round complete");
-      this.handleEndOverlay();
-      this.$emit("next-round-ready");
-    },
+    resolveRoomId() {
+      const paramId = this.$route?.params?.roomId;
+      const navState =
+        typeof history !== "undefined" ? history.state : undefined;
+      const stateRoomId =
+        navState?.roomId ??
+        navState?.roomData?.id ??
+        navState?.roomData?.gameRoomId;
 
-    handleEndOverlay() {
-      this.$emit("end-overlay");
-    },
-
-    // 다음 라운드 요청 처리 (슬롯에서 전달된 이벤트)
-    handleRequestNextRound() {
-      console.log("BaseMultiRoadViewGame: 다음 라운드 요청 받음");
-      // 부모 컴포넌트로 이벤트 전달
-      this.$emit("request-next-round");
-    },
-
-    // 슬롯에서 발생하는 next-round 이벤트 처리
-    handleNextRound() {
-      console.log("BaseMultiRoadViewGame: 다음 라운드 처리");
-      // 이벤트 발생
-      this.$emit("next-round");
-      
-      // 게임 스토어의 다음 라운드 시작 메서드 호출
-      this.gameStore.startNextRound();
-      
-      // 라운드 데이터 처리는 각 게임 뷰에서 담당
-    },
-
-    // 다음 라운드 시작
-    startNextRound(userRank, totalPlayers) {
-      this.userRank = userRank;
-      this.totalPlayers = totalPlayers;
-      
-      // 새 라운드 시작 시 지도 초기화 플래그 리셋
-      // (다음 라운드 데이터가 오면 새로 초기화됨)
-      const nextRound = this.gameStore.state.currentRound + 1;
-      this.mapInitializedForRound = null;
-      console.log(`[BaseGameView] 라운드 ${nextRound} 시작 준비 - 지도 초기화 플래그 리셋`);
-      
-      this.$nextTick(() => {
-        setTimeout(() => {
-          this.showNextRoundOverlay = true;
-          // 라운드 데이터 처리는 각 게임 뷰에서 담당
-        }, 500);
-      });
-    },
-
-    // 라운드 타이머 시작
-    startRoundTimer() {
-      console.log('라운드 타이머 시작');
-      
-      // 기존 타이머가 있다면 정리
-      this.clearRoundTimer();
-      
-      // 타이머 시작
-      this.roundTimer = setInterval(() => {
-        if (this.gameStore.state.remainingTime > 0) {
-          this.gameStore.state.remainingTime--;
-        } else {
-          this.clearRoundTimer();
-          // 시간 초과 시 라운드 종료
-          this.$emit('round-timeout');
-        }
-      }, 1000);
-    },
-
-    // 라운드 타이머 정리
-    clearRoundTimer() {
-      if (this.roundTimer) {
-        clearInterval(this.roundTimer);
-        this.roundTimer = null;
+      const candidate = paramId ?? stateRoomId ?? this.roomId;
+      if (candidate == null) {
+        return null;
       }
+
+      return String(candidate);
     },
 
-    // 사용자의 현재 등수 가져오기
-    getUserRank() {
-      if (
-        !this.gameStore.state.players ||
-        this.gameStore.state.players.length === 0
+    initializePlayerLoadingState() {
+      const expectedFromState = parseInt(history.state?.expectedPlayers, 10);
+      let total = this.playerLoading.totalCount;
+
+      if (!Number.isNaN(expectedFromState) && expectedFromState > 0) {
+        total = expectedFromState;
+      } else if (
+        this.isDummyRuntime &&
+        this.gameStore?.state?.players?.length
       ) {
-        return 1;
+        total = this.gameStore.state.players.length;
+      } else if (!this.isDummyRuntime && this.gamePlayers?.length) {
+        total = this.gamePlayers.length;
       }
 
-      // 점수 기준으로 정렬된 플레이어 배열 생성
-      const sortedPlayers = [...this.gameStore.state.players].sort(
-        (a, b) => b.score - a.score
-      );
-
-      // 현재 사용자의 인덱스 찾기
-      const currentUserIndex = sortedPlayers.findIndex(
-        (player) => player.id === this.gameStore.state.currentUser.id
-      );
-
-      // 인덱스 + 1이 등수
-      return currentUserIndex !== -1 ? currentUserIndex + 1 : 1;
-    },
-    // 반응형 상태 확인 및 설정
-    checkResponsive() {
-      const isMobile = window.innerWidth <= 992;
-      this.isMobile = window.innerWidth <= 768;
-      this.isResponsiveMode = isMobile;
-      
-      // 채팅 패널 표시/숨김 처리
-      const rightPanel = document.querySelector(".right-panel");
-      if (rightPanel) {
-        if (!isMobile) {
-          // 데스크톱에서는 항상 표시하고 애니메이션 클래스 제거
-          rightPanel.style.display = "block";
-          rightPanel.classList.remove("chat-open");
-        } else {
-          // 모바일에서는 채팅 열림 상태에 따라 처리
-          if (this.isChatOpen) {
-            rightPanel.style.display = "block";
-            this.$nextTick(() => {
-              rightPanel.classList.add("chat-open");
-            });
-          } else {
-            rightPanel.classList.remove("chat-open");
-            setTimeout(() => {
-              if (!this.isChatOpen) {
-                rightPanel.style.display = "none";
-              }
-            }, 400);
-          }
-        }
-      }
+      this.playerLoading.totalCount = Math.max(1, total);
+      this.playerLoading.readyCount = this.isDummyRuntime
+        ? 0
+        : this.playerLoading.readyCount;
     },
 
-    // 플레이어 리스트 토글
-    togglePlayerList() {
-      this.isPlayerListOpen = !this.isPlayerListOpen;
-    },
-
-    // 플레이어 리스트 닫기 (모바일 전용)
-    closePlayerList() {
-      this.isPlayerListOpen = false;
-    },
-
-    // 채팅 패널 토글 (모바일에서만 사용)
-    toggleChat() {
-      this.isChatOpen = !this.isChatOpen;
-      
-      // 채팅창이 열릴 때 읽지 않은 메시지 카운트 리셋
-      if (this.isChatOpen) {
-        this.$emit('reset-chat-unread');
-        this.$emit('chat-opened');
-      }
-      
-      // CSS 클래스 기반으로 애니메이션 처리
-      const rightPanel = document.querySelector(".right-panel");
-      if (rightPanel && this.isResponsiveMode) {
-        if (this.isChatOpen) {
-          rightPanel.style.display = "block";
-          // 애니메이션을 위해 다음 프레임에서 클래스 추가
-          this.$nextTick(() => {
-            rightPanel.classList.add("chat-open");
-          });
-        } else {
-          rightPanel.classList.remove("chat-open");
-          // 애니메이션 완료 후 display 숨김
-          setTimeout(() => {
-            if (!this.isChatOpen) {
-              rightPanel.style.display = "none";
-            }
-          }, 400); // CSS transition 시간과 동일
-        }
-      }
-    },
-
-    // 채팅 패널 닫기
-    closeChat() {
-      this.isChatOpen = false;
-      
-      // CSS 클래스 기반으로 애니메이션 처리
-      const rightPanel = document.querySelector(".right-panel");
-      if (rightPanel && this.isResponsiveMode) {
-        rightPanel.classList.remove("chat-open");
-        // 애니메이션 완료 후 display 숨김
-        setTimeout(() => {
-          if (!this.isChatOpen) {
-            rightPanel.style.display = "none";
-          }
-        }, 400); // CSS transition 시간과 동일
-      }
-    },
-
-    // 로드뷰 로딩 완료 처리
-    onViewLoaded() {
-      console.log("로드뷰 로딩 완료");
-    },
-
-    // 로드뷰 로딩 실패 처리
-    onViewLoadError(errorData) {
-      // useCustomWebSocket prop 값 확인 (반응형으로 최신 값 사용)
-      const useCustomWs = this.useCustomWebSocket
-      console.log('[BaseGameView] onViewLoadError 호출됨:', {
-        useCustomWebSocket: useCustomWs,
-        useCustomWebSocketType: typeof useCustomWs,
-        errorData,
-        parentComponent: this.$parent?.$options?.name || '알 수 없음'
-      })
-      
-      // Solo 게임에서 useSoloGameFlow를 사용하는 경우 (서버 모드) 재발급 요청
-      // 명시적으로 true인지 확인 (falsy 값 체크)
-      if (useCustomWs === true) {
-        console.error("[BaseGameView] 로드뷰 로딩 실패 - 서버 모드에서 재발급 요청:", errorData);
-        // 부모 컴포넌트(SoloGameView)에 로드 에러 이벤트 전달
-        this.$emit('roadview-load-error', errorData);
-        console.log('[BaseGameView] roadview-load-error 이벤트 emit 완료')
-      } else {
-        // 더미 모드에서는 로드뷰 에러를 무시 (로컬 테스트 데이터 사용)
-        console.warn('[BaseGameView] 더미 모드이므로 재발급 요청하지 않음 (useCustomWebSocket:', useCustomWs, ')')
-      }
-    },
-
-    // 추측 위치 설정
-    onGuessPlaced(position) {
-      this.guessPosition = position;
-    },
-
-    // 좌표를 문자열로 포맷팅 (소수점 4자리까지)
-    formatCoords(position) {
-      if (!position) return "";
-
-      const lat = position.lat.toFixed(4);
-      const lng = position.lng.toFixed(4);
-      return `${lat}, ${lng}`;
-    },
-
-    // 로드뷰 초기 위치로 돌아가기
-    resetRoadViewPosition() {
-      if (this.$refs.roadViewRef && this.$refs.roadViewRef.resetToInitial) {
-        this.$refs.roadViewRef.resetToInitial();
-      }
-    },
-
-    toggleMap() {
-      // 라운드가 끝났을 때는 결과 지도 표시/숨김 토글
-      if (this.gameStore.state.roundEnded) {
-        this.showResultMap = !this.showResultMap;
-      } else {
-        const wasOpen = this.isMapOpen;
-        this.isMapOpen = !this.isMapOpen;
-        
-        // 지도가 열릴 때 (false -> true)
-        // 라운드별로 최초 1번만 초기화하도록 변경
-        if (!wasOpen && this.isMapOpen) {
-          const currentRound = this.gameStore.state.currentRound;
-          
-          // 현재 라운드에서 지도가 아직 초기화되지 않은 경우에만 초기화
-          if (this.mapInitializedForRound !== currentRound) {
-            console.log(`[BaseGameView] 라운드 ${currentRound} 지도 최초 초기화`);
-            // PhoneFrame이 마운트된 후 재로딩 실행
-            this.$nextTick(() => {
-              // 약간의 딜레이를 주어 PhoneFrame이 완전히 렌더링된 후 재로딩
-              setTimeout(() => {
-                this.reloadPhoneMap(false);
-                // 초기화 플래그 설정
-                this.mapInitializedForRound = currentRound;
-              }, 100);
-            });
-          } else {
-            console.log(`[BaseGameView] 라운드 ${currentRound} 지도는 이미 초기화됨 - 재로딩하지 않음`);
-            // 지도는 이미 초기화되어 있으므로 크기만 조정
-            if (this.$refs.phoneFrame) {
-              this.$refs.phoneFrame.ensureMapInitialized();
-            }
-          }
-        }
-      }
-    },
-
-
-    // PhoneFrame 내부 지도 재로딩
-    reloadPhoneMap(showToast = true) {
-      if (!this.$refs.phoneFrame) {
-        if (showToast) {
-          this.showToastMessage("지도가 준비되지 않았습니다.");
-        }
+    setupLoadingStatusSubscription() {
+      if (!this.roomId) {
         return;
+      }
+      // 직접 구독하여 로딩 상태 메시지를 받도록 함 (skipSubscribe = false)
+      // 게임 재시작 시에도 정상적으로 로딩 상태를 수신하기 위함
+      soloGameWebSocket.setupLoadingSubscription(
+        this.roomId,
+        this.handleLoadingStatus,
+        false,
+      );
+    },
+
+    sendLoadingAcknowledge() {
+      if (this.isDummyRuntime || !this.roomId) {
+        return;
+      }
+
+      soloGameWebSocket.publishLoadingAcknowledge(this.roomId, {
+        roundId: null,
+      });
+
+      if (this.playerLoading.totalCount <= 1) {
+        setTimeout(() => this.finishPlayerLoading(), 300);
+      }
+    },
+
+    handleLoadingStatus(statusMessage) {
+      if (!statusMessage) {
+        return;
+      }
+
+      // 로드뷰 재발급 중에는 로딩 상태 메시지를 무시
+      if (this.isRetryingRoadview) {
+        console.log("[Solo Game] 로드뷰 재발급 중 - 로딩 상태 메시지 무시");
+        return;
+      }
+
+      const players = Array.isArray(statusMessage.players)
+        ? statusMessage.players
+        : [];
+      const transformedPlayers = players.map((player) => {
+        const storePlayer = this.gameStore?.state?.players?.find(
+          (p) => p.id === player.memberId,
+        );
+        const acknowledgedAt =
+          typeof player.acknowledgedAt === "number"
+            ? new Date(player.acknowledgedAt).toISOString()
+            : player.acknowledgedAt ?? null;
+
+        return {
+          memberId: player.memberId,
+          arrived: Boolean(player.arrived),
+          acknowledgedAt,
+          nickname: storePlayer?.nickname || player.nickname || null,
+        };
+      });
+
+      this.playerLoading.players = transformedPlayers;
+
+      const arrivedCount = transformedPlayers.filter(
+        (player) => player.arrived,
+      ).length;
+      this.playerLoading.readyCount = arrivedCount;
+      if (players.length) {
+        this.playerLoading.totalCount = players.length;
+      } else if (arrivedCount > this.playerLoading.totalCount) {
+        this.playerLoading.totalCount = arrivedCount;
+      }
+
+      if (statusMessage.allArrived) {
+        this.finishPlayerLoading();
+      }
+    },
+
+    finishPlayerLoading() {
+      this.playerLoading.readyCount = Math.max(
+        this.playerLoading.readyCount,
+        this.playerLoading.totalCount,
+      );
+      this.playerLoading.isActive = false;
+      if (this.$refs.baseGame) {
+        this.$refs.baseGame.showIntroOverlay = true;
+        this.pendingIntroOverlay = false;
+      } else {
+        this.pendingIntroOverlay = true;
+      }
+      this.triggerIntroOverlayIfNeeded();
+    },
+
+    simulateDummyLoading() {
+      if (!this.isDummyRuntime) {
+        return;
+      }
+
+      const players = this.gameStore?.state?.players || [];
+      this.playerLoading.players = players.map((player) => ({
+        memberId: player.id,
+        nickname: player.nickname,
+        arrived: false,
+        acknowledgedAt: null,
+      }));
+      this.playerLoading.readyCount = 0;
+      this.playerLoading.totalCount = Math.max(
+        this.playerLoading.totalCount,
+        this.playerLoading.players.length || 1,
+      );
+      this.playerLoading.isActive = true;
+
+      let index = 0;
+      const simulateArrival = () => {
+        if (index >= this.playerLoading.players.length) {
+          this.finishPlayerLoading();
+          return;
+        }
+
+        this.playerLoading.players[index].arrived = true;
+        this.playerLoading.players[index].acknowledgedAt =
+          new Date().toISOString();
+        this.playerLoading.readyCount = index + 1;
+        index += 1;
+        setTimeout(simulateArrival, 600);
+      };
+
+      setTimeout(simulateArrival, 450);
+    },
+
+    triggerIntroOverlayIfNeeded() {
+      if (!this.$refs.baseGame) {
+        return;
+      }
+
+      if (this.pendingIntroOverlay) {
+        this.$refs.baseGame.showIntroOverlay = true;
+        this.pendingIntroOverlay = false;
+      }
+    },
+
+    // ==================== 서버 모드 메서드 ====================
+
+    /**
+     * 서버 모드 게임 시작
+     */
+    async startServerMode() {
+      // UI 콜백 재설정 (setup 이후 this 접근 가능)
+      this.setupUICallbacks();
+
+      const resolvedRoomId = this.resolveRoomId();
+      if (!resolvedRoomId) {
+        console.error("[Solo Game] roomId를 확인할 수 없어 로비로 이동합니다.");
+        const error = new Error("roomId를 확인할 수 없습니다.");
+        error.code = "ROOM_ID_NOT_FOUND";
+        throw error;
+      }
+      this.roomId = resolvedRoomId;
+
+      await this.soloGameFlow.initializeFromServerStart(this.roomId);
+
+      this.setupLoadingStatusSubscription();
+      this.sendLoadingAcknowledge();
+    },
+
+    /**
+     * useSoloGameFlow의 UI 콜백 설정
+     */
+    setupUICallbacks() {
+      this.soloGameFlow.setCallbacks(createSoloGameFlowCallbacks(this));
+    },
+
+    /**
+     * 서버 모드 정답 제출
+     */
+    async submitServerAnswer(position) {
+      if (!this.isServerMode) {
+        return this.handleGuessSubmission(position);
       }
 
       try {
-        this.$refs.phoneFrame.reloadMap();
-        if (showToast) {
-          this.showToastMessage("지도를 재로딩합니다...");
+        console.log("[Solo Game] 서버에 정답 제출:", position);
+
+        await this.soloGameFlow.submitAnswer(position);
+
+        // UI 업데이트
+        this.gameStore.state.hasSubmittedGuess = true;
+        this.gameStore.state.userGuess = { position };
+
+        console.log("[Solo Game] 정답 제출 완료");
+      } catch (error) {
+        console.error("[Solo Game] 정답 제출 오류:", error);
+        alert("정답 제출에 실패했습니다. 다시 시도해주세요.");
+      }
+    },
+
+    // ==================== 공통 이벤트 핸들러 ====================
+
+    /**
+     * IntroOverlay 완료 처리
+     */
+    handleEndOverlay() {
+      console.log("[Solo Game] 인트로 오버레이 완료");
+
+      // 서버 모드: 오버레이 완료 처리 (타이머 시작 가능)
+      if (this.isServerMode) {
+        this.soloGameFlow.onOverlayComplete();
+      } else {
+        // 더미 모드: 시뮬레이션 시작
+        console.log("[Solo Game] 더미 모드 시뮬레이션 시작");
+        this.simulationTriggered = true;
+      }
+    },
+
+    /**
+     * 로드뷰 로딩 실패 처리
+     */
+    async handleRoadviewLoadError(errorData) {
+      console.log("[Solo Game] handleRoadviewLoadError 호출됨:", {
+        isServerMode: this.isServerMode,
+        errorData,
+        roomId: this.roomId,
+      });
+
+      if (!this.isServerMode) {
+        console.warn(
+          "[Solo Game] 더미 모드에서는 로드뷰 재발급을 요청하지 않습니다.",
+        );
+        return;
+      }
+
+      if (!this.roomId) {
+        console.error(
+          "[Solo Game] roomId가 없어 재발급 요청을 할 수 없습니다.",
+        );
+        return;
+      }
+
+      // 재시도 중인지 확인
+      this.isRetryingRoadview = this.soloGameFlow.isRetrying();
+
+      console.log(
+        `[Solo Game] 로드뷰 로딩 실패 - 재발급 요청 시작 (재시도 중: ${this.isRetryingRoadview}, roomId: ${this.roomId})`,
+      );
+
+      try {
+        const success = await this.soloGameFlow.requestRoadviewReIssue();
+        console.log(`[Solo Game] 재발급 요청 결과: ${success}`);
+
+        if (success) {
+          // 재시도 중 플래그 업데이트
+          this.isRetryingRoadview = this.soloGameFlow.isRetrying();
+          console.log(
+            "[Solo Game] 로드뷰 재발급 요청 완료. 서버에서 새로운 좌표 브로드캐스트 대기 중...",
+          );
+          // 재시도 중이므로 에러 화면을 표시하지 않음
+          // 새로운 좌표를 받으면 handleNextRound에서 자동으로 로드뷰를 다시 로드함
+        } else {
+          // 최대 시도 횟수 초과 시에만 에러 화면 표시
+          this.isRetryingRoadview = this.soloGameFlow.isRetrying();
+          console.warn(
+            `[Solo Game] 로드뷰 재발급 요청 실패 (success: ${success}, isRetrying: ${this.isRetryingRoadview})`,
+          );
+          if (!this.isRetryingRoadview) {
+            console.error(
+              "[Solo Game] 로드뷰 재발급 요청 실패 또는 최대 시도 횟수 초과",
+            );
+            // 재시도가 끝났으므로 에러 화면을 표시할 수 있음 (RoadView에서 자동으로 표시됨)
+          }
         }
       } catch (error) {
-        console.error("지도 재로딩 실패:", error);
-        if (showToast) {
-          this.showToastMessage("지도 재로딩에 실패했습니다. 다시 시도해주세요.");
+        console.error("[Solo Game] 로드뷰 재발급 요청 중 오류:", error);
+        // 에러 발생 시에도 재시도 중이 아니면 에러 화면 표시
+        this.isRetryingRoadview = this.soloGameFlow.isRetrying();
+        if (!this.isRetryingRoadview) {
+          // 재시도가 끝났으므로 에러 화면을 표시할 수 있음 (RoadView에서 자동으로 표시됨)
         }
       }
     },
 
-    // ...
-    handlePhoneMapGuess(position) {
-      if (
-        this.gameStore.state.hasSubmittedGuess ||
-        this.gameStore.state.roundEnded
-      )
-        return;
+    // ==================== 더미 모드 전용 이벤트 핸들러 ====================
+    // (서버 모드에서는 useSoloGameFlow가 처리)
 
-      // 선택한 위치 설정
-      this.guessPosition = position;
+    // 게임 시작 이벤트 처리 (더미 모드 전용)
+    handleGameStarted(message) {
+      if (this.isServerMode) return; // 서버 모드에서는 무시
 
-      // 지도 닫기
-      this.isMapOpen = false;
+      console.log("[Dummy Mode] 개인전 게임 시작 이벤트 처리:", message);
 
-      // 게임 모드별 추측 제출 처리
-      this.handleGuessSubmission(position);
-    },
+      // 게임 시작 시간 기록
+      this.gameStartTime = Date.now();
 
-    // 게임 모드별로 구현해야 하는 메서드 (추상)
-    handleGuessSubmission(position) {
-      // 이벤트 발생
-      this.$emit("guess-submitted", position);
-    },
-
-    // WebSocket 초기화 및 연결
-    initializeWebSocketConnection() {
-      console.log('게임 WebSocket 연결 초기화 시작');
-      
-      // WebSocket이 이미 연결되어 있다면 게임 구독만 설정
-      if (this.isWebSocketConnected) {
-        this.setupGameSubscriptions();
-        console.log('WebSocket이 이미 연결됨. 게임 구독 설정 완료');
-        return;
-      }
-      
-      // WebSocket 연결 시도
-      webSocketManager.connect('/ws', () => {
-        // core.js에서 실제 연결 실패 시에도 콜백은 호출될 수 있으므로, isConnected를 신뢰
-        if (webSocketManager.isConnected && webSocketManager.isConnected.value) {
-          console.log('게임 WebSocket 연결 성공');
-          this.socketConnected = true;
-          this.setupGameSubscriptions();
-        } else {
-          console.warn('WebSocket 연결 실패로 더미 모드로 진행합니다.');
-          this.socketConnected = false;
-          // 더미 모드에서는 즉시 게임 시작 흐름을 트리거하지 않음. 상위 뷰에서 처리
-        }
-      });
-    },
-
-    // 게임 관련 WebSocket 구독 설정
-    setupGameSubscriptions() {
-      if (!this.roomId) {
-        console.warn('방 ID가 없어 게임 구독을 설정할 수 없습니다.');
-        return;
+      // 서버에서 받은 정보로 게임 설정 업데이트
+      if (message.roomId) {
+        this.roomId = message.roomId;
       }
 
-      console.log(`방 ${this.roomId}의 게임 구독 설정 시작`);
-
-      // 게임 시작 신호 구독
-      this.subscribeToGameStart();
-      
-      // 라운드 데이터 구독  
-      this.subscribeToRoundData();
-      
-      // 플레이어 제출 상태 구독
-      this.subscribeToPlayerSubmissions();
-      
-      // 라운드 종료 구독
-      this.subscribeToRoundEnd();
-      
-      // 게임 종료 구독
-      this.subscribeToGameEnd();
-      
-      // 서버 시간 동기화 구독
-      this.subscribeToServerTime();
-
-      console.log('모든 게임 구독 설정 완료');
-    },
-
-    // 게임 시작 신호 구독
-    subscribeToGameStart() {
-      const topic = `/topic/room/${this.roomId}/game/start`;
-      const subscriptionId = webSocketManager.subscribe(topic, (message) => {
-        console.log('게임 시작 신호 수신:', message);
-        this.handleGameStart(message);
-      });
-      this.gameSubscriptions.set('gameStart', subscriptionId);
-    },
-
-    // 라운드 데이터 구독
-    subscribeToRoundData() {
-      const topic = `/topic/room/${this.roomId}/game/round/data`;
-      const subscriptionId = webSocketManager.subscribe(topic, (message) => {
-        console.log('라운드 데이터 수신:', message);
-        this.handleRoundData(message);
-      });
-      this.gameSubscriptions.set('roundData', subscriptionId);
-    },
-
-    // 플레이어 제출 상태 구독
-    subscribeToPlayerSubmissions() {
-      const topic = `/topic/room/${this.roomId}/game/submissions`;
-      const subscriptionId = webSocketManager.subscribe(topic, (message) => {
-        console.log('플레이어 제출 상태 수신:', message);
-        this.handlePlayerSubmission(message);
-      });
-      this.gameSubscriptions.set('submissions', subscriptionId);
-    },
-
-    // 라운드 종료 구독
-    subscribeToRoundEnd() {
-      const topic = `/topic/room/${this.roomId}/game/round/end`;
-      const subscriptionId = webSocketManager.subscribe(topic, (message) => {
-        console.log('라운드 종료 신호 수신:', message);
-        this.handleRoundEnd(message);
-      });
-      this.gameSubscriptions.set('roundEnd', subscriptionId);
-    },
-
-    // 게임 종료 구독
-    subscribeToGameEnd() {
-      const topic = `/topic/room/${this.roomId}/game/end`;
-      const subscriptionId = webSocketManager.subscribe(topic, (message) => {
-        console.log('게임 종료 신호 수신:', message);
-        this.handleGameEnd(message);
-      });
-      this.gameSubscriptions.set('gameEnd', subscriptionId);
-    },
-
-    // 서버 시간 동기화 구독
-    subscribeToServerTime() {
-      const topic = `/topic/room/${this.roomId}/game/time`;
-      const subscriptionId = webSocketManager.subscribe(topic, (message) => {
-        console.log('서버 시간 수신:', message);
-        this.handleServerTime(message);
-      });
-      this.gameSubscriptions.set('serverTime', subscriptionId);
-    },
-
-    // WebSocket 구독 해제
-    disconnectWebSocket() {
-      console.log('게임 WebSocket 구독 해제 시작');
-      
-      // 모든 게임 구독 해제
-      this.gameSubscriptions.forEach((subscriptionId, topic) => {
-        webSocketManager.unsubscribe(subscriptionId);
-        console.log(`구독 해제: ${topic}`);
-      });
-      
-      this.gameSubscriptions.clear();
-      this.socketConnected = false;
-      
-      console.log('게임 WebSocket 구독 해제 완료');
-    },
-
-    // 게임 시작 처리
-    handleGameStart(message) {
-      console.log('게임 시작 처리:', message);
-      
-      // 서버에서 받은 게임 시작 정보 처리
-      if (message.serverStartTime) {
-        this.serverStartTime = message.serverStartTime;
-      }
-      
       if (message.totalRounds) {
         this.gameStore.state.totalRounds = message.totalRounds;
       }
-      
-      // 게임 시작 상태로 변경
-      this.isGameStarted = true;
-      this.gameStore.state.currentRound = 1;
-      
-      // IntroOverlay 표시
-      this.showIntroOverlay = true;
-      
-      // 부모 컴포넌트에 게임 시작 이벤트 전달
-      this.$emit('game-started', message);
+
+      // 게임 시작 시 필요한 초기화
+      this.simulationTriggered = false;
+      this.allPlayersSubmitted = false;
+
+      // 인트로 오버레이 표시 (로드뷰보다 먼저)
+      if (this.$refs.baseGame) {
+        this.$refs.baseGame.showIntroOverlay = true;
+      }
+
+      console.log("[Dummy Mode] 개인전 게임 준비 완료 - 인트로 오버레이 표시");
     },
 
-    // 라운드 데이터 처리
-    handleRoundData(message) {
-      console.log('라운드 데이터 처리:', message);
-      
-      // 라운드 정보 업데이트
-      if (message.roundNumber) {
-        this.gameStore.state.currentRound = message.roundNumber;
-      }
-      
-      // 위치 정보 업데이트
-      if (message.location) {
-        this.gameStore.state.currentLocation = message.location;
-        this.gameStore.state.actualLocation = message.location; // 정답 좌표
-      }
-      
-      // 위치 상세 정보 업데이트
-      if (message.locationInfo) {
-        this.gameStore.state.locationInfo = message.locationInfo;
-      }
-      
-      // 라운드 시간 설정
-      if (message.roundTime) {
-        this.gameStore.state.remainingTime = message.roundTime;
-      }
-      
-      // 라운드 상태 초기화
-      this.gameStore.state.roundEnded = false;
-      this.gameStore.state.hasSubmittedGuess = false;
-      this.gameStore.state.playerGuesses = [];
-      
-      // 라운드 타이머 시작 (오버레이가 표시되지 않은 경우에만)
-      if (!this.showIntroOverlay && !this.showNextRoundOverlay) {
-        this.startRoundTimer();
-      }
-      
-      // 부모 컴포넌트에 라운드 데이터 이벤트 전달
-      this.$emit('round-data-received', message);
-    },
+    // 통합 라운드 데이터 처리 함수 (서버/더미 모드 공통)
+    processRoundData(message, isReIssue = false) {
+      console.log("[Solo Game] 라운드 데이터 처리:", { message, isReIssue });
 
-    // 플레이어 제출 상태 처리
-    handlePlayerSubmission(message) {
-      console.log('플레이어 제출 상태 처리:', message);
-      
-      // 플레이어 리스트에서 해당 플레이어의 제출 상태 업데이트
-      const player = this.gameStore.state.players.find(p => p.id === message.playerId);
-      if (player) {
-        player.hasSubmitted = true;
-        
-        // 제출한 플레이어의 추측 정보 저장 (위치는 숨김)
-        if (message.position && message.playerId !== this.gameStore.state.currentUser.id) {
-          this.gameStore.state.playerGuesses.push({
-            playerId: message.playerId,
-            playerName: player.nickname,
-            position: message.position,
-            color: this.getRandomColor(message.playerId)
-          });
-        }
-        
-        console.log(`플레이어 ${player.nickname} 제출 완료`);
-      }
-      
-      // 부모 컴포넌트에 제출 상태 이벤트 전달
-      this.$emit('player-submitted', message);
-    },
-
-    // 라운드 종료 처리
-    handleRoundEnd(message) {
-      console.log('라운드 종료 처리:', message);
-      
-      // 라운드 종료 상태로 변경
-      this.gameStore.state.roundEnded = true;
-      
-      // 결과 데이터 처리
-      if (message.results) {
-        // 플레이어 점수 및 순위 업데이트
-        if (message.results.playerResults) {
-          message.results.playerResults.forEach(result => {
-            const player = this.gameStore.state.players.find(p => p.id === result.playerId);
-            if (player) {
-              player.score = result.totalScore;
-              player.lastRoundScore = result.roundScore;
-              player.distanceToTarget = result.distance;
-            }
-          });
-          
-          // 점수 순으로 정렬
-          this.gameStore.state.players.sort((a, b) => (b.score || 0) - (a.score || 0));
-        }
-        
-        // 모든 플레이어 추측 위치 표시 (라운드 종료 후)
-        if (message.results.allGuesses) {
-          this.gameStore.state.playerGuesses = message.results.allGuesses;
-        }
-        
-        // 최고 점수 플레이어 정보
-        if (message.results.topPlayer) {
-          this.gameStore.state.topPlayer = message.results.topPlayer;
-        }
-      }
-      
-      // 부모 컴포넌트에 라운드 종료 이벤트 전달
-      this.$emit('round-ended', message);
-    },
-
-    // 게임 종료 처리
-    handleGameEnd(message) {
-      console.log('게임 종료 처리:', message);
-      
-      // 최종 결과 화면 표시
-      this.gameStore.state.showGameResults = true;
-      
-      // 최종 순위 정보 업데이트
-      if (message.finalResults) {
-        this.gameStore.state.players = message.finalResults.rankings || this.gameStore.state.players;
-      }
-      
-      // 부모 컴포넌트에 게임 종료 이벤트 전달
-      this.$emit('game-ended', message);
-    },
-
-    // 서버 시간 동기화 처리
-    handleServerTime(message) {
-      console.log('서버 시간 동기화:', message);
-      
-      if (message.serverTime) {
-        this.serverStartTime = message.serverTime;
-      }
-      
-      if (message.remainingTime !== undefined) {
-        this.gameStore.state.remainingTime = message.remainingTime;
-      }
-    },
-
-    handlePlayerGuess(data) {
-      // 다른 플레이어의 추측 정보 저장
-      const player = gameStore.state.players.find(
-        (p) => p.id === data.playerId
-      );
-      if (player) {
-        // gameStore에 직접 추가
-        if (!gameStore.state.playerGuesses) {
-          gameStore.state.playerGuesses = [];
-        }
-
-        gameStore.state.playerGuesses.push({
-          playerId: data.playerId,
-          playerName: player.nickname,
-          position: data.position,
-          color: this.getRandomColor(data.playerId),
-        });
-
-        this.submittedPlayersCount++;
-
-        // 모든 플레이어가 제출했는지 확인
-        if (this.submittedPlayersCount >= gameStore.state.players.length) {
-          this.allPlayersSubmitted = true;
-          this.endRound();
-        }
-      }
-    },
-
-    // 서버로 플레이어 추측 정보 전송
-    sendGuessToServer(guessData) {
-      console.log("서버에 추측 정보 전송:", guessData);
-
-      const topic = `/app/room/${this.roomId}/game/submit-guess`;
-      const payload = {
-        roomId: this.roomId,
-        playerId: this.gameStore.state.currentUser.id,
-        position: guessData.position,
-        roundNumber: this.gameStore.state.currentRound,
-        timestamp: Date.now()
-      };
-      
-      const success = webSocketManager.publish(topic, payload);
-      
-      if (!success) {
-        console.error('❌ 추측 정보 전송 실패 - 더미 모드로 처리');
-        // 더미 모드에서는 로컬에서 처리
-        this.handleLocalGuessSubmission(guessData);
-      } else {
-        console.log('✅ 추측 정보 전송 성공');
-      }
-      
-      return success;
-    },
-
-    // 더미 모드에서 로컬 추측 처리
-    handleLocalGuessSubmission(guessData) {
-      // 현재 플레이어의 제출 상태 업데이트
-      const currentPlayer = this.gameStore.state.players.find(
-        p => p.id === this.gameStore.state.currentUser.id
-      );
-      if (currentPlayer) {
-        currentPlayer.hasSubmitted = true;
-      }
-      
-      // 게임 스토어 상태 업데이트
-      this.gameStore.state.hasSubmittedGuess = true;
-      this.gameStore.state.userGuess = { position: guessData.position };
-    },
-
-    // 서버로 다음 라운드 준비 완료 신호 전송
-    sendNextRoundReadyToServer(userId) {
-      console.log(`서버에 다음 라운드 준비 완료 신호 전송: ${userId}`);
-      
-      const topic = `/app/room/${this.roomId}/game/next-round-ready`;
-      const payload = {
-        roomId: this.roomId,
-        playerId: userId,
-        roundNumber: this.gameStore.state.currentRound,
-        timestamp: Date.now()
-      };
-      
-      const success = webSocketManager.publish(topic, payload);
-      
-      if (!success) {
-        console.error('❌ 다음 라운드 준비 신호 전송 실패');
-      } else {
-        console.log('✅ 다음 라운드 준비 신호 전송 성공');
-      }
-      
-      return success;
-    },
-
-    // 서버로 채팅 메시지 전송
-    sendChatMessageToServer(message) {
-      console.log("서버에 채팅 메시지 전송:", message);
-      
-      const topic = `/app/room/${this.roomId}/chat`;
-      const payload = {
-        roomId: this.roomId,
-        senderId: this.gameStore.state.currentUser.id,
-        senderName: this.gameStore.state.currentUser.nickname,
-        message: message,
-        timestamp: Date.now()
-      };
-      
-      const success = webSocketManager.publish(topic, payload);
-      
-      if (!success) {
-        console.error('❌ 채팅 메시지 전송 실패');
-        // 더미 모드에서는 로컬에 추가
-        this.gameStore.addChatMessage(message, this.gameStore.state.currentUser.nickname);
-      } else {
-        console.log('✅ 채팅 메시지 전송 성공');
-      }
-      
-      return success;
-    },
-
-    calculatePlayerScores() {
-      // 각 플레이어의 점수 계산 (거리 기반)
-      this.gameStore.state.players.forEach((player) => {
-        // 플레이어의 추측 위치 찾기
-        const guess = this.gameStore.state.playerGuesses.find(
-          (g) => g.playerId === player.id
-        );
-        if (guess) {
-          // 실제 위치와의 거리 계산 (km)
-          const distance = this.calculateDistance(
-            guess.position.lat,
-            guess.position.lng,
-            this.gameStore.state.actualLocation.lat,
-            this.gameStore.state.actualLocation.lng
-          );
-
-          // 거리에 따른 점수 계산 (최대 5000점, 거리가 멀수록 점수 감소)
-          const score = Math.max(0, Math.round(5000 - distance * 10));
-
-          // 마지막 라운드 점수 저장
-          player.lastRoundScore = score;
-
-          // 플레이어 총점 업데이트
-          player.score = (player.score || 0) + score;
-          player.distanceToTarget = distance;
-        }
+      const {
+        nextPoiName,
+        shouldResetSimulationFlags,
+        shouldTriggerDummySimulation,
+      } = processRoundDataState({
+        gameStore: this.gameStore,
+        message,
+        isReIssue,
+        isDummyRuntime: this.isDummyRuntime,
+        currentPoiName: this.currentPoiName,
       });
 
-      // 점수에 따라 플레이어 정렬
-      this.gameStore.state.players.sort((a, b) => b.score - a.score);
+      this.currentPoiName = nextPoiName;
+
+      if (shouldResetSimulationFlags) {
+        this.allPlayersSubmitted = false;
+        this.simulationTriggered = shouldTriggerDummySimulation;
+
+        if (shouldTriggerDummySimulation) {
+          console.log("더미 모드: 다른 플레이어 시뮬레이션 트리거");
+        }
+      }
+
+      console.log(
+        `라운드 ${this.gameStore.state.currentRound} 데이터 처리 완료`,
+      );
     },
 
-    calculateDistance(lat1, lon1, lat2, lon2) {
-      // 두 지점 간의 거리 계산 (Haversine 공식)
-      const R = 6371; // 지구 반경 (km)
-      const dLat = this.deg2rad(lat2 - lat1);
-      const dLon = this.deg2rad(lon2 - lon1);
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(this.deg2rad(lat1)) *
-          Math.cos(this.deg2rad(lat2)) *
-          Math.sin(dLon / 2) *
-          Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      const distance = R * c; // 거리 (km)
-      return distance;
+    // 라운드 데이터 수신 이벤트 처리 (더미 모드 전용, processRoundData로 위임)
+    handleRoundDataReceived(message) {
+      console.log("[Solo Game] 라운드 데이터 수신 (더미 모드):", message);
+      // processRoundData로 통합 처리
+      this.processRoundData(message, false);
     },
 
-    deg2rad(deg) {
-      return deg * (Math.PI / 180);
+    // 플레이어 제출 이벤트 처리 (더미 모드 전용)
+    handlePlayerSubmitted(message) {
+      if (this.isServerMode) return; // 서버 모드에서는 무시
+
+      console.log("[Dummy Mode] 플레이어 제출 이벤트 처리:", message);
+
+      // 모든 플레이어가 제출했는지 확인
+      this.checkAllPlayersSubmitted();
+
+      const submittedCount = this.gameStore.state.playerGuesses.length;
+      console.log(
+        `현재 제출 완료: ${submittedCount}/${this.gameStore.state.players.length}`,
+      );
     },
 
-    handleMapError(error) {
-      console.error("지도 오류:", error);
-      this.showToast("지도를 로드하는 중 오류가 발생했습니다.");
+    // 게임 종료 이벤트 처리 (더미 모드 전용)
+    handleGameEnded(message) {
+      if (this.isServerMode) return; // 서버 모드에서는 무시
+
+      console.log("[Dummy Mode] 개인전 게임 종료 이벤트 처리:", message);
+
+      // 총 게임 시간 계산
+      if (this.gameStartTime) {
+        this.totalGameTime = Math.floor(
+          (Date.now() - this.gameStartTime) / 1000,
+        );
+      }
+
+      // 타이머 정리
+      this.clearTimer();
+
+      // 플레이어들의 평균 거리 계산
+      this.calculatePlayerAverageDistances();
+
+      // 더미 모드 게임 종료 시뮬레이션 호출 (로컬 데이터로 직접 설정)
+      this.simulateGameEnd();
+
+      // 30초 후 자동 로비 이동 카운트다운 시작 (더미 모드)
+      this.startAutoExitCountdown(30);
+
+      console.log(
+        "개인전 게임 완전 종료, 총 게임 시간:",
+        this.totalGameTime,
+        "초",
+      );
     },
 
+    // 다음 라운드 요청 처리 - NextRoundOverlay 표시 후 진행
+    requestNextRound() {
+      console.log(
+        `라운드 ${this.gameStore.state.currentRound} 종료 - 다음 라운드 요청`,
+      );
+
+      // 현재 사용자 등수 계산
+      this.currentUserRank = this.calculateUserRank();
+      const totalPlayers = this.gameStore.state.players.length;
+
+      // BaseGameView의 startNextRound 메서드 호출하여 NextRoundOverlay 표시
+      if (this.$refs.baseGame) {
+        this.$refs.baseGame.startNextRound(this.currentUserRank, totalPlayers);
+      }
+    },
+
+    // 이벤트 핸들러 메서드
+    handleRoundEnded() {
+      console.log("라운드가 종료되었습니다.");
+      // 라운드 종료 처리 로직
+      this.clearTimer();
+    },
+
+    // 타이머 정리 메서드 (BaseGameView의 타이머 정리)
+    clearTimer() {
+      if (this.$refs.baseGame) {
+        this.$refs.baseGame.clearRoundTimer();
+      }
+    },
+
+    // 라운드 종료 메서드
+    endRound() {
+      // 이미 라운드가 종료되었으면 중복 실행 방지
+      if (this.gameStore.state.roundEnded) {
+        console.log("라운드가 이미 종료되어 중복 실행 방지");
+        return;
+      }
+
+      console.log("라운드 종료!");
+      this.clearTimer();
+
+      // 플레이어 점수 계산 및 정렬
+      this.calculatePlayerScores();
+
+      // 라운드 종료 상태로 설정 (결과 화면 표시를 위해)
+      this.gameStore.state.roundEnded = true;
+      this.gameStore.endGameRound();
+      console.log("라운드 종료:", this.gameMode);
+    },
+
+    // 게임 초기화 메서드
+    initGame() {
+      this.gameStore.initGame();
+      this.fetchRoundData();
+    },
+
+    // 라운드 데이터 가져오기
+    fetchRoundData() {
+      // 테스트 데이터에서 위치 가져오기
+      setTimeout(() => {
+        const location = getRandomDummyLocation();
+        applyDummyLocationToStore({
+          gameStore: this.gameStore,
+          location,
+        });
+
+        // 타이머 시작
+        // this.startRoundTimer();
+      }, 1500);
+    },
+
+    // 토스트 메시지 표시
     showToast(message) {
       this.toastMessage = message;
       this.showToastFlag = true;
@@ -1282,1303 +1070,625 @@ export default {
       }, 3000);
     },
 
-    addToastStyles() {
-      // 동적으로 스타일 추가
-      const style = document.createElement("style");
-      style.textContent = `
-          .toast-message {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 4px;
-            z-index: 9999;
-            font-size: 14px;
-            transition: opacity 0.3s, transform 0.3s;
-            opacity: 0;
-            pointer-events: none;
-          }
-          
-          .toast-message.show {
-            opacity: 1;
-            transform: translate(-50%, -10px);
-          }
-        `;
-      document.head.appendChild(style);
+    handleGameFinished() {
+      console.log("게임이 종료되었습니다.");
+      // 게임 종료 처리 로직
     },
 
-    exitGame() {
+    /**
+     * 정답 제출 처리 (서버/더미 모드 분기)
+     */
+    handleGuessSubmission(position) {
+      console.log("[Solo Game] 위치 제출:", position);
+
+      // 이미 제출했거나 라운드가 종료된 경우 무시
       if (
-        confirm(
-          "정말 게임을 나가시겠습니까? 진행 중인 게임은 저장되지 않습니다."
-        )
+        this.gameStore.state.hasSubmittedGuess ||
+        this.gameStore.state.roundEnded
       ) {
-        this.exitToLobby();
+        console.warn("[Solo Game] 이미 제출했거나 라운드가 종료됨");
+        return;
+      }
+
+      // 서버 모드와 더미 모드 분기
+      if (this.isServerMode) {
+        this.submitServerAnswer(position);
+      } else {
+        this.submitDummyAnswer(position);
+      }
+    },
+
+    /**
+     * 더미 모드 정답 제출
+     */
+    submitDummyAnswer(position) {
+      const submittedResult = submitDummyAnswerState({
+        gameStore: this.gameStore,
+        position,
+        colorResolver: this.getRandomColor,
+      });
+
+      if (!submittedResult) {
+        console.warn("[Solo Game] 더미 모드 제출 실패: currentUser 없음");
+        return;
+      }
+
+      console.log(
+        `[Solo Game] 플레이어 ${submittedResult.currentPlayer.nickname} 제출 완료`,
+      );
+
+      // 더미 모드: 모든 플레이어 제출 확인
+      this.checkAllPlayersSubmitted();
+    },
+
+    sendChatMessage(message) {
+      if (!message.trim()) return;
+
+      // 현재 사용자의 채팅 말풍선 표시
+      const userId =
+        this.currentUserId || this.gameStore?.state?.currentUser?.id;
+      if (userId) {
+        this.showPlayerChatBubble(userId, message);
+      }
+
+      // 서버 모드: 게임 중 채팅 메시지 발행
+      if (this.isServerMode) {
+        const success = this.soloGameFlow.publishGlobalChatMessage(
+          message.trim(),
+        );
+        if (!success) {
+          console.error("[Solo Game] 채팅 메시지 발행 실패");
+        }
+      } else {
+        // 더미 모드에서는 로컬에만 추가
+        this.gameStore.addChatMessage(
+          message,
+          this.gameStore.state.currentUser.nickname,
+        );
+      }
+    },
+
+    closeRoundResults() {
+      this.gameStore.closeRoundResults();
+    },
+
+    // 플레이어 채팅 말풍선 표시
+    showPlayerChatBubble(playerId, message) {
+      // 이전 타이머가 있으면 제거
+      if (this.playerChatMessages[playerId]?.timer) {
+        clearTimeout(this.playerChatMessages[playerId].timer);
+      }
+
+      // 새 메시지 설정
+      this.playerChatMessages[playerId] = {
+        message: message.slice(0, 20) + (message.length > 20 ? "..." : ""), // 20자로 제한
+        timestamp: Date.now(),
+      };
+
+      // 3초 후 자동 제거
+      this.playerChatMessages[playerId].timer = setTimeout(() => {
+        delete this.playerChatMessages[playerId];
+      }, 3000);
+    },
+
+    // 색상 생성 메서드
+    getRandomColor(id) {
+      return getColorByPlayerId(id);
+    },
+
+    // 서버에 추측 정보 전송
+    sendGuessToServer(guessData) {
+      // 실제 구현 시 WebSocket으로 전송
+      console.log("서버에 추측 정보 전송:", guessData);
+
+      // 테스트용 더미 구현
+      console.log("서버로 추측 정보 전송:", guessData);
+    },
+
+    // 모든 플레이어가 제출했는지 확인하고 라운드 종료 처리
+    checkAllPlayersSubmitted() {
+      const progress = evaluateSubmissionProgress({
+        gameStore: this.gameStore,
+        allPlayersSubmitted: this.allPlayersSubmitted,
+      });
+
+      if (progress.blockedReason === "ALREADY_FINISHED") {
+        console.log("라운드가 이미 종료되었거나 모든 플레이어 제출 완료");
+        return;
+      }
+
+      console.log(
+        `제출 현황: ${progress.submittedPlayers}/${progress.totalPlayers}`,
+      );
+
+      if (progress.blockedReason === "CURRENT_USER_PENDING") {
+        console.log("현재 사용자가 아직 제출하지 않음");
+        return;
+      }
+
+      if (progress.shouldEndRound) {
+        this.allPlayersSubmitted = true;
+        console.log("모든 플레이어가 제출 완료 - 라운드 종료 처리 시작");
+
+        // 더미 모드에서 라운드 종료 시뮬레이션
+        setTimeout(() => {
+          this.simulateRoundEnd();
+        }, 1000);
+      }
+    },
+
+    // 플레이어 점수 계산
+    calculatePlayerScores() {
+      calculateDummyPlayerScores(this.gameStore);
+      console.log("점수 계산 완료:", this.gameStore.state.players);
+    },
+
+    // 플레이어별 평균 거리 계산
+    calculatePlayerAverageDistances() {
+      calculateAveragePlayerDistances(this.gameStore.state.players);
+    },
+
+    // ==================== 더미 모드 메서드 ====================
+
+    /**
+     * 더미 모드 게임 시작
+     */
+    startDummyMode() {
+      console.log("[Solo Game] 더미 모드 게임 플로우 시작");
+
+      this.simulateDummyLoading();
+
+      // 게임 시작 시간 기록
+      this.gameStartTime = Date.now();
+
+      // 더미 모드 시뮬레이션 감시
+      this.$watch(
+        () => this.simulationTriggered,
+        () => {
+          setTimeout(() => {
+            this.simulateOtherPlayersGuesses();
+          }, 10);
+        },
+      );
+
+      // 3초 후 게임 시작 시뮬레이션
+      setTimeout(() => {
+        this.simulateGameStart();
+      }, 3000);
+    },
+
+    /**
+     * 더미 게임 시작 시뮬레이션
+     */
+    simulateGameStart() {
+      console.log("[Solo Game] 더미 게임 시작 시뮬레이션");
+
+      const gameStartMessage = {
+        roomId: this.roomId,
+        totalRounds: this.gameStore.state.totalRounds,
+        serverStartTime: Date.now(),
+      };
+
+      // BaseGameView의 게임 시작 핸들러 호출
+      if (this.$refs.baseGame) {
+        this.$refs.baseGame.handleGameStart(gameStartMessage);
+      }
+
+      // 1초 후 첫 라운드 데이터 시뮬레이션
+      setTimeout(() => {
+        this.simulateRoundData();
+      }, 1000);
+    },
+
+    /**
+     * 더미 라운드 데이터 시뮬레이션
+     */
+    simulateRoundData() {
+      console.log(
+        `[Solo Game] 더미 라운드 ${this.gameStore.state.currentRound} 데이터 시뮬레이션`,
+      );
+
+      const roundDataMessage = createDummyRoundDataMessage(this.gameStore);
+
+      // 통합 라운드 데이터 처리 함수 사용 (더미 모드)
+      this.processRoundData(roundDataMessage, false);
+
+      // 라운드 데이터 가져오기
+      this.fetchRoundData();
+
+      // 시뮬레이션 트리거는 processRoundData에서 설정됨
+    },
+
+    /**
+     * 더미 라운드 종료 시뮬레이션
+     */
+    simulateRoundEnd() {
+      if (this.gameStore.state.roundEnded) {
+        console.log("[Solo Game] 라운드가 이미 종료됨");
+        return;
+      }
+
+      console.log(
+        `[Solo Game] 더미 라운드 ${this.gameStore.state.currentRound} 종료 시뮬레이션`,
+      );
+
+      // 라운드 종료 처리
+      this.endRound();
+
+      // 더미 모드에서는 라운드 횟수로 게임 종료를 판단하지 않음
+      // WebSocket 게임 종료 메시지를 받을 때만 게임 종료 처리
+      // (더미 모드에서는 simulateGameEnd()를 직접 호출하여 게임 종료 시뮬레이션)
+    },
+
+    /**
+     * 더미 게임 종료 시뮬레이션
+     * 더미 모드에서는 WebSocket 메시지를 받지 않으므로, 로컬 데이터로 직접 설정
+     */
+    simulateGameEnd() {
+      console.log("[Solo Game] 더미 게임 종료 시뮬레이션");
+
+      this.finalGameResult = buildDummyFinalGameResult(
+        this.gameStore.state.players,
+      );
+
+      // 게임 결과 모달 표시
+      this.showGameResults = true;
+
+      console.log(
+        "[Solo Game] 더미 모드 게임 결과 모달 표시:",
+        this.finalGameResult,
+      );
+    },
+
+    finishGame() {
+      // 서버 모드에서는 사용하지 않음 (서버에서 game/finished 채널로 게임 종료 브로드캐스트)
+      // 더미 모드에서만 사용
+      if (this.isServerMode) {
+        console.warn(
+          "[Solo Game] 서버 모드에서는 finishGame을 사용하지 않습니다. 서버에서 게임 종료를 처리합니다.",
+        );
+        return;
+      }
+
+      console.log("[Solo Game] 더미 모드 게임 완료 처리 시작");
+
+      // 총 게임 시간 계산
+      if (this.gameStartTime) {
+        this.totalGameTime = Math.floor(
+          (Date.now() - this.gameStartTime) / 1000,
+        );
+      }
+
+      // 플레이어들의 평균 거리 계산
+      this.calculatePlayerAverageDistances();
+
+      // 더미 모드 게임 종료 시뮬레이션 호출 (로컬 데이터로 직접 설정)
+      this.simulateGameEnd();
+
+      // 30초 후 자동 로비 이동 카운트다운 시작
+      this.startAutoExitCountdown(30);
+
+      console.log("[Solo Game] 더미 모드 게임 완료, 최종 결과 표시");
+    },
+
+    async restartGame() {
+      console.log("[Solo Game] 게임 방으로 복귀");
+
+      // 로컬 데이터 초기화
+      this.showGameResults = false;
+      this.finalGameResult = null;
+      // 자동 퇴장 카운트다운 취소
+      this.cancelAutoExitCountdown();
+
+      // 모든 구독 해제
+      this.cleanupSubscriptions();
+
+      // 게임 방으로 돌아가기
+      const roomId = this.roomId || this.$route?.params?.roomId;
+      if (roomId) {
+        console.log(
+          "[Solo Game] RoomView로 이동 - 게임방 상세조회 API 호출:",
+          roomId,
+        );
+
+        try {
+          // 게임방 상세조회 API 호출하여 최신 방 데이터 가져오기
+          const roomDetail = await roomApiService.getRoomDetail(roomId);
+          console.log("[Solo Game] 게임방 상세조회 결과:", roomDetail);
+
+          // RoomView로 이동 (roomData를 history.state로 전달하여 STOMP 재구독 유도)
+          this.$router.push({
+            name: "RoomView",
+            params: { roomId: roomId },
+            state: {
+              roomData: {
+                id: roomDetail.roomId ?? roomId,
+                title: roomDetail.title ?? "방",
+                timeLimit: roomDetail.timeLimit ?? 60,
+                gameMode:
+                  roomDetail.gameMode?.toLowerCase?.() ??
+                  roomDetail.gameMode ??
+                  "roadview",
+                isTeamMode: roomDetail.gameType
+                  ? roomDetail.gameType.toLowerCase() === "team"
+                  : false,
+                isPrivate: roomDetail.privateRoom ?? false,
+                maxPlayers: roomDetail.maxPlayers ?? 8,
+                totalRounds: roomDetail.totalRounds ?? 5,
+                poiNameVisible: roomDetail.poiNameVisible ?? true,
+                currentPlayerCount: roomDetail.connectedPlayers?.length ?? 0,
+                allowOverride: true, // RoomView에서 이 데이터로 덮어쓰기 허용
+              },
+            },
+          });
+        } catch (error) {
+          console.error("[Solo Game] 게임방 상세조회 실패:", error);
+          // API 실패 시에도 RoomView로 이동 (RoomView에서 다시 조회)
+          this.$router.push({
+            name: "RoomView",
+            params: { roomId: roomId },
+          });
+        }
+      } else {
+        console.warn("[Solo Game] roomId가 없어 로비로 이동합니다.");
+        // roomId가 없으면 로비로 이동
+        this.$router.push("/lobby");
       }
     },
 
     async exitToLobby() {
-      this.clearTimers();
-      
-      // leaveGameRoom API 호출
-      const roomId = this.roomId || this.$route?.params?.roomId;
+      // 확인 다이얼로그 표시
+      if (
+        !confirm(
+          "정말 게임을 나가시겠습니까? 진행 중인 게임은 저장되지 않습니다.",
+        )
+      ) {
+        return;
+      }
+
+      // 자동 퇴장 카운트다운 취소
+      this.cancelAutoExitCountdown();
+
+      // leave API 호출 (roomApi.service.js 사용)
+      const roomId = this.roomId;
+
       if (roomId) {
         try {
           await roomApiService.leaveGameRoom(roomId);
-          console.log('✅ 방 퇴장 API 호출 성공');
         } catch (error) {
-          console.warn('⚠️ 방 퇴장 API 호출 실패:', error);
+          console.warn("⚠️ leave API 호출 실패:", error);
           // API 실패해도 페이지 이동은 진행
         }
       }
-      
-      // WebSocket 연결 해제
-      this.disconnectWebSocket();
-      
-      // 로비로 이동
-      this.$router.push("/multiplayerLobby");
+
+      // 모든 구독 해제
+      this.cleanupSubscriptions();
+
+      // 로비로 새로고침 이동
+      window.location.href = "/lobby";
+    },
+
+    /**
+     * 모든 구독 해제
+     */
+    cleanupSubscriptions() {
+      console.log("[Solo Game] 모든 구독 해제 시작");
+
+      // 서버 모드 정리
+      if (this.isServerMode) {
+        this.soloGameFlow.cleanup();
+      }
+
+      // 로딩 핸들러만 해제 (구독은 RoomView에서 관리하므로 해제하지 않음)
+      if (soloGameWebSocket && soloGameWebSocket.handlers) {
+        soloGameWebSocket.handlers.onLoadingStatus = null;
+        console.log(
+          "[Solo Game] 로딩 상태 핸들러 해제 완료 (구독은 RoomView에서 관리)",
+        );
+      }
+
+      console.log("[Solo Game] 모든 구독 해제 완료");
+    },
+
+    // 모바일 액션 핸들러
+    togglePlayerList() {
+      if (this.$refs.baseGame) {
+        this.$refs.baseGame.togglePlayerList();
+      }
+    },
+
+    toggleChat() {
+      if (this.$refs.baseGame) {
+        this.$refs.baseGame.toggleChat();
+      }
+    },
+
+    // NextRoundOverlay 완료 후 다음 라운드 시작 처리
+    handleNextRoundReady() {
+      console.log(
+        `[Solo Game] 다음 라운드 준비 완료 - 현재 라운드: ${this.gameStore.state.currentRound}`,
+      );
+
+      // 라운드 상태 완전 초기화
+      this.gameStore.state.roundEnded = false;
+      this.gameStore.state.hasSubmittedGuess = false;
+      this.gameStore.state.userGuess = null;
+      this.gameStore.state.playerGuesses = [];
+      this.gameStore.state.showRoundResults = false;
+
+      // 시뮬레이션 상태 초기화
+      this.simulationTriggered = false;
+      this.allPlayersSubmitted = false;
+
+      // 플레이어 제출 상태 초기화 (더미 모드)
+      if (this.isDummyRuntime) {
+        this.gameStore.state.players.forEach((player) => {
+          player.hasSubmitted = false;
+          player.distanceToTarget = null;
+          player.lastRoundScore = 0;
+        });
+
+        // 더미 모드에서만 startNextRound 호출 (라운드 번호 증가)
+        this.gameStore.startNextRound();
+
+        // 더미 모드에서 다음 라운드 데이터 시뮬레이션
+        setTimeout(() => {
+          this.simulateRoundData();
+        }, 1000);
+      } else {
+        // 서버 모드: gamePlayers의 제출 상태 초기화
+        // 라운드 번호는 서버에서 받은 데이터로만 업데이트 (processRoundData에서 처리)
+        // startNextRound를 호출하지 않음 (라운드 번호 중복 증가 방지)
+        if (this.gamePlayers && this.gamePlayers.length > 0) {
+          this.gamePlayers.forEach((player) => {
+            player.gamePlayerStatus = "WAITING";
+            player.distanceToTarget = null;
+            player.lastRoundScore = 0;
+          });
+          console.log(
+            "[Solo Game] 서버 모드 - 플레이어 제출 상태 초기화 (라운드 번호는 서버에서 관리)",
+          );
+        }
+      }
+    },
+
+    // 사용자의 현재 등수 계산
+    calculateUserRank() {
+      const players = this.isDummyRuntime
+        ? this.gameStore.state.players
+        : this.localPlayers;
+      return calculateUserRankByScore(players, this.currentUserId);
+    },
+
+    /**
+     * 더미 모드: 다른 플레이어 정답 제출 시뮬레이션
+     */
+    simulateOtherPlayersGuesses() {
+      console.log("[Solo Game] 다른 플레이어 추측 시뮬레이션 시작");
+
+      // 라운드 종료 또는 모든 플레이어 제출 완료 시 중단
+      if (this.gameStore.state.roundEnded || this.allPlayersSubmitted) {
+        console.log("[Solo Game] 시뮬레이션 중단");
+        return;
+      }
+
+      // 실제 위치 확인
+      if (!this.gameStore.state.actualLocation?.lat) {
+        console.error("[Solo Game] 실제 위치가 없어 시뮬레이션 불가");
+        return;
+      }
+
+      // 현재 플레이어를 제외한 다른 플레이어들
+      const userId = this.currentUserId;
+      const players = this.isDummyRuntime
+        ? this.gameStore.state.players
+        : this.localPlayers;
+      const otherPlayers = players.filter(
+        (player) => String(player.id) !== String(userId),
+      );
+
+      console.log(`[Solo Game] 시뮬레이션 대상: ${otherPlayers.length}명`);
+
+      // 각 플레이어마다 랜덤 위치 생성 및 제출
+      otherPlayers.forEach((player) => {
+        setTimeout(() => {
+          // 실제 위치 주변 랜덤 위치 생성 (±20km)
+          const randomOffset = () => (Math.random() - 0.5) * 0.4;
+          const randomPosition = {
+            lat: this.gameStore.state.actualLocation.lat + randomOffset(),
+            lng: this.gameStore.state.actualLocation.lng + randomOffset(),
+          };
+
+          const color = this.getRandomColor(player.id);
+
+          // 플레이어 추측 추가
+          this.addPlayerGuessToStore(player.id, randomPosition, color);
+
+          // 제출 상태 업데이트
+          player.hasSubmitted = true;
+
+          // 모든 플레이어 제출 확인
+          this.checkAllPlayersSubmitted();
+        }, 500 + Math.random() * 2000); // 0.5~2.5초 랜덤
+      });
+    },
+
+    /**
+     * 플레이어 추측을 스토어에 추가
+     */
+    addPlayerGuessToStore(playerId, position, color) {
+      appendPlayerGuess({
+        gameStore: this.gameStore,
+        playerId,
+        position,
+        color,
+      });
+    },
+
+    // ===== 자동 로비 이동 유틸 =====
+    startAutoExitCountdown(seconds = 30) {
+      try {
+        // 중복 방지
+        this.cancelAutoExitCountdown();
+        this.autoExitRemaining = Number(seconds) > 0 ? Number(seconds) : 30;
+        this.autoExitTimerId = setInterval(() => {
+          this.autoExitRemaining = Math.max(0, this.autoExitRemaining - 1);
+          if (this.autoExitRemaining <= 0) {
+            this.cancelAutoExitCountdown();
+            this.redirectToLobby();
+          }
+        }, 1000);
+        console.log(
+          `[Solo Game] 자동 로비 이동 카운트다운 시작: ${this.autoExitRemaining}초`,
+        );
+      } catch (e) {
+        console.warn("[Solo Game] 자동 퇴장 카운트다운 시작 오류:", e);
+      }
+    },
+
+    cancelAutoExitCountdown() {
+      if (this.autoExitTimerId) {
+        clearInterval(this.autoExitTimerId);
+        this.autoExitTimerId = null;
+      }
+      this.autoExitRemaining = 0;
+    },
+
+    async redirectToLobby() {
+      try {
+        console.log("[Solo Game] 30초 경과 - 로비로 자동 이동");
+
+        // leave API 호출하여 방에서 정상 퇴장 처리
+        const roomId = this.roomId;
+        if (roomId) {
+          try {
+            await roomApiService.leaveGameRoom(roomId);
+            console.log("[Solo Game] ✅ leave API 호출 성공");
+          } catch (error) {
+            console.warn("[Solo Game] ⚠️ leave API 호출 실패:", error);
+            // API 실패해도 로비 이동은 진행
+          }
+        }
+
+        // 이동 전 정리
+        this.cleanupSubscriptions();
+        this.$router.replace("/lobby");
+      } catch (e) {
+        console.error("[Solo Game] 로비 이동 중 오류:", e);
+      }
     },
   },
 };
 </script>
 
 <style scoped>
-.multiplayer-roadview-game {
-  display: flex;
-  flex-direction: column;
+.solo-game-container {
+  position: relative;
+  width: 100%;
   /* 모바일 브라우저 주소창 변동 대응 */
   min-height: 100svh;
   min-height: 100dvh;
   height: 100dvh;
-  background-color: #f5f7fa;
   overflow: hidden;
-  /* 헤더 높이 CSS 변수 (반응형에 따라 변경) */
-  --header-height: 80px;
-}
-
-/* 게임 헤더 스타일 */
-.game-header {
-  position: relative; /* 타이머 컨테이너의 기준점 */
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 1.5rem;
-  background-color: #222831;
-  color: white;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  z-index: 10;
-  min-height: 80px; /* 최소 높이 고정 */
-  flex-shrink: 0; /* 축소 방지 */
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-}
-
-.leave-game-button {
-  width: 42px;
-  height: 42px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  border: none;
-  background: rgba(255, 255, 255, 0.12);
-  color: white;
-  font-size: 1.05rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18);
-}
-
-.leave-game-button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
-}
-
-.leave-game-button:active {
-  transform: translateY(0);
-}
-
-.leave-game-button i {
-  pointer-events: none;
-}
-
-.header-center {
-  flex: 1;
-  max-width: 400px;
-  margin: 0 2rem;
-  /* 플렉스 수축 허용 */
-  min-width: 0;
-}
-
-@media (max-width: 768px) {
-  .leave-game-button {
-    width: 38px;
-    height: 38px;
-    font-size: 0.95rem;
-  }
-}
-
-.room-info {
-  margin-left: 1rem;
-}
-
-.room-info.without-button {
-  margin-left: 0;
-}
-
-.room-name {
-  font-size: 1.125rem;
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.game-mode {
-  font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.round-info {
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-width: 100px;
-}
-
-.round-number {
-  font-size: 0.875rem;
-  font-weight: 500;
-  margin-bottom: 0.25rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.round-progress {
-  width: 100%; /* 데스크톱에서도 프로그레스바 가로 너비 확보 */
-  height: 8px;
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.progress-bar {
-  height: 100%;
-  background: linear-gradient(90deg, #4f46e5, #3b82f6);
-  border-radius: 4px;
-  transition: width 0.5s ease-out;
-}
-
-/* 타이머 컨테이너 (헤더 바로 밑에 고정) */
-
-.timer-container {
-  position: absolute;
-  top: var(--header-height);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 20;
-}
-
-/* header-right poiName 표시 */
-.poi-name-display {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.95);
-  margin-left: 1rem;
-}
-
-.poi-label {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.poi-text {
-  font-weight: 600;
-  color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 200px;
-}
-
-/* 게임 컨텐츠 스타일 */
-.game-content {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-  padding-bottom: 0; /* 데스크톱에서는 하단바 없음 */
-}
-
-/* 모바일에서 하단바 공간 확보 */
-@media (max-width: 992px) {
-  .game-content {
-    padding-bottom: 64px; /* 하단바 높이만큼 여백 */
-  }
-}
-
-@media (max-width: 480px) {
-  .game-content {
-    padding-bottom: 60px; /* 작은 모바일 하단바 높이 */
-  }
-}
-
-/* ====================================================
-   날개 버튼 래퍼 (데스크톱 전용)
-   - 패널과 날개 버튼을 나란히 배치
-   ==================================================== */
-.left-panel-wrapper {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  flex-shrink: 0;
-  position: relative;
-  /* 패널이 닫혀도 날개 버튼 공간(22px) 확보 */
-  min-width: 22px;
-}
-
-/* 날개 버튼 (데스크톱 전용 컴팩트 탭) */
-.wing-toggle-btn {
-  position: absolute;
-  /* 패널 오른쪽 바깥 상단에 고정 */
-  top: 16px;
-  right: -22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 44px;
-  border: none;
-  background: rgba(30, 36, 50, 0.72);
-  color: rgba(255, 255, 255, 0.9);
-  cursor: pointer;
-  z-index: 10;
-  border-radius: 0 10px 10px 0;
-  box-shadow: 3px 0 12px rgba(0, 0, 0, 0.18);
-  transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.15s ease;
-  backdrop-filter: blur(6px);
-}
-
-/* 패널이 닫혔을 때: 버튼을 wrapper 왼쪽 끝에 붙임 */
-.left-panel-wrapper:has(.left-panel.hidden) .wing-toggle-btn {
-  right: auto;
-  left: 0;
-}
-
-.wing-toggle-btn:hover {
-  background: rgba(79, 70, 229, 0.9);
-  color: #fff;
-  box-shadow: 3px 0 16px rgba(79, 70, 229, 0.35);
-  transform: translateX(2px);
-}
-
-.wing-toggle-btn:active {
-  background: rgba(79, 70, 229, 1);
-  transform: translateX(1px);
-}
-
-.wing-toggle-btn i {
-  font-size: 0.65rem;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  pointer-events: none;
-}
-
-/* 왼쪽 패널: 플레이어 목록 */
-.left-panel {
-  width: 250px;
-  background-color: white;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
-  z-index: 5;
-  overflow-y: auto;
-  max-height: calc(100vh - 160px);
-  display: flex;
-  flex-direction: column;
-  border-radius: 10px; /* 날개 버튼이 absolute이므로 전체 radius 적용 */
-  /* 개별 속성별 애니메이션 설정 */
-  transition:
-    width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.2s ease-out,
-    opacity 0.2s ease-out;
-}
-
-/* 데스크톱에서 숨김 상태 */
-.left-panel.hidden {
-  width: 0;
-  overflow: hidden;
-  opacity: 0;
-  box-shadow: none;
-  /* 숨김 시 더 빠른 애니메이션 */
-  transition:
-    width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.15s ease-in,
-    box-shadow 0.1s ease-in;
-}
-
-/* 모바일에서만 플레이어 리스트가 닫힐 때 적용 */
-@media (max-width: 768px) {
-  .left-panel:not(.mobile-open) {
-    transform: translateX(-100%);
-    opacity: 0;
-    pointer-events: none;
-    /* 닫힐 때 더 빠른 애니메이션 */
-    transition: 
-      transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-      opacity 0.15s ease-in,
-      box-shadow 0.1s ease-in;
-  }
-
-}
-
-.main-panel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-
-.game-view {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-}
-
-/* 초기 위치로 돌아가기 버튼 (헤더 바로 밑, 우측 상단) */
-.road-reset-btn {
-  position: absolute;
-  /* 헤더 높이 변수 사용 */
-  top: calc(var(--header-height) + 10px);
-  right: 12px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
-  color: #fff;
-  cursor: pointer;
-  z-index: 100;
-  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
-}
-
-.road-reset-btn:hover {
-  transform: translateY(-1px);
-  background: rgba(0, 0, 0, 0.6);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
-}
-
-.road-reset-btn i {
-  font-size: 1rem;
-}
-
-/* 데스크톱에서 채팅창이 열려있을 때 reset-btn 위치 조정 */
-@media (min-width: 993px) {
-  .game-content.chat-open .road-reset-btn {
-    /* 채팅창(300px) 바로 왼쪽에 위치 */
-    right: 312px;
-  }
-}
-
-.map-container {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  width: 300px;
-  height: 200px;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 5;
-  transition: all 0.3s ease;
-}
-
-.map-container.expanded {
-  width: 60%;
-  height: 60%;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.expand-map-button {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 30px;
-  height: 30px;
-  background-color: white;
-  border: none;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 10;
-  font-size: 0.75rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.right-panel {
-  display: block; /* 명시적으로 표시 */
-  width: 300px;
-  background-color: white;
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.05);
-  z-index: 5;
-}
-
-/* 게임 푸터 스타일 */
-.game-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  background-color: #222831;
-  color: white;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.guess-info {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 500;
-}
-
-.guess-info i {
-  color: #3b82f6;
-}
-
-.submit-button {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 2rem;
-  background-color: #4f46e5;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.submit-button:hover:not(:disabled) {
-  background-color: #4338ca;
-}
-
-.submit-button:disabled {
-  background-color: #94a3b8;
-  cursor: not-allowed;
-}
-
-/* 반응형 스타일 */
-@media (max-width: 1200px) {
-  .left-panel {
-    width: 200px;
-  }
-
-  .right-panel {
-    width: 250px;
-  }
-}
-
-/* 태블릿 사이즈 (992px 이하) */
-@media (max-width: 992px) {
-  .game-content {
-    flex-direction: row; /* 다시 row로 변경 */
-    height: calc(100dvh - 80px);
-    position: relative;
-  }
-
-  /* 플레이어 리스트 중앙 창 스타일 */
-  .left-panel {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0.8);
-    width: 360px;
-    height: 680px;
-    max-width: 90vw;
-    max-height: 85vh;
-    background: white;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    z-index: 15000;
-    overflow-y: auto;
-    border-radius: 30px;
-    opacity: 0;
-    pointer-events: none;
-    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  }
-
-  /* 플레이어 리스트가 열린 상태 - 열릴 때 즉시 나타남 */
-  .left-panel:not(.hidden) {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-    pointer-events: auto;
-    transition: none;
-  }
-
-  /* 채팅 패널을 position: absolute로 플렉스에서 제거 */
-  .right-panel {
-    display: block; /* 명시적으로 표시 */
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0.8);
-    width: 360px;
-    height: 680px;
-    max-width: 90vw;
-    max-height: 85vh;
-    background: white;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    z-index: 15000; /* RoundResults보다 높은 z-index로 다른 요소들 위에 표시 */
-    overflow: hidden;
-    border-radius: 30px;
-    
-    /* 부드러운 애니메이션 설정 */
-    opacity: 0;
-    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    pointer-events: none; /* 숨겨진 상태에서는 클릭 방지 */
-  }
-
-  .right-panel.chat-open {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-    pointer-events: auto; /* 표시된 상태에서는 클릭 허용 */
-  }
-
-  /* 채팅창 내부 스타일 조정 */
-  .right-panel .chat-window {
-    height: 100%;
-    border-radius: 30px;
-  }
-
-  .main-panel {
-    width: 100%; /* 전체 너비 사용 */
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .game-view {
-    flex: 1;
-    height: 100%;
-    position: relative;
-    min-height: 300px; /* 최소 높이 축소 */
-  }
-
-  .map-container.expanded {
-    width: 90%;
-    height: 90%;
-    max-height: calc(100vh - 100px);
-  }
-
-  .mobile-player-info {
-    display: flex;
-  }
-
-  .chat-toggle {
-    display: flex; /* 태블릿에서도 표시 */
-  }
-
-  /* 헤더 텍스트 폰트 소폭 축소 */
-  .room-name { font-size: 1rem; }
-  .round-number { font-size: 0.8rem; }
-  
-  /* 타이머 컨테이너는 헤더의 실제 높이에 맞춰 자동 조정됨 (top: 100% 사용) */
-  
-  /* poiName 표시 최적화 (태블릿) */
-  .poi-name-display {
-    font-size: 0.8rem;
-    margin-left: 0.8rem;
-  }
-  
-  .poi-text {
-    max-width: 150px;
-  }
-}
-
-@media (max-width: 768px) {
-  .game-header {
-    flex-direction: row;
-    padding: 0.5rem 0.8rem;
-    flex-wrap: nowrap; /* wrap 제거하여 요소들이 한 줄에 유지 */
-    justify-content: space-between;
-    align-items: center;
-    min-height: 70px; /* 모바일에서 약간 작은 높이 */
-    overflow: hidden; /* 넘치는 요소 숨김 */
-  }
-
-  /* 게임 화면에서는 자체 헤더만 사용하므로 padding-top 불필요 */
-
-  .header-left {
-    flex: 0 0 auto; /* 고정 크기 */
-    min-width: 120px;
-    max-width: 40%;
-  }
-
-  .header-center {
-    flex: 1;
-    margin: 0 0.5rem;
-    min-width: 0;
-    text-align: center;
-  }
-  
-  .round-info {
-    min-width: auto;
-    width: 100%;
-  }
-  
-  .round-number {
-    font-size: 0.75rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  
-  .round-progress {
-    width: 100%;
-    min-width: 60px;
-  }
-
-  .header-right {
-    flex: 0 0 auto; /* 고정 크기 */
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-  }
-
-  /* 헤더 내부 요소들 크기 조정 */
-  .room-name {
-    font-size: 0.9rem;
-  }
-
-  .game-mode {
-    font-size: 0.75rem;
-  }
-
-  /* 모바일에서 채팅 패널 최적화 */
-  .right-panel {
-    display: block; /* 명시적으로 표시 */
-    width: 340px;
-    height: 640px;
-    max-width: 90vw;
-    max-height: 80vh;
-  }
-
-  /* 모바일에서 채팅 토글 버튼 표시 */
-  .chat-toggle {
-    display: flex;
-  }
-  
-  /* 모바일에서 헤더 높이 변수 업데이트 */
-  .multiplayer-roadview-game {
-    --header-height: 70px;
-  }
-  
-  /* 타이머는 CSS 변수를 통해 헤더 바로 밑에 자동 배치 */
-  /* poiName 표시 최적화 (모바일) */
-  .poi-name-display {
-    font-size: 0.75rem;
-    margin-left: 0.5rem;
-    gap: 0.3rem;
-  }
-  
-  .poi-text {
-    max-width: 120px;
-  }
-}
-
-
-.player-list-toggle-btn {
-  padding: 0.3rem 0.6rem;
-  font-size: 0.75rem;
-  min-width: 70px;
-}
-
-.toggle-text {
-  font-size: 0.7rem;
-}
-
-.game-view {
-  min-height: 250px; /* 모바일에서 더 작은 최소 높이 */
-}
-
-/* 더 작은 화면에서 헤더 최적화 */
-@media (max-width: 480px) {
-  /* 작은 모바일에서 헤더 높이 변수 업데이트 */
-  .multiplayer-roadview-game {
-    --header-height: 65px;
-  }
-
-  .game-header {
-    padding: 0.4rem 0.6rem;
-    min-height: 65px;
-  }
-
-  .header-left {
-    min-width: 100px;
-    max-width: 35%;
-  }
-
-  .header-center {
-    margin: 0 0.3rem;
-    min-width: 0;
-    flex: 1 1 auto;
-  }
-  
-  .round-number {
-    font-size: 0.7rem;
-  }
-  
-  .round-progress {
-    height: 6px;
-    min-width: 50px;
-  }
-
-  .header-right {
-    gap: 0.2rem;
-  }
-
-  .room-name {
-    font-size: 0.8rem;
-  }
-
-  .game-mode {
-    font-size: 0.7rem;
-  }
-  
-  /* poiName 표시 최적화 (작은 모바일) */
-  .poi-name-display {
-    font-size: 0.7rem;
-    margin-left: 0.3rem;
-    gap: 0.2rem;
-  }
-  
-  .poi-text {
-    max-width: 100px;
-  }
-
-  .player-list-toggle-btn {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.7rem;
-    min-width: 60px;
-  }
-
-  .toggle-text {
-    font-size: 0.65rem;
-  }
-
-  /* 더 작은 화면에서 채팅 패널 크기 조정 */
-  .right-panel {
-    display: block; /* 명시적으로 표시 */
-    width: 300px;
-    height: 600px;
-    max-width: 90vw;
-    max-height: 75vh;
-  }
-}
-
-/* 초소형 화면에서 토글 텍스트 숨김 */
-@media (max-width: 360px) {
-  .player-list-toggle-btn .toggle-text { display: none; }
-}
-
-.home-button {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #333, #222);
-  border-radius: 50%;
-  border: 2px solid #444;
-  cursor: pointer;
-  position: relative;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
-}
-
-.home-button:before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 15px;
-  height: 15px;
-  border: 2px solid #666;
-  border-radius: 3px;
-}
-
-.home-button:active {
-  transform: scale(0.95);
-  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8);
-}
-
-.phone-map {
-  width: 100%;
-  height: 100%;
-  z-index: 101;
-}
-
-/* 휴대폰 내부 Spot 버튼 */
-.phone-spot-button {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: linear-gradient(135deg, #27ae60, #2ecc71);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 25px;
-  font-weight: bold;
-  font-size: 0.9rem;
-  cursor: pointer;
-  box-shadow: 0 4px 10px rgba(46, 204, 113, 0.4);
-  transition: all 0.3s ease;
-  z-index: 102;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.phone-spot-button:hover {
-  transform: translateX(-50%) translateY(-2px);
-  box-shadow: 0 6px 12px rgba(46, 204, 113, 0.6);
-}
-
-.phone-spot-button:active {
-  transform: translateX(-50%) translateY(-1px);
-}
-
-/* 지도 토글 버튼 */
-.map-toggle {
-  position: absolute;
-  bottom: 30px;
-  right: 30px;
-  background: linear-gradient(135deg, #3498db, #2980b9);
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 25px;
-  font-weight: bold;
-  font-size: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
-  z-index: 50;
-}
-
-.map-toggle:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
-}
-
-
-@media (max-width: 768px) {
-  .phone-frame {
-    width: 340px;
-    height: 640px;
-  }
-}
-
-@media (max-width: 480px) {
-  .phone-frame {
-    width: 300px;
-    height: 600px;
-  }
-
-  .map-toggle {
-    padding: 10px 15px;
-    font-size: 0.9rem;
-    bottom: 20px;
-    right: 20px;
-  }
-
-  .phone-spot-button {
-    padding: 8px 16px;
-    font-size: 0.85rem;
-  }
-}
-
-/* 채팅 토글 버튼 */
-.chat-toggle {
-  display: none; /* 기본적으로 숨김 */
-  position: absolute;
-  bottom: 30px;
-  left: 30px;
-  background: linear-gradient(135deg, #9c27b0, #673ab7);
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 25px;
-  font-weight: bold;
-  font-size: 1rem;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  z-index: 2100;
-  transform: scale(1);
-}
-
-.chat-toggle:hover {
-  transform: translateY(-3px) scale(1.05);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
-}
-
-.chat-toggle:active {
-  transform: translateY(-1px) scale(0.98);
-  transition: all 0.1s ease;
-}
-
-@media (max-width: 992px) {
-  /* 모바일에서 기존 채팅 버튼 숨김 (하단바로 대체) */
-  .chat-toggle {
-    display: none !important;
-  }
-  
-  /* 모바일에서 기존 지도 버튼 숨김 (하단바로 대체) */
-  .map-toggle {
-    display: none !important;
-  }
-  
-  /* 모바일에서 헤더의 플레이어 리스트 버튼 숨김 (하단바로 대체) */
-  .header-right .player-list-toggle-btn {
-    display: none !important;
-  }
-
-  /* 태블릿/모바일에서는 날개 버튼 wrapper 숨김 (하단바 사용) */
-  .left-panel-wrapper {
-    display: none !important;
-  }
-}
-
-/* 플레이어 리스트 토글 버튼 (모바일/태블릿, 데스크톱에서는 날개 버튼으로 대체) */
-.player-list-toggle-btn {
-  background: linear-gradient(135deg, #4CAF50, #45a049);
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  display: none; /* 데스크톱에서 숨김: 날개 버튼 사용 */
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
-  margin-right: 1rem;
-  min-width: 100px;
-  justify-content: center;
-}
-
-/* 모바일/태블릿에서는 헤더 토글 버튼 표시 */
-@media (max-width: 992px) {
-  .player-list-toggle-btn {
-    display: flex;
-  }
-}
-
-.player-list-toggle-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
-  background: linear-gradient(135deg, #45a049, #388e3c);
-}
-
-.player-list-toggle-btn.active {
-  background: linear-gradient(135deg, #FF6B6B, #E55A5A);
-  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
-}
-
-.player-list-toggle-btn.active:hover {
-  background: linear-gradient(135deg, #E55A5A, #D32F2F);
-  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
-}
-
-.toggle-text {
-  font-size: 0.8rem;
-  white-space: nowrap;
-}
-
-/* 모바일 사이즈 (768px 이하) - 플레이어 리스트 중앙 창 스타일 */
-@media (max-width: 768px) {
-  /* 게임 헤더 높이 계산용 변수 */
-  .game-header {
-    height: 80px; /* 헤더 고정 높이 설정 */
-  }
-  
-  /* 모바일에서 플레이어 리스트 기본 스타일 */
-  .left-panel {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0.8);
-    width: 340px;
-    height: 640px;
-    max-width: 90vw;
-    max-height: 80vh;
-    z-index: 15000;
-    background: white;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    opacity: 0;
-    pointer-events: none;
-    overflow-y: auto;
-    padding: 0;
-    border-radius: 30px;
-    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  }
-  
-  /* 모바일에서 플레이어 리스트가 열린 상태 - 열릴 때 즉시 나타남 */
-  .left-panel.mobile-open {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-    pointer-events: auto;
-    transition: none;
-  }
-  
-  /* 게임 화면 최적화 */
-  .game-view {
-    min-height: 300px; /* 모바일에서 최소 높이 축소 */
-  }
-  
-  /* 토글 버튼 모바일 최적화 */
-  .player-list-toggle-btn {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
-    margin-right: 0.5rem;
-    min-width: 80px;
-  }
-  
-  .toggle-text {
-    font-size: 0.75rem;
-  }
-}
-
-/* 더 작은 화면에서 추가 최적화 */
-@media (max-width: 480px) {
-  .left-panel {
-    width: 300px;
-    height: 600px;
-    max-width: 90vw;
-    max-height: 75vh;
-  }
-  
-  .left-panel.mobile-open {
-    width: 300px;
-    height: 600px;
-    max-width: 90vw;
-    max-height: 75vh;
-    transition: none;
-  }
-  
-  .mobile-header {
-    padding: 0.8rem;
-  }
-  
-  .close-button {
-    width: 28px;
-    height: 28px;
-  }
-}
-
-/* 페이드 트랜지션 */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.5s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-/* ==================== 모바일 하단바 (TOSS 디자인 철학) ==================== */
-.mobile-bottom-nav {
-  display: none; /* 기본적으로 숨김 (데스크톱) */
-}
-
-@media (max-width: 992px) {
-  .mobile-bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
-    height: 64px;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    padding: 0;
-    padding-bottom: env(safe-area-inset-bottom, 0);
-  }
-
-  .bottom-nav-btn {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    height: 100%;
-    border: none;
-    background: transparent;
-    color: #8e8e93;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    padding: 8px 12px;
-    min-width: 0;
-  }
-
-  .bottom-nav-btn:active {
-    transform: scale(0.95);
-    transition: all 0.1s ease;
-  }
-
-  .btn-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    font-size: 20px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .btn-label {
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: -0.01em;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    white-space: nowrap;
-  }
-
-  /* 활성 상태 */
-  .bottom-nav-btn.active {
-    color: #3182f6;
-  }
-
-  .bottom-nav-btn.active .btn-icon {
-    transform: scale(1.1);
-  }
-
-  .bottom-nav-btn.active .btn-label {
-    font-weight: 600;
-  }
-
-  /* 활성 인디케이터 (상단 선) */
-  .active-indicator {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 32px;
-    height: 3px;
-    background: #3182f6;
-    border-radius: 0 0 3px 3px;
-    animation: indicatorAppear 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  @keyframes indicatorAppear {
-    0% {
-      width: 0;
-      opacity: 0;
-    }
-    100% {
-      width: 32px;
-      opacity: 1;
-    }
-  }
-
-  /* 호버 효과 (터치 디바이스에서는 제한적) */
-  @media (hover: hover) {
-    .bottom-nav-btn:hover:not(.active) {
-      color: #5a5a5a;
-      background: rgba(0, 0, 0, 0.02);
-    }
-  }
-}
-
-/* 더 작은 모바일 화면 최적화 */
-@media (max-width: 480px) {
-  .mobile-bottom-nav {
-    height: 60px;
-  }
-
-  .btn-icon {
-    width: 22px;
-    height: 22px;
-    font-size: 18px;
-  }
-
-  .btn-label {
-    font-size: 10px;
-  }
-
-  .active-indicator {
-    width: 28px;
-    height: 2.5px;
-  }
-}
-
-/* 채팅 알림 배지 스타일 */
-.chat-notification-badge {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  min-width: 18px;
-  height: 18px;
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: white;
-  border-radius: 9px;
-  font-size: 0.65rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 4px;
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
-  border: 2px solid white;
-  animation: badgePulse 2s ease-in-out infinite;
-  z-index: 10;
-}
-
-@keyframes badgePulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
-  }
-  50% {
-    transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.6);
-  }
-}
-
-/* btn-icon에 position relative 추가 */
-.btn-icon {
-  position: relative;
 }
 </style>
