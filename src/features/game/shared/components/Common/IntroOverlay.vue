@@ -12,8 +12,7 @@
         {{ gameDescription }}
       </p>
       <button class="start-btn" :class="mode" @click="endIntro">
-        <span class="btn-text">시작하기</span>
-        <i class="fas fa-arrow-right btn-icon"></i>
+        시작하기
       </button>
     </div>
   </div>
@@ -55,7 +54,7 @@ export default {
 </script>
 
 <style scoped>
-/* 배경 오버레이 - 글래스모피즘 적용 */
+/* 배경 오버레이 (투명도 없이 완전한 흰색 배경) */
 .intro-overlay {
   position: absolute;
   top: 0;
@@ -65,156 +64,121 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(243, 244, 246, 0.4); /* BACKGROUND.GRAY with opacity */
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background-color: #ffffff;
   z-index: 30; /* PhoneFrame(21)보다 높게 설정 */
 }
 
-/* 메인 컨텐츠 카드 */
+/* 메인 컨텐츠 카드 (작고 심플하게) */
 .intro-content {
-  background-color: rgba(255, 255, 255, 0.95);
-  padding: 40px 30px;
-  border-radius: 24px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  background-color: transparent;
+  padding: 0 20px;
   text-align: center;
-  max-width: 480px;
+  max-width: 380px;
   width: 90%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeIn 0.4s ease forwards;
 }
 
-@keyframes slideUpFade {
+@keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(20px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
-/* 모드별 아이콘 컨테이너 */
+/* 모드별 아이콘 컨테이너 (부담스럽지 않게 수정) */
 .intro-icon {
-  width: 64px;
-  height: 64px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 20px;
-  font-size: 28px;
-  color: white;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+  font-size: 20px;
 }
 
+/* 약간의 파스텔 톤 배경에 진한 텍스트 컬러 */
 .intro-icon.practice {
-  background: linear-gradient(135deg, #33fbe8 0%, #3b82f6 100%); /* PRIMARY to INFO */
+  background: #f0f9ff;
+  color: #3b82f6; 
 }
 
 .intro-icon.rank {
-  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); /* SECONDARY to DANGER */
+  background: #fffbeb;
+  color: #f59e0b;
 }
 
-/* 타이포그래피 */
+/* 타이포그래피 (크기 줄임) */
 h2 {
   color: #111827; /* TEXT.PRIMARY */
-  font-size: 1.8rem;
-  font-weight: 800;
-  margin-bottom: 12px;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 8px;
   letter-spacing: -0.02em;
 }
 
 .subtitle {
   color: #111827; /* TEXT.PRIMARY */
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin-bottom: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 6px;
 }
 
 .description {
   color: #6b7280; /* TEXT.SECONDARY */
-  font-size: 0.95rem;
-  line-height: 1.6;
-  margin-bottom: 32px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 24px;
 }
 
-/* 액션 버튼 */
+/* 액션 버튼 (얇고 딱딱하지 않게) */
 .start-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
   color: white;
   border: none;
-  padding: 16px 36px;
-  font-size: 1.1rem;
-  font-weight: 700;
-  border-radius: 100px; /* 완전한 알약 형태 */
+  padding: 12px 28px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 8px; /* 알약 형태 대신 둥근 사각형으로 심플하게 */
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s ease;
   width: 100%;
-  max-width: 240px;
+  max-width: 160px;
   letter-spacing: 0.02em;
 }
 
-.btn-icon {
-  font-size: 1rem;
-  transition: transform 0.3s ease;
-}
-
-/* 모드별 버튼 스타일 */
+/* 심플한 단일 색상 또는 부드러운 그라데이션 */
 .start-btn.practice {
-  background: linear-gradient(135deg, #33fbe8 0%, #3b82f6 100%); /* PRIMARY to INFO */
-  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+  background: #3b82f6;
 }
 
 .start-btn.rank {
-  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); /* SECONDARY to DANGER */
-  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
+  background: #f59e0b;
 }
 
-/* 마이크로 인터랙션 */
+/* 마이크로 인터랙션 단축 */
 .start-btn:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   filter: brightness(1.05);
-}
-
-.start-btn.practice:hover {
-  box-shadow: 0 12px 24px rgba(59, 130, 246, 0.4);
-}
-
-.start-btn.rank:hover {
-  box-shadow: 0 12px 24px rgba(239, 68, 68, 0.4);
-}
-
-.start-btn:hover .btn-icon {
-  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .start-btn:active {
-  transform: translateY(1px);
+  transform: translateY(0);
 }
 
 /* 반응형 */
 @media (max-width: 480px) {
   .intro-content {
-    padding: 32px 24px;
-    width: 85%;
+    max-width: 320px;
   }
 
   h2 {
-    font-size: 1.5rem;
-  }
-  
-  .intro-icon {
-    width: 56px;
-    height: 56px;
-    font-size: 24px;
+    font-size: 1.3rem;
   }
 }
 </style>

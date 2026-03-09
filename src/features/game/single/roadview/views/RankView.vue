@@ -1,9 +1,9 @@
 <template>
   <div class="road-view-practice">
-    <!-- Google AdSense 광고 (헤더 위) -->
-    <div class="top-ads-container">
+    <!-- Google AdSense 광고 비활성화 (헤더 위) -->
+    <!-- <div class="top-ads-container">
       <Adsense :ad-slot="'6033902133'" @ad-loaded="onAdLoaded" />
-    </div>
+    </div> -->
 
     <!-- 헤더 -->
     <div class="game-header" :style="{ top: headerTop }">
@@ -158,7 +158,7 @@ import PhoneFrame from "src/features/game/shared/components/Phone/PhoneFrame.vue
 import CountdownOverlay from "@/features/game/shared/components/Common/CountdownOverlay.vue";
 import IntroOverlay from "@/features/game/shared/components/Common/IntroOverlay.vue";
 import ResultOverlay from "src/features/game/single/roadview/components/Result/ResultOverlay.vue";
-import Adsense from "@/features/game/shared/components/Common/Adsense.vue";
+// import Adsense from "@/features/game/shared/components/Common/Adsense.vue";
 import { roadViewApiService } from "src/features/game/single/roadview/services/roadViewApi.service.js";
 
 export default {
@@ -169,7 +169,7 @@ export default {
     CountdownOverlay,
     IntroOverlay,
     ResultOverlay,
-    Adsense,
+    // Adsense,
   },
   props: {
     isRankMode: {
@@ -270,17 +270,18 @@ export default {
   computed: {
     // 헤더 위치 계산
     headerTop() {
-      return this.hasAd ? "90px" : "0";
+      // 광고를 숨겼으므로 무조건 0
+      return "0";
     },
     // 타이머 컨테이너 위치 계산 (헤더 아래 70px)
     timerTop() {
-      return this.hasAd ? "160px" : "70px";
+      // 광고를 숨겼으므로 무조건 70px
+      return "70px";
     },
     // reset 버튼 위치 계산 (헤더 바로 밑)
-    // 광고(90px) + 헤더(56px) + 여백(12px) = 158px (광고 있을 때)
-    // 헤더(56px) + 여백(12px) = 68px (광고 없을 때)
     resetBtnTop() {
-      return this.hasAd ? "158px" : "68px";
+      // 헤더(56px) + 여백(12px) = 68px
+      return "68px";
     },
   },
   mounted() {
@@ -1031,7 +1032,7 @@ export default {
   cursor: pointer;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
-  z-index: 10;
+  z-index: 25; /* PhoneFrame(21)보다 높고 IntroOverlay(30)보다 낮게 설정 */
 }
 
 .map-toggle:hover {

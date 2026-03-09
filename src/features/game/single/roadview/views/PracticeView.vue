@@ -1,9 +1,9 @@
 <template>
   <div class="road-view-practice">
-    <!-- Google AdSense 광고 (헤더 위) -->
-    <div class="top-ads-container">
+    <!-- Google AdSense 광고 비활성화 (헤더 위) -->
+    <!-- <div class="top-ads-container">
       <Adsense :ad-slot="'6033902133'" @ad-loaded="onAdLoaded" />
-    </div>
+    </div> -->
 
     <!-- 헤더 -->
     <div class="game-header" :style="{ top: headerTop }">
@@ -206,7 +206,7 @@ import RoadViewGame from "src/features/game/single/roadview/components/gameplay/
 import PhoneFrame from "src/features/game/shared/components/Phone/PhoneFrame.vue";
 import CountdownOverlay from "@/features/game/shared/components/Common/CountdownOverlay.vue";
 import IntroOverlay from "@/features/game/shared/components/Common/IntroOverlay.vue";
-import Adsense from "@/features/game/shared/components/Common/Adsense.vue";
+// import Adsense from "@/features/game/shared/components/Common/Adsense.vue";
 import { roadViewApiService } from "src/features/game/single/roadview/services/roadViewApi.service.js";
 import PracticeResultOverlay from "src/features/game/single/roadview/components/Result/PracticeResultOverlay.vue";
 import SharedPracticeResultOverlay from "src/features/game/single/roadview/components/Result/SharedPracticeResultOverlay.vue";
@@ -219,7 +219,7 @@ export default {
     PhoneFrame,
     CountdownOverlay,
     IntroOverlay,
-    Adsense,
+    // Adsense,
     PracticeResultOverlay,
     SharedPracticeResultOverlay,
   },
@@ -365,13 +365,13 @@ export default {
   computed: {
     // 헤더 위치 계산
     headerTop() {
-      return this.hasAd ? "90px" : "0";
+      // 광고를 숨겼으므로 무조건 0으로 처리
+      return "0";
     },
     // reset 버튼 위치 계산 (헤더 바로 밑)
     resetBtnTop() {
-      // 광고(90px) + 헤더(56px) + 여백(12px) = 158px (광고 있을 때)
-      // 헤더(56px) + 여백(12px) = 68px (광고 없을 때)
-      return this.hasAd ? "158px" : "68px";
+      // 광고를 숨겼으므로 무조건 68px (헤더 56px + 여백 12px)
+      return "68px";
     },
     usedHints() {
       return 3 - this.hintCount;
@@ -1863,7 +1863,7 @@ export default {
   cursor: pointer;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
-  z-index: 10;
+  z-index: 25; /* PhoneFrame(21)보다 높고 IntroOverlay(30)보다 낮게 설정 */
 }
 
 .map-toggle:hover {
