@@ -1,13 +1,9 @@
 <template>
-  <div class="mvp-root" :class="{ 'is-loaded': isLoaded }">
-    <!-- 배경 레이어들 -->
-    <div class="bg-layer">
-      <div class="bg-radial-glow" />
-      <div class="bg-scanlines" />
-      <div class="bg-grid" />
-      <canvas ref="particleCanvas" class="bg-particles" />
-    </div>
-
+  <div 
+    class="mvp-root" 
+    :class="{ 'is-loaded': isLoaded, 'is-empty': !mvp && isLoaded }"
+    @click="handleCardClick"
+  >
     <!-- 로딩 상태 -->
     <transition name="fade">
       <div v-if="isLoading" class="loading-overlay">
@@ -16,50 +12,46 @@
       </div>
     </transition>
 
-    <!-- 에러 상태 -->
+    <!-- 에러 및 데이터 없음 (Empty State) 상태 -->
     <transition name="fade">
-      <div v-if="isError" class="error-overlay">
-        <span class="error-icon">⚠</span>
+      <div v-if="isLoaded && !mvp" class="empty-state">
+        <div class="empty-icon-wrapper">
+          <i class="fas fa-crown empty-icon"></i>
+        </div>
+        <h2 class="empty-title">TODAY'S MVP</h2>
+        <p class="empty-text">아직 MVP가 없네요!<br/>지금 당장 랭크 플레이로 MVP를 노려보세요!</p>
+        <button class="empty-play-btn" @click.stop="goToRankPlay">
+          랭크 게임 하러 가기 <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+    </transition>
+
+    <!-- 에러 상태 (API 오류 등) -->
+    <transition name="fade">
+      <div v-if="isError && !mvp" class="error-overlay">
+        <i class="fas fa-exclamation-triangle error-icon"></i>
         <span class="error-text">MVP 데이터를 불러올 수 없습니다</span>
       </div>
     </transition>
 
-    <!-- MVP 콘텐츠 -->
+    <!-- MVP 콘텐츠 (가로형 레이아웃) -->
     <transition name="fade">
-      <div v-if="mvp && isLoaded" class="mvp-content">
-
-        <!-- 타이틀 섹션 -->
-        <div class="title-section">
+      <div v-if="mvp && isLoaded" class="mvp-content-horizontal">
+        
+        <!-- 왼쪽: 타이틀 섹션 -->
+        <div class="hz-section section-left">
           <div class="title-eyebrow">
-            <span class="eyebrow-line" />
             <span class="eyebrow-text">HALL OF GLORY</span>
-            <span class="eyebrow-line" />
           </div>
-          <h1 class="title-main">
-            <span class="title-today">TODAY'S</span>
-            <span class="title-mvp">
-              <span class="title-mvp-char" v-for="(char, i) in 'MVP'" :key="i" :style="{ animationDelay: `${0.5 + i * 0.08}s` }">{{ char }}</span>
-            </span>
-          </h1>
+          <h1 class="title-main">TODAY'S MVP</h1>
           <div class="title-date">{{ formattedDate }}</div>
+          
+          <!-- 모바일/좁은 화면에선 이 타이틀 밑에 마커 이미지가 오도록 재배치될 수 있음 -->
         </div>
 
-        <!-- 마커 + 유저 중앙 섹션 -->
-        <div class="hero-section">
-
-          <!-- 회전 링들 -->
-          <div class="rings-wrapper">
-            <div class="ring ring-outer" />
-            <div class="ring ring-mid" />
-            <div class="ring ring-inner" />
-            <div class="ring-dots">
-              <span class="ring-dot" v-for="n in 8" :key="n" :style="{ '--dot-i': n - 1 }" />
-            </div>
-          </div>
-
-          <!-- 마커 이미지 -->
+        <!-- 중앙: 프로필 및 티어 섹션 -->
+        <div class="hz-section section-center">
           <div class="marker-wrapper">
-            <div class="marker-glow" />
             <div class="marker-frame">
               <img
                 v-if="mvp.equippedMarkerImageUrl"
@@ -72,79 +64,46 @@
                 <span>{{ mvp.nickname?.charAt(0)?.toUpperCase() }}</span>
               </div>
             </div>
-            <div class="marker-shadow" />
+            <div class="mvp-badge">
+              <i class="fas fa-crown badge-icon"></i>
+              <span class="badge-text">1st</span>
+            </div>
           </div>
 
-          <!-- MVP 배지 -->
-          <div class="mvp-badge">
-            <span class="badge-icon">🏆</span>
-            <span class="badge-text">#1 MVP</span>
-          </div>
-        </div>
-
-        <!-- 닉네임 & 티어 -->
-        <div class="identity-section">
-          <div class="nickname-wrapper">
+          <div class="identity-section">
             <h2 class="nickname">{{ mvp.nickname }}</h2>
-          </div>
-          <div class="tier-wrapper">
-            <span class="tier-badge" :class="`tier-${mvp.rankTier?.toLowerCase()}`">
-              <span class="tier-icon">{{ tierIcon }}</span>
-              <span class="tier-name">{{ mvp.rankTier }} {{ mvp.rankLevel }}</span>
-            </span>
-            <span class="rating-score">
-              <span class="rating-label">RP</span>
-              <span class="rating-value">{{ mvp.ratingScore?.toLocaleString() }}</span>
-            </span>
-          </div>
-        </div>
-
-        <!-- 스탯 카드들 -->
-        <div class="stats-section">
-          <div class="stat-card stat-score">
-            <div class="stat-card-inner">
-              <div class="stat-icon">🎯</div>
-              <div class="stat-body">
-                <div class="stat-label">GAME SCORE</div>
-                <div class="stat-value score-value">
-                  <span class="score-int">{{ scoreInt }}</span><span class="score-dec">.{{ scoreDec }}</span>
-                </div>
-              </div>
-              <div class="stat-shine" />
-            </div>
-          </div>
-
-          <div class="stat-card stat-rank">
-            <div class="stat-card-inner">
-              <div class="stat-icon">👑</div>
-              <div class="stat-body">
-                <div class="stat-label">RANK TIER</div>
-                <div class="stat-value rank-value" :class="`tier-text-${mvp.rankTier?.toLowerCase()}`">
-                  {{ mvp.rankTier }}
-                </div>
-                <div class="stat-sub">{{ mvp.rankLevel }}</div>
-              </div>
-              <div class="stat-shine" />
-            </div>
-          </div>
-
-          <div class="stat-card stat-poi">
-            <div class="stat-card-inner">
-              <div class="stat-icon">📍</div>
-              <div class="stat-body">
-                <div class="stat-label">LOCATION</div>
-                <div class="stat-value poi-value">{{ mvp.poiName }}</div>
-              </div>
-              <div class="stat-shine" />
+            <div class="tier-wrapper">
+              <span class="tier-badge" :class="`tier-${mvp.rankTier?.toLowerCase()}`">
+                <i :class="getTierIcon(mvp.rankTier)" class="tier-icon"></i>
+                <span class="tier-name">{{ formatTierName(mvp.rankTier) }} {{ formatTierLevel(mvp.rankLevel) }}</span>
+              </span>
             </div>
           </div>
         </div>
 
-        <!-- 하단 장식 -->
-        <div class="footer-deco">
-          <span class="deco-line" />
-          <span class="deco-logo">KOSPOT</span>
-          <span class="deco-line" />
+        <!-- 오른쪽: 점수 및 액션 섹션 -->
+        <div class="hz-section section-right">
+          <div class="rating-box">
+            <span class="rating-label">레이팅 점수</span>
+            <span class="rating-value">{{ mvp.ratingScore?.toLocaleString() }} <span class="rating-unit">RP</span></span>
+          </div>
+
+          <div class="stats-row">
+            <div class="stat-item">
+              <div class="stat-label">게임 점수</div>
+              <div class="stat-value highlight">{{ scoreInt }}.<span class="stat-dec">{{ scoreDec }}</span></div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <div class="stat-label">플레이 지역</div>
+              <div class="stat-value">{{ mvp.poiName || '-' }}</div>
+            </div>
+          </div>
+<!-- 
+          <div class="interaction-hint">
+            <span>자세히 보기</span>
+            <i class="fas fa-chevron-right"></i>
+          </div> -->
         </div>
 
       </div>
@@ -153,18 +112,19 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { fetchDailyMvp } from './dailyMvpService.js'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { fetchDailyMvp } from '../services/dailyMvp.service.js'
+
+// ─── Emits ────────────────────────────────────────────────────────────
+const emit = defineEmits(['show-player-details']);
+const router = useRouter();
 
 // ─── State ───────────────────────────────────────────────────────────
 const mvp = ref(null)
 const isLoading = ref(true)
 const isLoaded = ref(false)
 const isError = ref(false)
-const particleCanvas = ref(null)
-
-let animFrame = null
-let particles = []
 
 // ─── Computed ─────────────────────────────────────────────────────────
 const formattedDate = computed(() => {
@@ -183,189 +143,120 @@ const scoreDec = computed(() => {
   return (mvp.value.gameScore % 1).toFixed(1).split('.')[1]
 })
 
-const tierIcon = computed(() => {
+// ─── Methods ──────────────────────────────────────────────────────────
+function handleCardClick() {
+  if (mvp.value && isLoaded.value) {
+    emit('show-player-details', mvp.value);
+  }
+}
+
+function goToRankPlay() {
+  // 랭크 게임 라우팅 (경로에 맞게 수정)
+  router.push('/roadView/rank')
+}
+
+function getTierIcon(tier) {
   const icons = {
-    BRONZE: '🥉', SILVER: '🥈', GOLD: '🥇',
-    PLATINUM: '💎', DIAMOND: '💠', MASTER: '🔥',
+    'BRONZE': 'fas fa-medal',
+    'SILVER': 'fas fa-medal',
+    'GOLD': 'fas fa-medal',
+    'PLATINUM': 'fas fa-gem',
+    'DIAMOND': 'fas fa-gem',
+    'MASTER': 'fas fa-crown'
+  };
+  return icons[tier] || 'fas fa-medal';
+}
+
+function formatTierName(tier) {
+  const names = {
+    'BRONZE': 'Bronze',
+    'SILVER': 'Silver',
+    'GOLD': 'Gold',
+    'PLATINUM': 'Platinum',
+    'DIAMOND': 'Diamond',
+    'MASTER': 'Master'
+  };
+  return names[tier] || tier;
+}
+
+function formatTierLevel(level) {
+  if (!level) return 'I';
+  
+  const levelMap = {
+    'ONE': 'I',
+    'TWO': 'II',
+    'THREE': 'III',
+    'FOUR': 'IV',
+    'FIVE': 'V'
+  };
+  
+  if (levelMap[level.toUpperCase()]) {
+    return levelMap[level.toUpperCase()];
   }
-  return icons[mvp.value?.rankTier] ?? '⭐'
-})
-
-// ─── Lifecycle ────────────────────────────────────────────────────────
-onMounted(async () => {
-  initParticles()
-  try {
-    const data = await fetchDailyMvp()
-    mvp.value = data
-    setTimeout(() => { isLoaded.value = true }, 100)
-  } catch (e) {
-    console.error('MVP fetch error:', e)
-    isError.value = true
-    // 개발용 mock
-    mvp.value = {
-      mvpDate: new Date().toISOString().split('T')[0],
-      memberId: 1,
-      nickname: 'StarChaser',
-      equippedMarkerImageUrl: '',
-      rankTier: 'DIAMOND',
-      rankLevel: 'I',
-      ratingScore: 2847,
-      gameScore: 98.7,
-      poiName: '경복궁',
-    }
-    isError.value = false
-    setTimeout(() => { isLoaded.value = true }, 100)
-  } finally {
-    isLoading.value = false
-  }
-})
-
-onUnmounted(() => {
-  if (animFrame) cancelAnimationFrame(animFrame)
-})
-
-// ─── Particle System ──────────────────────────────────────────────────
-function initParticles() {
-  const canvas = particleCanvas.value
-  if (!canvas) return
-  const ctx = canvas.getContext('2d')
-
-  const resize = () => {
-    canvas.width = canvas.offsetWidth
-    canvas.height = canvas.offsetHeight
-  }
-  resize()
-  window.addEventListener('resize', resize)
-
-  const COUNT = 40
-  for (let i = 0; i < COUNT; i++) {
-    particles.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      size: Math.random() * 2 + 0.5,
-      speedX: (Math.random() - 0.5) * 0.4,
-      speedY: (Math.random() - 0.5) * 0.4,
-      opacity: Math.random() * 0.6 + 0.1,
-      color: Math.random() > 0.6 ? '#33fbe8' : '#f59e0b',
-    })
-  }
-
-  const draw = () => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    particles.forEach(p => {
-      p.x += p.speedX
-      p.y += p.speedY
-      if (p.x < 0) p.x = canvas.width
-      if (p.x > canvas.width) p.x = 0
-      if (p.y < 0) p.y = canvas.height
-      if (p.y > canvas.height) p.y = 0
-
-      ctx.save()
-      ctx.globalAlpha = p.opacity
-      ctx.fillStyle = p.color
-      ctx.shadowColor = p.color
-      ctx.shadowBlur = 6
-      ctx.beginPath()
-      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.restore()
-    })
-    animFrame = requestAnimationFrame(draw)
-  }
-  draw()
+  
+  return level.toString();
 }
 
 function onImgError(e) {
   e.target.style.display = 'none'
 }
+
+// ─── Lifecycle ────────────────────────────────────────────────────────
+onMounted(async () => {
+  try {
+    const response = await fetchDailyMvp()
+    const data = response.data?.result || response.data || response;
+    
+    if (data && data.isSuccess !== false && Object.keys(data).length > 0) {
+      // API 응답 구조가 `{ result: null }` 인 경우를 대비
+      mvp.value = data.result || data;
+      // result가 null인데 data.result 자체가 null 이면 Empty State 로직으로 빠짐
+      if (!mvp.value || Object.keys(mvp.value).length === 0) {
+        mvp.value = null;
+      }
+    } else {
+       mvp.value = null; // 데이터 없음 Empty State
+    }
+  } catch (e) {
+    console.error('MVP fetch error:', e)
+    isError.value = true
+    mvp.value = null; 
+  } finally {
+    isLoading.value = false
+    setTimeout(() => { isLoaded.value = true }, 50)
+  }
+})
 </script>
 
 <style scoped>
-/* ─── Google Fonts ─────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;700&display=swap');
-
-/* ─── CSS Variables ─────────────────────────────────────────── */
+/* ─── Variables & Root ─────────────────────────────────────────────── */
 .mvp-root {
-  --c-brand:      #33fbe8;
-  --c-gold:       #f59e0b;
-  --c-bg:         #111827;
-  --c-bg2:        #1f2937;
-  --c-border:     #374151;
-  --c-text:       #f3f4f6;
-  --c-muted:      #9ca3af;
-  --c-danger:     #ef4444;
-  --c-success:    #10b981;
-
-  --tier-bronze:   #cd7f32;
-  --tier-silver:   #c0c0c0;
-  --tier-gold:     #f59e0b;
-  --tier-platinum: #33fbe8;
-  --tier-diamond:  #818cf8;
-  --tier-master:   #ef4444;
-
-  --glow-brand: 0 0 20px rgba(51, 251, 232, 0.4), 0 0 60px rgba(51, 251, 232, 0.15);
-  --glow-gold:  0 0 20px rgba(245, 158, 11, 0.4), 0 0 60px rgba(245, 158, 11, 0.15);
-
-  font-family: 'Noto Sans KR', sans-serif;
   position: relative;
   width: 100%;
-  max-width: 480px;
-  min-height: 680px;
-  background: var(--c-bg);
-  border-radius: 24px;
-  border: 1px solid var(--c-border);
+  height: 260px; /* 기존 카드들의 3배 정도 높이 고정 (가로형) */
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  /* box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); */
   overflow: hidden;
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-/* ─── Background Layers ─────────────────────────────────────── */
-.bg-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
+.mvp-root:not(.is-empty) {
+  cursor: pointer;
 }
 
-.bg-radial-glow {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 60% 40% at 50% 35%, rgba(51, 251, 232, 0.08) 0%, transparent 70%),
-    radial-gradient(ellipse 40% 30% at 20% 80%, rgba(245, 158, 11, 0.05) 0%, transparent 60%);
+/* Hover Micro-interaction (데이터가 있을 때만) - 애니메이션 제거 (피로도 감소) */
+.mvp-root:not(.is-empty):hover {
+  border-color: #cbd5e1;
 }
 
-.bg-scanlines {
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.08) 2px,
-    rgba(0, 0, 0, 0.08) 4px
-  );
-  opacity: 0.5;
+.mvp-root:not(.is-empty):hover .interaction-hint i {
+  color: #0ea5e9;
 }
 
-.bg-grid {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(51, 251, 232, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(51, 251, 232, 0.04) 1px, transparent 1px);
-  background-size: 40px 40px;
-}
-
-.bg-particles {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-/* ─── Loading / Error ───────────────────────────────────────── */
+/* ─── Loading / Error ─────────────────────────────────────────────── */
 .loading-overlay,
 .error-overlay {
   position: absolute;
@@ -376,218 +267,180 @@ function onImgError(e) {
   align-items: center;
   justify-content: center;
   gap: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
 }
 
 .loading-ring {
-  width: 48px;
-  height: 48px;
-  border: 2px solid var(--c-border);
-  border-top-color: var(--c-brand);
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #0ea5e9;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
 .loading-text {
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 0.2em;
-  color: var(--c-brand);
-  opacity: 0.7;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: #64748b;
   animation: pulse 1.5s ease-in-out infinite;
 }
 
-.error-icon { font-size: 36px; }
+.error-icon { 
+  font-size: 2rem; 
+  color: #ef4444; /* 빨간색 계열 */
+}
+
 .error-text {
-  font-size: 14px;
-  color: var(--c-muted);
+  font-size: 0.95rem;
+  color: #64748b;
   text-align: center;
 }
 
-/* ─── Main Content ──────────────────────────────────────────── */
-.mvp-content {
+/* ─── Empty State ─────────────────────────────────────────────────── */
+.empty-state {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #ffffff;
+  text-align: center;
+  padding: 2rem;
+}
+
+.empty-icon-wrapper {
+  width: 56px;
+  height: 56px;
+  background: #f1f5f9;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.empty-icon {
+  font-size: 1.5rem;
+  color: #cbd5e1;
+}
+
+.empty-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #94a3b8;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.empty-text {
+  font-size: 0.95rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0.5rem 0 1.25rem 0;
+}
+
+.empty-play-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #0ea5e9;
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 100px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px rgba(14, 165, 233, 0.2);
+}
+
+.empty-play-btn:hover {
+  background: #0284c7;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(14, 165, 233, 0.3);
+}
+
+/* ─── Horizontal Main Content ─────────────────────────────────────── */
+.mvp-content-horizontal {
   position: relative;
   z-index: 1;
   width: 100%;
-  padding: 32px 28px 24px;
+  height: 100%;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
+  align-items: stretch;
 }
 
-/* ─── Title Section ─────────────────────────────────────────── */
-.title-section {
-  width: 100%;
-  text-align: center;
-  margin-bottom: 28px;
-  opacity: 0;
-  transform: translateY(-20px);
-  animation: slideDown 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards;
+/* 3분할된 섹션 컴포넌트들 */
+.hz-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2rem;
+}
+
+/* 왼쪽: 타이틀 영역 */
+.section-left {
+  flex: 0 0 25%;
+  align-items: flex-start;
+  border-right: 1px dashed #e2e8f0;
+  background: linear-gradient(90deg, #ffffff 0%, #f8fafc 100%);
 }
 
 .title-eyebrow {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.eyebrow-line {
-  height: 1px;
-  width: 40px;
-  background: linear-gradient(90deg, transparent, var(--c-brand));
-  opacity: 0.5;
-}
-.eyebrow-line:last-child {
-  background: linear-gradient(90deg, var(--c-brand), transparent);
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  background: #e0f2fe;
+  border-radius: 20px;
+  margin-bottom: 0.75rem;
 }
 
 .eyebrow-text {
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.3em;
-  color: var(--c-brand);
-  opacity: 0.7;
-  text-transform: uppercase;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: #0369a1;
 }
 
 .title-main {
-  margin: 0;
-  line-height: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
-}
-
-.title-today {
-  font-family: 'DM Mono', monospace;
-  font-size: 13px;
-  letter-spacing: 0.4em;
-  color: var(--c-muted);
-  font-weight: 400;
-}
-
-.title-mvp {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 88px;
-  letter-spacing: 0.06em;
-  color: var(--c-text);
-  line-height: 0.9;
-  text-shadow: var(--glow-brand);
-  display: flex;
-}
-
-.title-mvp-char {
-  display: inline-block;
-  opacity: 0;
-  transform: scale(1.4) translateY(10px);
-  animation: charPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
 .title-date {
-  margin-top: 6px;
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 0.15em;
-  color: var(--c-muted);
-  opacity: 0.6;
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 500;
 }
 
-/* ─── Hero Section ──────────────────────────────────────────── */
-.hero-section {
-  position: relative;
-  width: 200px;
-  height: 200px;
-  display: flex;
+/* 중앙: 유저 프로필 및 등급 */
+.section-center {
+  flex: 1;
   align-items: center;
-  justify-content: center;
-  margin-bottom: 24px;
-  opacity: 0;
-  animation: fadeScale 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s forwards;
 }
 
-/* Rings */
-.rings-wrapper {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.ring {
-  position: absolute;
-  border-radius: 50%;
-  border: 1px solid var(--c-brand);
-}
-
-.ring-outer {
-  width: 190px;
-  height: 190px;
-  border-color: rgba(51, 251, 232, 0.15);
-  animation: rotateCW 12s linear infinite;
-  border-style: dashed;
-}
-
-.ring-mid {
-  width: 155px;
-  height: 155px;
-  border-color: rgba(51, 251, 232, 0.25);
-  animation: rotateCCW 8s linear infinite;
-}
-
-.ring-inner {
-  width: 120px;
-  height: 120px;
-  border-color: rgba(245, 158, 11, 0.3);
-  animation: rotateCW 5s linear infinite;
-  border-style: dashed;
-}
-
-.ring-dots {
-  position: absolute;
-  width: 155px;
-  height: 155px;
-  animation: rotateCCW 8s linear infinite;
-}
-
-.ring-dot {
-  position: absolute;
-  width: 5px;
-  height: 5px;
-  background: var(--c-brand);
-  border-radius: 50%;
-  top: 50%;
-  left: 50%;
-  box-shadow: 0 0 6px var(--c-brand);
-  transform-origin: 0 0;
-  transform: rotate(calc(var(--dot-i) * 45deg)) translateX(77px) translateY(-2.5px);
-}
-
-/* Marker */
 .marker-wrapper {
   position: relative;
-  z-index: 2;
-  animation: floatY 3s ease-in-out infinite;
-}
-
-.marker-glow {
-  position: absolute;
-  inset: -10px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(51, 251, 232, 0.25) 0%, transparent 70%);
-  animation: pulse 2s ease-in-out infinite;
+  margin-bottom: 1rem;
 }
 
 .marker-frame {
-  width: 88px;
-  height: 88px;
+  width: 90px;
+  height: 90px;
   border-radius: 50%;
-  background: var(--c-bg2);
-  border: 2px solid var(--c-brand);
-  box-shadow: var(--glow-brand), inset 0 0 20px rgba(51, 251, 232, 0.08);
+  background: #ffffff;
+  border: 4px solid #ffffff;
+  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -597,291 +450,182 @@ function onImgError(e) {
 .marker-img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .marker-placeholder {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 36px;
-  color: var(--c-brand);
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #94a3b8;
 }
 
-.marker-shadow {
-  position: absolute;
-  bottom: -14px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60px;
-  height: 10px;
-  background: radial-gradient(ellipse, rgba(51, 251, 232, 0.3) 0%, transparent 70%);
-  filter: blur(4px);
-}
-
-/* MVP Badge */
 .mvp-badge {
   position: absolute;
-  top: -8px;
-  right: 10px;
-  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   border-radius: 20px;
-  padding: 4px 10px;
+  padding: 0.25rem 0.75rem;
   display: flex;
   align-items: center;
-  gap: 5px;
-  box-shadow: var(--glow-gold);
-  animation: badgePulse 2s ease-in-out infinite;
+  gap: 0.3rem;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
 }
 
-.badge-icon { font-size: 13px; }
+.badge-icon {
+  font-size: 0.7rem;
+  color: #ffffff;
+}
+
 .badge-text {
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  font-weight: 500;
-  color: #1f2937;
-  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #ffffff;
 }
 
-/* ─── Identity Section ──────────────────────────────────────── */
 .identity-section {
-  width: 100%;
   text-align: center;
-  margin-bottom: 24px;
-  opacity: 0;
-  animation: slideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.75s forwards;
-}
-
-.nickname-wrapper {
-  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .nickname {
   margin: 0;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 48px;
-  letter-spacing: 0.08em;
-  color: var(--c-text);
-  text-shadow: 0 2px 20px rgba(0,0,0,0.5);
-  line-height: 1;
-}
-
-.tier-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #0f172a;
 }
 
 .tier-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 14px;
+  gap: 0.35rem;
+  padding: 0.3rem 0.8rem;
   border-radius: 100px;
-  border: 1px solid;
-  font-family: 'DM Mono', monospace;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.05em;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
 }
 
-.tier-badge.tier-bronze  { color: var(--tier-bronze);   border-color: var(--tier-bronze);   background: rgba(205,127,50,0.1); }
-.tier-badge.tier-silver  { color: var(--tier-silver);   border-color: var(--tier-silver);   background: rgba(192,192,192,0.1); }
-.tier-badge.tier-gold    { color: var(--tier-gold);     border-color: var(--tier-gold);     background: rgba(245,158,11,0.1); }
-.tier-badge.tier-platinum{ color: var(--tier-platinum); border-color: var(--tier-platinum); background: rgba(51,251,232,0.1); }
-.tier-badge.tier-diamond { color: var(--tier-diamond);  border-color: var(--tier-diamond);  background: rgba(129,140,248,0.1); }
-.tier-badge.tier-master  { color: var(--tier-master);   border-color: var(--tier-master);   background: rgba(239,68,68,0.1); }
+/* 티어 심볼 색상 */
+.tier-bronze .tier-icon { color: #b45309; }
+.tier-silver .tier-icon { color: #64748b; }
+.tier-gold .tier-icon { color: #ca8a04; }
+.tier-platinum .tier-icon { color: #0891b2; }
+.tier-diamond .tier-icon { color: #0ea5e9; }
+.tier-master .tier-icon { color: #7c3aed; }
 
-.rating-score {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-}
-.rating-label {
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  color: var(--c-muted);
-  letter-spacing: 0.1em;
-}
-.rating-value {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 22px;
-  color: var(--c-gold);
-  letter-spacing: 0.05em;
-  text-shadow: 0 0 10px rgba(245,158,11,0.4);
+/* 오른쪽: 점수/스탯 표시 */
+.section-right {
+  flex: 0 0 32%;
+  align-items: flex-end; /* 오른쪽 정렬 지원, 세부영역은 우측으로 붙임 */
+  background: #f8fafc;
+  border-left: 1px solid #f1f5f9;
 }
 
-/* ─── Stats Section ─────────────────────────────────────────── */
-.stats-section {
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.stat-card {
-  opacity: 0;
-  transform: translateY(16px);
-}
-.stat-card:nth-child(1) { animation: slideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.95s forwards; }
-.stat-card:nth-child(2) { animation: slideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 1.05s forwards; }
-.stat-card:nth-child(3) { animation: slideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 1.15s forwards; }
-
-.stat-card-inner {
-  position: relative;
-  background: var(--c-bg2);
-  border: 1px solid var(--c-border);
-  border-radius: 14px;
-  padding: 14px 12px;
+.rating-box {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  overflow: hidden;
-  transition: border-color 0.3s, box-shadow 0.3s;
-  cursor: default;
-  text-align: center;
+  align-items: flex-end;
+  margin-bottom: 1.5rem;
+  width: 100%;
 }
 
-.stat-card-inner:hover {
-  border-color: rgba(51, 251, 232, 0.4);
-  box-shadow: 0 0 20px rgba(51, 251, 232, 0.08);
+.rating-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 0.2rem;
+  font-weight: 600;
 }
 
-.stat-score .stat-card-inner:hover { border-color: rgba(16, 185, 129, 0.4); }
-.stat-rank  .stat-card-inner:hover { border-color: rgba(129, 140, 248, 0.4); }
-.stat-poi   .stat-card-inner:hover { border-color: rgba(245, 158, 11, 0.4); }
-
-.stat-icon {
-  font-size: 20px;
+.rating-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0ea5e9;
   line-height: 1;
 }
 
-.stat-body {
+.rating-unit {
+  font-size: 1rem;
+  opacity: 0.8;
+  font-weight: 700;
+}
+
+.stats-row {
+  display: flex;
+  width: 100%;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 1.5rem;
+}
+
+.stat-item {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  justify-content: center;
+  gap: 0.2rem;
+}
+
+.stat-divider {
+  width: 1px;
+  background: #e2e8f0;
+  margin: 0 0.5rem;
 }
 
 .stat-label {
-  font-family: 'DM Mono', monospace;
-  font-size: 9px;
-  letter-spacing: 0.18em;
-  color: var(--c-muted);
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #64748b;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .stat-value {
-  font-family: 'Bebas Neue', sans-serif;
-  line-height: 1;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
 }
 
-.score-value {
-  color: var(--c-success);
-  text-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
-}
-.score-int { font-size: 28px; }
-.score-dec { font-size: 18px; opacity: 0.7; }
-
-.rank-value {
-  font-size: 20px;
-}
-.tier-text-bronze   { color: var(--tier-bronze); }
-.tier-text-silver   { color: var(--tier-silver); }
-.tier-text-gold     { color: var(--tier-gold); }
-.tier-text-platinum { color: var(--tier-platinum); }
-.tier-text-diamond  { color: var(--tier-diamond); text-shadow: 0 0 8px rgba(129,140,248,0.5); }
-.tier-text-master   { color: var(--tier-master); text-shadow: 0 0 8px rgba(239,68,68,0.4); }
-
-.stat-sub {
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  color: var(--c-muted);
-  letter-spacing: 0.1em;
+.stat-value.highlight {
+  color: #0ea5e9;
 }
 
-.poi-value {
-  font-size: 17px;
-  color: var(--c-gold);
-  text-shadow: 0 0 10px rgba(245,158,11,0.3);
-  word-break: keep-all;
-  line-height: 1.1;
+.stat-dec {
+  font-size: 0.75rem;
+  opacity: 0.7;
 }
 
-.stat-shine {
-  position: absolute;
-  top: 0;
-  left: -60%;
-  width: 40%;
-  height: 100%;
-  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.04) 50%, transparent 60%);
-  transition: left 0.5s ease;
-}
-.stat-card-inner:hover .stat-shine {
-  left: 120%;
-}
-
-/* ─── Footer Deco ───────────────────────────────────────────── */
-.footer-deco {
+/* 인터랙션 안내 우측 하단 */
+.interaction-hint {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: flex-end;
+  gap: 0.4rem;
   width: 100%;
-  opacity: 0;
-  animation: fadeIn 0.5s ease 1.3s forwards;
-}
-.deco-line {
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--c-border));
-}
-.deco-line:last-child {
-  background: linear-gradient(90deg, var(--c-border), transparent);
-}
-.deco-logo {
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.3em;
-  color: var(--c-brand);
-  opacity: 0.4;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #94a3b8;
+  transition: color 0.2s ease;
 }
 
-/* ─── Transitions ───────────────────────────────────────────── */
-.fade-enter-active, .fade-leave-active { transition: opacity 0.4s ease; }
+.interaction-hint i {
+  font-size: 0.75rem;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+/* ─── Transitions ─────────────────────────────────────────────────── */
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
-
-/* ─── Keyframes ─────────────────────────────────────────────── */
-@keyframes slideDown {
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes slideUp {
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes fadeIn {
-  to { opacity: 1; }
-}
-@keyframes fadeScale {
-  to { opacity: 1; transform: scale(1); }
-}
-.hero-section { transform: scale(0.85); }
-
-@keyframes charPop {
-  to { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-@keyframes rotateCW {
-  to { transform: rotate(360deg); }
-}
-@keyframes rotateCCW {
-  to { transform: rotate(-360deg); }
-}
-
-@keyframes floatY {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-8px); }
-}
 
 @keyframes spin {
   to { transform: rotate(360deg); }
@@ -892,16 +636,108 @@ function onImgError(e) {
   50%       { opacity: 0.5; }
 }
 
-@keyframes badgePulse {
-  0%, 100% { box-shadow: var(--glow-gold); }
-  50%       { box-shadow: 0 0 30px rgba(245, 158, 11, 0.7), 0 0 60px rgba(245, 158, 11, 0.3); }
-}
+/* ─── Responsive ──────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .mvp-root {
+    height: auto;
+    min-height: auto; 
+  }
 
-/* ─── Responsive ────────────────────────────────────────────── */
-@media (max-width: 360px) {
-  .title-mvp  { font-size: 72px; }
-  .nickname   { font-size: 38px; }
-  .stats-section { grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .stat-card-inner { padding: 10px 8px; }
+  .mvp-content-horizontal {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    padding: 1rem;
+    gap: 0;
+  }
+
+  .hz-section {
+    padding: 0.5rem;
+    justify-content: flex-start;
+  }
+
+  .section-left {
+    grid-column: 1 / 2;
+    grid-row: 1 / 2;
+    border-right: none;
+    background: transparent;
+    align-items: flex-start;
+  }
+
+  .title-main {
+    font-size: 1.6rem;
+  }
+
+  .section-center {
+    grid-column: 2 / 3;
+    grid-row: 1 / 2;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .marker-wrapper {
+    margin-bottom: 0.75rem;
+  }
+
+  .marker-frame {
+    width: 64px;
+    height: 64px;
+    border-width: 3px;
+    box-shadow: 0 4px 8px -2px rgba(0, 0, 0, 0.1);
+  }
+
+  .marker-placeholder {
+    font-size: 1.8rem;
+  }
+
+  .mvp-badge {
+    bottom: -8px;
+    padding: 0.15rem 0.6rem;
+  }
+
+  .badge-text {
+    font-size: 0.65rem;
+  }
+
+  .identity-section {
+    align-items: center;
+  }
+
+  .nickname {
+    font-size: 1.2rem;
+  }
+
+  .tier-badge {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.6rem;
+  }
+
+  .section-right {
+    grid-column: 1 / 3;
+    grid-row: 2 / 3;
+    border-left: none;
+    border-top: 1px dashed #e2e8f0;
+    background: transparent;
+    align-items: center;
+    padding-top: 1rem;
+    margin-top: 0.5rem;
+  }
+
+  .rating-box {
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .rating-value {
+    font-size: 1.75rem;
+  }
+
+  .stats-row {
+    margin-bottom: 1rem;
+  }
+
+  .interaction-hint {
+    justify-content: center;
+  }
 }
 </style>
