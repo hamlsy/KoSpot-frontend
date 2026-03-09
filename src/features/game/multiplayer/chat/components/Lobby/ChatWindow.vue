@@ -28,22 +28,32 @@
         <div
           v-else
           class="chat-message"
-          :class="{ 'my-chat': isMyMessage(message) }"
+          :class="{
+            'my-chat': isMyMessage(message),
+            'grouped-message': !shouldShowSender(message, messages[index - 1])
+          }"
         >
           <!-- 다른 사용자 메시지 -->
           <div v-if="!isMyMessage(message)" class="other-message">
             <div class="message-content-wrapper">
-              <div class="message-info">
+              <div
+                v-if="shouldShowSender(message, messages[index - 1])"
+                class="message-info"
+              >
                 <span class="sender-name">{{ message.sender }}</span>
-                <span
-                  v-if="shouldShowTime(message, messages[index - 1])"
-                  class="message-time"
-                  >{{ formatTime(message.timestamp) }}</span
-                >
               </div>
-              <div class="message-bubble other-bubble">
-                <span class="bubble-tail other-tail"></span>
-                {{ message.message }}
+              <div class="message-bubble-row">
+                <div class="message-bubble other-bubble" :class="{ 'no-tail': !shouldShowSender(message, messages[index - 1]) }">
+                  <span
+                    v-if="shouldShowSender(message, messages[index - 1])"
+                    class="bubble-tail other-tail"
+                  ></span>
+                  {{ message.message }}
+                </div>
+                <span
+                  v-if="shouldShowTime(message, messages[index + 1])"
+                  class="message-time message-time-side"
+                >{{ formatTime(message.timestamp) }}</span>
               </div>
             </div>
           </div>
@@ -51,16 +61,18 @@
           <!-- 내 메시지 -->
           <div v-else-if="isMyMessage(message)" class="my-message">
             <div class="my-content-wrapper">
-              <div class="my-message-info">
+              <div class="message-bubble-row">
                 <span
-                  v-if="shouldShowTime(message, messages[index - 1])"
-                  class="message-time"
-                  >{{ formatTime(message.timestamp) }}</span
-                >
-              </div>
-              <div class="message-bubble my-bubble">
-                {{ message.message }}
-                <span class="bubble-tail my-tail"></span>
+                  v-if="shouldShowTime(message, messages[index + 1])"
+                  class="message-time message-time-side my-side"
+                >{{ formatTime(message.timestamp) }}</span>
+                <div class="message-bubble my-bubble" :class="{ 'no-tail': !shouldShowSender(message, messages[index - 1]) }">
+                  {{ message.message }}
+                  <span
+                    v-if="shouldShowSender(message, messages[index - 1])"
+                    class="bubble-tail my-tail"
+                  ></span>
+                </div>
               </div>
             </div>
           </div>
@@ -74,8 +86,9 @@
           type="text"
           v-model="newMessage"
           placeholder="메시지를 입력하세요..."
-          @keydown.stop
-          @keydown="handleKeydown"
+          @keyup.enter="handleEnter"
+          @compositionstart="onCompositionStart"
+          @compositionend="onCompositionEnd"
           @focus="handleInputFocus"
           @blur="handleInputBlur"
           ref="chatInput"
@@ -127,6 +140,7 @@ export default {
       onlineUsers: 37, // 테스트 데이터, 실제로는 서버에서 받아와야 함
       currentMemberId: null,
       isInputFocused: false,
+      isComposing: false,
     };
   },
 
@@ -169,20 +183,24 @@ export default {
       this.currentMemberId = localStorageMemberId || propsUserId;
     },
 
-    /**
-     * Handle keydown event with IME composition check
-     * This prevents double message sending on MacOS when using Korean IME
-     */
-    handleKeydown(event) {
-      // IME 조합 중이면 무시 (한글 등 조합형 문자 입력 시)
-      // isComposing: 표준 속성으로 조합 중인지 확인
-      // keyCode === 229: 일부 브라우저에서 IME 조합 중임을 나타내는 레거시 코드
-      if (event.isComposing || event.keyCode === 229) {
-        return;
-      }
+    onCompositionStart() {
+      this.isComposing = true;
+    },
 
-      // Enter 키가 아니면 무시
-      if (event.key !== "Enter") {
+    onCompositionEnd(event) {
+      // Mac Chrome에서 한글 입력 시 조합 완료와 동시에 엔터 이벤트가 발생할 수 있으므로,
+      // 상태 해제를 미세하게 지연시킵니다.
+      setTimeout(() => {
+        this.isComposing = false;
+      }, 50);
+    },
+
+    /**
+     * Handle enter key event to send message
+     */
+    handleEnter(event) {
+      // IME 조합 중이거나, 이제 막 끝난 상태면 무시
+      if (this.isComposing || event.isComposing) {
         return;
       }
 
@@ -246,20 +264,29 @@ export default {
       return false;
     },
 
-    shouldShowTime(message, previousMessage) {
-      if (!previousMessage) return true; // 첫 메시지는 항상 표시
-      if (message.system) return false; // 시스템 메시지는 시간 표시 안 함
+    shouldShowSender(message, previousMessage) {
+      if (!previousMessage) return true;
+      if (message.system || previousMessage.system) return true;
+      return message.senderId !== previousMessage.senderId;
+    },
+
+    shouldShowTime(message, nextMessage) {
+      if (!nextMessage) return true; // 마지막 메시지는 항상 표시
+      if (message.system || nextMessage.system) return true;
+      
+      // 다음 메시지의 보낸이가 다르면 현재 메시지에 시간을 표시
+      if (message.senderId !== nextMessage.senderId) return true;
 
       const currentTime = new Date(message.timestamp);
-      const prevTime = new Date(previousMessage.timestamp);
+      const nextTime = new Date(nextMessage.timestamp);
 
-      // 같은 분인지 확인 (년, 월, 일, 시, 분 비교)
+      // 다음 메시지와 같은 분이면 표시 안 함, 다른 분이면 표시
       return (
-        currentTime.getFullYear() !== prevTime.getFullYear() ||
-        currentTime.getMonth() !== prevTime.getMonth() ||
-        currentTime.getDate() !== prevTime.getDate() ||
-        currentTime.getHours() !== prevTime.getHours() ||
-        currentTime.getMinutes() !== prevTime.getMinutes()
+        currentTime.getFullYear() !== nextTime.getFullYear() ||
+        currentTime.getMonth() !== nextTime.getMonth() ||
+        currentTime.getDate() !== nextTime.getDate() ||
+        currentTime.getHours() !== nextTime.getHours() ||
+        currentTime.getMinutes() !== nextTime.getMinutes()
       );
     },
   },
@@ -419,6 +446,8 @@ export default {
 .message-content-wrapper {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .message-info {
@@ -426,6 +455,7 @@ export default {
   align-items: center;
   gap: 0.4rem;
   margin-bottom: 0.2rem;
+  margin-left: 0.4rem;
 }
 
 .sender-name {
@@ -438,6 +468,17 @@ export default {
   font-size: 0.7rem;
   color: #9ca3af;
   font-weight: 500;
+  white-space: nowrap;
+}
+
+.message-bubble-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.4rem;
+}
+
+.message-time-side {
+  margin-bottom: 0.2rem;
 }
 
 /* 말풍선 공통 스타일 */
@@ -450,7 +491,7 @@ export default {
   word-wrap: break-word;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   transition: all 0.2s ease;
-  max-width: 100%;
+  max-width: fit-content;
 }
 
 .message-bubble:hover {
@@ -464,6 +505,10 @@ export default {
   color: #374151;
   border-bottom-left-radius: 4px;
   border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.other-bubble.no-tail {
+  border-bottom-left-radius: 14px;
 }
 
 .other-tail {
@@ -503,14 +548,8 @@ export default {
   max-width: 100%;
 }
 
-.my-message-info {
-  margin-bottom: 0.2rem;
-}
-
-.my-message-info .message-time {
-  font-size: 0.7rem;
-  color: #9ca3af;
-  margin-right: 0.3rem;
+.grouped-message {
+  margin-top: -0.1rem;
 }
 
 /* 내 말풍선 */
@@ -520,6 +559,10 @@ export default {
   border-bottom-right-radius: 4px;
   border: none;
   font-weight: 500;
+}
+
+.my-bubble.no-tail {
+  border-bottom-right-radius: 14px;
 }
 
 .my-tail {

@@ -305,16 +305,15 @@ export default {
 
 <style scoped>
 .team-game-results {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  position: relative;
+  width: 100%;
+  height: 100%;
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
   animation: fadeIn 0.3s ease;
+  overflow: hidden;
 }
 
 .results-backdrop {

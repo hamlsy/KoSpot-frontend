@@ -14,6 +14,8 @@
           <!-- 네비게이션 추가 - 웹 전용 -->
           <div class="main-nav desktop-only">
             <router-link :to="{ name: 'NoticeListView' }" class="nav-link">공지사항</router-link>
+            <!-- 상점 -->
+            <router-link to="/shop" class="nav-link">상점</router-link>
             <!-- 로그인한 경우에만 마이페이지 표시 -->
             <router-link v-if="actualIsLoggedIn" to="/myProfile" class="nav-link">마이페이지</router-link>
             <!-- 버그/문의 -->
@@ -52,6 +54,15 @@
                 @close="closeNotificationDropdown"
               />
             </div>
+
+            <!-- 친구 토글 버튼 (로그인 시에만 표시) -->
+            <FriendToggleButton
+              v-if="actualIsLoggedIn"
+              :is-open="friendStore.isPanelOpen"
+              :has-notification="friendStore.hasAnyNotification"
+              :notification-count="friendStore.totalNotificationCount"
+              @toggle="friendStore.togglePanel"
+            />
 
             <!-- 다크모드 토글 버튼 (웹에만 표시) -->
             <!-- <button class="theme-toggle desktop-only" @click="toggleTheme" :title="isDarkMode ? '라이트 모드로 전환' : '다크 모드로 전환'">
@@ -165,40 +176,96 @@
 
         <!-- 모바일용 내비게이션 메뉴 추가 -->
         <nav class="mobile-nav" v-if="actualIsLoggedIn">
-          <!-- 다크모드 토글 비활성화 -->
-          <!-- <div class="menu-item theme-menu-item" @click="toggleTheme">
-            <i class="fas" :class="isDarkMode ? 'fa-sun' : 'fa-moon'"></i>
-            {{ isDarkMode ? '라이트 모드' : '다크 모드' }}
-          </div>
-          
-          <div class="menu-divider"></div> -->
-          
-          <router-link :to="{ name: 'NoticeListView' }" class="menu-item">
-            <i class="fas fa-bullhorn"></i>
+          <!-- 게임 섹션 -->
+          <div class="menu-section-label">게임</div>
+          <router-link to="/roadView/main" class="menu-item" @click="closeProfileMenu">
+            <span class="menu-icon-wrap menu-icon-roadview"><i class="fas fa-street-view"></i></span>
+            로드뷰 모드
+          </router-link>
+          <router-link to="/lobby" class="menu-item" @click="closeProfileMenu">
+            <span class="menu-icon-wrap menu-icon-multi"><i class="fas fa-users"></i></span>
+            멀티플레이어
+          </router-link>
+
+          <div class="menu-divider"></div>
+
+          <!-- 소셜 섹션 -->
+          <div class="menu-section-label">소셜</div>
+          <router-link to="/shopMain" class="menu-item" @click="closeProfileMenu">
+            <span class="menu-icon-wrap menu-icon-shop"><i class="fas fa-shopping-bag"></i></span>
+            상점
+          </router-link>
+          <a href="#" class="menu-item" @click.prevent="() => { closeProfileMenu(); friendStore.openPanel(); }">
+            <span class="menu-icon-wrap menu-icon-friend"><i class="fas fa-user-friends"></i></span>
+            친구
+          </a>
+          <router-link :to="{ name: 'NoticeListView' }" class="menu-item" @click="closeProfileMenu">
+            <span class="menu-icon-wrap menu-icon-notice"><i class="fas fa-bullhorn"></i></span>
             공지사항
           </router-link>
-          <router-link to="/myProfile" class="menu-item">
-            <i class="fas fa-user-circle"></i>
-            마이페이지
-          </router-link>
           <a href="#" class="menu-item" @click.prevent="openContactModalFromSidebar">
-            <i class="fas fa-envelope"></i>
+            <span class="menu-icon-wrap menu-icon-contact"><i class="fas fa-envelope"></i></span>
             버그/문의
           </a>
+
           <div class="menu-divider"></div>
+
+          <!-- 계정 섹션 -->
+          <div class="menu-section-label">계정</div>
+          <router-link to="/myProfile" class="menu-item" @click="closeProfileMenu">
+            <span class="menu-icon-wrap menu-icon-profile"><i class="fas fa-user-circle"></i></span>
+            마이페이지
+          </router-link>
           <a href="#" class="menu-item" @click.prevent="handleLogout">
-            <i class="fas fa-sign-out-alt"></i>
+            <span class="menu-icon-wrap menu-icon-logout"><i class="fas fa-sign-out-alt"></i></span>
             로그아웃
           </a>
           
           <!-- 관리자 페이지 링크 추가 -->
-          <router-link v-if="actualIsAdmin" to="/admin" class="menu-item admin-menu-item">
-            <i class="fas fa-user-shield"></i>
+          <router-link v-if="actualIsAdmin" to="/admin" class="menu-item admin-menu-item" @click="closeProfileMenu">
+            <span class="menu-icon-wrap menu-icon-admin"><i class="fas fa-user-shield"></i></span>
             관리자 페이지
           </router-link>
         </nav>
       </div>
     </transition>
+
+    <!-- 친구 패널 -->
+    <FriendPanel
+      v-if="actualIsLoggedIn"
+      :is-open="friendStore.isPanelOpen"
+      :friends="friendStore.friends"
+      :pending-requests="friendStore.pendingRequests"
+      @close="friendStore.closePanel"
+      @open-chat="handleOpenChat"
+      @open-user-search="friendStore.openSearch"
+      @accept-request="friendStore.acceptFriendRequest"
+      @decline-request="friendStore.declineFriendRequest"
+      @delete-friend="(f) => friendStore.deleteFriend(f.id)"
+    />
+
+    <!-- 사용자 검색 모달 -->
+    <UserSearchModal
+      v-if="actualIsLoggedIn"
+      :is-open="friendStore.isSearchOpen"
+      @close="friendStore.closeSearch"
+    />
+
+    <!-- 채팅 창들 (최대 3개) -->
+    <FriendChatWindow
+      v-for="(chat, index) in friendStore.openChats"
+      :key="chat.friend.id"
+      :is-open="true"
+      :friend="chat.friend"
+      :messages="chat.messages"
+      :is-loading="chat.isLoading"
+      :initial-x="computeChatInitialX(index)"
+      :initial-y="computeChatInitialY()"
+      :z-index="chat.zIndex"
+      @close="friendStore.closeChatRoom(chat.friend.id)"
+      @send-message="handleSendMessage"
+      @focus="friendStore.bringToFront(chat.friend.id)"
+    />
   </div>
 </template>
 
@@ -207,12 +274,21 @@
 import { tokenRefreshService } from '@/core/services/tokenRefresh.service.js';
 import { useTheme } from '@/core/composables/useTheme.js';
 import { useNotificationStore } from '@/store/modules/notificationStore.js';
+import { useFriendStore } from '@/features/friend/stores/friend.store.js';
 import NotificationDropdown from '@/core/components/NotificationDropdown.vue';
+import FriendToggleButton from '@/features/friend/components/FriendToggleButton.vue';
+import FriendPanel from '@/features/friend/components/FriendPanel.vue';
+import UserSearchModal from '@/features/friend/components/UserSearchModal.vue';
+import FriendChatWindow from '@/features/friend/components/FriendChatWindow.vue';
 
 export default {
   name: 'NavigationBar',
   components: {
     NotificationDropdown,
+    FriendToggleButton,
+    FriendPanel,
+    UserSearchModal,
+    FriendChatWindow,
   },
   props: {
     isLoggedIn: {
@@ -239,11 +315,13 @@ export default {
   setup() {
     const { isDarkMode, toggleTheme } = useTheme();
     const notificationStore = useNotificationStore();
+    const friendStore = useFriendStore();
     
     return {
       isDarkMode,
       toggleTheme,
       notificationStore,
+      friendStore,
     };
   },
   data() {
@@ -257,8 +335,7 @@ export default {
         email: "user@kospot.com",
         avatar: null,
         isAdmin: false
-      },
-      isDevMode: true
+      }
     };
   },
   computed: {
@@ -306,18 +383,14 @@ export default {
       immediate: true,
       deep: true
     },
-    '$route'() {
-      // 라우트 변경 시 개발 모드 확인
-      this.checkDevMode();
-    }
   },
   mounted() {
-    this.checkDevMode();
-    // 토큰이 있으면 사용자 정보 업데이트
-    if (this.hasToken && !this.actualIsLoggedIn) {
+    // 토큰이 있으면 사용자 정보 조회
+    if (this.hasToken) {
       this.checkAuthStatus();
     }
-    // 알림 미읽은 수 초기 로드 (로그인 상태일 때)
+    // 알림 미읽은 수 초기 로드
+    // 친구 목록/소켓 초기화는 App.vue에서 전역으로 처리됨
     if (this.hasToken) {
       this.notificationStore.fetchUnreadCount();
     }
@@ -328,6 +401,46 @@ export default {
     document.removeEventListener('click', this.handleGlobalClick);
   },
   methods: {
+    /**
+     * 친구 채팅창 열기 핸들러
+     */
+    async handleOpenChat(friend) {
+      let myMemberId = null;
+      try {
+        const raw = localStorage.getItem('memberInfo');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          myMemberId = parsed.memberId ?? parsed.id ?? null;
+        }
+      } catch { /* Ignore */ }
+      await this.friendStore.openChatRoom(friend, myMemberId);
+    },
+    /**
+     * FriendChatWindow의 @send-message 이벤트 처리
+     * payload: { friendId, text }
+     */
+    handleSendMessage({ friendId, text }) {
+      this.friendStore.sendMessage(friendId, text);
+    },
+    /**
+     * 채팅창 초기 X 위치 계산 (화면 우하단에서 index 만큼 왼쪽으로)
+     * 창 너비 300px + 간격 20px
+     */
+    computeChatInitialX(index) {
+      const W = window.innerWidth;
+      if (W <= 480) return 0; // 모바일 Bottom Sheet
+      const winW = 300;
+      const gap = 20;
+      return Math.max(0, W - (winW + gap) * (index + 1));
+    },
+    /**
+     * 채팅창 초기 Y 위치 계산 (화면 하단 20px 여백)
+     */
+    computeChatInitialY() {
+      const H = window.innerHeight;
+      if (window.innerWidth <= 480) return 0; // 모바일 Bottom Sheet
+      return Math.max(0, H - 440 - 20);
+    },
     toggleProfileMenu() {
       this.showProfileMenu = !this.showProfileMenu;
       if (this.showProfileMenu) {
@@ -399,65 +512,46 @@ export default {
       
       this.$router.push('/main');
     },
-    // 개발 모드 확인 (API 연결 실패 시)
-    async checkDevMode() {
-      // 개발 모드 감지는 초기 로드 시 한 번만 수행
-      if (this.$route.matched.length === 0) {
+    // 인증 상태 확인
+    async checkAuthStatus() {
+      // 부모 컴포넌트(MainView, ShopView 등)가 프로필 정보를 내려준 경우 생략
+      if (this.userInfo && this.userInfo.name && this.userInfo.name !== "김코스팟") {
         return;
       }
       
-      try {
-        // API 연결 테스트 (타임아웃 2초)
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => {
-          controller.abort();
-        }, 2000);
-        
-        const testResponse = await fetch('/api/main', { 
-          method: 'GET',
-          signal: controller.signal,
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (testResponse.ok) {
-          this.isDevMode = false;
-        } else {
-          // API 응답이 실패하면 개발 모드로 간주
-          this.isDevMode = true;
-          console.log('🔧 개발 모드 감지: API 응답 실패');
-        }
-      } catch (error) {
-        // 네트워크 에러, 타임아웃, 또는 CORS 에러 시 개발 모드로 간주
-        this.isDevMode = true;
-        console.log('🔧 개발 모드 감지: API 연결 실패', error.name || error.message);
-      }
-    },
-    // 인증 상태 확인
-    async checkAuthStatus() {
       const token = localStorage.getItem('accessToken');
       if (token) {
-        // 토큰이 있으면 사용자 정보 조회 시도
         try {
-          // API 호출은 필요 시 구현
-          // 현재는 props로 전달받은 userInfo 사용
+          // MainView에서 저장해둔 사용자 정보를 불러와서 사용
+          const storedProfile = localStorage.getItem('userProfile');
+          if (storedProfile) {
+            const parsedProfile = JSON.parse(storedProfile);
+            this.userProfile = {
+              ...this.userProfile,
+              name: parsedProfile.name || this.userProfile.name,
+              email: parsedProfile.email || this.userProfile.email,
+              avatar: parsedProfile.avatar || this.userProfile.avatar,
+              isAdmin: parsedProfile.isAdmin || false
+            };
+          }
         } catch (error) {
-          console.error('인증 상태 확인 실패:', error);
+          console.error('로컬스토리지에서 프로필 불러오기 실패:', error);
         }
       }
     },
     // 로그아웃 처리
     handleLogout() {
       // 토큰 갱신 서비스 중지
-      console.log('🛑 로그아웃: 토큰 갱신 서비스 중지');
       tokenRefreshService.stop();
-      
+
+      // 친구 WebSocket 해제 및 상태 초기화
+      this.friendStore.destroySocket();
+      this.friendStore.reset();
+
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('memberId');
+      localStorage.removeItem('userProfile');
       this.userProfile = {
         name: "",
         email: "",
@@ -775,10 +869,12 @@ export default {
   width: 320px;
   background: var(--color-surface);
   z-index: 9999;
-  padding: var(--spacing-xl);
+  padding: var(--spacing-xl) var(--spacing-xl) 0;
   overflow-y: auto;
   box-shadow: var(--shadow-xl);
   border-left: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
 }
 
 .profile-header {
@@ -842,46 +938,86 @@ export default {
 .mobile-nav {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: 2px;
+  padding: 0.75rem 0.75rem 1.5rem;
+  flex: 1;
+}
+
+/* 섹션 레이블 */
+.menu-section-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-tertiary, #9ca3af);
+  padding: 0.75rem 0.4rem 0.3rem;
+  margin-top: 0.25rem;
 }
 
 .menu-item {
   display: flex;
   align-items: center;
-  padding: var(--spacing-md);
+  padding: 0.55rem 0.5rem;
   color: var(--color-text-primary);
   text-decoration: none;
   font-weight: 500;
-  gap: var(--spacing-md);
-  border-radius: var(--radius-md);
-  transition: all var(--transition-normal);
+  font-size: 0.9rem;
+  gap: 0.75rem;
+  border-radius: 10px;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
 }
 
-.menu-item:hover {
+.menu-item:hover,
+.menu-item.router-link-active {
   background: var(--color-surface-hover);
-  transform: translateX(4px);
+  color: var(--color-primary);
+  transform: translateX(2px);
 }
 
 .menu-item i {
   width: 20px;
   text-align: center;
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: var(--color-text-secondary);
 }
+
+/* 아이콘 래퍼 */
+.menu-icon-wrap {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.menu-item:hover .menu-icon-wrap {
+  transform: scale(1.08);
+}
+
+/* 아이콘 색상 */
+.menu-icon-roadview { background: rgba(102, 126, 234, 0.12); color: #667eea; }
+.menu-icon-multi    { background: rgba(16, 185, 129, 0.12);  color: #10b981; }
+.menu-icon-shop     { background: rgba(245, 158, 11, 0.12);  color: #f59e0b; }
+.menu-icon-friend   { background: rgba(236, 72, 153, 0.12);  color: #ec4899; }
+.menu-icon-notice   { background: rgba(59, 130, 246, 0.12);  color: #3b82f6; }
+.menu-icon-contact  { background: rgba(20, 184, 166, 0.12);  color: #14b8a6; }
+.menu-icon-profile  { background: rgba(99, 102, 241, 0.12);  color: #6366f1; }
+.menu-icon-logout   { background: rgba(239, 68, 68, 0.12);   color: #ef4444; }
+.menu-icon-admin    { background: rgba(99, 102, 241, 0.14);  color: #6366f1; }
 
 .menu-divider {
   height: 1px;
   background: var(--color-border);
-  margin: var(--spacing-md) 0;
+  margin: 0.4rem 0.4rem;
 }
 
 .admin-menu-item {
   color: var(--color-accent) !important;
   font-weight: 600;
-}
-
-.admin-menu-item i {
-  color: var(--color-accent);
 }
 
 .temp-login-menu-item {

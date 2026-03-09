@@ -292,6 +292,8 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
             error(`❌ 연결 콜백 실행 중 오류 (${index + 1}):`, callbackError);
           }
         });
+        // ✅ 재연결 시 콜백 중복 실행 방지: 실행 후 즉시 초기화
+        connectionCallbacks.value.clear();
       },
       // 연결 실패 콜백
       (err) => {

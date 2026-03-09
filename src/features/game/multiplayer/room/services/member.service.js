@@ -49,22 +49,18 @@ class MemberService {
    */
   async getPlayerSummary(memberId) {
     try {
-      console.log('📤 플레이어 요약 정보 조회 요청:', { memberId });
-      
       const response = await apiClient.get(MEMBER_ENDPOINTS.GET_PLAYER_SUMMARY(memberId));
-      
-      console.log('✅ 플레이어 요약 정보 조회 성공:', response.data);
-      
+
       // API 응답 구조에 따라 데이터 추출
       if (response.data?.isSuccess && response.data?.result) {
         return response.data.result;
       }
-      
+
       // 직접 데이터가 반환되는 경우
       if (response.data?.data) {
         return response.data.data;
       }
-      
+
       return response.data;
     } catch (error) {
       console.error('❌ 플레이어 요약 정보 조회 실패:', error);
@@ -83,7 +79,7 @@ class MemberService {
     if (error.response) {
       const { status, data } = error.response;
       console.error(`HTTP ${status} 에러:`, data);
-      
+
       switch (status) {
         case 400:
           console.error('📛 잘못된 요청:', data.message || defaultMessage);
@@ -100,7 +96,7 @@ class MemberService {
         default:
           console.error('📛 알 수 없는 오류:', data.message || defaultMessage);
       }
-      
+
       if (data?.message) {
         throw new Error(data.message);
       }
@@ -108,7 +104,7 @@ class MemberService {
       console.error('📛 네트워크 오류: 서버에 연결할 수 없습니다.');
       throw new Error('서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.');
     }
-    
+
     throw new Error(defaultMessage);
   }
 }

@@ -59,8 +59,18 @@
 
       <!-- 메인 게임 영역 -->
       <template #main>
+        <final-results
+          v-if="showGameResults"
+          :player-results="finalGameResult?.playerResults || []"
+          :current-user-id="currentUserId"
+          :total-rounds="gameStore.state.totalRounds"
+          :total-game-time="totalGameTime"
+          :game-message="finalGameResult?.message"
+          @play-again="restartGame"
+          @exit-to-lobby="exitToLobby"
+        />
         <round-results
-          v-if="gameStore.state.roundEnded"
+          v-else-if="gameStore.state.roundEnded"
           :players="localPlayers"
           :actual-location="
             gameStore.state.actualLocation || { lat: 37.5665, lng: 126.978 }
@@ -90,18 +100,8 @@
         />
       </template>
 
-      <!-- 게임 결과 모달 -->
+      <!-- 게임 결과 모달 (이동됨) -->
       <template #results>
-        <final-results
-          v-if="showGameResults"
-          :player-results="finalGameResult?.playerResults || []"
-          :current-user-id="currentUserId"
-          :total-rounds="gameStore.state.totalRounds"
-          :total-game-time="totalGameTime"
-          :game-message="finalGameResult?.message"
-          @play-again="restartGame"
-          @exit-to-lobby="exitToLobby"
-        />
       </template>
     </BaseMultiRoadViewGame>
   </div>

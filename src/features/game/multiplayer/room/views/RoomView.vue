@@ -17,8 +17,11 @@
           :unread-messages="unreadMessages"
           :is-team-mode="isTeamMode"
           :show-chat-toggle="isMobileView"
+          :friend-is-open="friendStore.isPanelOpen"
+          :friend-has-notification="friendStore.hasAnyNotification"
           @open-settings="openRoomSettings"
           @toggle-chat="handleToggleChat"
+          @toggle-friend="friendStore.togglePanel()"
           @leave-room="leaveRoom"
           @start-game="startGame"
           @refresh-room="handleRefreshRoom"
@@ -120,6 +123,35 @@
       </div>
     </div>
 
+    <!-- 친구 패널 -->
+    <FriendPanel
+      :is-open="friendStore.isPanelOpen"
+      :friends="friendStore.friends"
+      :pending-requests="friendStore.pendingRequests"
+      @close="friendStore.closePanel()"
+      @open-chat="(friend) => friendStore.openChatRoom(friend, Number(currentUserId))"
+      @open-user-search="friendStore.openSearch()"
+      @accept-request="friendStore.acceptFriendRequest"
+      @decline-request="friendStore.declineFriendRequest"
+    />
+
+    <!-- 유저 검색 모달 -->
+    <UserSearchModal
+      v-if="friendStore.isSearchOpen"
+      @close="friendStore.closeSearch()"
+    />
+
+    <!-- 친구 채팅창 -->
+    <FriendChatWindow
+      v-for="chat in friendStore.openChats"
+      :key="chat.friend.id"
+      :friend="chat.friend"
+      :messages="chat.messages"
+      :is-loading="chat.isLoading"
+      @close="friendStore.closeChatRoom(chat.friend.id)"
+      @send="(text) => friendStore.sendMessage(chat.friend.id, text)"
+    />
+
     <!-- 방 설정 모달 -->
     <RoomSettingsModal
       :is-active="isRoomSettingsOpen"
@@ -191,6 +223,13 @@ import ToastNotification from "src/features/game/multiplayer/room/components/not
 import CountdownOverlay from "src/features/game/multiplayer/room/components/settings/CountdownOverlay.vue";
 import { soloTestData } from "src/features/game/multiplayer/room/composables/MultiplayerGameTestData.js";
 
+// 친구 기능
+import FriendToggleButton from "@/features/friend/components/FriendToggleButton.vue";
+import FriendPanel from "@/features/friend/components/FriendPanel.vue";
+import FriendChatWindow from "@/features/friend/components/FriendChatWindow.vue";
+import UserSearchModal from "@/features/friend/components/UserSearchModal.vue";
+import { useFriendStore } from "@/features/friend/stores/friend.store.js";
+
 // Composables
 import { useRoom } from "../composables/useRoom";
 
@@ -208,6 +247,9 @@ const props = defineProps({
 // Vue Router
 const router = useRouter();
 const route = useRoute();
+
+// 친구 Store
+const friendStore = useFriendStore();
 
 // 현재 사용자 ID (localStorage에서 가져오기)
 let currentUserId = localStorage.getItem("memberId") || "";
@@ -718,6 +760,11 @@ onMounted(async () => {
   // 강제 종료 감지를 위한 beforeunload 이벤트 리스너 추가
   window.addEventListener("beforeunload", handleBeforeUnload);
 
+  // 친구 데이터 초기화 (패널 오픈 시 바로 보이도록)
+  friendStore.loadInitialData().catch(() => {
+    // 실패해도 방 입장은 계속 진행
+  });
+
   // Room 초기화 전에 접근 권한 확인
   try {
     // 더미 모드가 아닌 경우에만 접근 권한 확인
@@ -945,6 +992,16 @@ const formatUpdateTime = (timestamp) => {
   min-width: 320px;
   display: flex;
   flex-direction: column;
+}
+
+/* ─── 친구 플로팅 버튼 영역 ─────────────────────── */
+.friend-floating-area {
+  position: fixed;
+  top: 1rem;
+  right: 1.25rem;
+  z-index: 200;
+  display: flex;
+  align-items: center;
 }
 
 .panel-section {

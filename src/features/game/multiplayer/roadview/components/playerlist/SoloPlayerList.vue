@@ -203,17 +203,14 @@ export default {
 
 <style scoped>
 .player-list {
-  background: linear-gradient(135deg, rgba(248, 250, 252, 0.95) 0%, rgba(241, 245, 249, 0.95) 100%);
-  backdrop-filter: blur(16px);
+  /* 배경/테두리/그림자는 부모 .left-panel에 위임 (이중 박스 방지) */
+  background: transparent;
   padding: 1rem;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   flex: 1;
   max-width: 100%;
-  border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
 /* 플레이어 목록 타이틀 */
@@ -297,9 +294,9 @@ export default {
 }
 
 .players-container {
-  padding-top: 30px;
+  padding-top: 0.5rem;
   flex: 1;
-  overflow-y: auto;
+  overflow-y: auto; /* 내부 컨텐츠 스크롤 - 부모 .left-panel overflow-y: auto와 협력 */
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
@@ -665,11 +662,12 @@ export default {
 
 /* 모바일에서는 말풍선 위치 조정 */
 @media (max-width: 768px) {
+  /* 모바일에서는 플레이어 리스트가 모달처럼 뜨므로 자체 배경 복원 */
   .player-list {
     background: linear-gradient(135deg, rgba(248, 250, 252, 0.98) 0%, rgba(241, 245, 249, 0.98) 100%);
     backdrop-filter: blur(20px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 20px;
+    box-shadow: none; /* 부모 모달에서 그림자 처리 */
   }
   
   .chat-bubble {

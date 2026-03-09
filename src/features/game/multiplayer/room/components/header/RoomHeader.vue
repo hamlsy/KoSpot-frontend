@@ -83,6 +83,23 @@
             </div>
           </button>
 
+          <!-- 친구 버튼 (헤더에 통합) -->
+          <button
+            class="action-button friend-toggle-button"
+            :class="{ 'is-open': friendIsOpen, 'has-notif': friendHasNotification }"
+            @click="$emit('toggle-friend')"
+            title="친구 목록"
+          >
+            <span v-if="friendHasNotification" class="friend-notif-dot"></span>
+            <svg class="friend-btn-icon" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
+                fill="currentColor"
+              />
+            </svg>
+            <span>친구</span>
+          </button>
+
           <button
             class="action-button refresh-button"
             @click="$emit('refresh-room')"
@@ -164,6 +181,14 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  friendIsOpen: {
+    type: Boolean,
+    default: false,
+  },
+  friendHasNotification: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const emit = defineEmits([
@@ -172,6 +197,7 @@ const emit = defineEmits([
   "start-game",
   "toggle-chat",
   "refresh-room",
+  "toggle-friend",
 ]);
 
 const gameModeName = computed(() => {
@@ -469,6 +495,49 @@ const leaveRoomWithConfirm = () => {
   font-weight: 700;
   box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
   border: 2px solid white;
+}
+
+/* 친구 버튼 */
+.friend-toggle-button {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #475569;
+  border: 1px solid rgba(102, 126, 234, 0.25);
+  position: relative;
+}
+.friend-toggle-button:hover {
+  background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+  color: #6d28d9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+.friend-toggle-button.is-open {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: rgba(102, 126, 234, 0.4);
+}
+.friend-toggle-button.is-open:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #553c9a 100%);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.35);
+}
+.friend-btn-icon {
+  width: 14px;
+  height: 14px;
+}
+/* 알림 뱃지 */
+.friend-notif-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 9px;
+  height: 9px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 2px solid white;
+  animation: pulse-notif 2s ease-in-out infinite;
+}
+@keyframes pulse-notif {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.25); }
 }
 
 .settings-button {

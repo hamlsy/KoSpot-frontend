@@ -331,42 +331,59 @@
             <i class="fas fa-times"></i>
           </button>
         </div>
-
+        
         <!-- 모바일용 내비게이션 메뉴 추가 -->
         <nav class="mobile-nav">
-          <router-link :to="{ name: 'NoticeListView' }" class="menu-item">
-            <i class="fas fa-bullhorn"></i>
-            공지사항
-          </router-link>
-          <!-- <router-link to="/tempPage" class="menu-item">
-            <i class="fas fa-calendar-alt"></i>
-            이벤트
-          </router-link>
-          <router-link to="/tempPage" class="menu-item">
-            <i class="fas fa-chart-bar"></i>
-            통계
-          </router-link>
-          <router-link to="/shopMain" class="menu-item">
-            <i class="fas fa-shopping-cart"></i>
-            상점
-          </router-link> -->
-          <router-link to="/myProfile" class="menu-item">
-            <i class="fas fa-user-circle"></i>
+          <!-- 계정 섹션 -->
+          <div class="menu-section-label">계정</div>
+          <router-link to="/myProfile" class="menu-item" @click="closeProfileMenu">
+            <span class="menu-icon-wrap menu-icon-profile"><i class="fas fa-user-circle"></i></span>
             마이페이지
           </router-link>
-          <div class="menu-divider"></div>
           <a href="#" class="menu-item" @click.prevent="handleLogout">
-            <i class="fas fa-sign-out-alt"></i>
+            <span class="menu-icon-wrap menu-icon-logout"><i class="fas fa-sign-out-alt"></i></span>
             로그아웃
           </a>
+          <div class="menu-divider"></div>
+          <!-- 게임 섹션 -->
+          <div class="menu-section-label">게임</div>
+          <router-link to="/roadView/main" class="menu-item" @click="closeProfileMenu">
+            <span class="menu-icon-wrap menu-icon-roadview"><i class="fas fa-street-view"></i></span>
+            로드뷰 모드
+          </router-link>
+          <router-link to="/lobby" class="menu-item" @click="closeProfileMenu">
+            <span class="menu-icon-wrap menu-icon-multi"><i class="fas fa-users"></i></span>
+            멀티플레이어
+          </router-link>
 
+          <div class="menu-divider"></div>
+
+          <!-- 소셜 섹션 -->
+          <div class="menu-section-label">소셜</div>
+          <router-link to="/shop" class="menu-item" @click="closeProfileMenu">
+            <span class="menu-icon-wrap menu-icon-shop"><i class="fas fa-shopping-bag"></i></span>
+            상점
+          </router-link>
+          <a href="#" class="menu-item" @click.prevent="() => { closeProfileMenu(); $emit('open-friends'); }">
+            <span class="menu-icon-wrap menu-icon-friend"><i class="fas fa-user-friends"></i></span>
+            친구
+          </a>
+          <router-link :to="{ name: 'NoticeListView' }" class="menu-item" @click="closeProfileMenu">
+            <span class="menu-icon-wrap menu-icon-notice"><i class="fas fa-bullhorn"></i></span>
+            공지사항
+          </router-link>
+
+          <div class="menu-divider"></div>
+
+          
           <!-- 관리자 페이지 링크 추가 -->
           <router-link
             v-if="userProfile.isAdmin"
             to="/admin"
             class="menu-item admin-menu-item"
+            @click="closeProfileMenu"
           >
-            <i class="fas fa-user-shield"></i>
+            <span class="menu-icon-wrap menu-icon-admin"><i class="fas fa-user-shield"></i></span>
             관리자 페이지
           </router-link>
         </nav>
@@ -505,6 +522,9 @@ async function loadMainPageData() {
           isFirstVisited.value = false;
           userProfile.value.isFirstVisited = false;
         }
+
+        // 받아온 프로필 정보를 다른 페이지(Lobby 등)에서 재사용할 수 있도록 저장
+        localStorage.setItem('userProfile', JSON.stringify(userProfile.value));
       }
       
       // 게임 모드 상태 업데이트
@@ -560,6 +580,7 @@ onMounted(() => {
   loadMainPageData();
   startBannerRotation();
   window.addEventListener('resize', handleResize);
+  // 친구 소켓 및 구독은 App.vue에서 전역으로 관리됨
 });
 
 // 컴포넌트 언마운트 전 실행

@@ -127,12 +127,12 @@ export default {
   },
   computed: {
     comparisonOutcome() {
-      const delta = this.myScore - this.sharerScore;
+      const delta = Number((this.myScore - this.sharerScore).toFixed(2));
       if (delta === 0) return "tie";
       return delta > 0 ? "win" : "lose";
     },
     scoreDeltaAbs() {
-      return Math.abs(this.myScore - this.sharerScore);
+      return Number(Math.abs(this.myScore - this.sharerScore).toFixed(2));
     },
     outcomeLabel() {
       if (this.comparisonOutcome === "win") return "승리!";

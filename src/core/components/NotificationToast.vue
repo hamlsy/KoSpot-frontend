@@ -8,6 +8,7 @@
           class="notif-toast"
           :class="[`notif-toast--${getTypeCssClass(toast.type)}`, { 'notif-toast--show': toast.show }]"
           role="alert"
+          @click="handleToastClick(toast)"
         >
           <!-- 타입 아이콘 -->
           <div class="notif-toast__icon" :style="{ color: getNotificationMeta(toast.type).color }">
@@ -22,7 +23,7 @@
           </div>
 
           <!-- 닫기 버튼 -->
-          <button class="notif-toast__close" @click="removeToast(toast.toastId)" aria-label="알림 닫기">
+          <button class="notif-toast__close" @click.stop="removeToast(toast.toastId)" aria-label="알림 닫기">
             <i class="fas fa-times"></i>
           </button>
 
@@ -39,10 +40,15 @@
 
 <script setup>
 import { ref, watch, onUnmounted } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useNotificationStore } from '@/store/modules/notificationStore.js';
-import { getNotificationMeta } from '@/core/constants/notificationTypes.js';
+import { useFriendStore } from '@/features/friend/stores/friend.store.js';
+import { getNotificationMeta, NOTIFICATION_TYPE } from '@/core/constants/notificationTypes.js';
 
 const store = useNotificationStore();
+const friendStore = useFriendStore();
+// storeToRefs로 ref를 직접 추출 → .push() 시 즉시 watch 트리거
+const { toastQueue } = storeToRefs(store);
 const toasts = ref([]);
 const timers = new Map();
 
@@ -53,6 +59,16 @@ const TOAST_DURATION = 5000; // 5초
  */
 const getTypeCssClass = (type) => {
   return (type || 'default').toLowerCase().replace(/_/g, '-');
+};
+
+/**
+ * 토스트 클릭
+ */
+const handleToastClick = (toast) => {
+  if (toast.type === NOTIFICATION_TYPE.FRIEND_REQUEST) {
+    friendStore.openPanel();
+    removeToast(toast.toastId);
+  }
 };
 
 /**
@@ -94,9 +110,9 @@ const removeToast = (toastId) => {
   }
 };
 
-// 스토어의 toastQueue 감시 → 새 알림이 들어오면 토스트 표시
+// storeToRefs로 추출한 ref를 직접 watch → .push()도 즉시 감지
 watch(
-  () => store.toastQueue,
+  toastQueue,
   (queue) => {
     queue.forEach((notification) => {
       const alreadyShowing = toasts.value.some((t) => t.toastId === notification.toastId);
@@ -131,10 +147,10 @@ onUnmounted(() => {
   position: relative;
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
+  gap: 0.6rem;
   background: var(--color-surface, #ffffff);
-  border-radius: 12px;
-  padding: 1rem 1rem 1.25rem;
+  border-radius: 10px;
+  padding: 0.75rem 0.875rem 1rem;
   box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 10px 30px rgba(0, 0, 0, 0.12);
@@ -143,8 +159,9 @@ onUnmounted(() => {
   transform: translateX(calc(100% + 2rem));
   opacity: 0;
   transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
-  min-width: 280px;
+  min-width: 240px;
   overflow: hidden;
+  cursor: pointer;
 }
 
 .notif-toast--show {
@@ -172,13 +189,13 @@ onUnmounted(() => {
 /* 아이콘 */
 .notif-toast__icon {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  font-size: 0.8rem;
 }
 
 /* 내용 */
@@ -197,20 +214,20 @@ onUnmounted(() => {
 }
 
 .notif-toast__title {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--color-text-primary, #111827);
   line-height: 1.35;
-  margin-bottom: 0.2rem;
+  margin-bottom: 0.15rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .notif-toast__message {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   color: var(--color-text-secondary, #6b7280);
-  line-height: 1.4;
+  line-height: 1.35;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;

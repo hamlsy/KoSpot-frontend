@@ -76,7 +76,8 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useNotificationStore } from '@/store/modules/notificationStore.js';
-import { getNotificationMeta } from '@/core/constants/notificationTypes.js';
+import { useFriendStore } from '@/features/friend/stores/friend.store.js';
+import { getNotificationMeta, NOTIFICATION_TYPE } from '@/core/constants/notificationTypes.js';
 
 const props = defineProps({
   isOpen: {
@@ -88,6 +89,7 @@ const props = defineProps({
 const emit = defineEmits(['close']);
 
 const store = useNotificationStore();
+const friendStore = useFriendStore();
 const router = useRouter();
 const dropdownRef = ref(null);
 const listRef = ref(null);
@@ -126,9 +128,16 @@ const handleNotificationClick = async (notification) => {
   }
 
   // NOTICE 타입 → noticeId로 공지사항 상세 이동
-  if (notification.type === 'NOTICE' && notification.sourceId) {
+  if (notification.type === NOTIFICATION_TYPE.NOTICE && notification.sourceId) {
     emit('close');
     router.push(`/noticeDetail/${notification.sourceId}`);
+    return;
+  }
+
+  // FRIEND_REQUEST 타입 → 친구 목록 열기
+  if (notification.type === NOTIFICATION_TYPE.FRIEND_REQUEST) {
+    emit('close');
+    friendStore.openPanel();
     return;
   }
 

@@ -10,6 +10,7 @@ import devRoutes from './devRoutes.js';
 import adminRoutes from './adminRoutes.js';
 import noticeRoutes from './noticeRoutes.js';
 import shopRoutes from './shopRoutes.js';
+import { connectAll } from '@/core/services/appWebSocket.service.js';
 
 // 봇 여부 확인 헬퍼 함수
 const isBot = () => {
@@ -86,13 +87,24 @@ router.beforeEach((to, from, next) => {
   }
 })
 
-const requireComponent = require.context('./', true, /index\.vue$/)
-const components = {}
+// 로그인 직후 WebSocket 연결 트리거
+// App.vue의 setInterval이 제거된 대신, 로그인 페이지에서 벗어날 때
+// 토큰이 있으면 connectAll()을 호출해 WebSocket을 연결합니다.
+router.afterEach((to, from) => {
+  // from.name이 없으면 앱 최초 진입(빈 경로)이므로 스킵
+  // 최초 진입 시 연결은 App.vue onMounted가 담당
+  if (!from.name) return;
 
-requireComponent.keys().forEach(fileName => {
-  const componentConfig = requireComponent(fileName)
-  const componentName = fileName.split('/')[1]
-  components[componentName] = componentConfig.default || componentConfig
+  const comingFromLogin = from.path === '/loginPage' || from.path === '/login';
+  const goingToLoginOrSameLogin = to.path === '/loginPage' || to.path === '/login';
+
+  if (comingFromLogin && !goingToLoginOrSameLogin) {
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      // 로그인 완료 후 WebSocket 연결 (App.vue의 connectAll 재사용)
+      connectAll();
+    }
+  }
 })
 
-export default router;
+export default router;
