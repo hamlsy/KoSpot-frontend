@@ -101,7 +101,7 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
 
 
     const socket = new SockJS(wsUrl, undefined, sockjsOptions);
-    
+
     log("🔵 SockJS 인스턴스 생성 완료:", {
       wsUrl: wsUrl,
       readyState: socket.readyState,
@@ -122,7 +122,7 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
         isConnected: isConnected.value,
         timestamp: new Date().toISOString()
       });
-      
+
       // SockJS 연결 실패 시 즉시 더미 모드로 전환
       if (!isConnected.value) {
         warn("⚠️ SockJS 연결이 완료되지 않은 상태에서 종료됨");
@@ -133,7 +133,7 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
           wsUrl: wsUrl,
           connectionCallbacksCount: connectionCallbacks.value.size
         });
-        
+
         stompClient.value = null;
 
         // 등록된 콜백들을 더미 모드로 실행
@@ -158,7 +158,7 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
         isConnected: isConnected.value,
         timestamp: new Date().toISOString()
       });
-      
+
       // 추가 에러 정보 수집
       if (err?.target) {
         error("📋 SockJS 에러 타겟 상세:", {
@@ -168,7 +168,7 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
           extensions: err.target.extensions
         });
       }
-      
+
       // SockJS 오류 시 즉시 더미 모드로 전환
       if (!isConnected.value) {
         warn("⚠️ SockJS 연결 오류로 인해 더미 모드로 전환");
@@ -184,12 +184,12 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
         });
       }
     };
-    
+
     // SockJS 연결 상태 변화 추적
     socket.onopen = function (event) {
-      
+
     };
-    
+
     // SockJS 메시지 이벤트 (디버깅용)
     socket.onmessage = function (event) {
       log("📨 SockJS 메시지 수신:", {
@@ -212,7 +212,7 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
         // log("STOMP:", str);
       };
     } else {
-      stompClient.value.debug = function () {}; // 디버깅 비활성화
+      stompClient.value.debug = function () { }; // 디버깅 비활성화
     }
 
     //JWT토큰 (여러 키에서 시도)
@@ -227,7 +227,7 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
         if (tokenParts.length === 3) {
           const payload = JSON.parse(atob(tokenParts[1]));
           const now = Date.now() / 1000;
-          
+
           if (payload.exp && payload.exp < now) {
             warn("⚠️  토큰이 만료되었습니다. 새로고침이 필요할 수 있습니다.");
           }
@@ -238,7 +238,7 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
     } else {
       warn("⚠️  JWT 토큰이 없어 인증 없이 연결 시도");
     }
-    
+
     // 페이지 새로고침 감지 및 연결 정리
     const handleBeforeUnload = () => {
       if (stompClient.value && isConnected.value) {
@@ -250,39 +250,22 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
         }
       }
     };
-    
+
     // 이벤트 리스너가 이미 등록되어 있지 않은 경우에만 등록
     if (!window.webSocketBeforeUnloadRegistered) {
       window.addEventListener('beforeunload', handleBeforeUnload);
       window.webSocketBeforeUnloadRegistered = true;
     }
 
-    log("🔵 STOMP 연결 시도 시작:", {
-      wsUrl: wsUrl,
-      endpoint: endpoint,
-      hasHeaders: !!headers && Object.keys(headers).length > 0,
-      headersKeys: headers ? Object.keys(headers) : [],
-      hasToken: !!headers?.Authorization,
-      tokenPrefix: headers?.Authorization?.substring(0, 20) || 'none',
-      timestamp: new Date().toISOString()
-    });
-    
+
     stompClient.value.connect(
       headers, // 헤더 (인증 정보 등이 필요하면 여기에 추가)
       // 연결 성공 콜백
       (frame) => {
-        log("✅ STOMP 연결 성공:", {
-          wsUrl: wsUrl,
-          frame: frame,
-          command: frame?.command,
-          headers: frame?.headers,
-          body: frame?.body,
-          timestamp: new Date().toISOString()
-        });
-        
+
         isConnected.value = true;
 
-        
+
         // 등록된 콜백들 실행
         connectionCallbacks.value.forEach((callback, index) => {
           try {
@@ -314,7 +297,7 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
           hasStompClient: !!stompClient.value,
           timestamp: new Date().toISOString()
         });
-        
+
         // 에러 객체의 모든 속성 출력
         if (err && typeof err === 'object') {
           error("📋 에러 객체 상세:", {
@@ -325,7 +308,7 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
             }, {})
           });
         }
-        
+
         // 인증 오류 체크
         const errorStr = String(err?.message || JSON.stringify(err) || '');
         if (errorStr.includes('401') || errorStr.includes('Unauthorized')) {
@@ -337,7 +320,7 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
             tokenSuffix: token?.substring(token?.length - 20) || 'none'
           });
         }
-        
+
         // 네트워크 오류 체크
         if (errorStr.includes('Network') || errorStr.includes('network') || errorStr.includes('ECONNREFUSED')) {
           error("🌐 네트워크 오류 감지 - 서버에 연결할 수 없음");
@@ -431,38 +414,22 @@ const deactivate = async (options = {}) => {
  * @returns {String} 구독 ID (구독 취소 시 사용)
  */
 const subscribe = (topic, callback) => {
-  log('🔵 subscribe 함수 호출:', {
-    topic: topic,
-    isConnected: isConnected.value,
-    hasStompClient: !!stompClient.value,
-    alreadySubscribed: activeSubscriptions.value.has(topic),
-    timestamp: new Date().toISOString()
-  });
-  
+
+
   // 이미 구독 중인 경우 기존 구독 해제 후 새로 구독 (핸들러 업데이트를 위해)
   if (activeSubscriptions.value.has(topic)) {
-    log(`🔄 ${topic} 재구독: 기존 구독 해제 후 새 핸들러로 구독`);
     unsubscribe(topic);
   }
-  
+
   // 실제 구독 처리
   if (isConnected.value && stompClient.value) {
     try {
       log(`📡 STOMP 구독 시도: ${topic}`);
-      
+
       const subscription = stompClient.value.subscribe(topic, (message) => {
-        log(`📨 STOMP 메시지 수신 (${topic}):`, {
-          topic: topic,
-          message: message,
-          messageBody: message.body,
-          messageHeaders: message.headers,
-          timestamp: new Date().toISOString()
-        });
-        
         try {
           // 메시지 본문 파싱 및 콜백 호출
           const body = message.body ? JSON.parse(message.body) : {};
-          log(`✅ 메시지 파싱 완료 (${topic}):`, body);
           callback(body);
         } catch (parseError) {
           error(`❌ 메시지 처리 중 오류 (${topic}):`, parseError, message);
@@ -472,12 +439,7 @@ const subscribe = (topic, callback) => {
 
       // 활성 구독 목록에 추가
       activeSubscriptions.value.set(topic, subscription);
-      log(`✅ 구독 성공 (${topic}):`, {
-        subscriptionId: subscription.id,
-        totalSubscriptions: activeSubscriptions.value.size,
-        activeTopics: Array.from(activeSubscriptions.value.keys())
-      });
-      
+
       return subscription.id;
     } catch (err) {
       error(`❌ 구독 오류 (${topic}):`, err);

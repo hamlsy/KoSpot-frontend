@@ -88,6 +88,7 @@
         :gameTitle="gameTitle"
         :gameContent="gameContent"
         :gameDescription="gameDescription"
+        mode="rank"
         @end-intro="endIntro"
       />
 
