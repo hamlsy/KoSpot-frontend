@@ -29,7 +29,15 @@
           <p class="card-name">{{ sharerNickname }}</p>
           <p class="card-score-number">{{ sharerScore }}</p>
           <p class="card-score-unit">점</p>
-          <p class="card-meta">힌트 {{ sharerHintsUsed }}회</p>
+          
+          <div class="card-meta-list">
+            <div class="meta-badge">
+              <i class="fas fa-stopwatch"></i> {{ formatPlaytime(sharerPlaytime) }}
+            </div>
+            <div class="meta-badge">
+              <i class="fas fa-lightbulb"></i> 힌트 {{ sharerHintsUsed }}회
+            </div>
+          </div>
         </div>
 
         <!-- VS 중간 구분 -->
@@ -42,7 +50,15 @@
           <p class="card-name">나</p>
           <p class="card-score-number card-score-number--me">{{ myScore }}</p>
           <p class="card-score-unit">점</p>
-          <p class="card-meta">힌트 {{ myHintsUsed }}회</p>
+          
+          <div class="card-meta-list">
+            <div class="meta-badge meta-badge--me">
+              <i class="fas fa-stopwatch"></i> {{ formatPlaytime(myPlaytime) }}
+            </div>
+            <div class="meta-badge meta-badge--me">
+              <i class="fas fa-lightbulb"></i> 힌트 {{ myHintsUsed }}회
+            </div>
+          </div>
         </div>
       </div>
 
@@ -104,11 +120,19 @@ export default {
       type: Number,
       default: 0,
     },
+    sharerPlaytime: {
+      type: Number,
+      default: 0,
+    },
     myScore: {
       type: Number,
       default: 0,
     },
     myHintsUsed: {
+      type: Number,
+      default: 0,
+    },
+    myPlaytime: {
       type: Number,
       default: 0,
     },
@@ -149,6 +173,18 @@ export default {
       if (this.comparisonOutcome === "win") return "fas fa-trophy";
       if (this.comparisonOutcome === "tie") return "fas fa-equals";
       return "fas fa-redo";
+    },
+  },
+  methods: {
+    formatPlaytime(ms) {
+      if (!ms || ms === 0) return "00:00.00";
+      const totalSeconds = ms / 1000;
+      const mins = Math.floor(totalSeconds / 60);
+      const secs = Math.floor(totalSeconds % 60);
+      const fract = Math.floor((ms % 1000) / 10);
+      return `${mins.toString().padStart(2, "0")}:${secs
+        .toString()
+        .padStart(2, "0")}.${fract.toString().padStart(2, "0")}`;
     },
   },
 };
@@ -386,10 +422,44 @@ export default {
   color: #9ca3af;
 }
 
-.card-meta {
-  margin: 0;
+.card-meta-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.meta-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 0.72rem;
+  color: #6b7280;
+  background: white;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  font-weight: 600;
+  width: max-content;
+}
+
+.meta-badge i {
   color: #9ca3af;
+  font-size: 0.75rem;
+  width: 12px;
+  text-align: center;
+}
+
+/* 내 카드 메타 뱃지 */
+.meta-badge--me {
+  background: #ffffff;
+  border-color: #b2f5f0;
+  color: #0f766e;
+}
+
+.meta-badge--me i {
+  color: #0d9488;
 }
 
 /* ═══════════════════════════════════════

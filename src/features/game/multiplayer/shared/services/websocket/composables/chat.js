@@ -24,10 +24,10 @@ const currentUser = ref({
 const initializeUserData = () => {
     const { user: authUser, isAuthenticated } = useAuth();
     const localStorageMemberId = localStorage.getItem('memberId');
-    
+
     if (isAuthenticated.value && authUser.value) {
         const userId = authUser.value.id || authUser.value.memberId || localStorageMemberId;
-        
+
         currentUser.value = {
             id: userId,
             nickname: '익명',
@@ -64,7 +64,7 @@ const buildChatMessage = (message, chatType, teamId = null) => {
             content: message
         };
     }
-    
+
     return {
         playerId: currentUser.value.id,
         playerName: currentUser.value.nickname || '익명',
@@ -80,24 +80,24 @@ const buildChatMessage = (message, chatType, teamId = null) => {
  */
 const sendChatMessage = (message, chatType = 'game', options = {}) => {
     if (!message) return false;
-    
+
     // 로비 채팅의 경우 서버 세션으로 사용자 식별 (currentUser 불필요)
     if (chatType === 'lobby') {
         const destination = getChatDestination(chatType, options.teamId);
         const chatMessage = buildChatMessage(message, chatType, options.teamId);
         return publish(destination, chatMessage);
     }
-    
+
     // 게임/팀 채팅의 경우에만 사용자 정보 확인
     if (!currentUser.value?.id) {
         initializeUserData();
     }
-    
+
     if (!currentUser.value?.id) {
         console.error('게임/팀 채팅: 사용자 정보가 없어 메시지를 전송할 수 없습니다.');
         return false;
     }
-    
+
     // 하위 호환성: 기존 게임 채팅 방식 지원
     if (options.player && !currentUser.value.id) {
         currentUser.value = {
@@ -107,10 +107,10 @@ const sendChatMessage = (message, chatType = 'game', options = {}) => {
             profileImage: options.player.profileImage
         };
     }
-    
+
     const destination = getChatDestination(chatType, options.teamId);
     const chatMessage = buildChatMessage(message, chatType, options.teamId);
-    
+
     return publish(destination, chatMessage);
 };
 
@@ -119,33 +119,17 @@ const sendChatMessage = (message, chatType = 'game', options = {}) => {
  */
 const handleChatMessage = (message) => {
     const chatType = message.chatType || 'game';
-    
-    console.log('🔄 handleChatMessage 호출:', {
-        chatType: chatType,
-        message: message,
-        hasContent: !!message.content,
-        content: message.content
-    });
-    
+
+
     switch (chatType) {
         case 'lobby':
-            console.log('📝 로비 채팅 메시지 추가:', {
-                beforeCount: lobbyChatMessages.value.length,
-                message: message
-            });
-            
             lobbyChatMessages.value.push(message);
-            
-            console.log('📝 로비 채팅 메시지 추가 완료:', {
-                afterCount: lobbyChatMessages.value.length,
-                latestMessage: lobbyChatMessages.value[lobbyChatMessages.value.length - 1]
-            });
-            
+
             if (lobbyChatMessages.value.length > 100) {
                 lobbyChatMessages.value = lobbyChatMessages.value.slice(-100);
             }
             break;
-            
+
         case 'team': {
             const teamId = message.teamId;
             if (teamId) {
@@ -159,7 +143,7 @@ const handleChatMessage = (message) => {
             }
             break;
         }
-            
+
         case 'game':
         default:
             gameChatMessages.value.push(message);
@@ -182,11 +166,11 @@ const createSystemMessage = (content, chatType = 'game', teamId = null) => {
         isSystem: true,
         chatType: chatType
     };
-    
+
     if (teamId) {
         systemMessage.teamId = teamId;
     }
-    
+
     handleChatMessage(systemMessage);
     return systemMessage;
 };
@@ -202,7 +186,7 @@ const sendLobbyJoinMessage = () => {
         chatType: 'lobby',
         isSystem: true
     };
-    
+
     handleChatMessage(joinMessage);
     return true;
 };
@@ -216,7 +200,7 @@ const setupChatSubscriptions = (chatTypes = ['game']) => {
             case 'lobby': {
                 // API 명세서에 따른 구독 경로: /topic/lobby
                 const topic = '/topic/chat/lobby';
-                
+
                 subscribe(topic, (message) => {
                     console.log('📨 로비 채팅 메시지 수신:', {
                         topic: topic,
@@ -224,12 +208,12 @@ const setupChatSubscriptions = (chatTypes = ['game']) => {
                         messageType: typeof message,
                         timestamp: new Date().toISOString()
                     });
-                    
+
                     try {
                         const data = typeof message === 'string' ? JSON.parse(message) : message;
-                        
-                
-                        
+
+
+
                         // API 명세서에 따른 수신 메시지 형식
                         const processedMessage = {
                             id: data.messageId,
@@ -241,19 +225,19 @@ const setupChatSubscriptions = (chatTypes = ['game']) => {
                             chatType: 'lobby',
                             isSystem: data.messageType === 'SYSTEM_CHAT' || data.messageType === 'NOTICE_CHAT'
                         };
-                        
-                    
-                        
+
+
+
                         handleChatMessage(processedMessage);
-                        
-                
+
+
                     } catch (error) {
                         console.error(`❌ 로비 채팅 메시지 처리 오류 (${topic}):`, error, message);
                     }
                 });
                 break;
             }
-                
+
             case 'game':
                 subscribe('/topic/game/chat', (message) => {
                     try {
@@ -265,7 +249,7 @@ const setupChatSubscriptions = (chatTypes = ['game']) => {
                     }
                 });
                 break;
-                
+
             case 'team':
                 // 팀 채팅은 동적으로 구독되므로 여기서는 설정하지 않음
                 break;
@@ -278,7 +262,7 @@ const setupChatSubscriptions = (chatTypes = ['game']) => {
  */
 const subscribeToTeamChat = (teamId) => {
     if (!teamId) return;
-    
+
     const topic = `/topic/game/team/${teamId}/chat`;
     subscribe(topic, (message) => {
         try {
@@ -331,10 +315,10 @@ export {
     readonlyGameChatMessages as gameChatMessages,
     readonlyTeamChatMessages as teamChatMessages,
     readonlyCurrentUser as currentUser,
-    
+
     // 하위 호환성을 위한 기존 export
     readonlyGameChatMessages as chatMessages,
-    
+
     // 메서드
     sendChatMessage,
     handleChatMessage,
@@ -342,10 +326,10 @@ export {
     setupChatSubscriptions,
     subscribeToTeamChat,
     clearChatMessages,
-    
+
     // 로비 전용 메서드
     sendLobbyJoinMessage,
-    
+
     // 사용자 정보 관리
     initializeUserData
 };
