@@ -27,6 +27,12 @@
 
       <!-- Game Modes Section -->
       <section class="game-modes">
+        
+        <!-- Daily MVP Section -->
+        <div class="daily-mvp-section">
+          <daily-mvp-card @show-player-details="handleShowPlayerDetails" />
+        </div>
+
         <div class="game-mode-list">
           <game-mode-card
             v-for="mode in gameModes"
@@ -249,6 +255,13 @@
       :initial-rank-tier="rankInfo?.rankTier || 'BRONZE'"
       @close="showRankingModal = false"
     />
+
+    <!-- Player Details Modal (for Daily MVP) -->
+    <player-details-modal
+      :is-active="showPlayerDetailsModal"
+      :player="selectedMvpPlayer"
+      @close="showPlayerDetailsModal = false"
+    />
   </div>
 </template>
 
@@ -261,6 +274,8 @@ import HistoryModal from "@/features/game/single/main/components/HistoryModal.vu
 import PracticeTutorialModal from "@/features/game/single/main/components/PracticeTutorialModal.vue";
 import RankingModal from "@/features/game/single/main/components/RankingModal.vue";
 import Adsense from "@/features/game/shared/components/Common/Adsense.vue";
+import DailyMvpCard from "@/features/game/single/main/components/DailyMvpCard.vue";
+import PlayerDetailsModal from "@/features/game/multiplayer/room/components/player/PlayerDetailsModal.vue";
 import roadViewMainService from "@/features/game/single/main/services/roadViewMain.service";
 
 // 라우터 설정
@@ -278,6 +293,8 @@ const showThemeModePopup = ref(false);
 const showHistoryModal = ref(false);
 const showRankingModal = ref(false);
 const showPracticeTutorial = ref(false);
+const showPlayerDetailsModal = ref(false);
+const selectedMvpPlayer = ref(null);
 
 // 광고 로드 상태
 const hasAd = ref(false);
@@ -642,6 +659,15 @@ function closeGameModePopup() {
   selectedRegion.value = null;
 }
 
+// MVP 카드 클릭 핸들러
+function handleShowPlayerDetails(mvpData) {
+  selectedMvpPlayer.value = { 
+    id: mvpData.memberId, 
+    ...mvpData 
+  };
+  showPlayerDetailsModal.value = true;
+}
+
 // 테마 게임 시작 함수
 function startThemeGame(gameData) {
   console.log("Starting theme game with:", gameData);
@@ -799,11 +825,24 @@ function startThemeGame(gameData) {
   margin: 8px;
 }
 
+/* MVP 섹션 스타일 */
+.daily-mvp-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: var(--spacing-xxl);
+  width: 100%;
+}
+
 /* 반응형 */
 @media (max-width: 768px) {
   .google-ads-space {
     padding: 0 var(--spacing-md);
     margin: var(--spacing-lg) 0;
+  }
+  
+  .daily-mvp-section {
+    margin-bottom: var(--spacing-xl);
   }
 }
 </style>
