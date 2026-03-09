@@ -19,6 +19,7 @@ import SockJS from 'sockjs-client';
 let stompClient = null;
 const subscriptions = new Map(); // roomId → STOMP subscription
 let currentRoomId = null;
+let _connectingPromise = null; // 연결 중(connecting) 상태 추적 — Race Condition 방지용
 
 const WS_ENDPOINT = '/ws';
 // roomId는 destination에 포함: /app/chat-rooms.{roomId}.chat
@@ -31,18 +32,33 @@ const SUBSCRIBE_TOPIC_PREFIX = '/topic/friend/chat-rooms/';
  * 앱 로드 또는 사용자 로그인 시 호출할 수 있으며, 또는 특정 채팅방 입장 시 호출해도 무방합니다.
  */
 export const connectFriendSocket = () => {
-    return new Promise((resolve, reject) => {
-        const token = localStorage.getItem('accessToken');
-        if (!token) {
-            reject(new Error('토큰 없음'));
-            return;
-        }
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+        return Promise.reject(new Error('토큰 없음'));
+    }
 
-        if (stompClient && stompClient.connected) {
-            resolve();
-            return;
-        }
+    // Guard 1: 이미 연결 완료된 상태
+    if (stompClient && stompClient.connected) {
+        return Promise.resolve();
+    }
 
+    // Guard 2: 현재 연결 시도 중 — 동일한 Promise를 반환해 호출자도 await 가능
+    // stompClient.connected는 activate() 후 수백ms 동안 false를 반환하므로
+    // 이 구간을 _connectingPromise로 명시적으로 추적해 중복 연결을 차단합니다.
+    if (_connectingPromise) {
+        console.log('💬 친구 채팅 WebSocket: 연결 시도 진행 중, 기존 Promise 재사용');
+        return _connectingPromise;
+    }
+
+    // Guard 3: stompClient가 존재하면 reconnectDelay로 자동 재연결 대기 중
+    // disconnectFriendSocket()에서만 stompClient = null을 설정하므로
+    // 정상 disconnect 없이는 절대 새 클라이언트가 만들어지지 않습니다.
+    if (stompClient) {
+        console.log('💬 친구 채팅 WebSocket: 클라이언트 존재 (연결 중 또는 재연결 대기), 건너뜀');
+        return Promise.resolve();
+    }
+
+    _connectingPromise = new Promise((resolve, reject) => {
         try {
             const baseUrl =
                 typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL
@@ -61,30 +77,52 @@ export const connectFriendSocket = () => {
                 heartbeatOutgoing: 4000,
 
                 onConnect: () => {
+                    _connectingPromise = null; // 연결 완료 → 진행 중 플래그 해제
+                    console.log('💬 친구 채팅 WebSocket: STOMP 연결 성공');
                     resolve();
                 },
 
                 onDisconnect: () => {
-                    subscriptions.clear();
-                    currentRoomId = null;
+                    // reconnectDelay가 설정되어 있어 STOMP가 자동 재연결합니다.
+                    // 채팅방 구독(subscriptions)은 openChatRoom 시점에 다시 등록되므로
+                    // 여기서는 상태 초기화 없이 플래그만 해제합니다.
+                    console.log('💬 친구 채팅 WebSocket: 연결 해제 (자동 재연결 대기 중)');
+                    _connectingPromise = null;
                 },
 
                 onStompError: (frame) => {
-                    console.error('💬 친구 채팅 WebSocket STOMP 오류:', frame.headers?.message);
-                    reject(new Error(frame.headers?.message));
+                    const msg = frame.headers?.message || '알 수 없는 오류';
+                    console.error('💬 친구 채팅 WebSocket STOMP 오류:', msg);
+                    _connectingPromise = null;
+
+                    // ❗ STOMP ERROR → 즉시 deactivate해서 재연결 루프 차단
+                    if (stompClient) {
+                        try {
+                            stompClient.deactivate();
+                        } catch (_) { /* 무시 */ }
+                        stompClient = null;
+                        subscriptions.clear();
+                        currentRoomId = null;
+                        console.warn('💬 친구 채팅 WebSocket: STOMP 오류로 인해 연결 종료.');
+                    }
+                    reject(new Error(msg));
                 },
 
                 onWebSocketError: () => {
                     console.warn('💬 친구 채팅 WebSocket: 연결 실패');
+                    _connectingPromise = null; // 연결 실패 → 플래그 해제
                 },
             });
 
             stompClient.activate();
         } catch (error) {
             console.warn('💬 친구 채팅 WebSocket 초기화 실패:', error.message);
+            _connectingPromise = null;
             reject(error);
         }
     });
+
+    return _connectingPromise;
 };
 
 /**
@@ -187,6 +225,9 @@ export const sendChatMessage = (roomId, content) => {
  * WebSocket 연결 해제 (로그아웃 혹은 앱 종료 시 호출)
  */
 export const disconnectFriendSocket = () => {
+    // 연결 중 플래그 초기화 (재연결 시 막히지 않도록)
+    _connectingPromise = null;
+
     subscriptions.forEach((sub, roomId) => {
         try {
             sub.unsubscribe();

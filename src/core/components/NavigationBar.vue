@@ -241,6 +241,7 @@
       @open-user-search="friendStore.openSearch"
       @accept-request="friendStore.acceptFriendRequest"
       @decline-request="friendStore.declineFriendRequest"
+      @delete-friend="(f) => friendStore.deleteFriend(f.id)"
     />
 
     <!-- 사용자 검색 모달 -->

@@ -69,10 +69,13 @@ export const useFriendStore = defineStore('friend', () => {
         return {
             id: raw.friendMemberId ?? raw.memberId ?? raw.id,
             nickname: raw.nickname,
-            avatarColor: raw.profileImageUrl ?? _generateAvatarColor(raw.nickname),
-            isOnline: raw.isOnline ?? false,
+            markerImageUrl: raw.equippedMarkerImageUrl ?? raw.markerImageUrl ?? null,
+            isOnline: raw.online ?? raw.isOnline ?? false,
             lastMessage: raw.lastMessage ?? null,
             unreadCount: raw.unreadCount ?? 0,
+            rankTier: raw.roadViewRankTier ?? null,
+            rankLevel: raw.roadViewRankLevel ?? null,
+            ratingScore: raw.roadViewRatingScore ?? raw.roadViewRankScore ?? raw.ratingScore ?? raw.score ?? raw.rankInfo?.roadView?.ratingScore ?? 0,
         };
     }
 
@@ -200,6 +203,22 @@ export const useFriendStore = defineStore('friend', () => {
             console.error('❌ 친구 요청 거절 실패:', error);
             // 실패해도 UI에서만 제거
             pendingRequests.value = pendingRequests.value.filter((r) => r.id !== req.id);
+        }
+    }
+
+    /**
+     * 친구 삭제
+     * @param {number} friendId - 삭제할 친구의 memberId
+     */
+    async function deleteFriend(friendId) {
+        try {
+            await friendService.deleteFriend(friendId);
+        } catch (error) {
+            console.error('❌ 친구 삭제 실패:', error);
+        } finally {
+            // 성공/실패 무관하게 로컬 상태에서 제거
+            friends.value = friends.value.filter((f) => f.id !== friendId);
+            closeChatRoom(friendId);
         }
     }
 
@@ -450,6 +469,7 @@ export const useFriendStore = defineStore('friend', () => {
         loadInitialData,
         acceptFriendRequest,
         declineFriendRequest,
+        deleteFriend,
         openChatRoom,
         closeChatRoom,
         bringToFront,

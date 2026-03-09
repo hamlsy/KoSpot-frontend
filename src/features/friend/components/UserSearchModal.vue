@@ -19,8 +19,7 @@
 
           <!-- 검색 인풋 -->
           <div class="modal-search">
-            <div class="input-wrapper">
-              <span class="input-prefix">@</span>
+          <div class="input-wrapper">
               <input
                 ref="searchInput"
                 v-model="query"
@@ -76,14 +75,22 @@
                 class="result-item"
               >
                 <!-- 아바타 -->
-                <div class="result-avatar" :style="{ background: user.avatarColor }">
-                  {{ user.nickname[0].toUpperCase() }}
+                <div class="result-avatar-wrap">
+                  <img
+                    v-if="user.markerImageUrl"
+                    :src="user.markerImageUrl"
+                    class="result-avatar result-avatar-img"
+                    :alt="user.nickname"
+                    @error="(e) => e.target.style.display = 'none'"
+                  />
+                  <div v-else class="result-avatar result-avatar-initial" :style="{ background: _colorFromNickname(user.nickname) }">
+                    {{ user.nickname[0].toUpperCase() }}
+                  </div>
                 </div>
 
                 <!-- 유저 정보 -->
                 <div class="result-info">
                   <span class="result-nickname">{{ user.nickname }}</span>
-                  <span class="result-id">#{{ user.userId }}</span>
                 </div>
 
                 <!-- 친구 추가 버튼 -->
@@ -181,7 +188,7 @@ export default {
         this.searchResults = rawResults.map((u) => ({
           id: u.memberId ?? u.id,
           nickname: u.nickname,
-          avatarColor: u.markerImageUrl ?? this._colorFromNickname(u.nickname),
+          markerImageUrl: u.markerImageUrl ?? null,
           isFriend: u.friend ?? u.isFriend ?? false,
           requestSent: u.requestSend ?? u.requestSent ?? false,
         }))
@@ -304,19 +311,9 @@ export default {
   border-color: var(--color-primary);
 }
 
-.input-prefix {
-  padding: 0 6px 0 14px;
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--color-primary);
-  opacity: 0.6;
-  pointer-events: none;
-}
-
 .modal-input {
   flex: 1;
-  padding: 12px 8px;
+  padding: 12px 8px 12px 16px;
   background: transparent;
   border: none;
   color: var(--color-text-primary);
@@ -436,10 +433,25 @@ export default {
   background: var(--color-surface-hover);
 }
 
+.result-avatar-wrap {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+}
+
 .result-avatar {
   width: 38px;
   height: 38px;
   border-radius: 50%;
+}
+
+.result-avatar-img {
+  object-fit: cover;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-background);
+}
+
+.result-avatar-initial {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -447,7 +459,6 @@ export default {
   font-size: 16px;
   font-weight: 700;
   color: #ffffff;
-  flex-shrink: 0;
 }
 
 .result-info {
