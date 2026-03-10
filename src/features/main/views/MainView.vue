@@ -1,5 +1,5 @@
 <template>
-  <div class="app-container">
+  <div class="app-container" :style="mainColorVars">
     <!-- 닉네임 설정 모달 -->
     <NicknameSetupModal 
       :show="showNicknameModal"
@@ -408,6 +408,7 @@ import NicknameSetupModal from '@/features/intro/components/NicknameSetupModal.v
 import HeroSection from '@/features/intro/components/HeroSection.vue'
 import Adsense from '@/features/game/shared/components/Common/Adsense.vue'
 import { mainService } from '@/features/main/services/main.service.js'
+import { BRAND, TEXT, BACKGROUND } from '@/core/constants/colors.js'
 
 // 라우터 설정
 const router = useRouter();
@@ -463,6 +464,23 @@ const displayBanners = computed(() => {
 // 공지사항 데이터
 const recentNotices = ref([]);
 const noticesLoading = ref(false);
+
+const mainColorVars = computed(() => ({
+  '--color-primary': BRAND.PRIMARY,
+  '--color-secondary': BRAND.SECONDARY,
+  '--color-success': BRAND.SUCCESS,
+  '--color-warning': BRAND.WARNING,
+  '--color-danger': BRAND.DANGER,
+  '--color-info': BRAND.INFO,
+  '--color-background': BACKGROUND.LIGHT,
+  '--color-surface': BACKGROUND.LIGHT,
+  '--color-border': BRAND.SECONDARY,
+  '--color-text-primary': TEXT.PRIMARY,
+  '--color-text-secondary': TEXT.SECONDARY,
+  '--color-text-tertiary': TEXT.MUTED,
+  '--main-highlight-bg': BACKGROUND.HIGHLIGHT,
+  '--main-muted-bg': BACKGROUND.GRAY
+}));
 
 // 반응형 감지
 const windowWidth = ref(window.innerWidth);
@@ -1199,30 +1217,30 @@ async function handleLogout() {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--main-muted-bg);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c5c5c5;
+  background: var(--color-secondary);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: var(--color-text-tertiary);
 }
 
 .admin-link {
-  color: #6366f1;
+  color: var(--color-primary);
   font-weight: 600;
 }
 
 .admin-menu-item {
-  color: #6366f1 !important;
+  color: var(--color-primary) !important;
   font-weight: 600;
 }
 
 .admin-menu-item i {
-  color: #6366f1;
+  color: var(--color-primary);
 }
 
 /* 광고 섹션 스타일 */
@@ -1234,7 +1252,7 @@ async function handleLogout() {
 .ad-container {
   width: 100%;
   height: 120px;
-  background-color: #f8f9fa;
+  background-color: var(--main-muted-bg);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -1248,24 +1266,25 @@ async function handleLogout() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #e9ecef;
-  color: #6c757d;
+  background-color: var(--color-secondary);
+  color: var(--color-text-secondary);
   font-size: 14px;
-  border: 1px dashed #adb5bd;
+  border: 1px dashed var(--color-border);
 }
 
 /* 테스트 링크 스타일 */
 .test-links {
   margin-top: 2rem;
   padding: 1rem;
-  background-color: #fff;
+  background-color: var(--color-surface);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--color-border);
 }
 
 .test-links h3 {
   font-size: 1.2rem;
-  color: #334155;
+  color: var(--color-text-primary);
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
@@ -1283,10 +1302,10 @@ async function handleLogout() {
   align-items: center;
   justify-content: center;
   padding: 1.5rem 1rem;
-  background-color: #f8fafc;
+  background-color: var(--main-muted-bg);
   border-radius: 8px;
   text-decoration: none;
-  color: #334155;
+  color: var(--color-text-primary);
   transition: all 0.2s ease;
   flex: 1;
 }
@@ -1297,13 +1316,13 @@ async function handleLogout() {
 }
 
 .test-link.team-test {
-  background-color: #dbeafe;
-  color: #1d4ed8;
+  background-color: var(--main-highlight-bg);
+  color: var(--color-info);
 }
 
 .test-link.solo-test {
-  background-color: #fef3c7;
-  color: #d97706;
+  background-color: rgba(245, 158, 11, 0.12);
+  color: var(--color-warning);
 }
 
 .test-link:hover {
@@ -1324,13 +1343,13 @@ async function handleLogout() {
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   font-size: 0.9rem;
 }
 
 .loading-spinner i {
   font-size: 1.5rem;
-  color: #667eea;
+  color: var(--color-primary);
 }
 
 /* 토스트 알림 */
@@ -1339,11 +1358,12 @@ async function handleLogout() {
   bottom: 32px;
   left: 50%;
   transform: translateX(-50%);
-  background-color: #334155;
-  color: white;
+  background-color: var(--color-text-primary);
+  color: var(--color-surface);
   padding: 16px 24px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--color-border);
   z-index: 1000;
   animation: slideUp 0.3s ease-out;
   font-size: 14px;
