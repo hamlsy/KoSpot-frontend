@@ -5,8 +5,8 @@
 
 // 브랜드 색상
 export const BRAND = {
-  PRIMARY: '#33fbe8',       // 메인 브랜드 색상 (로고 색상)
-  SECONDARY: '#f59e0b',     // 보조 브랜드 색상 (배지 색상)
+  PRIMARY: '#52DEE5',       // 메인 브랜드 색상 (로고 색상)
+  SECONDARY: '#EEE5E9',     // 보조 브랜드 색상 (배지 색상)
   SUCCESS: '#10b981',       // 성공 상태 색상
   WARNING: '#f59e0b',       // 경고 상태 색상
   DANGER: '#ef4444',        // 위험/오류 상태 색상
@@ -73,8 +73,8 @@ export const GAME = {
 
 // 그라데이션 색상
 export const GRADIENTS = {
-  PRIMARY: 'linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)',
-  SECONDARY: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)',
+  PRIMARY: 'linear-gradient(135deg, #52DEE5 0%, #EEE5E9 100%)',
+  SECONDARY: 'linear-gradient(135deg, #EEE5E9 0%, #EEE5E9 100%)',
   SUCCESS: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
   DANGER: 'linear-gradient(135deg, #ef4444 0%, #f87171 100%)',
 };
