@@ -123,12 +123,16 @@
               </div>
             </div>
 
-            <ResultMapSection
-              :currentLocation="currentLocation"
-              :guessedLocation="guessedLocation"
-              :locationDescription="locationDescription"
-              :markerImageUrl="markerImageUrl"
-            />
+            <div class="map-wrapper" :class="{ 'map-expanded': isMapExpanded }">
+              <ResultMapSection
+                :currentLocation="currentLocation"
+                :guessedLocation="guessedLocation"
+                :locationDescription="locationDescription"
+                :markerImageUrl="markerImageUrl"
+                :isExpanded="isMapExpanded"
+                @toggle-expand="isMapExpanded = !isMapExpanded"
+              />
+            </div>
           </div>
           
 
@@ -233,6 +237,7 @@ export default {
   },
   data() {
     return {
+      isMapExpanded: false,
       options: {
         duration: 1.1,
         useEasing: true,
@@ -392,6 +397,7 @@ export default {
   flex-direction: column;
   animation: slideUp 0.5s cubic-bezier(0.19, 1, 0.22, 1);
   overflow: hidden;
+  position: relative;
 }
 
 @keyframes slideUp {
@@ -448,6 +454,49 @@ export default {
   flex-direction: column;
   gap: 15px;
   min-height: 0;
+}
+
+/* ═══════════════════════════════════════
+   지도 래퍼 & 확장 상태
+═══════════════════════════════════════ */
+.map-wrapper {
+  margin: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  background: white;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 250px;
+}
+
+/* 지도 확장 상태 */
+.map-expanded {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  right: 15px;
+  bottom: 15px;
+  z-index: 50;
+  margin: 0 !important;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+.map-expanded :deep(.result-map-section) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.map-expanded :deep(.result-map-container) {
+  flex: 1;
+  height: 100% !important; /* 모바일 대응 높이 무시 */
 }
 
 /* 플레이어 정보 섹션 */

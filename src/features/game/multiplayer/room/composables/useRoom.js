@@ -5,6 +5,15 @@ import { useRoomChat } from './useRoomChat';
 import { useRoomPlayer } from './useRoomPlayer';
 import roomApiService from '../services/roomApi.service.js';
 import roomWebSocketService from '../services/roomWebSocket.service.js';
+import screenStateSyncService, {
+  extractMemberKeyFromPlayer,
+  extractScreenStateSeq,
+  extractScreenStateUpdatedAt,
+  mergeScreenStateFields,
+  normalizeIncomingScreenState,
+  shouldApplyScreenState,
+  toMemberKey,
+} from '../services/screenStateSync.service.js';
 import { soloTestData, testData } from '../composables/MultiplayerGameTestData.js';
 import soloGameWebSocket from '@/features/game/multiplayer/roadview/services/soloGameWebSocket';
 
@@ -23,6 +32,7 @@ export function useRoom(props, emit, options = {}) {
   const isStartingGame = ref(false);
   const isDummyMode = ref(Boolean(dummyMode));
   const hasDisconnected = ref(false);
+  const hasReceivedPlayerListSignal = ref(false);
   const disconnectReason = ref(null);
   const setDisconnectReason = (reason) => {
     disconnectReason.value = reason || null;
@@ -54,6 +64,7 @@ export function useRoom(props, emit, options = {}) {
       console.error('❌ WebSocket 연결 해제 중 오류:', error);
     } finally {
       disconnectReason.value = null;
+      hasReceivedPlayerListSignal.value = false;
     }
   };
 
@@ -78,6 +89,62 @@ export function useRoom(props, emit, options = {}) {
     return roomPlayer.canStartGame(isTeamMode.value);
   });
 
+  const joiningPlayers = computed(() => {
+    return roomPlayer.localPlayers.value.filter(
+      (player) => normalizeIncomingScreenState(player?.screenState) === 'JOINING',
+    );
+  });
+
+  const hasJoiningPlayers = computed(() => joiningPlayers.value.length > 0);
+
+  const allPlayersInRoomState = computed(() => {
+    return roomPlayer.localPlayers.value.every(
+      (player) => normalizeIncomingScreenState(player?.screenState) === 'ROOM',
+    );
+  });
+
+  const hasNonRoomPlayers = computed(() => !allPlayersInRoomState.value);
+
+  const isPlayerListReady = computed(() => {
+    if (isDummyMode.value) {
+      return true;
+    }
+
+    return hasReceivedPlayerListSignal.value;
+  });
+
+  const canStartGameWithScreenGate = computed(() => {
+    if (isDummyMode.value) {
+      return canStartGame.value;
+    }
+
+    return canStartGame.value && isPlayerListReady.value && !hasNonRoomPlayers.value;
+  });
+
+  const startBlockReason = computed(() => {
+    if (isDummyMode.value) {
+      return null;
+    }
+
+    if (!canStartGame.value) {
+      return 'insufficient-players';
+    }
+
+    if (!isPlayerListReady.value) {
+      return 'sync-pending';
+    }
+
+    if (hasJoiningPlayers.value) {
+      return 'joining-players';
+    }
+
+    if (hasNonRoomPlayers.value) {
+      return 'non-room-players';
+    }
+
+    return null;
+  });
+
   const transformGameRoomPlayers = (players = []) => {
     if (!Array.isArray(players)) {
       return [];
@@ -97,6 +164,9 @@ export function useRoom(props, emit, options = {}) {
         team: player?.team ?? null,
         isOnline: 'isOnline' in (player || {}) ? Boolean(player.isOnline) : true,
         joinedAt: player?.joinedAt ? new Date(player.joinedAt) : new Date(),
+        screenState: normalizeIncomingScreenState(player?.screenState),
+        screenStateSeq: extractScreenStateSeq(player, 0),
+        screenStateUpdatedAt: extractScreenStateUpdatedAt(player, null),
         raw: player
       };
     });
@@ -108,6 +178,96 @@ export function useRoom(props, emit, options = {}) {
     }
     const transformed = transformGameRoomPlayers([playerInfo]);
     return transformed.length ? transformed[0] : null;
+  };
+
+  const mergeScreenStateFromFullSync = (incomingPlayers = []) => {
+    const currentPlayers = Array.isArray(roomPlayer.localPlayers.value)
+      ? roomPlayer.localPlayers.value
+      : [];
+
+    if (!currentPlayers.length) {
+      return incomingPlayers;
+    }
+
+    const currentByMemberKey = new Map();
+    currentPlayers.forEach((player) => {
+      const key = toMemberKey(player?.memberId ?? player?.id);
+      if (key) {
+        currentByMemberKey.set(key, player);
+      }
+    });
+
+    return incomingPlayers.map((incomingPlayer) => {
+      const key = toMemberKey(incomingPlayer?.memberId ?? incomingPlayer?.id);
+      if (!key || !currentByMemberKey.has(key)) {
+        return incomingPlayer;
+      }
+
+      const currentPlayer = currentByMemberKey.get(key);
+      const incomingSeq = extractScreenStateSeq(incomingPlayer, 0);
+      const currentSeq = extractScreenStateSeq(currentPlayer, 0);
+
+      const shouldApplyIncoming = shouldApplyScreenState(
+        currentSeq,
+        incomingSeq,
+        currentPlayer?.screenState,
+        incomingPlayer?.screenState,
+      );
+
+      if (shouldApplyIncoming) {
+        return incomingPlayer;
+      }
+
+      return {
+        ...incomingPlayer,
+        screenState: normalizeIncomingScreenState(currentPlayer?.screenState),
+        screenStateSeq: currentSeq,
+        screenStateUpdatedAt: extractScreenStateUpdatedAt(currentPlayer, null),
+      };
+    });
+  };
+
+  const applyScreenStateDelta = (playerInfo) => {
+    const targetMemberKey = extractMemberKeyFromPlayer(playerInfo);
+    if (!targetMemberKey) {
+      return false;
+    }
+
+    const transformedPlayer = transformGameRoomPlayer(playerInfo);
+    if (!transformedPlayer) {
+      return false;
+    }
+
+    let didUpdate = false;
+    let didFindTarget = false;
+    const nextPlayers = roomPlayer.localPlayers.value.map((player) => {
+      const memberKey = toMemberKey(player?.memberId ?? player?.id);
+      if (memberKey !== targetMemberKey) {
+        return player;
+      }
+
+      didFindTarget = true;
+
+      const mergedPlayer = mergeScreenStateFields(player, playerInfo);
+      if (mergedPlayer !== player) {
+        didUpdate = true;
+      }
+      return mergedPlayer;
+    });
+
+    if (!didFindTarget) {
+      nextPlayers.push(transformedPlayer);
+      didUpdate = true;
+    }
+
+    if (!didUpdate) {
+      return false;
+    }
+
+    roomPlayer.updatePlayerList(nextPlayers);
+    localRoomData.value.currentPlayerCount = nextPlayers.length;
+    emit('player-list-updated', nextPlayers);
+    return true;
   };
 
   const buildDummyRoomData = (source) => {
@@ -284,17 +444,22 @@ export function useRoom(props, emit, options = {}) {
   const handleGameRoomNotification = (notification) => {
     console.log('📥 게임 방 알림 수신:', notification);
     
-    const { type, playerInfo, players, message, timestamp } = notification;
+    const { playerInfo, players, message } = notification;
     
     try {
       isLoadingPlayerList.value = true;
       
-      const type = notification?.type;
-      const hasPlayersArray = Array.isArray(players) && players.length > 0;
+      const notificationType = notification?.type;
+      const hasPlayersArray = Array.isArray(players);
       const hasPlayerInfo = !!playerInfo;
+      const isFullSyncNotification = notificationType === 'PLAYER_LIST_UPDATED';
+
+      if (notificationType) {
+        hasReceivedPlayerListSignal.value = true;
+      }
 
       // HOST_CHANGED 처리 (players가 null이고 playerInfo에 newHostInfo가 있음)
-      if (type === 'HOST_CHANGED' && hasPlayerInfo) {
+      if (notificationType === 'HOST_CHANGED' && hasPlayerInfo) {
         const newHostInfo = transformGameRoomPlayer(playerInfo);
         if (newHostInfo) {
           const newHostId = newHostInfo.id || newHostInfo.memberId?.toString();
@@ -336,12 +501,22 @@ export function useRoom(props, emit, options = {}) {
           
           console.log(`✅ 방장 변경 완료: ${oldHostId} -> ${newHostId}`);
         }
-      } else if (hasPlayersArray) {
+      } else if (notificationType === 'SCREEN_STATE_UPDATED' && hasPlayerInfo) {
+        const updated = applyScreenStateDelta(playerInfo);
+
+        if (updated) {
+          console.log('✅ 플레이어 화면 상태 델타 반영 완료');
+        } else {
+          console.log('ℹ️ 플레이어 화면 상태 델타 무시 (stale 또는 동일 seq)');
+        }
+      } else if (isFullSyncNotification && hasPlayersArray) {
         const transformedPlayers = transformGameRoomPlayers(players);
-        roomPlayer.updatePlayerList(transformedPlayers);
-        localRoomData.value.currentPlayerCount = transformedPlayers.length;
-        emit('player-list-updated', transformedPlayers);
-        console.log(`✅ 플레이어 목록 업데이트 완료: ${transformedPlayers.length}명`);
+        const nextPlayers = mergeScreenStateFromFullSync(transformedPlayers);
+
+        roomPlayer.updatePlayerList(nextPlayers);
+        localRoomData.value.currentPlayerCount = nextPlayers.length;
+        emit('player-list-updated', nextPlayers);
+        console.log(`✅ 플레이어 목록 업데이트 완료: ${nextPlayers.length}명`);
       } else if (hasPlayerInfo) {
         const transformedPlayer = transformGameRoomPlayer(playerInfo);
         if (transformedPlayer) {
@@ -352,7 +527,7 @@ export function useRoom(props, emit, options = {}) {
             TEAM_CHANGED: 'TEAM_CHANGE'
           };
 
-          const eventType = eventTypeMap[type] || null;
+          const eventType = eventTypeMap[notificationType] || null;
           if (eventType) {
             roomPlayer.handlePlayerStatusChange(
               {
@@ -369,7 +544,7 @@ export function useRoom(props, emit, options = {}) {
       
       // 실시간 알림 표시
       if (toastRef?.value) {
-        switch (type) {
+        switch (notificationType) {
           case 'PLAYER_JOINED':
             if (playerInfo?.memberId?.toString() !== props.currentUserId) {
               toastRef.value.showPlayerJoinNotification(playerInfo?.nickname || '플레이어');
@@ -385,6 +560,10 @@ export function useRoom(props, emit, options = {}) {
           case 'PLAYER_LIST_UPDATED':
             // API 명세서: 10초마다 주기적으로 발생하므로 토스트 알림은 표시하지 않음
             console.log('🔄 플레이어 목록 자동 동기화 (토스트 알림 없음)');
+            break;
+
+          case 'SCREEN_STATE_UPDATED':
+            // 화면 상태는 빈도가 높아 토스트 미표시
             break;
             
           case 'TEAM_CHANGED':
@@ -422,12 +601,12 @@ export function useRoom(props, emit, options = {}) {
       }
       
       // 시스템 메시지 추가 (HOST_CHANGED는 이미 처리됨)
-      if (message && type !== 'HOST_CHANGED') {
+      if (message && notificationType !== 'HOST_CHANGED' && notificationType !== 'SCREEN_STATE_UPDATED') {
         roomChat.addSystemMessage(message);
       }
       
       // 강퇴 처리 (자신이 강퇴당한 경우) - toastRef가 없는 경우를 위한 fallback
-      if (type === 'PLAYER_KICKED' && playerInfo?.memberId?.toString() === props.currentUserId) {
+      if (notificationType === 'PLAYER_KICKED' && playerInfo?.memberId?.toString() === props.currentUserId) {
         // 알림이 없는 경우 기본 alert 사용 후 즉시 이동
         if (!toastRef?.value) {
           alert('방장에 의해 강퇴되었습니다.');
@@ -695,6 +874,29 @@ export function useRoom(props, emit, options = {}) {
       return false;
     }
 
+    if (!isDummyMode.value && !isPlayerListReady.value) {
+      const message = '참가자 상태를 확인하는 중입니다. 잠시만 기다려주세요.';
+      if (toastRef?.value) {
+        toastRef.value.showErrorNotification('시작 대기', message);
+      } else {
+        alert(message);
+      }
+      return false;
+    }
+
+    if (!isDummyMode.value && !allPlayersInRoomState.value) {
+      const blockMessage = hasJoiningPlayers.value
+        ? '참여 중인 플레이어가 있습니다. 잠시 후 다시 시도해주세요.'
+        : '모든 플레이어가 방 화면으로 돌아온 뒤 시작할 수 있습니다.';
+
+      if (toastRef?.value) {
+        toastRef.value.showErrorNotification('시작 불가', blockMessage);
+      } else {
+        alert(blockMessage);
+      }
+      return false;
+    }
+
     if (isStartingGame.value) {
       console.log('▶️ 게임 시작 요청이 이미 진행 중입니다.');
       return false;
@@ -924,17 +1126,18 @@ export function useRoom(props, emit, options = {}) {
   const initializeRoom = async (preloadedRoomDetail = null) => {
     try {
       console.log('🚀 RoomView 초기화 시작');
+      hasReceivedPlayerListSignal.value = false;
       
       // 1. 초기 환영 메시지 추가
       roomChat.addSystemMessage('채팅방에 오신 것을 환영합니다!');
       roomChat.scrollChatToBottom();
-      
-      // 2. 초기 방 데이터 로딩 (방 정보 + 초기 플레이어 목록)
-      // preloadedRoomDetail이 있으면 사용, 없으면 API 호출
-      // 에러 발생 시 RoomView에서 처리하도록 throw
-      await loadInitialRoomData(preloadedRoomDetail);
+
+      // 2. 초기 방 데이터 로딩을 먼저 시작해두고,
+      // 3. WebSocket 연결/구독을 병행하여 JOINING 체류 시간을 줄입니다.
+      const roomDataLoadPromise = loadInitialRoomData(preloadedRoomDetail);
 
       if (isDummyMode.value) {
+        await roomDataLoadPromise;
         console.log('🧪 더미 모드로 실행 중이므로 WebSocket 연결을 생략합니다.');
         return;
       }
@@ -956,10 +1159,22 @@ export function useRoom(props, emit, options = {}) {
         props.currentUserId,
         eventHandlers
       );
+
+      // 5. 방 데이터 로딩 완료 대기
+      await roomDataLoadPromise;
       
       if (wsConnected) {
         console.log('✅ WebSocket 연결 성공 - 실시간 모드');
         roomChat.addSystemMessage('실시간 채팅에 연결되었습니다.');
+        hasReceivedPlayerListSignal.value = true;
+
+        const roomStateSent = screenStateSyncService.sendScreenState(
+          localRoomData.value.id,
+          'ROOM',
+        );
+        if (!roomStateSent) {
+          console.warn('⚠️ Room 화면 상태 전송 실패 (연결 직후)');
+        }
       } else {
         console.warn('⚠️ WebSocket 연결 실패 - 연결 재시도 필요');
         roomChat.addSystemMessage('채팅 연결 중... 잠시만 기다려주세요.');
@@ -983,6 +1198,10 @@ export function useRoom(props, emit, options = {}) {
     localRoomData: computed(() => localRoomData.value),
     isTeamMode,
     canStartGame,
+    canStartGameWithScreenGate,
+    startBlockReason,
+    joiningPlayers,
+    isPlayerListReady,
     isStartingGame,
     
     // WebSocket 및 로딩 상태

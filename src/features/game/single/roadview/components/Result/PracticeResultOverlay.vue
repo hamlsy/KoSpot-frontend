@@ -54,11 +54,13 @@
       </div>
 
       <!-- 지도 -->
-      <div class="map-wrapper">
+      <div class="map-wrapper" :class="{ 'map-expanded': isMapExpanded }">
         <ResultMapSection
           :currentLocation="currentLocation"
           :guessedLocation="guessedLocation"
           :markerImageUrl="markerImageUrl"
+          :isExpanded="isMapExpanded"
+          @toggle-expand="isMapExpanded = !isMapExpanded"
         />
       </div>
 
@@ -149,6 +151,11 @@ export default {
       type: String,
       default: "게임 공유",
     },
+  },
+  data() {
+    return {
+      isMapExpanded: false,
+    };
   },
   computed: {
     formattedDistance() {
@@ -373,6 +380,35 @@ export default {
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid #e5e7eb;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  background: white;
+}
+
+/* 지도 확장 상태 */
+.map-expanded {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  right: 15px;
+  bottom: 15px;
+  z-index: 50;
+  margin: 0 !important;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+.map-expanded :deep(.result-map-section) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.map-expanded :deep(.result-map-container) {
+  flex: 1;
+  height: 100% !important; /* 모바일 대응 높이 무시 */
 }
 
 /* ═══════════════════════════════════════
@@ -491,6 +527,86 @@ export default {
 
   .action-row {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-height: 850px) {
+  .result-header {
+    padding: 12px 22px 0;
+  }
+  .score-hero {
+    padding: 10px 22px 0;
+  }
+  .score-ring {
+    width: 85px;
+    height: 85px;
+    border-width: 3px;
+  }
+  .score-number {
+    font-size: 1.7rem;
+  }
+  .stats-row {
+    margin: 12px 22px;
+  }
+  .stat-item {
+    padding: 10px 8px;
+  }
+  .location-section,
+  .map-wrapper,
+  .share-section {
+    margin-bottom: 12px;
+  }
+  .location-section-header {
+    padding: 7px 14px;
+  }
+  .location-body {
+    padding: 8px 14px;
+  }
+  .share-section {
+    padding: 8px 14px;
+  }
+  .action-row {
+    padding: 0 22px 14px;
+  }
+  .map-wrapper :deep(.result-map-container) {
+    height: 150px;
+  }
+}
+
+@media (max-height: 700px) {
+  .result-header {
+    padding: 8px 22px 0;
+  }
+  .score-hero {
+    padding: 6px 22px 0;
+  }
+  .score-ring {
+    width: 65px;
+    height: 65px;
+    border-width: 2px;
+  }
+  .score-number {
+    font-size: 1.4rem;
+  }
+  .stats-row {
+    margin: 8px 22px;
+  }
+  .stat-item {
+    padding: 6px 4px;
+  }
+  .location-section,
+  .map-wrapper,
+  .share-section {
+    margin-bottom: 8px;
+  }
+  .share-section {
+    padding: 6px 14px;
+  }
+  .action-row {
+    padding: 0 22px 10px;
+  }
+  .map-wrapper :deep(.result-map-container) {
+    height: 120px;
   }
 }
 

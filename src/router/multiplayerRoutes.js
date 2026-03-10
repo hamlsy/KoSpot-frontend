@@ -1,8 +1,8 @@
 import LobbyView from 'src/features/game/multiplayer/lobby/views/LobbyView.vue'
 
 //roadview
-import SoloRoadViewGameView from '@/features/game/multiplayer/roadview/views/SoloGameView.vue'
-import TeamRoadViewGameView from 'src/features/game/multiplayer/roadview/views/TeamGameView.vue'
+import SoloRoadViewGameView from '@/features/game/multiplayer/roadview/views/BaseGameView.vue'
+
 
 //photo
 import PhotoGameView from 'src/features/game/multiplayer/photo/views/GameView.vue'
@@ -47,12 +47,7 @@ const multiplayerRoutes = [
         component: PhotoGameView,
         props: { roomId: 'test-team', isTeamMode: true }
     },
-    {
-        path: '/testTeamGame',
-        name: "TestTeamGame",
-        component: TeamRoadViewGameView,
-        props: { roomId: 'team-test-123', isTeamMode: true }
-    },
+
     {
         path: '/testSoloGame',
         name: "TestSoloGame",
@@ -71,7 +66,7 @@ const multiplayerRoutes = [
         component: PhotoGameView,
         props: { roomId: 'photo-team-test', isTeamMode: true }
     },
-  
+
 ];
 
 export default multiplayerRoutes;

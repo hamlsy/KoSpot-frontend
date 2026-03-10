@@ -126,7 +126,6 @@
         </template>
       </PhoneFrame>
 
-      <!-- 인트로 화면 -->
       <IntroOverlay
         :showIntro="showIntro"
         :gameTitle="gameTitle"
@@ -134,6 +133,7 @@
         :gameDescription="gameDescription"
         mode="practice"
         @end-intro="endIntro"
+        @exit-intro="exitGame"
       />
 
       <!-- 카운트다운 화면 -->
@@ -513,6 +513,7 @@ export default {
         return;
       }
 
+      // 공유 게임이 아닌 일반 연습 게임일 때, 시작 버튼을 눌렀을 때만 API 호출
       this.fetchGameLocationData();
     },
 

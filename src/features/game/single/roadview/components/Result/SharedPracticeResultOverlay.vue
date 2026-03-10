@@ -63,11 +63,13 @@
       </div>
 
       <!-- 지도 -->
-      <div class="map-wrapper">
+      <div class="map-wrapper" :class="{ 'map-expanded': isMapExpanded }">
         <ResultMapSection
           :currentLocation="currentLocation"
           :guessedLocation="guessedLocation"
           :markerImageUrl="markerImageUrl"
+          :isExpanded="isMapExpanded"
+          @toggle-expand="isMapExpanded = !isMapExpanded"
         />
       </div>
 
@@ -148,6 +150,11 @@ export default {
       type: String,
       default: null,
     },
+  },
+  data() {
+    return {
+      isMapExpanded: false,
+    };
   },
   computed: {
     comparisonOutcome() {
@@ -470,6 +477,35 @@ export default {
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid #e5e7eb;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  background: white;
+}
+
+/* 지도 확장 상태 */
+.map-expanded {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  right: 15px;
+  bottom: 15px;
+  z-index: 50;
+  margin: 0 !important;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+.map-expanded :deep(.result-map-section) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.map-expanded :deep(.result-map-container) {
+  flex: 1;
+  height: 100% !important; /* 모바일 대응 높이 무시 */
 }
 
 /* ═══════════════════════════════════════
@@ -574,6 +610,54 @@ export default {
   .card-score-number {
     font-size: 1.6rem;
   }
+}
+
+@media (max-height: 850px) {
+  .result-header { padding: 10px 22px 0; }
+  .outcome-hero {
+    margin: 10px 22px;
+    padding: 12px 16px 10px;
+  }
+  .outcome-icon-wrap {
+    width: 42px; height: 42px;
+  }
+  .outcome-icon { font-size: 1.1rem; }
+  .outcome-label-text { font-size: 1.1rem; }
+  .comparison-section {
+    margin: 0 22px 10px;
+  }
+  .compare-card { padding: 8px; }
+  .card-score-number { font-size: 1.6rem; }
+  .map-wrapper {
+    margin: 0 22px 10px;
+  }
+  .map-wrapper :deep(.result-map-container) {
+    height: 140px;
+  }
+  .cta-section { margin: 0 22px 10px; }
+  .cta-text-row { padding: 6px 14px; }
+  .btn-login { padding: 10px 16px; font-size: 0.85rem; }
+  .footer-action { padding: 0 22px 10px; }
+  .btn-restart { padding: 10px; }
+}
+
+@media (max-height: 700px) {
+  .result-header { padding: 6px 22px 0; }
+  .outcome-hero {
+    margin: 6px 22px;
+    padding: 8px 16px;
+  }
+  .comparison-section { margin: 0 22px 6px; }
+  .card-score-number { font-size: 1.4rem; }
+  .meta-badge { font-size: 0.65rem; padding: 2px 6px; }
+  .map-wrapper { margin: 0 22px 6px; }
+  .map-wrapper :deep(.result-map-container) {
+    height: 100px;
+  }
+  .cta-section { margin: 0 22px 6px; }
+  .cta-copy { font-size: 0.7rem; }
+  .btn-login, .btn-restart { padding: 8px; font-size: 0.8rem; }
+  .footer-action { padding: 0 22px 8px; }
 }
 
 /* ═══════════════════════════════════════

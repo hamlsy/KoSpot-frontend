@@ -11,9 +11,11 @@
         <RoomHeader
           :room-data="localRoomData"
           :is-host="isHost"
-          :can-start-game="isRoomDummyMode ? true : canStartGame"
+          :can-start-game="canStartGameWithScreenGate"
           :is-starting="isStartingGame"
           :is-dummy-mode="isRoomDummyMode"
+          :start-block-reason="startBlockReason"
+          :joining-count="joiningPlayers.length"
           :unread-messages="unreadMessages"
           :is-team-mode="isTeamMode"
           :show-chat-toggle="isMobileView"
@@ -455,7 +457,9 @@ const {
   // 상태
   localRoomData,
   isTeamMode,
-  canStartGame,
+  canStartGameWithScreenGate,
+  startBlockReason,
+  joiningPlayers,
   isStartingGame,
   isDummyMode: isRoomDummyMode,
 
@@ -618,6 +622,17 @@ const handleRefreshRoom = async () => {
             isHost: Boolean(player?.isHost),
             teamId: player?.team ?? player?.teamId ?? null,
             team: player?.team ?? null,
+            screenState: String(player?.screenState || "ROOM").toUpperCase(),
+            screenStateSeq: Number.isFinite(
+              Number(player?.screenStateSeq ?? player?.clientSeq),
+            )
+              ? Number(player?.screenStateSeq ?? player?.clientSeq)
+              : 0,
+            screenStateUpdatedAt: Number.isFinite(
+              Number(player?.screenStateUpdatedAt ?? player?.updatedAt),
+            )
+              ? Number(player?.screenStateUpdatedAt ?? player?.updatedAt)
+              : null,
             isOnline:
               "isOnline" in (player || {}) ? Boolean(player.isOnline) : true,
             joinedAt: player?.joinedAt ? new Date(player.joinedAt) : new Date(),

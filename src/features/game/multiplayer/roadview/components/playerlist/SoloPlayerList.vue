@@ -15,15 +15,15 @@
       플레이어 <span class="player-count">{{ players.length }}명</span>
     </h3>
     <div class="players-container">
-      <div
-        v-for="player in sortedPlayers"
-        :key="player.id"
-        class="player-card"
-        :class="{
-          'current-user': player.id === currentUserId,
-          'has-submitted': player.hasSubmitted,
-        }"
-      >
+        <div
+          v-for="player in sortedPlayers"
+          :key="player.id"
+          class="player-card"
+          :class="{
+            'current-user': player.id === currentUserId,
+            'has-submitted': isPlayerSubmitted(player),
+          }"
+        >
         <!-- 순위 -->
         <div
           class="rank-badge"
@@ -55,7 +55,7 @@
             </div>
             <!-- 플레이어 제출 상태 (아이콘만 표시) -->
             <div class="player-status" v-if="!showScores">
-              <template v-if="player.hasSubmitted">
+              <template v-if="isPlayerSubmitted(player)">
                 <div class="check-badge submitted" title="제출완료">
                   <i class="fas fa-check-circle"></i>
                 </div>
@@ -163,6 +163,14 @@ export default {
   },
 
   methods: {
+    isPlayerSubmitted(player) {
+      if (player?.hasSubmitted === true) return true;
+      const status = String(player?.gamePlayerStatus || "").toUpperCase();
+      return ["PLAYING", "FINISHED", "SUBMITTED", "ANSWERED"].includes(
+        status,
+      );
+    },
+
     formatNumber(number) {
       if (!number && number !== 0) return "0";
       return number.toLocaleString();

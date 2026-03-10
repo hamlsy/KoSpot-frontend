@@ -11,9 +11,14 @@
       <p class="description">
         {{ gameDescription }}
       </p>
-      <button class="start-btn" :class="mode" @click="endIntro">
-        시작하기
-      </button>
+      <div class="action-buttons">
+        <button class="exit-btn" @click="exitIntro">
+          나가기
+        </button>
+        <button class="start-btn" :class="mode" @click="endIntro">
+          시작하기
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -48,6 +53,9 @@ export default {
   methods: {
     endIntro() {
       this.$emit("end-intro");
+    },
+    exitIntro() {
+      this.$emit("exit-intro");
     },
   },
 };
@@ -136,19 +144,38 @@ h2 {
   margin-bottom: 24px;
 }
 
-/* 액션 버튼 (얇고 딱딱하지 않게) */
-.start-btn {
-  color: white;
+/* 액션 버튼 그룹 (수평 배치) */
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+}
+
+/* 액션 버튼 공통 속성 */
+.start-btn,
+.exit-btn {
   border: none;
-  padding: 12px 28px;
+  padding: 12px 24px;
   font-size: 1rem;
   font-weight: 600;
   border-radius: 8px; /* 알약 형태 대신 둥근 사각형으로 심플하게 */
   cursor: pointer;
   transition: all 0.2s ease;
   width: 100%;
-  max-width: 160px;
+  max-width: 140px;
   letter-spacing: 0.02em;
+}
+
+/* 시작하기 버튼 속성 */
+.start-btn {
+  color: white;
+}
+
+/* 나가기 버튼 속성 */
+.exit-btn {
+  background: #f1f5f9;
+  color: #64748b;
 }
 
 /* 심플한 단일 색상 또는 부드러운 그라데이션 */
@@ -161,13 +188,21 @@ h2 {
 }
 
 /* 마이크로 인터랙션 단축 */
-.start-btn:hover {
+.start-btn:hover,
+.exit-btn:hover {
   transform: translateY(-2px);
   filter: brightness(1.05);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.start-btn:active {
+.exit-btn:hover {
+  background: #e2e8f0;
+  color: #334155;
+  filter: none;
+}
+
+.start-btn:active,
+.exit-btn:active {
   transform: translateY(0);
 }
 
@@ -179,6 +214,15 @@ h2 {
 
   h2 {
     font-size: 1.3rem;
+  }
+  
+  .action-buttons {
+    gap: 8px;
+  }
+  
+  .start-btn,
+  .exit-btn {
+    padding: 12px 16px;
   }
 }
 </style>
