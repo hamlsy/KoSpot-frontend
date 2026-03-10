@@ -82,7 +82,6 @@
         ref="phoneFrame"
       />
 
-      <!-- 인트로 화면 -->
       <IntroOverlay
         :showIntro="showIntro"
         :gameTitle="gameTitle"
@@ -90,6 +89,7 @@
         :gameDescription="gameDescription"
         mode="rank"
         @end-intro="endIntro"
+        @exit-intro="exitGame"
       />
 
       <!-- 카운트다운 화면 -->
@@ -285,8 +285,7 @@ export default {
     },
   },
   mounted() {
-    // 게임 위치 데이터 요청
-    this.fetchGameLocationData();
+    // 게임 위치 데이터는 실제 "시작하기"를 클릭했을 때 로드합니다. (endIntro에서 호출)
   },
   beforeUnmount() {
     // 컴포넌트 소멸 시 타이머 정리
@@ -312,6 +311,9 @@ export default {
     endIntro() {
       this.showIntro = false;
       this.showCountdown = true;
+      
+      // "시작하기"를 누른 시점에 게임 위치 데이터(API)를 요청합니다.
+      this.fetchGameLocationData();
     },
 
     // 게임 상태 초기화

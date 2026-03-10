@@ -205,17 +205,24 @@ function onImgError(e) {
 onMounted(async () => {
   try {
     const response = await fetchDailyMvp()
-    const data = response.data?.result || response.data || response;
+    const responseData = response.data || response;
     
-    if (data && data.isSuccess !== false && Object.keys(data).length > 0) {
-      // API 응답 구조가 `{ result: null }` 인 경우를 대비
-      mvp.value = data.result || data;
-      // result가 null인데 data.result 자체가 null 이면 Empty State 로직으로 빠짐
-      if (!mvp.value || Object.keys(mvp.value).length === 0) {
+    // API 응답 구조를 명확히 판별하여 처리
+    if (responseData && typeof responseData === 'object' && 'isSuccess' in responseData) {
+      if (responseData.isSuccess) {
+        // 성공 시 result가 null이면 MVP 없음(Empty State)으로 처리
+        mvp.value = responseData.result || null;
+      } else {
         mvp.value = null;
       }
     } else {
-       mvp.value = null; // 데이터 없음 Empty State
+      // 구조가 다르거나 데이터가 직접 포함된 경우 fallback 처리
+      mvp.value = responseData?.result !== undefined ? responseData.result : responseData;
+    }
+    
+    // 데이터 유효성 추가 검사 (빈 객체 등)
+    if (mvp.value && typeof mvp.value === 'object' && Object.keys(mvp.value).length === 0) {
+      mvp.value = null;
     }
   } catch (e) {
     console.error('MVP fetch error:', e)
@@ -223,7 +230,7 @@ onMounted(async () => {
     mvp.value = null; 
   } finally {
     isLoading.value = false
-    setTimeout(() => { isLoaded.value = true }, 50)
+    isLoaded.value = true
   }
 })
 </script>
@@ -240,6 +247,7 @@ onMounted(async () => {
   /* box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); */
   overflow: hidden;
   display: flex;
+  min-height: 260px; /* 고정 최소 높이 설정 (내부 absolute 요소들 때문) */
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
@@ -640,7 +648,7 @@ onMounted(async () => {
 @media (max-width: 768px) {
   .mvp-root {
     height: auto;
-    min-height: auto; 
+    min-height: 260px; /* 모바일에서도 최소 높이 유지 */
   }
 
   .mvp-content-horizontal {
