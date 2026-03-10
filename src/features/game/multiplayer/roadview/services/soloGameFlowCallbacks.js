@@ -125,6 +125,9 @@ export const createSoloGameFlowCallbacks = (vm) => {
 
       vm.finalGameResult = finalGameResult;
       vm.showGameResults = true;
+      if (typeof vm.publishScreenState === "function") {
+        vm.publishScreenState("RESULT");
+      }
 
       if (vm.gameStartTime) {
         vm.totalGameTime = Math.floor((Date.now() - vm.gameStartTime) / 1000);

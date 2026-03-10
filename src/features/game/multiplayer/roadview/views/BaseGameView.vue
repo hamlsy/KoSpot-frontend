@@ -69,6 +69,7 @@
           v-if="showGameResults"
           :player-results="finalGameResult?.playerResults || []"
           :current-user-id="currentUserId"
+          :room-player-screen-states="roomPlayerScreenStates"
           :total-rounds="gameStore.state.totalRounds"
           :total-game-time="totalGameTime"
           :game-message="finalGameResult?.message"
@@ -145,6 +146,14 @@ import {
   submitDummyAnswerState,
 } from "@/features/game/multiplayer/roadview/services/soloGameRuntimeService";
 import roomApiService from "@/features/game/multiplayer/room/services/roomApi.service.js";
+import screenStateSyncService, {
+  extractScreenStateSeq,
+  extractScreenStateUpdatedAt,
+  normalizeScreenState,
+  shouldApplyScreenState,
+  toMemberKey,
+} from "@/features/game/multiplayer/room/services/screenStateSync.service.js";
+import webSocketManager from "@/features/game/multiplayer/shared/services/websocket/composables";
 
 export default {
   name: "BaseRoadViewGame",
@@ -282,6 +291,10 @@ export default {
       unreadChatCount: 0,
       // 이전 채팅 메시지 수 (새 메시지 감지용)
       previousChatMessagesLength: 0,
+
+      // 방 플레이어 화면 상태 맵 (memberId 기반)
+      roomPlayerScreenStates: {},
+      roomPlayerListTopic: null,
     };
   },
 
@@ -464,6 +477,7 @@ export default {
     // showGameResults 등이 true로 남아있으면 게임 완료 화면이 표시될 수 있음
     this.showGameResults = false; // 로컬 데이터 초기화
     this.finalGameResult = null; // 로컬 데이터 초기화
+    this.roomPlayerScreenStates = {};
     this.gameStore.state.roundEnded = false;
     this.gameStore.state.hasSubmittedGuess = false;
     this.gameStore.state.showRoundResults = false;
@@ -771,8 +785,113 @@ export default {
 
       await this.soloGameFlow.initializeFromServerStart(this.roomId);
 
+      this.setupRoomPlayerListSubscription();
       this.setupLoadingStatusSubscription();
       this.sendLoadingAcknowledge();
+      this.publishScreenState("IN_GAME");
+    },
+
+    setupRoomPlayerListSubscription() {
+      if (!this.roomId || !webSocketManager.isConnected.value) {
+        return;
+      }
+
+      this.removeRoomPlayerListSubscription();
+
+      const topic = `/topic/room/${this.roomId}/playerList`;
+      const subscriptionId = webSocketManager.subscribe(topic, (notification) => {
+        this.handleRoomPlayerListNotification(notification);
+      });
+
+      if (!subscriptionId) {
+        console.warn("[Solo Game] room playerList 구독 실패");
+        return;
+      }
+
+      this.roomPlayerListTopic = topic;
+    },
+
+    removeRoomPlayerListSubscription() {
+      if (!this.roomPlayerListTopic) {
+        return;
+      }
+
+      try {
+        webSocketManager.unsubscribe(this.roomPlayerListTopic);
+      } catch (error) {
+        console.warn("[Solo Game] room playerList 구독 해제 실패:", error);
+      }
+
+      this.roomPlayerListTopic = null;
+    },
+
+    handleRoomPlayerListNotification(notification) {
+      if (!notification || typeof notification !== "object") {
+        return;
+      }
+
+      const type = notification.type;
+      if (type === "SCREEN_STATE_UPDATED" && notification.playerInfo) {
+        this.mergeRoomPlayerScreenState(notification.playerInfo);
+        return;
+      }
+
+      if (type === "PLAYER_LIST_UPDATED" && Array.isArray(notification.players)) {
+        notification.players.forEach((playerInfo) => {
+          this.mergeRoomPlayerScreenState(playerInfo);
+        });
+      }
+    },
+
+    mergeRoomPlayerScreenState(playerInfo) {
+      const memberKey = toMemberKey(
+        playerInfo?.memberId ?? playerInfo?.id ?? playerInfo?.playerId,
+      );
+      if (!memberKey) {
+        return;
+      }
+
+      const currentState = this.roomPlayerScreenStates[memberKey];
+      const currentSeq =
+        currentState && Number.isFinite(Number(currentState.screenStateSeq))
+          ? Number(currentState.screenStateSeq)
+          : -1;
+      const incomingSeq = extractScreenStateSeq(playerInfo, 0);
+      const currentScreenState = currentState?.state;
+      const incomingScreenState = playerInfo?.screenState;
+
+      if (
+        !shouldApplyScreenState(
+          currentSeq,
+          incomingSeq,
+          currentScreenState,
+          incomingScreenState,
+        )
+      ) {
+        return;
+      }
+
+      this.roomPlayerScreenStates = {
+        ...this.roomPlayerScreenStates,
+        [memberKey]: {
+          state: normalizeScreenState(playerInfo?.screenState),
+          screenStateSeq: incomingSeq,
+          screenStateUpdatedAt:
+            extractScreenStateUpdatedAt(playerInfo, Date.now()) ?? Date.now(),
+        },
+      };
+    },
+
+    publishScreenState(state) {
+      if (this.isDummyRuntime || !this.roomId) {
+        return false;
+      }
+
+      const success = screenStateSyncService.sendScreenState(this.roomId, state);
+      if (!success) {
+        console.warn(`[Solo Game] 화면 상태 전송 실패: ${state}`);
+      }
+      return success;
     },
 
     /**
@@ -1434,6 +1553,8 @@ export default {
     async restartGame() {
       console.log("[Solo Game] 게임 방으로 복귀");
 
+      this.publishScreenState("ROOM");
+
       // 로컬 데이터 초기화
       this.showGameResults = false;
       this.finalGameResult = null;
@@ -1533,6 +1654,8 @@ export default {
      */
     cleanupSubscriptions() {
       console.log("[Solo Game] 모든 구독 해제 시작");
+
+      this.removeRoomPlayerListSubscription();
 
       // 서버 모드 정리
       if (this.isServerMode) {

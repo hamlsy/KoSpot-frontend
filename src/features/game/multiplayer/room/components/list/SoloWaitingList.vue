@@ -52,6 +52,13 @@
               <span class="player-name-text">{{ orderedPlayers[n - 1].nickname }}</span>
               <span v-if="orderedPlayers[n - 1].id === currentUserId" class="you-badge">나</span>
             </div>
+            <div
+              v-if="shouldShowScreenState(orderedPlayers[n - 1].screenState)"
+              class="screen-state-badge"
+              :class="`state-${String(orderedPlayers[n - 1].screenState).toLowerCase()}`"
+            >
+              {{ getScreenStateLabel(orderedPlayers[n - 1].screenState) }}
+            </div>
           </div>
         </div>
 
@@ -122,6 +129,24 @@ const orderedPlayers = computed(() => {
   const others = props.players.filter(p => p.id !== props.currentUserId);
   return me ? [me, ...others] : [...props.players];
 });
+
+const screenStateLabelMap = {
+  JOINING: '입장 중',
+  RESULT: '결과 화면',
+  ROOM: '방 대기',
+  IN_GAME: '게임 중',
+  DISCONNECTED: '연결 끊김',
+};
+
+const getScreenStateLabel = (screenState) => {
+  const normalized = String(screenState || '').toUpperCase();
+  return screenStateLabelMap[normalized] || '방 대기';
+};
+
+const shouldShowScreenState = (screenState) => {
+  const normalized = String(screenState || '').toUpperCase();
+  return normalized !== 'ROOM' && Boolean(screenStateLabelMap[normalized]);
+};
 </script>
 
 
@@ -297,6 +322,45 @@ const orderedPlayers = computed(() => {
   padding: 0.1rem 0.3rem;
   border-radius: 8px;
   font-weight: 500;
+}
+
+.screen-state-badge {
+  margin-top: 0.25rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.screen-state-badge.state-result {
+  color: #0f766e;
+  background: #ccfbf1;
+  border-color: #99f6e4;
+}
+
+.screen-state-badge.state-joining {
+  color: #92400e;
+  background: #fef3c7;
+  border-color: #fde68a;
+}
+
+.screen-state-badge.state-room {
+  color: #1d4ed8;
+  background: #dbeafe;
+  border-color: #bfdbfe;
+}
+
+.screen-state-badge.state-in_game {
+  color: #9a3412;
+  background: #ffedd5;
+  border-color: #fed7aa;
+}
+
+.screen-state-badge.state-disconnected {
+  color: #7f1d1d;
+  background: #fee2e2;
+  border-color: #fecaca;
 }
 
 /* 슬롯 래퍼 */

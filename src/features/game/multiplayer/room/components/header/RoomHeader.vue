@@ -140,6 +140,10 @@
             <span>시작</span>
           </button>
         </div>
+
+        <p v-if="showStartBlockMessage" class="start-block-message">
+          {{ startBlockMessage }}
+        </p>
       </div>
     </div>
   </div>
@@ -180,6 +184,14 @@ const props = defineProps({
   isStarting: {
     type: Boolean,
     default: false,
+  },
+  startBlockReason: {
+    type: String,
+    default: null,
+  },
+  joiningCount: {
+    type: Number,
+    default: 0,
   },
   friendIsOpen: {
     type: Boolean,
@@ -230,6 +242,33 @@ const showStartButton = computed(() => props.isHost || props.isDummyMode);
 const startButtonDisabled = computed(
   () => props.isStarting || (!props.canStartGame && !props.isDummyMode),
 );
+
+const startBlockMessage = computed(() => {
+  switch (props.startBlockReason) {
+    case "joining-players":
+      return props.joiningCount > 0
+        ? `참여 중인 플레이어(${props.joiningCount}명)가 있습니다. 잠시 후 다시 시도해주세요.`
+        : "참여 중인 플레이어가 있습니다. 잠시 후 다시 시도해주세요.";
+    case "non-room-players":
+      return "모든 플레이어가 방 화면으로 돌아오면 시작할 수 있습니다.";
+    case "sync-pending":
+      return "참가자 상태를 확인하는 중입니다. 잠시만 기다려주세요.";
+    case "insufficient-players":
+      return "게임을 시작하기 위한 최소 인원이 필요합니다.";
+    default:
+      return "";
+  }
+});
+
+const showStartBlockMessage = computed(() => {
+  return (
+    showStartButton.value &&
+    !props.isDummyMode &&
+    !props.isStarting &&
+    startButtonDisabled.value &&
+    Boolean(startBlockMessage.value)
+  );
+});
 
 const copyRoomId = () => {
   navigator.clipboard
@@ -447,6 +486,18 @@ const leaveRoomWithConfirm = () => {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+}
+
+.start-block-message {
+  margin: 0;
+  width: 100%;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #b45309;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 0.5rem 0.65rem;
 }
 
 .action-button {

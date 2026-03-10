@@ -282,6 +282,18 @@ class RoomWebSocketService {
         }
         break;
 
+      case GAME_ROOM_NOTIFICATION_TYPES.SCREEN_STATE_UPDATED:
+        if (eventHandlers.onGameRoomNotification) {
+          eventHandlers.onGameRoomNotification({
+            type: 'SCREEN_STATE_UPDATED',
+            playerInfo,
+            players: null,
+            message: null,
+            timestamp
+          });
+        }
+        break;
+
       case GAME_ROOM_NOTIFICATION_TYPES.TEAM_CHANGED:
         if (eventHandlers.onGameRoomNotification) {
           eventHandlers.onGameRoomNotification({

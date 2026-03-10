@@ -867,6 +867,12 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     // playerResults가 유효한 경우에만 finalGameResult 생성
     const playerResults = message.playerResults.map(player => ({
       playerId: player.playerId,
+      memberId:
+        player.memberId != null
+          ? Number(player.memberId)
+          : player.playerId != null
+            ? Number(player.playerId)
+            : null,
       nickname: player.nickname || '알 수 없음',
       markerImageUrl: player.markerImageUrl || null,
       totalScore: player.totalScore != null ? Number(player.totalScore) : 0,

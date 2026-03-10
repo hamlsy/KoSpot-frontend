@@ -63,6 +63,20 @@
         </div>
       </div>
 
+      <div v-if="opponentStatuses.length" class="opponent-status-section">
+        <p class="opponent-status-title">상대 화면 상태</p>
+        <div
+          v-for="opponent in opponentStatuses"
+          :key="opponent.key"
+          class="opponent-status-item"
+        >
+          <span class="opponent-name">{{ opponent.nickname }}</span>
+          <span class="opponent-status-badge" :class="`state-${opponent.state.toLowerCase()}`">
+            {{ opponent.label }}
+          </span>
+        </div>
+      </div>
+
       <!-- 하단 액션 & 로딩 바 -->
       <div class="footer-action">
         <div class="action-row">
@@ -110,6 +124,10 @@ const props = defineProps({
     type: String,
     default: ''
   },
+  roomPlayerScreenStates: {
+    type: Object,
+    default: () => ({})
+  },
   autoExitRemaining: {
     type: Number,
     default: 30
@@ -127,6 +145,58 @@ const sortedPlayers = computed(() =>
   [...props.playerResults].sort((a, b) => (a.finalRank || 999) - (b.finalRank || 999))
 );
 const podium = computed(() => sortedPlayers.value.slice(0, 3));
+
+const resolvePlayerState = (player) => {
+  const keys = [player?.memberId, player?.playerId]
+    .filter((value) => value != null)
+    .map((value) => String(value));
+
+  for (const key of keys) {
+    if (props.roomPlayerScreenStates[key]) {
+      return props.roomPlayerScreenStates[key];
+    }
+  }
+
+  return null;
+};
+
+const isCurrentUserResult = (player) => {
+  const currentUserKey = String(props.currentUserId || '');
+  if (!currentUserKey) {
+    return false;
+  }
+
+  return [player?.memberId, player?.playerId]
+    .filter((value) => value != null)
+    .some((value) => String(value) === currentUserKey);
+};
+
+const stateLabelMap = {
+  JOINING: '입장 중',
+  RESULT: '결과 화면',
+  ROOM: '방으로 복귀',
+  IN_GAME: '게임 화면',
+  DISCONNECTED: '연결 끊김',
+};
+
+const opponentStatuses = computed(() => {
+  return sortedPlayers.value
+    .filter((player) => !isCurrentUserResult(player))
+    .map((player) => {
+      const resolved = resolvePlayerState(player);
+      const normalizedState = String(
+        resolved?.state || resolved?.screenState || 'RESULT',
+      ).toUpperCase();
+      const state = stateLabelMap[normalizedState] ? normalizedState : 'RESULT';
+
+      return {
+        key: `${player.playerId ?? 'unknown'}-${state}`,
+        nickname: player.nickname || '상대 플레이어',
+        state,
+        label: stateLabelMap[state],
+      };
+    });
+});
 
 const autoExitProgress = computed(() => {
   if (!props.autoExitTotal || props.autoExitTotal <= 0) return 0;
@@ -381,6 +451,75 @@ function handlePlayAgain() {
   border-radius: 14px;
   overflow: hidden;
   flex-shrink: 0;
+}
+
+.opponent-status-section {
+  margin: 0 28px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.opponent-status-title {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.opponent-status-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.opponent-name {
+  font-size: 0.82rem;
+  color: #374151;
+  font-weight: 600;
+}
+
+.opponent-status-badge {
+  font-size: 0.74rem;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.opponent-status-badge.state-result {
+  color: #0f766e;
+  background: #ccfbf1;
+  border-color: #99f6e4;
+}
+
+.opponent-status-badge.state-joining {
+  color: #92400e;
+  background: #fef3c7;
+  border-color: #fde68a;
+}
+
+.opponent-status-badge.state-room {
+  color: #1d4ed8;
+  background: #dbeafe;
+  border-color: #bfdbfe;
+}
+
+.opponent-status-badge.state-in_game {
+  color: #9a3412;
+  background: #ffedd5;
+  border-color: #fed7aa;
+}
+
+.opponent-status-badge.state-disconnected {
+  color: #7f1d1d;
+  background: #fee2e2;
+  border-color: #fecaca;
 }
 
 .stat-item {
