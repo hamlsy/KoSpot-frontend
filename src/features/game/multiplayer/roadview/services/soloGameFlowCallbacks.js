@@ -134,6 +134,16 @@ export const createSoloGameFlowCallbacks = (vm) => {
       vm.startAutoExitCountdown(30);
     },
 
+    onTimerStart: () => {
+      if (!vm?.isServerMode) {
+        return;
+      }
+
+      if (typeof vm.handleServerTimerSignal === "function") {
+        vm.handleServerTimerSignal();
+      }
+    },
+
     onTimerSync: (message) => {
       if (!vm.gameStore) {
         return;

@@ -37,8 +37,14 @@ export const mapServerPlayers = (gamePlayers = []) => {
 export const mapGamePlayersToLocalPlayers = (gamePlayers = []) => {
   return gamePlayers.map((player) => {
     const gamePlayerStatus = player.gamePlayerStatus || "WAITING";
+    const submittedStatuses = new Set([
+      "PLAYING",
+      "FINISHED",
+      "SUBMITTED",
+      "ANSWERED",
+    ]);
     const hasSubmitted =
-      gamePlayerStatus === "PLAYING" || gamePlayerStatus === "FINISHED";
+      submittedStatuses.has(String(gamePlayerStatus).toUpperCase());
 
     return {
       id: String(player.playerId),
@@ -155,7 +161,8 @@ export const applySubmissionStatusToPlayers = (gamePlayers = [], submissionData)
     };
   }
 
-  updatedPlayer.gamePlayerStatus = "PLAYING";
+  const nextStatus = submissionData?.gamePlayerStatus || "PLAYING";
+  updatedPlayer.gamePlayerStatus = String(nextStatus).toUpperCase();
   if (memberId != null && updatedPlayer.memberId == null) {
     updatedPlayer.memberId = Number(memberId);
   }

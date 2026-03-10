@@ -170,6 +170,9 @@
             지도
           </button>
 
+          <!-- 결과 모달 -->
+          <slot name="results" @request-next-round="handleRequestNextRound"></slot>
+
           
         </div>
       </div>
@@ -179,8 +182,6 @@
         <slot name="chat" :close-chat="closeChat" :is-chat-open="isChatOpen"></slot>
       </div>
 
-      <!-- 결과 모달 -->
-      <slot name="results" @request-next-round="handleRequestNextRound"></slot>
     </div>
 
     <!-- 휴대폰 프레임 -->

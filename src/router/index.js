@@ -11,6 +11,7 @@ import adminRoutes from './adminRoutes.js';
 import noticeRoutes from './noticeRoutes.js';
 import shopRoutes from './shopRoutes.js';
 import { connectAll } from '@/core/services/appWebSocket.service.js';
+import TestFinalResultsView from '@/features/game/multiplayer/roadview/views/TestFinalResultsView.vue';
 
 // 봇 여부 확인 헬퍼 함수
 const isBot = () => {
@@ -38,7 +39,11 @@ const routes = [
   ...devRoutes,
   ...noticeRoutes,
   ...shopRoutes,
-
+  {
+    path: '/test-final-results',
+    name: 'TestFinalResults',
+    component: TestFinalResultsView
+  }
 ];
 
 const router = createRouter({
@@ -107,4 +112,4 @@ router.afterEach((to, from) => {
   }
 })
 
-export default router;
+export default router;

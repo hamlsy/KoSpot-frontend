@@ -72,6 +72,8 @@
           :total-rounds="gameStore.state.totalRounds"
           :total-game-time="totalGameTime"
           :game-message="finalGameResult?.message"
+          :auto-exit-remaining="autoExitRemaining"
+          :auto-exit-total="autoExitTotal"
           @play-again="restartGame"
           @exit-to-lobby="exitToLobby"
         />
@@ -266,7 +268,11 @@ export default {
 
       // 자동 로비 이동 상태
       autoExitTimerId: null,
-      autoExitRemaining: 0,
+      autoExitRemaining: 30,
+      autoExitTotal: 30,
+
+      // 서버 타이머 수신 여부 (로딩/인트로 오버레이 강제 종료 판단)
+      hasServerTimerStarted: false,
 
       // 지명 공개 관련 로컬 상태
       isPoiNameVisibleLocal: true,
@@ -670,6 +676,17 @@ export default {
         this.playerLoading.totalCount,
       );
       this.playerLoading.isActive = false;
+
+      // 서버 타이머가 이미 시작된 경우 인트로 오버레이를 다시 열지 않음
+      if (this.hasServerTimerStarted) {
+        this.pendingIntroOverlay = false;
+        if (this.$refs.baseGame) {
+          this.$refs.baseGame.showIntroOverlay = false;
+          this.$refs.baseGame.showNextRoundOverlay = false;
+        }
+        return;
+      }
+
       if (this.$refs.baseGame) {
         this.$refs.baseGame.showIntroOverlay = true;
         this.pendingIntroOverlay = false;
@@ -718,6 +735,13 @@ export default {
 
     triggerIntroOverlayIfNeeded() {
       if (!this.$refs.baseGame) {
+        return;
+      }
+
+      if (this.hasServerTimerStarted) {
+        this.pendingIntroOverlay = false;
+        this.$refs.baseGame.showIntroOverlay = false;
+        this.$refs.baseGame.showNextRoundOverlay = false;
         return;
       }
 
@@ -797,6 +821,42 @@ export default {
         // 더미 모드: 시뮬레이션 시작
         console.log("[Solo Game] 더미 모드 시뮬레이션 시작");
         this.simulationTriggered = true;
+      }
+    },
+
+    handleServerTimerSignal() {
+      if (!this.isServerMode) {
+        return;
+      }
+
+      this.hasServerTimerStarted = true;
+
+      const baseGame = this.$refs.baseGame;
+      const hasBlockingOverlay =
+        this.playerLoading.isActive ||
+        Boolean(baseGame?.showIntroOverlay) ||
+        Boolean(baseGame?.showNextRoundOverlay) ||
+        this.pendingIntroOverlay;
+
+      if (!hasBlockingOverlay) {
+        return;
+      }
+
+      this.forceCloseBlockingOverlays("timer-start");
+
+      // useSoloGameFlow 내부 pending 타이머를 즉시 시작하기 위해 오버레이 완료 처리 호출
+      this.soloGameFlow.onOverlayComplete();
+    },
+
+    forceCloseBlockingOverlays(reason = "unknown") {
+      console.warn(`[Solo Game] 블로킹 오버레이 강제 종료: ${reason}`);
+
+      this.playerLoading.isActive = false;
+      this.pendingIntroOverlay = false;
+
+      if (this.$refs.baseGame) {
+        this.$refs.baseGame.showIntroOverlay = false;
+        this.$refs.baseGame.showNextRoundOverlay = false;
       }
     },
 
@@ -1630,7 +1690,8 @@ export default {
       try {
         // 중복 방지
         this.cancelAutoExitCountdown();
-        this.autoExitRemaining = Number(seconds) > 0 ? Number(seconds) : 30;
+        this.autoExitTotal = Number(seconds) > 0 ? Number(seconds) : 30;
+        this.autoExitRemaining = this.autoExitTotal;
         this.autoExitTimerId = setInterval(() => {
           this.autoExitRemaining = Math.max(0, this.autoExitRemaining - 1);
           if (this.autoExitRemaining <= 0) {
