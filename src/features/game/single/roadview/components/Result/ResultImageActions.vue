@@ -197,86 +197,12 @@ export default {
     },
   },
   methods: {
-    // ─── StaticMap 이미지 생성 ───────────────────────────────────────
-    createStaticMapImage(width, height) {
-      return new Promise((resolve) => {
-        if (!window.kakao?.maps?.StaticMap || !this.currentLocation) {
-          resolve(null);
-          return;
-        }
-
-        const tempDiv = document.createElement('div');
-        tempDiv.style.cssText = `position:fixed;left:-9999px;top:-9999px;width:${width}px;height:${height}px;visibility:hidden;pointer-events:none;`;
-        document.body.appendChild(tempDiv);
-
-        const cleanup = () => {
-          if (document.body.contains(tempDiv)) document.body.removeChild(tempDiv);
-        };
-
-        let centerLat = this.currentLocation.lat;
-        let centerLng = this.currentLocation.lng;
-        if (this.guessedLocation) {
-          centerLat = (centerLat + this.guessedLocation.lat) / 2;
-          centerLng = (centerLng + this.guessedLocation.lng) / 2;
-        }
-
-        const markers = [{ position: new window.kakao.maps.LatLng(this.currentLocation.lat, this.currentLocation.lng) }];
-        if (this.guessedLocation) {
-          markers.push({ position: new window.kakao.maps.LatLng(this.guessedLocation.lat, this.guessedLocation.lng) });
-        }
-
-        try {
-          // eslint-disable-next-line no-new
-          new window.kakao.maps.StaticMap(tempDiv, {
-            center: new window.kakao.maps.LatLng(centerLat, centerLng),
-            level: this.guessedLocation ? 7 : 5,
-            marker: markers,
-          });
-        } catch {
-          cleanup();
-          resolve(null);
-          return;
-        }
-
-        const checkImg = (count = 0) => {
-          const img = tempDiv.querySelector('img');
-          if (img && img.complete && img.naturalWidth > 0) {
-            const clone = img.cloneNode(true);
-            clone.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
-            cleanup();
-            resolve(clone);
-          } else if (count < 40) {
-            setTimeout(() => checkImg(count + 1), 50);
-          } else {
-            cleanup();
-            resolve(null);
-          }
-        };
-
-        // MutationObserver: img 삽입 즉시 error 리스너 등록
-        const obs = new MutationObserver(() => {
-          const img = tempDiv.querySelector('img');
-          if (img) {
-            obs.disconnect();
-            img.addEventListener('error', () => { cleanup(); resolve(null); });
-          }
-        });
-        obs.observe(tempDiv, { childList: true, subtree: true });
-
-        setTimeout(() => checkImg(), 0);
-      });
-    },
-
     // ─── Off-Screen 캡처 카드 생성 ──────────────────────────────────
-    /**
-     * 실제 화면 DOM과 독립된 캡처 전용 카드를 반환합니다.
-     * overflow/max-height 제한이 없어 전체 내용이 캡처됩니다.
-     * @param {HTMLElement|null} staticMapImg
-     */
-    buildOffScreenCard(staticMapImg) {
+    buildOffScreenCard() {
       const CARD_W = 420;
-      const MAP_H  = 200;
-      const FONT   = '-apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif';
+      // 시스템 폰트마다 baseline이 달라 html2canvas에서 텍스트가 아래로 밀리는 현상 방지.
+      // 맑은 고딕, 애플-SD 계열 등 한글 폰트를 명시적으로 지정
+      const FONT   = '"Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
 
       const card = document.createElement('div');
       card.style.cssText = [
@@ -289,7 +215,17 @@ export default {
         'left:-9999px',
         'top:0',
         'z-index:-1',
+        'box-sizing:border-box'
       ].join(';');
+
+      // CSS 리셋: html2canvas가 렌더링할 때 영향을 최소화하도록 리셋
+      const style = document.createElement('style');
+      style.textContent = `
+        * { margin:0; padding:0; box-sizing:border-box; }
+        /* html2canvas 텍스트 아래 치우침(baseline 오차) 보정을 위한 공통 위로 올림 */
+        .txt-fix { display: inline-block; transform: translateY(-3%); }
+      `;
+      card.appendChild(style);
 
       // ① 브랜드 바
       const brandBar = document.createElement('div');
@@ -298,34 +234,38 @@ export default {
 
       // ② 헤더
       const header = document.createElement('div');
-      header.style.cssText = 'display:flex;align-items:center;gap:9px;padding:18px 22px 0;';
+      header.style.cssText = 'display:flex;align-items:center;padding:18px 22px 0;';
       const headerIcon = document.createElement('div');
-      headerIcon.style.cssText = 'width:30px;height:30px;border-radius:50%;background:#33fbe8;display:flex;align-items:center;justify-content:center;font-size:0.8rem;flex-shrink:0;';
-      headerIcon.textContent = '📍';
+      // 플렉스로 맞추면 아이콘 내부 텍스트도 중앙이 엇나갈 수 있어 padding이나 line-height 미세조정 사용
+      headerIcon.style.cssText = 'width:30px;height:30px;border-radius:50%;background:#33fbe8;display:flex;align-items:center;justify-content:center;font-size:0.8rem;flex-shrink:0;margin-right:9px;';
+      headerIcon.innerHTML = '<span class="txt-fix" style="font-size:16px;">📍</span>';
+      
       const headerTitle = document.createElement('span');
       headerTitle.style.cssText = 'font-size:0.95rem;font-weight:700;color:#6b7280;letter-spacing:0.02em;';
-      headerTitle.textContent = this.isSharedMode ? '공유 게임 결과' : '게임 결과';
+      headerTitle.innerHTML = `<span class="txt-fix">${this.isSharedMode ? '공유 게임 결과' : '게임 결과'}</span>`;
+      
       header.appendChild(headerIcon);
       header.appendChild(headerTitle);
       card.appendChild(header);
 
       if (this.isSharedMode) {
         // ── 공유 대전 모드 레이아웃 ──────────────────────────────
-        // 승패 뱃지
         const outcomeColors = { win: '#33fbe8', lose: '#fde68a', tie: '#e5e7eb' };
         const outcomeLabels = { win: '승리! 🎉', lose: '아쉽게 패배', tie: '무승부' };
         const hero = document.createElement('div');
         const oc = this.comparisonOutcome || 'tie';
-        hero.style.cssText = `margin:14px 22px;border-radius:18px;padding:16px;text-align:center;border:1.5px solid ${outcomeColors[oc] || '#e5e7eb'};background:#f8fafc;`;
+        hero.style.cssText = `margin:14px 22px;border-radius:18px;padding:20px 16px 16px;text-align:center;border:1.5px solid ${outcomeColors[oc] || '#e5e7eb'};background:#f8fafc;`;
+        
         const heroLabel = document.createElement('p');
-        heroLabel.style.cssText = 'margin:0 0 4px;font-size:1.3rem;font-weight:800;color:#111827;';
-        heroLabel.textContent = outcomeLabels[oc] || '';
+        heroLabel.style.cssText = 'margin:0 0 8px;padding:0;font-size:1.3rem;font-weight:800;color:#111827;line-height:1;';
+        heroLabel.innerHTML = `<span class="txt-fix">${outcomeLabels[oc] || ''}</span>`;
         hero.appendChild(heroLabel);
+        
         const deltaBadge = document.createElement('div');
         const delta = Math.abs((this.myScore || 0) - (this.sharerScore || 0));
         if (delta > 0) {
-          deltaBadge.style.cssText = 'display:inline-block;padding:3px 10px;border-radius:999px;font-size:0.75rem;font-weight:700;background:rgba(0,0,0,0.07);color:#111827;';
-          deltaBadge.textContent = `${delta}점 차이`;
+          deltaBadge.style.cssText = 'display:inline-block;padding:5px 12px 3px;border-radius:999px;font-size:0.75rem;font-weight:700;background:rgba(0,0,0,0.07);color:#111827;line-height:1;';
+          deltaBadge.innerHTML = `<span class="txt-fix">${delta}점 차이</span>`;
           hero.appendChild(deltaBadge);
         }
         card.appendChild(hero);
@@ -334,52 +274,90 @@ export default {
         const cmp = document.createElement('div');
         cmp.style.cssText = 'display:grid;grid-template-columns:1fr 36px 1fr;margin:0 22px 16px;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden;';
 
-        const makeCard = (name, sc, isMe) => {
+        const formatSecs = (s) => {
+          if (!s) return '0초';
+          const m = Math.floor(s / 60);
+          const rr = s % 60;
+          return m > 0 ? `${m}분 ${rr}초` : `${rr}초`;
+        };
+
+        const makeCard = (name, sc, isMe, playtime, hints) => {
           const c = document.createElement('div');
-          c.style.cssText = `padding:16px 12px;text-align:center;background:${isMe ? '#f0fffe' : '#f8fafc'};${isMe ? 'border-left:1px solid #e5e7eb;' : ''}`;
-          c.innerHTML = `<p style="margin:0 0 8px;font-size:0.78rem;font-weight:600;color:#6b7280;">${name}</p><p style="margin:0;font-size:2rem;font-weight:800;color:${isMe ? '#0d9488' : '#111827'};">${sc}</p><p style="margin:2px 0 0;font-size:0.78rem;color:#9ca3af;">점</p>`;
+          c.style.cssText = `padding:18px 12px 14px;text-align:center;background:${isMe ? '#f0fffe' : '#f8fafc'};${isMe ? 'border-left:1px solid #e5e7eb;' : ''}`;
+          c.innerHTML = `
+            <p style="margin:0 0 10px;padding:0;font-size:0.75rem;font-weight:600;color:#6b7280;line-height:1;"><span class="txt-fix">${name}</span></p>
+            <p style="margin:0;padding:0;font-size:2rem;font-weight:800;color:${isMe ? '#0d9488' : '#111827'};line-height:1;"><span class="txt-fix">${sc}</span></p>
+            <p style="margin:4px 0 12px;padding:0;font-size:0.75rem;color:#9ca3af;line-height:1;"><span class="txt-fix">점</span></p>
+            
+            <div style="display:inline-flex;flex-direction:column;gap:4px;width:100%;">
+              <div style="background:rgba(0,0,0,0.03);border-radius:6px;padding:6px 4px;font-size:0.65rem;color:#6b7280;line-height:1;display:flex;align-items:center;justify-content:center;">
+                <span class="txt-fix" style="font-size:0.7rem;margin-right:3px;">⏱</span>
+                <span class="txt-fix">${formatSecs(playtime)}</span>
+              </div>
+              <div style="background:rgba(0,0,0,0.03);border-radius:6px;padding:6px 4px;font-size:0.65rem;color:#6b7280;line-height:1;display:flex;align-items:center;justify-content:center;">
+                <span class="txt-fix" style="font-size:0.7rem;margin-right:3px;">💡</span>
+                <span class="txt-fix">힌트 ${hints}회</span>
+              </div>
+            </div>
+          `;
           return c;
         };
         const vsCol = document.createElement('div');
-        vsCol.style.cssText = 'display:flex;align-items:center;justify-content:center;background:#fff;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;';
-        vsCol.innerHTML = '<span style="font-size:0.7rem;font-weight:800;color:#d1d5db;letter-spacing:0.05em;">VS</span>';
-        cmp.appendChild(makeCard(this.sharerNickname || '공유자', this.sharerScore ?? 0, false));
+        vsCol.style.cssText = 'display:flex;align-items:center;justify-content:center;background:#fff;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;padding-bottom:2px;';
+        vsCol.innerHTML = '<span class="txt-fix" style="font-size:0.7rem;font-weight:800;color:#d1d5db;letter-spacing:0.05em;line-height:1;">VS</span>';
+        cmp.appendChild(makeCard(this.sharerNickname || '공유자', this.sharerScore ?? 0, false, this.sharerPlaytime, this.sharerHintsUsed));
         cmp.appendChild(vsCol);
-        cmp.appendChild(makeCard('나', this.myScore ?? 0, true));
+        cmp.appendChild(makeCard('나', this.myScore ?? 0, true, this.myPlaytime, this.myHintsUsed));
         card.appendChild(cmp);
       } else {
         // ── 연습 모드 레이아웃 ──────────────────────────────────────
-        // 점수 링
         const scoreHero = document.createElement('div');
-        scoreHero.style.cssText = 'display:flex;flex-direction:column;align-items:center;padding:20px 22px 4px;gap:8px;';
+        scoreHero.style.cssText = 'display:flex;flex-direction:column;align-items:center;padding:24px 22px 8px;';
+        
         const ring = document.createElement('div');
-        ring.style.cssText = 'width:110px;height:110px;border-radius:50%;border:4px solid #33fbe8;background:linear-gradient(135deg,#f0fffe 0%,#ffffff 100%);box-shadow:0 0 0 8px rgba(51,251,232,0.1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;';
-        ring.innerHTML = `<span style="font-size:2rem;font-weight:800;color:#111827;line-height:1;">${this.score ?? 0}</span><span style="font-size:0.8rem;font-weight:600;color:#6b7280;line-height:1;">점</span>`;
+        // line-height 오차를 줄이기 위해 ring 내부도 padding 보정
+        ring.style.cssText = 'width:110px;height:110px;border-radius:50%;border:4px solid #33fbe8;background:linear-gradient(135deg,#f0fffe 0%,#ffffff 100%);box-shadow:0 0 0 8px rgba(51,251,232,0.1);display:flex;flex-direction:column;align-items:center;justify-content:center;margin-bottom:14px;padding-top:6px;';
+        ring.innerHTML = `<span class="txt-fix" style="font-size:2rem;font-weight:800;color:#111827;line-height:1;margin-bottom:2px;">${this.score ?? 0}</span>
+                          <span class="txt-fix" style="font-size:0.8rem;font-weight:600;color:#6b7280;line-height:1;">점</span>`;
+        
         const scoreCap = document.createElement('p');
-        scoreCap.style.cssText = 'margin:0;font-size:0.82rem;color:#9ca3af;font-weight:500;';
-        scoreCap.textContent = '획득 점수';
+        scoreCap.style.cssText = 'margin:0;padding:0;font-size:0.82rem;color:#9ca3af;font-weight:500;line-height:1;text-align:center;';
+        scoreCap.innerHTML = '<span class="txt-fix">획득 점수</span>';
+        
         scoreHero.appendChild(ring);
         scoreHero.appendChild(scoreCap);
         card.appendChild(scoreHero);
 
-        // 통계 행
         const statsRow = document.createElement('div');
         statsRow.style.cssText = 'display:flex;align-items:stretch;margin:16px 22px;background:#f0fffe;border:1px solid #b2f5f0;border-radius:14px;overflow:hidden;';
         const makeStat = (icon, val, label) => {
           const s = document.createElement('div');
-          s.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 10px;';
-          s.innerHTML = `<span style="font-size:0.85rem;">${icon}</span><span style="font-size:1rem;font-weight:700;color:#0f766e;">${val}</span><span style="font-size:0.72rem;color:#6b7280;">${label}</span>`;
+          s.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;padding:16px 5px 14px;text-align:center;';
+          s.innerHTML = `<span class="txt-fix" style="font-size:1.1rem;line-height:1;margin-bottom:8px;">${icon}</span>
+                         <span class="txt-fix" style="font-size:0.95rem;font-weight:700;color:#0f766e;line-height:1;margin-bottom:6px;">${val}</span>
+                         <span class="txt-fix" style="font-size:0.65rem;color:#6b7280;line-height:1;">${label}</span>`;
           return s;
         };
-        const divider = document.createElement('div');
-        divider.style.cssText = 'width:1px;background:#b2f5f0;margin:12px 0;';
-        statsRow.appendChild(makeStat('📏', this.distanceText || '—', '떨어진 거리'));
-        statsRow.appendChild(divider);
-        if (this.showElapsedTime && this.elapsedTimeText) {
-          statsRow.appendChild(makeStat('⏱', this.elapsedTimeText, '소요 시간'));
+        const createDivider = () => {
+          const d = document.createElement('div');
+          d.style.cssText = 'width:1px;background:#b2f5f0;margin:14px 0;flex-shrink:0;';
+          return d;
+        };
+
+        statsRow.appendChild(makeStat('📏', this.distanceText || '—', '거리'));
+        statsRow.appendChild(createDivider());
+        
+        if (this.showElapsedTime) {
+          statsRow.appendChild(makeStat('⏱', this.elapsedTimeText || '—', '걸린 시간'));
+          
+          if (this.hintsUsed > 0) {
+            statsRow.appendChild(createDivider());
+            statsRow.appendChild(makeStat('💡', `${this.hintsUsed}회`, '사용 힌트'));
+          }
         } else {
           statsRow.appendChild(makeStat('🎯', '연습 모드', '게임 유형'));
         }
+        
         card.appendChild(statsRow);
       }
 
@@ -387,21 +365,24 @@ export default {
       if (this.poiName || this.fullAddress) {
         const loc = document.createElement('div');
         loc.style.cssText = 'margin:0 22px 16px;border-radius:13px;border:1px solid #b2f5f0;overflow:hidden;';
+        
         const locHeader = document.createElement('div');
-        locHeader.style.cssText = 'display:flex;align-items:center;gap:7px;padding:9px 14px;background:#f0fffe;border-bottom:1px solid #b2f5f0;font-size:0.78rem;font-weight:600;color:#0f766e;';
-        locHeader.innerHTML = '📍 <span>정답 위치</span>';
+        // 타이틀이 중앙으로 오도록 flex 컨테이너에 약간의 윗 여백
+        locHeader.style.cssText = 'display:flex;align-items:center;padding:10px 14px 9px;background:#f0fffe;border-bottom:1px solid #b2f5f0;font-size:0.78rem;font-weight:600;color:#0f766e;line-height:1;';
+        locHeader.innerHTML = '<span class="txt-fix" style="font-size:1rem;">📍</span> <span class="txt-fix" style="margin-left:7px;">정답 위치</span>';
+        
         const locBody = document.createElement('div');
-        locBody.style.cssText = 'padding:10px 14px;';
+        locBody.style.cssText = 'padding:12px 14px 10px;';
         if (this.poiName) {
           const p = document.createElement('p');
-          p.style.cssText = 'margin:0 0 2px;font-size:0.95rem;font-weight:700;color:#111827;';
-          p.textContent = this.poiName;
+          p.style.cssText = 'margin:0 0 6px;padding:0;font-size:0.95rem;font-weight:700;color:#111827;line-height:1;';
+          p.innerHTML = `<span class="txt-fix">${this.poiName}</span>`;
           locBody.appendChild(p);
         }
         if (this.fullAddress) {
           const p = document.createElement('p');
-          p.style.cssText = 'margin:0;font-size:0.82rem;color:#6b7280;';
-          p.textContent = this.fullAddress;
+          p.style.cssText = 'margin:0;padding:0;font-size:0.82rem;color:#6b7280;line-height:1;';
+          p.innerHTML = `<span class="txt-fix">${this.fullAddress}</span>`;
           locBody.appendChild(p);
         }
         loc.appendChild(locHeader);
@@ -409,26 +390,10 @@ export default {
         card.appendChild(loc);
       }
 
-      // ④ 지도 영역 (StaticMap img 직접 삽입)
-      const mapBox = document.createElement('div');
-      mapBox.style.cssText = `margin:0 22px 16px;border-radius:14px;border:1px solid #e5e7eb;overflow:hidden;height:${MAP_H}px;background:#f0f4f8;display:flex;align-items:center;justify-content:center;`;
-      if (staticMapImg) {
-        const imgEl = staticMapImg.cloneNode(true);
-        imgEl.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
-        imgEl.crossOrigin = '';   // CORS 속성 제거 (same-origin 취급)
-        mapBox.appendChild(imgEl);
-      } else {
-        const placeholder = document.createElement('span');
-        placeholder.style.cssText = 'font-size:0.8rem;color:#9ca3af;';
-        placeholder.textContent = '지도 로딩 실패';
-        mapBox.appendChild(placeholder);
-      }
-      card.appendChild(mapBox);
-
       // ⑤ KoSpot 워터마크
       const wm = document.createElement('div');
-      wm.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 22px 18px;';
-      wm.innerHTML = '<span style="font-size:0.75rem;font-weight:700;color:#33fbe8;letter-spacing:0.04em;">KoSpot</span><span style="font-size:0.72rem;color:#d1d5db;">· kospot.kr</span>';
+      wm.style.cssText = 'display:flex;align-items:center;justify-content:center;padding:12px 22px 20px;';
+      wm.innerHTML = '<span class="txt-fix" style="font-size:0.75rem;font-weight:700;color:#33fbe8;letter-spacing:0.04em;line-height:1;margin-right:6px;">KoSpot</span><span class="txt-fix" style="font-size:0.72rem;color:#d1d5db;line-height:1;">· kospot.kr</span>';
       card.appendChild(wm);
 
       document.body.appendChild(card);
@@ -444,19 +409,16 @@ export default {
       try {
         await document.fonts.ready;
 
-        // ① StaticMap 생성 (420px × 200px 기준)
-        const staticMapImg = await this.createStaticMapImage(376, 200); // 420 - 44(margin)
+        // ① Off-screen 카드 DOM 생성 (맵 없이)
+        offScreenCard = this.buildOffScreenCard();
 
-        // ② Off-screen 카드 DOM 생성
-        offScreenCard = this.buildOffScreenCard(staticMapImg);
-
-        // ③ 레이아웃 완료 대기 (1프레임)
+        // ② 브라우저가 화면상 레이아웃을 계산할 수 있도록 대기
         await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-        // ④ html2canvas로 캡처 (overflow 제한 없음)
+        // ④ html2canvas로 캡처 (allowTaint: true 유지, useCORS는 true)
         const canvas = await html2canvas(offScreenCard, {
           useCORS: true,
-          allowTaint: true,   // off-screen 카드는 외부 img 없으므로 taint OK
+          allowTaint: true,
           scale: 2,
           backgroundColor: '#ffffff',
           logging: false,

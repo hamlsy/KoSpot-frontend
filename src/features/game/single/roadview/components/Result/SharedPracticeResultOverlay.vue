@@ -87,12 +87,17 @@
 
       <!-- 결과 이미지 액션 (복사·저장·공유) -->
       <ResultImageActions
-        :captureEl="$refs.resultContent"
         :fileName="'kospot-shared-result'"
         :shareTitle="'KoSpot 공유 게임 결과'"
         :shareText="`나: ${myScore}점 vs ${sharerNickname}: ${sharerScore}점 | KoSpot에서 도전해보세요!`"
         :currentLocation="currentLocation"
         :guessedLocation="guessedLocation"
+        :myScore="myScore"
+        :sharerScore="sharerScore"
+        :sharerNickname="sharerNickname"
+        :comparisonOutcome="comparisonOutcome"
+        :poiName="poiName"
+        :fullAddress="fullAddress"
         @toast="onImageActionToast"
       />
 

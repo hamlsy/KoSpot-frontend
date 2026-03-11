@@ -21,7 +21,7 @@
         <p class="score-caption">획득 점수</p>
       </div>
 
-      <!-- 보조 통계 행: 거리 + 소요시간 -->
+      <!-- 보조 통계 행: 거리 + 소요시간 + 힌트 사용 -->
       <div class="stats-row">
         <div class="stat-item">
           <i class="fas fa-ruler stat-icon"></i>
@@ -34,7 +34,14 @@
           <span class="stat-value">{{ elapsedTimeText }}</span>
           <span class="stat-label">소요 시간</span>
         </div>
-        <div class="stat-item" v-if="!showElapsedTime">
+        <div class="stat-divider" v-if="hintsUsed > 0"></div>
+        <div class="stat-item" v-if="hintsUsed > 0">
+          <i class="fas fa-lightbulb stat-icon"></i>
+          <span class="stat-value">{{ hintsUsed }}회</span>
+          <span class="stat-label">힌트 사용</span>
+        </div>
+        <div class="stat-divider" v-if="!showElapsedTime && hintsUsed <= 0"></div>
+        <div class="stat-item" v-if="!showElapsedTime && hintsUsed <= 0">
           <i class="fas fa-crosshairs stat-icon"></i>
           <span class="stat-value">연습 모드</span>
           <span class="stat-label">게임 유형</span>
@@ -79,12 +86,18 @@
 
       <!-- 결과 이미지 액션 (복사·저장·공유) -->
       <ResultImageActions
-        :captureEl="$refs.resultContent"
         :fileName="'kospot-practice-result'"
         :shareTitle="'KoSpot 연습 게임 결과'"
-        :shareText="`점수: ${score}점 | 거리: ${formattedDistance} | KoSpot에서 도전해보세요!`"
+        :shareText="`점수: ${score}점 | 거리: ${formattedDistance} | 힌트: ${hintsUsed}회 | 소요 시간: ${elapsedTimeText} | KoSpot에서 도전해보세요!`"
         :currentLocation="currentLocation"
         :guessedLocation="guessedLocation"
+        :score="score"
+        :distanceText="formattedDistance"
+        :elapsedTimeText="elapsedTimeText"
+        :showElapsedTime="showElapsedTime"
+        :hintsUsed="hintsUsed"
+        :poiName="poiName"
+        :fullAddress="fullAddress"
         @toast="onImageActionToast"
       />
 
@@ -125,6 +138,10 @@ export default {
       default: 0,
     },
     score: {
+      type: Number,
+      default: 0,
+    },
+    hintsUsed: {
       type: Number,
       default: 0,
     },
