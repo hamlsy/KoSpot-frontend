@@ -8,25 +8,25 @@
         class="slot-wrapper"
         :class="{ 
           'disabled-slot': n > maxPlayers,
-          'player-slot': n <= maxPlayers && players[n - 1],
-          'empty-slot': n <= maxPlayers && !players[n - 1]
+          'player-slot': n <= maxPlayers && orderedPlayers[n - 1],
+          'empty-slot': n <= maxPlayers && !orderedPlayers[n - 1]
         }"
       >
         <!-- 플레이어가 있는 슬롯 -->
         <div 
-          v-if="n <= maxPlayers && players[n - 1]"
+          v-if="n <= maxPlayers && orderedPlayers[n - 1]"
           class="player-card"
           :class="{ 
-            'is-current': players[n - 1].id === currentUserId,
-            'is-host': players[n - 1].isHost
+            'is-current': orderedPlayers[n - 1].id === currentUserId,
+            'is-host': orderedPlayers[n - 1].isHost
           }"
-          @click="$emit('show-player-details', players[n - 1])"
+          @click="$emit('show-player-details', orderedPlayers[n - 1])"
         >
           <!-- 강퇴 버튼 (방장만 표시, 본인 제외) -->
           <button 
-            v-if="isHost && players[n - 1].id !== currentUserId"
+            v-if="isHost && orderedPlayers[n - 1].id !== currentUserId"
             class="kick-button"
-            @click.stop="$emit('kick-player', players[n - 1])"
+            @click.stop="$emit('kick-player', orderedPlayers[n - 1])"
             title="강퇴하기"
           >
             <i class="fas fa-times"></i>
@@ -35,13 +35,13 @@
           <!-- 플레이어 아바타 -->
           <div class="player-avatar">
             <img 
-              :src="players[n - 1].profileImage || '/images/default-avatar.png'"
-              :alt="players[n - 1].nickname"
+              :src="orderedPlayers[n - 1].profileImage || '/images/default-avatar.png'"
+              :alt="orderedPlayers[n - 1].nickname"
               class="avatar-image"
             />
             
             <!-- 방장 배지 -->
-            <div v-if="players[n - 1].isHost" class="host-badge">
+            <div v-if="orderedPlayers[n - 1].isHost" class="host-badge">
               <i class="fas fa-crown"></i>
             </div>
           </div>
@@ -49,8 +49,15 @@
           <!-- 플레이어 정보 -->
           <div class="player-info">
             <div class="player-name">
-              <span class="player-name-text">{{ players[n - 1].nickname }}</span>
-              <span v-if="players[n - 1].id === currentUserId" class="you-badge">나</span>
+              <span class="player-name-text">{{ orderedPlayers[n - 1].nickname }}</span>
+              <span v-if="orderedPlayers[n - 1].id === currentUserId" class="you-badge">나</span>
+            </div>
+            <div
+              v-if="shouldShowScreenState(orderedPlayers[n - 1].screenState)"
+              class="screen-state-badge"
+              :class="`state-${String(orderedPlayers[n - 1].screenState).toLowerCase()}`"
+            >
+              {{ getScreenStateLabel(orderedPlayers[n - 1].screenState) }}
             </div>
           </div>
         </div>
@@ -82,7 +89,7 @@
 </template>
 
 <script setup>
-import { computed, defineProps, defineEmits } from 'vue';
+import { computed } from 'vue';
 
 const props = defineProps({
   players: {
@@ -108,7 +115,40 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['show-player-details', 'kick-player']);
+
+/**
+ * 현재 유저를 항상 첫 번째 슬롯에 고정하고,
+ * 나머지 플레이어는 원래 입장 순서(서버 배열 순서)대로 채운다.
+ *
+ * 기존 문제: players[n-1]로 순수 인덱스 참조 시,
+ * 나이 입장자가 왼쪽을 차지하고 기존 플레이어가 밀림.
+ * 해결: me → others 순으로 재정렬.
+ */
+const orderedPlayers = computed(() => {
+  const me = props.players.find(p => p.id === props.currentUserId);
+  const others = props.players.filter(p => p.id !== props.currentUserId);
+  return me ? [me, ...others] : [...props.players];
+});
+
+const screenStateLabelMap = {
+  JOINING: '입장 중',
+  RESULT: '결과 화면',
+  ROOM: '방 대기',
+  IN_GAME: '게임 중',
+  DISCONNECTED: '연결 끊김',
+};
+
+const getScreenStateLabel = (screenState) => {
+  const normalized = String(screenState || '').toUpperCase();
+  return screenStateLabelMap[normalized] || '방 대기';
+};
+
+const shouldShowScreenState = (screenState) => {
+  const normalized = String(screenState || '').toUpperCase();
+  return normalized !== 'ROOM' && Boolean(screenStateLabelMap[normalized]);
+};
 </script>
+
 
 <style scoped>
 .solo-players-container {
@@ -270,6 +310,7 @@ const emit = defineEmits(['show-player-details', 'kick-player']);
   text-overflow: ellipsis;
   white-space: normal;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   line-height: 1.2;
 }
@@ -281,6 +322,45 @@ const emit = defineEmits(['show-player-details', 'kick-player']);
   padding: 0.1rem 0.3rem;
   border-radius: 8px;
   font-weight: 500;
+}
+
+.screen-state-badge {
+  margin-top: 0.25rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.screen-state-badge.state-result {
+  color: #0f766e;
+  background: #ccfbf1;
+  border-color: #99f6e4;
+}
+
+.screen-state-badge.state-joining {
+  color: #92400e;
+  background: #fef3c7;
+  border-color: #fde68a;
+}
+
+.screen-state-badge.state-room {
+  color: #1d4ed8;
+  background: #dbeafe;
+  border-color: #bfdbfe;
+}
+
+.screen-state-badge.state-in_game {
+  color: #9a3412;
+  background: #ffedd5;
+  border-color: #fed7aa;
+}
+
+.screen-state-badge.state-disconnected {
+  color: #7f1d1d;
+  background: #fee2e2;
+  border-color: #fecaca;
 }
 
 /* 슬롯 래퍼 */

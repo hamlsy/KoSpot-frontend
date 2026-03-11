@@ -1,9 +1,9 @@
 <template>
   <div class="road-view-practice">
-    <!-- Google AdSense 광고 (헤더 위) -->
-    <div class="top-ads-container">
+    <!-- Google AdSense 광고 비활성화 (헤더 위) -->
+    <!-- <div class="top-ads-container">
       <Adsense :ad-slot="'6033902133'" @ad-loaded="onAdLoaded" />
-    </div>
+    </div> -->
 
     <!-- 헤더 -->
     <div class="game-header" :style="{ top: headerTop }">
@@ -30,18 +30,27 @@
           <span>{{ formatTime(timeRemaining) }}</span>
         </div>
 
-        <!-- 연습 모드 힌트 -->
-        <div v-else class="hints">
-          <div
-            v-for="n in 3"
-            :key="`hint-${n}`"
-            class="hint-indicator"
-            :class="{ active: n <= hintsLeft }"
-          >
-            <i class="fas fa-lightbulb"></i>
+        <!-- 연습 모드 시간 및 힌트 -->
+        <div v-else class="practice-status-group">
+          <!-- 연습 모드 타이머 -->
+          <div class="timer practice-timer" @click="togglePlaytime" :title="showPlaytime ? '시간 숨기기' : '시간 보기'">
+            <i class="fas fa-stopwatch" :class="{ 'timer-hidden-icon': !showPlaytime }"></i>
+            <span v-if="showPlaytime" class="tabular-nums">{{ formattedPlaytime }}</span>
+            <span v-else class="timer-hidden-text">--:--.--</span>
           </div>
-          <div v-if="!hintAvailable && hintsLeft > 0" class="hint-timer">
-            {{ nextHintTime }}초
+          
+          <div class="hints">
+            <div
+              v-for="n in 3"
+              :key="`hint-${n}`"
+              class="hint-indicator"
+              :class="{ active: n <= hintsLeft }"
+            >
+              <i class="fas fa-lightbulb"></i>
+            </div>
+            <div v-if="!hintAvailable && hintsLeft > 0" class="hint-timer">
+              {{ nextHintTime }}초
+            </div>
           </div>
         </div>
       </div>
@@ -117,13 +126,14 @@
         </template>
       </PhoneFrame>
 
-      <!-- 인트로 화면 -->
       <IntroOverlay
         :showIntro="showIntro"
         :gameTitle="gameTitle"
         :gameContent="gameContent"
         :gameDescription="gameDescription"
+        mode="practice"
         @end-intro="endIntro"
+        @exit-intro="exitGame"
       />
 
       <!-- 카운트다운 화면 -->
@@ -143,6 +153,8 @@
         :currentLocation="currentLocation"
         :guessedLocation="guessedLocation"
         :markerImageUrl="markerImageUrl"
+        :showElapsedTime="true"
+        :elapsedTimeText="formattedPlaytime"
         :shareLoading="isShareLoading"
         :shareButtonText="isShareCopied ? '복사완료!' : '게임 공유'"
         @share="shareGame"
@@ -156,8 +168,10 @@
         :sharerNickname="sharedSource.nickname"
         :sharerScore="sharedSource.score"
         :sharerHintsUsed="sharedSource.hintsUsed"
+        :sharerPlaytime="sharedSource.playtimeMs"
         :myScore="score"
         :myHintsUsed="usedHints"
+        :myPlaytime="elapsedTimeMs"
         :currentLocation="currentLocation"
         :guessedLocation="guessedLocation"
         :markerImageUrl="markerImageUrl"
@@ -192,7 +206,7 @@ import RoadViewGame from "src/features/game/single/roadview/components/gameplay/
 import PhoneFrame from "src/features/game/shared/components/Phone/PhoneFrame.vue";
 import CountdownOverlay from "@/features/game/shared/components/Common/CountdownOverlay.vue";
 import IntroOverlay from "@/features/game/shared/components/Common/IntroOverlay.vue";
-import Adsense from "@/features/game/shared/components/Common/Adsense.vue";
+// import Adsense from "@/features/game/shared/components/Common/Adsense.vue";
 import { roadViewApiService } from "src/features/game/single/roadview/services/roadViewApi.service.js";
 import PracticeResultOverlay from "src/features/game/single/roadview/components/Result/PracticeResultOverlay.vue";
 import SharedPracticeResultOverlay from "src/features/game/single/roadview/components/Result/SharedPracticeResultOverlay.vue";
@@ -205,7 +219,7 @@ export default {
     PhoneFrame,
     CountdownOverlay,
     IntroOverlay,
-    Adsense,
+    // Adsense,
     PracticeResultOverlay,
     SharedPracticeResultOverlay,
   },
@@ -254,7 +268,10 @@ export default {
       // 게임 점수 관련
       distance: null,
       score: 0,
-      elapsedTime: 0, // 게임 경과 시간 (초)
+      elapsedTime: 0, // 구버전 게임 경과 시간 (초)
+      elapsedTimeMs: 0, // 고정밀 게임 경과 시간 (밀리초)
+      timerFrame: null, // requestAnimationFrame ID
+      showPlaytime: false, // 소요시간 기본 숨김 옵션
 
       // 지도 관련
       centerLocation: {
@@ -336,6 +353,7 @@ export default {
         nickname: "공유 플레이어",
         score: 0,
         hintsUsed: 0,
+        playtimeMs: 0,
       },
       sharedTargetLocation: null,
 
@@ -347,16 +365,29 @@ export default {
   computed: {
     // 헤더 위치 계산
     headerTop() {
-      return this.hasAd ? "90px" : "0";
+      // 광고를 숨겼으므로 무조건 0으로 처리
+      return "0";
     },
     // reset 버튼 위치 계산 (헤더 바로 밑)
     resetBtnTop() {
-      // 광고(90px) + 헤더(56px) + 여백(12px) = 158px (광고 있을 때)
-      // 헤더(56px) + 여백(12px) = 68px (광고 없을 때)
-      return this.hasAd ? "158px" : "68px";
+      // 광고를 숨겼으므로 무조건 68px (헤더 56px + 여백 12px)
+      return "68px";
     },
     usedHints() {
       return 3 - this.hintCount;
+    },
+    // 고정밀 게임 시간 포맷팅 (MM:SS.ms)
+    formattedPlaytime() {
+      if (this.elapsedTimeMs === 0) return "00:00.00";
+      
+      const totalSeconds = this.elapsedTimeMs / 1000;
+      const mins = Math.floor(totalSeconds / 60);
+      const secs = Math.floor(totalSeconds % 60);
+      const ms = Math.floor((this.elapsedTimeMs % 1000) / 10); // 소수점 둘째 자리까지 표시
+      
+      return `${mins.toString().padStart(2, "0")}:${secs
+        .toString()
+        .padStart(2, "0")}.${ms.toString().padStart(2, "0")}`;
     },
   },
   mounted() {
@@ -420,6 +451,11 @@ export default {
     this.clearToastTimer();
   },
   methods: {
+    // 소요시간 토글
+    togglePlaytime() {
+      this.showPlaytime = !this.showPlaytime;
+    },
+
     // 로드뷰 초기 위치로 돌아가기
     resetRoadViewPosition() {
       if (
@@ -477,6 +513,7 @@ export default {
         return;
       }
 
+      // 공유 게임이 아닌 일반 연습 게임일 때, 시작 버튼을 눌렀을 때만 API 호출
       this.fetchGameLocationData();
     },
 
@@ -500,6 +537,7 @@ export default {
       const nickname = source.nn || source.nickname || "공유 플레이어";
       const score = Number(source.sc !== undefined ? source.sc : (source.score || 0));
       const hintsUsed = Number(source.h !== undefined ? source.h : (source.hintsUsed || 0));
+      const playtimeMs = Number(source.pt !== undefined ? source.pt : (source.playtimeMs || 0));
 
       this.isSharedRecipientMode = true;
       this.currentSidoKey = sido;
@@ -507,12 +545,25 @@ export default {
         lat: parsedPayload.location.lat,
         lng: parsedPayload.location.lng,
       };
-      this.selectedRegion =
-        this.regions.find((region) => region.id === regionId) || this.regions[0];
+
+      const regionName = this.sidoKeyToRegionNameMapping[sido] || "서울";
+      const matchedRegion = this.regions.find((region) => region.id === regionId || region.name === regionName);
+
+      if (matchedRegion) {
+        this.selectedRegion = matchedRegion;
+      } else {
+        this.selectedRegion = {
+          id: regionId || sido.toLowerCase(),
+          name: regionName,
+          centerLat: 37.5665,
+          centerLng: 126.978,
+        };
+      }
+
       this.gameTitle = `${this.selectedRegion.name} 로드뷰 공유게임`;
       this.poiName = poiName;
       this.fullAddress = fullAddress;
-      this.sharedSource = { nickname, score, hintsUsed };
+      this.sharedSource = { nickname, score, hintsUsed, playtimeMs };
     },
 
     parseShareToken(token) {
@@ -560,6 +611,7 @@ export default {
           nn: payload.source.nickname,
           sc: payload.source.score,
           h: payload.source.hintsUsed,
+          pt: payload.source.playtimeMs,
         },
       };
       const encoded = window.btoa(
@@ -598,6 +650,7 @@ export default {
               "익명 플레이어",
             score: this.score,
             hintsUsed: this.usedHints,
+            playtimeMs: this.elapsedTimeMs,
           },
         };
 
@@ -685,6 +738,7 @@ export default {
       this.distance = null;
       this.score = 0;
       this.elapsedTime = 0;
+      this.elapsedTimeMs = 0;
 
       // API 관련 상태 초기화
       this.gameId = null;
@@ -1126,9 +1180,7 @@ export default {
           shareToken: this.$route.query.shareToken,
           submittedLat: position.lat,
           submittedLng: position.lng,
-          answerTime: this.gameStartTime
-            ? (Date.now() - this.gameStartTime) / 1000
-            : this.elapsedTime,
+          answerTime: this.elapsedTimeMs > 0 ? this.elapsedTimeMs / 1000 : (Date.now() - this.gameStartTime) / 1000,
           hintsUsed: this.usedHints,
         };
         const response = await roadViewApiService.endSharedPracticeGame(
@@ -1165,10 +1217,10 @@ export default {
       }
 
       try {
-        // 답변 소요 시간 계산 (초 단위)
-        const answerTime = this.gameStartTime
-          ? (Date.now() - this.gameStartTime) / 1000
-          : this.elapsedTime;
+        // 답변 소요 시간 계산 (초 단위, ms 정밀도 사용)
+        const answerTime = this.elapsedTimeMs > 0 
+          ? this.elapsedTimeMs / 1000 
+          : (Date.now() - this.gameStartTime) / 1000;
 
         const endData = {
           gameId: this.gameId, // Number 타입
@@ -1239,17 +1291,31 @@ export default {
         });
     },
 
-    // 랭크 모드 타이머 시작
+    // 랭크 모드 / 연습 모드 고정밀 타이머 시작
     startGameTimer() {
       this.elapsedTime = 0;
+      this.elapsedTimeMs = 0;
 
       if (this.gameTimer) {
         clearInterval(this.gameTimer);
       }
+      if (this.timerFrame) {
+        cancelAnimationFrame(this.timerFrame);
+      }
 
+      // 1초 단위 업데이트 유지 (기존 호환성)
       this.gameTimer = setInterval(() => {
         this.elapsedTime++;
       }, 1000);
+
+      // 고정밀 타이머 렌더링 프레임
+      const startMs = performance.now();
+      const updateMsTimer = (timestamp) => {
+        this.elapsedTimeMs = timestamp - startMs;
+        this.timerFrame = requestAnimationFrame(updateMsTimer);
+      };
+      
+      this.timerFrame = requestAnimationFrame(updateMsTimer);
     },
 
     // 타이머 정리
@@ -1267,6 +1333,11 @@ export default {
       if (this.hintTimer) {
         clearInterval(this.hintTimer);
         this.hintTimer = null;
+      }
+      
+      if (this.timerFrame) {
+        cancelAnimationFrame(this.timerFrame);
+        this.timerFrame = null;
       }
     },
 
@@ -1329,6 +1400,9 @@ export default {
 
           // coordinate를 받을 때까지 로드뷰를 표시하지 않도록 currentLocation 초기화
           this.currentLocation = null;
+          // POI 이름도 즉시 초기화하여 헤더가 "지명 불러오는 중..." placeholder를 표시하게 함
+          this.poiName = null;
+          this.fullAddress = null;
 
           // 최대 5번 재시도하는 reissueCoordinate 호출
           const response = await roadViewApiService.reissueCoordinate(
@@ -1336,7 +1410,7 @@ export default {
           );
 
           if (response.isSuccess && response.result) {
-            const { targetLat, targetLng } = response.result;
+            const { targetLat, targetLng, poiName, fullAddress } = response.result;
 
             // 좌표 유효성 검사
             if (!targetLat || !targetLng) {
@@ -1359,6 +1433,10 @@ export default {
               lat: decryptedLat,
               lng: decryptedLng,
             };
+
+            // 새로운 좌표의 POI 이름과 주소 업데이트
+            if (poiName) this.poiName = poiName;
+            if (fullAddress) this.fullAddress = fullAddress;
 
             // currentLocation이 설정된 후 PhoneFrame의 지도 초기화 보장
             this.$nextTick(() => {
@@ -1668,6 +1746,61 @@ export default {
   }
 }
 
+/* 연습 모드 상태 그룹 */
+.practice-status-group {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* 연습 모드 고정밀 타이머 */
+.practice-timer {
+  background-color: rgba(0, 0, 0, 0.45);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.practice-timer:hover {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+.practice-timer:active {
+  transform: scale(0.97);
+}
+
+.practice-timer i {
+  color: #33fbe8;
+  font-size: 1.05rem;
+  transition: color 0.3s ease;
+}
+
+.practice-timer .timer-hidden-icon {
+  color: #9ca3af;
+}
+
+.timer-hidden-text {
+  color: #9ca3af;
+  font-size: 1.15rem;
+  letter-spacing: 0.1em;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  /* Monospace fallback for consistent width while ticking */
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
 /* 힌트 스타일 */
 .hints {
   display: flex;
@@ -1731,7 +1864,7 @@ export default {
   cursor: pointer;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
-  z-index: 10;
+  z-index: 25; /* PhoneFrame(21)보다 높고 IntroOverlay(30)보다 낮게 설정 */
 }
 
 .map-toggle:hover {

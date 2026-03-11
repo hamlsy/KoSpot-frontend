@@ -1,7 +1,16 @@
 <template>
-  <div class="result-map-section">
+  <div class="result-map-section" :class="{ 'is-expanded': isExpanded }">
     <div class="result-map-container">
       <div class="result-map" ref="resultMapElement"></div>
+      
+      <!-- 확대/축소 토글 버튼 -->
+      <button 
+        class="map-expand-btn" 
+        @click.stop="$emit('toggle-expand')"
+        title="지도 크게 보기"
+      >
+        <i :class="isExpanded ? 'fas fa-compress-arrows-alt' : 'fas fa-expand-arrows-alt'"></i>
+      </button>
     </div>
   </div>
 </template>
@@ -11,7 +20,18 @@ import { getUserMarkerSize, getResultMarkerSize } from '@/core/constants/markerS
 
 export default {
   name: "ResultMapSection",
+  emits: ["toggle-expand"],
+  data() {
+    return {
+      mapInstance: null,
+      bounds: null,
+    };
+  },
   props: {
+    isExpanded: {
+      type: Boolean,
+      default: false,
+    },
     currentLocation: {
       type: Object,
       default: null,
@@ -34,6 +54,32 @@ export default {
       this.initResultMap();
     });
   },
+  watch: {
+    isExpanded(newVal) {
+      this.$nextTick(() => {
+        if (this.mapInstance) {
+          // 컨테이너 크기 변경 후 카카오맵 relayout 호출
+          this.mapInstance.relayout();
+          
+          // 축척 및 중심점 재설정
+          if (this.bounds) {
+            // expanded 상태일 때 타이머를 약간 줘서 CSS 트랜지션 완료 후 다시 맞추기 (옵션)
+            setTimeout(() => {
+              this.mapInstance.relayout();
+              this.mapInstance.setBounds(this.bounds);
+            }, 300); // 300ms is typical CSS transition duration
+          } else {
+            this.mapInstance.setCenter(
+              new window.kakao.maps.LatLng(
+                this.currentLocation.lat,
+                this.currentLocation.lng
+              )
+            );
+          }
+        }
+      });
+    }
+  },
   methods: {
     // 결과 지도 초기화
     initResultMap() {
@@ -50,13 +96,15 @@ export default {
       }
 
       // 지도 생성
-      const resultMap = new window.kakao.maps.Map(mapElement, {
+      this.mapInstance = new window.kakao.maps.Map(mapElement, {
         center: new window.kakao.maps.LatLng(
           this.currentLocation.lat,
           this.currentLocation.lng
         ),
         level: 5,
       });
+
+      const resultMap = this.mapInstance;
 
       // 실제 위치 마커 (location-flag.png 사용)
       const realLocationImage = new window.kakao.maps.MarkerImage(
@@ -179,6 +227,7 @@ export default {
             this.guessedLocation.lng
           )
         );
+        this.bounds = bounds;
         resultMap.setBounds(bounds);
 
         // 두 지점을 연결하는 선 그리기
@@ -222,12 +271,55 @@ export default {
   overflow: hidden;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   position: relative;
+  transition: height 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .result-map {
   width: 100%;
   height: 100%;
   background-color: #f5f7fa;
+}
+
+/* ═══════════════════════════════════════
+   확대/축소 버튼
+═══════════════════════════════════════ */
+.map-expand-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 20;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+  color: #374151;
+  font-size: 1rem;
+}
+
+.map-expand-btn:hover {
+  background: #ffffff;
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  color: #111827;
+}
+
+.map-expand-btn:active {
+  transform: scale(0.95);
+}
+
+/* ═══════════════════════════════════════
+   Expanded State (부모에서 주입됨)
+═══════════════════════════════════════ */
+.is-expanded .result-map-container {
+  height: 100%;
+  border-radius: 16px;
 }
 
 @media (max-width: 480px) {

@@ -1,5 +1,5 @@
 <template>
-  <div class="road-view-container">
+  <div class="road-view-container" :style="roadViewColorVars">
     <!-- Header -->
     <header class="header">
       <div class="header-content">
@@ -27,6 +27,12 @@
 
       <!-- Game Modes Section -->
       <section class="game-modes">
+        
+        <!-- Daily MVP Section -->
+        <div class="daily-mvp-section">
+          <daily-mvp-card @show-player-details="handleShowPlayerDetails" />
+        </div>
+
         <div class="game-mode-list">
           <game-mode-card
             v-for="mode in gameModes"
@@ -249,6 +255,13 @@
       :initial-rank-tier="rankInfo?.rankTier || 'BRONZE'"
       @close="showRankingModal = false"
     />
+
+    <!-- Player Details Modal (for Daily MVP) -->
+    <player-details-modal
+      :is-active="showPlayerDetailsModal"
+      :player="selectedMvpPlayer"
+      @close="showPlayerDetailsModal = false"
+    />
   </div>
 </template>
 
@@ -261,7 +274,10 @@ import HistoryModal from "@/features/game/single/main/components/HistoryModal.vu
 import PracticeTutorialModal from "@/features/game/single/main/components/PracticeTutorialModal.vue";
 import RankingModal from "@/features/game/single/main/components/RankingModal.vue";
 import Adsense from "@/features/game/shared/components/Common/Adsense.vue";
+import DailyMvpCard from "@/features/game/single/main/components/DailyMvpCard.vue";
+import PlayerDetailsModal from "@/features/game/multiplayer/room/components/player/PlayerDetailsModal.vue";
 import roadViewMainService from "@/features/game/single/main/services/roadViewMain.service";
+import { BRAND, TEXT, BACKGROUND } from "@/core/constants/colors.js";
 
 // 라우터 설정
 const router = useRouter();
@@ -278,6 +294,8 @@ const showThemeModePopup = ref(false);
 const showHistoryModal = ref(false);
 const showRankingModal = ref(false);
 const showPracticeTutorial = ref(false);
+const showPlayerDetailsModal = ref(false);
+const selectedMvpPlayer = ref(null);
 
 // 광고 로드 상태
 const hasAd = ref(false);
@@ -291,6 +309,27 @@ function onAdLoaded(loaded) {
 const rankInfo = ref(null);
 const statisticInfo = ref(null);
 const recentGamesData = ref([]);
+
+const roadViewColorVars = computed(() => {
+  const hex = BRAND.PRIMARY.replace("#", "");
+  const full = hex.length === 3 ? hex.split("").map((ch) => ch + ch).join("") : hex;
+  const value = Number.parseInt(full, 16);
+
+  return {
+    "--color-primary": BRAND.PRIMARY,
+    "--color-secondary": BRAND.SECONDARY,
+    "--color-info": BRAND.INFO,
+    "--color-success": BRAND.SUCCESS,
+    "--color-warning": BRAND.WARNING,
+    "--color-danger": BRAND.DANGER,
+    "--color-background": BACKGROUND.GRAY,
+    "--color-surface": BACKGROUND.LIGHT,
+    "--color-border": BRAND.SECONDARY,
+    "--color-text-primary": TEXT.PRIMARY,
+    "--color-text-secondary": TEXT.SECONDARY,
+    "--roadview-primary-rgb": `${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}`,
+  };
+});
 
 // 게임 모드 데이터
 const gameModes = [
@@ -642,6 +681,15 @@ function closeGameModePopup() {
   selectedRegion.value = null;
 }
 
+// MVP 카드 클릭 핸들러
+function handleShowPlayerDetails(mvpData) {
+  selectedMvpPlayer.value = { 
+    id: mvpData.memberId, 
+    ...mvpData 
+  };
+  showPlayerDetailsModal.value = true;
+}
+
 // 테마 게임 시작 함수
 function startThemeGame(gameData) {
   console.log("Starting theme game with:", gameData);
@@ -692,8 +740,8 @@ function startThemeGame(gameData) {
   width: 48px;
   height: 48px;
   border-radius: var(--radius-md);
-  background: rgba(37, 99, 235, 0.05);
-  border: 1px solid rgba(37, 99, 235, 0.1);
+  background: rgba(var(--roadview-primary-rgb), 0.08);
+  border: 1px solid rgba(var(--roadview-primary-rgb), 0.2);
   color: var(--color-primary);
   display: flex;
   align-items: center;
@@ -707,7 +755,7 @@ function startThemeGame(gameData) {
   background: var(--color-primary);
   color: white;
   transform: translateX(-4px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 4px 12px rgba(var(--roadview-primary-rgb), 0.35);
 }
 
 .logo-container {
@@ -719,7 +767,7 @@ function startThemeGame(gameData) {
 .header-logo {
   height: 50px;
   width: auto;
-  filter: drop-shadow(0 2px 8px rgba(37, 99, 235, 0.15));
+  filter: drop-shadow(0 2px 8px rgba(var(--roadview-primary-rgb), 0.25));
   transition: transform var(--transition-normal);
 }
 
@@ -782,15 +830,15 @@ function startThemeGame(gameData) {
   gap: 0.5rem;
   margin-top: 1rem;
   padding: 0.75rem 1rem;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(37, 99, 235, 0.04) 100%);
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  background: linear-gradient(135deg, rgba(var(--roadview-primary-rgb), 0.1) 0%, rgba(var(--roadview-primary-rgb), 0.05) 100%);
+  border: 1px solid rgba(var(--roadview-primary-rgb), 0.25);
   border-radius: 10px;
   font-size: 0.85rem;
-  color: #64748b;
+  color: var(--color-text-secondary);
 }
 
 .info-note i {
-  color: #3b82f6;
+  color: var(--color-primary);
   font-size: 1rem;
   flex-shrink: 0;
 }
@@ -799,11 +847,24 @@ function startThemeGame(gameData) {
   margin: 8px;
 }
 
+/* MVP 섹션 스타일 */
+.daily-mvp-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: var(--spacing-xxl);
+  width: 100%;
+}
+
 /* 반응형 */
 @media (max-width: 768px) {
   .google-ads-space {
     padding: 0 var(--spacing-md);
     margin: var(--spacing-lg) 0;
+  }
+  
+  .daily-mvp-section {
+    margin-bottom: var(--spacing-xl);
   }
 }
 </style>

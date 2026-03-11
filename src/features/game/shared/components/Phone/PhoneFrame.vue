@@ -29,6 +29,7 @@
       <button
         v-if="!disabled && !isTeamMode"
         class="phone-spot-button"
+        :style="spotButtonVars"
         :class="{ 'disabled': hasSubmitted }"
         :disabled="hasSubmitted"
         @click="checkSpotAnswer"
@@ -57,6 +58,7 @@
 
 <script>
 import KakaoMapGame from "@/features/game/shared/components/Kakao/KakaoMapGame/KakaoMapGame.vue";
+import { BRAND, TEXT } from "@/core/constants/colors.js";
 
 export default {
   name: "PhoneFrame",
@@ -109,6 +111,16 @@ export default {
     showReloadButton: {
       type: Boolean,
       default: false,
+    },
+  },
+  computed: {
+    spotButtonVars() {
+      return {
+        "--spot-primary": BRAND.PRIMARY,
+        "--spot-accent": BRAND.INFO,
+        "--spot-text": "#ffffff",
+        "--spot-disabled-bg": TEXT.MUTED,
+      };
     },
   },
   methods: {
@@ -329,16 +341,16 @@ export default {
   bottom: var(--spot-btn-bottom);
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(135deg, #27ae60, #2ecc71);
-  color: white;
+  background: linear-gradient(135deg, var(--spot-primary) 0%, var(--spot-accent) 100%);
+  color: var(--spot-text);
   border: none;
   padding: var(--spot-btn-pad-v) var(--spot-btn-pad-h);
   border-radius: 25px;
   font-weight: bold;
   font-size: var(--spot-btn-font);
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(46, 204, 113, 0.4);
-  transition: all 0.3s ease;
+  box-shadow: 0 5px 12px rgba(59, 130, 246, 0.24);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   z-index: 20;
   display: flex;
   align-items: center;
@@ -346,8 +358,8 @@ export default {
 }
 
 .phone-spot-button:hover {
-  transform: translateX(-50%) translateY(-2px);
-  box-shadow: 0 6px 12px rgba(46, 204, 113, 0.6);
+  transform: translateX(-50%) translateY(-1px);
+  box-shadow: 0 7px 14px rgba(59, 130, 246, 0.3);
 }
 
 .phone-spot-button:active {
@@ -356,7 +368,7 @@ export default {
 
 .phone-spot-button.disabled,
 .phone-spot-button:disabled {
-  background: linear-gradient(135deg, #555, #666);
+  background: var(--spot-disabled-bg);
   cursor: not-allowed;
   opacity: 0.6;
   box-shadow: none;

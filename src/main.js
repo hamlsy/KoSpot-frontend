@@ -4,6 +4,7 @@ window.__VUE_PROD_DEVTOOLS__ = false;
 window.__VUE_PROD_HYDRATION_MISMATCH_DETAILS__ = false;
 
 import { createApp } from 'vue';
+import { createPinia } from 'pinia';
 import App from './App.vue';
 import router from './router';
 import axios from 'axios';
@@ -32,6 +33,7 @@ app.config.globalProperties.$axios = axios;
 app.config.globalProperties.$env = environmentConfig;
 
 // 플러그인 등록
+app.use(createPinia());
 app.use(router);
 
 // 앱 마운트

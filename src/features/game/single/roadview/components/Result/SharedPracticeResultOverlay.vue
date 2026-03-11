@@ -29,7 +29,15 @@
           <p class="card-name">{{ sharerNickname }}</p>
           <p class="card-score-number">{{ sharerScore }}</p>
           <p class="card-score-unit">점</p>
-          <p class="card-meta">힌트 {{ sharerHintsUsed }}회</p>
+          
+          <div class="card-meta-list">
+            <div class="meta-badge">
+              <i class="fas fa-stopwatch"></i> {{ formatPlaytime(sharerPlaytime) }}
+            </div>
+            <div class="meta-badge">
+              <i class="fas fa-lightbulb"></i> 힌트 {{ sharerHintsUsed }}회
+            </div>
+          </div>
         </div>
 
         <!-- VS 중간 구분 -->
@@ -42,16 +50,26 @@
           <p class="card-name">나</p>
           <p class="card-score-number card-score-number--me">{{ myScore }}</p>
           <p class="card-score-unit">점</p>
-          <p class="card-meta">힌트 {{ myHintsUsed }}회</p>
+          
+          <div class="card-meta-list">
+            <div class="meta-badge meta-badge--me">
+              <i class="fas fa-stopwatch"></i> {{ formatPlaytime(myPlaytime) }}
+            </div>
+            <div class="meta-badge meta-badge--me">
+              <i class="fas fa-lightbulb"></i> 힌트 {{ myHintsUsed }}회
+            </div>
+          </div>
         </div>
       </div>
 
       <!-- 지도 -->
-      <div class="map-wrapper">
+      <div class="map-wrapper" :class="{ 'map-expanded': isMapExpanded }">
         <ResultMapSection
           :currentLocation="currentLocation"
           :guessedLocation="guessedLocation"
           :markerImageUrl="markerImageUrl"
+          :isExpanded="isMapExpanded"
+          @toggle-expand="isMapExpanded = !isMapExpanded"
         />
       </div>
 
@@ -104,11 +122,19 @@ export default {
       type: Number,
       default: 0,
     },
+    sharerPlaytime: {
+      type: Number,
+      default: 0,
+    },
     myScore: {
       type: Number,
       default: 0,
     },
     myHintsUsed: {
+      type: Number,
+      default: 0,
+    },
+    myPlaytime: {
       type: Number,
       default: 0,
     },
@@ -125,14 +151,19 @@ export default {
       default: null,
     },
   },
+  data() {
+    return {
+      isMapExpanded: false,
+    };
+  },
   computed: {
     comparisonOutcome() {
-      const delta = this.myScore - this.sharerScore;
+      const delta = Number((this.myScore - this.sharerScore).toFixed(2));
       if (delta === 0) return "tie";
       return delta > 0 ? "win" : "lose";
     },
     scoreDeltaAbs() {
-      return Math.abs(this.myScore - this.sharerScore);
+      return Number(Math.abs(this.myScore - this.sharerScore).toFixed(2));
     },
     outcomeLabel() {
       if (this.comparisonOutcome === "win") return "승리!";
@@ -149,6 +180,18 @@ export default {
       if (this.comparisonOutcome === "win") return "fas fa-trophy";
       if (this.comparisonOutcome === "tie") return "fas fa-equals";
       return "fas fa-redo";
+    },
+  },
+  methods: {
+    formatPlaytime(ms) {
+      if (!ms || ms === 0) return "00:00.00";
+      const totalSeconds = ms / 1000;
+      const mins = Math.floor(totalSeconds / 60);
+      const secs = Math.floor(totalSeconds % 60);
+      const fract = Math.floor((ms % 1000) / 10);
+      return `${mins.toString().padStart(2, "0")}:${secs
+        .toString()
+        .padStart(2, "0")}.${fract.toString().padStart(2, "0")}`;
     },
   },
 };
@@ -386,10 +429,44 @@ export default {
   color: #9ca3af;
 }
 
-.card-meta {
-  margin: 0;
+.card-meta-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.meta-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 0.72rem;
+  color: #6b7280;
+  background: white;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  font-weight: 600;
+  width: max-content;
+}
+
+.meta-badge i {
   color: #9ca3af;
+  font-size: 0.75rem;
+  width: 12px;
+  text-align: center;
+}
+
+/* 내 카드 메타 뱃지 */
+.meta-badge--me {
+  background: #ffffff;
+  border-color: #b2f5f0;
+  color: #0f766e;
+}
+
+.meta-badge--me i {
+  color: #0d9488;
 }
 
 /* ═══════════════════════════════════════
@@ -400,6 +477,35 @@ export default {
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid #e5e7eb;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  background: white;
+}
+
+/* 지도 확장 상태 */
+.map-expanded {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  right: 15px;
+  bottom: 15px;
+  z-index: 50;
+  margin: 0 !important;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+.map-expanded :deep(.result-map-section) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.map-expanded :deep(.result-map-container) {
+  flex: 1;
+  height: 100% !important; /* 모바일 대응 높이 무시 */
 }
 
 /* ═══════════════════════════════════════
@@ -504,6 +610,54 @@ export default {
   .card-score-number {
     font-size: 1.6rem;
   }
+}
+
+@media (max-height: 850px) {
+  .result-header { padding: 10px 22px 0; }
+  .outcome-hero {
+    margin: 10px 22px;
+    padding: 12px 16px 10px;
+  }
+  .outcome-icon-wrap {
+    width: 42px; height: 42px;
+  }
+  .outcome-icon { font-size: 1.1rem; }
+  .outcome-label-text { font-size: 1.1rem; }
+  .comparison-section {
+    margin: 0 22px 10px;
+  }
+  .compare-card { padding: 8px; }
+  .card-score-number { font-size: 1.6rem; }
+  .map-wrapper {
+    margin: 0 22px 10px;
+  }
+  .map-wrapper :deep(.result-map-container) {
+    height: 140px;
+  }
+  .cta-section { margin: 0 22px 10px; }
+  .cta-text-row { padding: 6px 14px; }
+  .btn-login { padding: 10px 16px; font-size: 0.85rem; }
+  .footer-action { padding: 0 22px 10px; }
+  .btn-restart { padding: 10px; }
+}
+
+@media (max-height: 700px) {
+  .result-header { padding: 6px 22px 0; }
+  .outcome-hero {
+    margin: 6px 22px;
+    padding: 8px 16px;
+  }
+  .comparison-section { margin: 0 22px 6px; }
+  .card-score-number { font-size: 1.4rem; }
+  .meta-badge { font-size: 0.65rem; padding: 2px 6px; }
+  .map-wrapper { margin: 0 22px 6px; }
+  .map-wrapper :deep(.result-map-container) {
+    height: 100px;
+  }
+  .cta-section { margin: 0 22px 6px; }
+  .cta-copy { font-size: 0.7rem; }
+  .btn-login, .btn-restart { padding: 8px; font-size: 0.8rem; }
+  .footer-action { padding: 0 22px 8px; }
 }
 
 /* ═══════════════════════════════════════

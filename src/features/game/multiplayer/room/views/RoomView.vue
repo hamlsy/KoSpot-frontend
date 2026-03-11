@@ -1,5 +1,5 @@
 <template>
-  <div class="multiplayer-room-waiting">
+  <div class="multiplayer-room-waiting" :style="roomColorVars">
     <!-- 배경 요소 -->
     <div class="mode-background"></div>
 
@@ -11,14 +11,19 @@
         <RoomHeader
           :room-data="localRoomData"
           :is-host="isHost"
-          :can-start-game="isRoomDummyMode ? true : canStartGame"
+          :can-start-game="canStartGameWithScreenGate"
           :is-starting="isStartingGame"
           :is-dummy-mode="isRoomDummyMode"
+          :start-block-reason="startBlockReason"
+          :joining-count="joiningPlayers.length"
           :unread-messages="unreadMessages"
           :is-team-mode="isTeamMode"
           :show-chat-toggle="isMobileView"
+          :friend-is-open="friendStore.isPanelOpen"
+          :friend-has-notification="friendStore.hasAnyNotification"
           @open-settings="openRoomSettings"
           @toggle-chat="handleToggleChat"
+          @toggle-friend="friendStore.togglePanel()"
           @leave-room="leaveRoom"
           @start-game="startGame"
           @refresh-room="handleRefreshRoom"
@@ -120,6 +125,35 @@
       </div>
     </div>
 
+    <!-- 친구 패널 -->
+    <FriendPanel
+      :is-open="friendStore.isPanelOpen"
+      :friends="friendStore.friends"
+      :pending-requests="friendStore.pendingRequests"
+      @close="friendStore.closePanel()"
+      @open-chat="(friend) => friendStore.openChatRoom(friend, Number(currentUserId))"
+      @open-user-search="friendStore.openSearch()"
+      @accept-request="friendStore.acceptFriendRequest"
+      @decline-request="friendStore.declineFriendRequest"
+    />
+
+    <!-- 유저 검색 모달 -->
+    <UserSearchModal
+      v-if="friendStore.isSearchOpen"
+      @close="friendStore.closeSearch()"
+    />
+
+    <!-- 친구 채팅창 -->
+    <FriendChatWindow
+      v-for="chat in friendStore.openChats"
+      :key="chat.friend.id"
+      :friend="chat.friend"
+      :messages="chat.messages"
+      :is-loading="chat.isLoading"
+      @close="friendStore.closeChatRoom(chat.friend.id)"
+      @send="(text) => friendStore.sendMessage(chat.friend.id, text)"
+    />
+
     <!-- 방 설정 모달 -->
     <RoomSettingsModal
       :is-active="isRoomSettingsOpen"
@@ -191,6 +225,14 @@ import ToastNotification from "src/features/game/multiplayer/room/components/not
 import CountdownOverlay from "src/features/game/multiplayer/room/components/settings/CountdownOverlay.vue";
 import { soloTestData } from "src/features/game/multiplayer/room/composables/MultiplayerGameTestData.js";
 
+// 친구 기능
+import FriendToggleButton from "@/features/friend/components/FriendToggleButton.vue";
+import FriendPanel from "@/features/friend/components/FriendPanel.vue";
+import FriendChatWindow from "@/features/friend/components/FriendChatWindow.vue";
+import UserSearchModal from "@/features/friend/components/UserSearchModal.vue";
+import { useFriendStore } from "@/features/friend/stores/friend.store.js";
+import { BRAND, TEXT, BACKGROUND } from "@/core/constants/colors.js";
+
 // Composables
 import { useRoom } from "../composables/useRoom";
 
@@ -209,6 +251,9 @@ const props = defineProps({
 const router = useRouter();
 const route = useRoute();
 
+// 친구 Store
+const friendStore = useFriendStore();
+
 // 현재 사용자 ID (localStorage에서 가져오기)
 let currentUserId = localStorage.getItem("memberId") || "";
 
@@ -221,6 +266,21 @@ if (shouldUseDummyMode && !currentUserId) {
 }
 
 const normalizedCurrentUserId = currentUserId ? currentUserId.toString() : "";
+
+const roomColorVars = computed(() => ({
+  "--color-primary": BRAND.PRIMARY,
+  "--color-secondary": BRAND.SECONDARY,
+  "--color-success": BRAND.SUCCESS,
+  "--color-warning": BRAND.WARNING,
+  "--color-danger": BRAND.DANGER,
+  "--color-info": BRAND.INFO,
+  "--color-background": BACKGROUND.GRAY,
+  "--color-surface": BACKGROUND.LIGHT,
+  "--color-border": BRAND.SECONDARY,
+  "--color-text-primary": TEXT.PRIMARY,
+  "--color-text-secondary": TEXT.SECONDARY,
+  "--color-text-tertiary": TEXT.MUTED,
+}));
 
 // Router state에서 전달받은 데이터 확인 (방 생성 시 LobbyView에서 전달)
 const routerState = history.state?.roomData || null;
@@ -413,7 +473,9 @@ const {
   // 상태
   localRoomData,
   isTeamMode,
-  canStartGame,
+  canStartGameWithScreenGate,
+  startBlockReason,
+  joiningPlayers,
   isStartingGame,
   isDummyMode: isRoomDummyMode,
 
@@ -576,6 +638,17 @@ const handleRefreshRoom = async () => {
             isHost: Boolean(player?.isHost),
             teamId: player?.team ?? player?.teamId ?? null,
             team: player?.team ?? null,
+            screenState: String(player?.screenState || "ROOM").toUpperCase(),
+            screenStateSeq: Number.isFinite(
+              Number(player?.screenStateSeq ?? player?.clientSeq),
+            )
+              ? Number(player?.screenStateSeq ?? player?.clientSeq)
+              : 0,
+            screenStateUpdatedAt: Number.isFinite(
+              Number(player?.screenStateUpdatedAt ?? player?.updatedAt),
+            )
+              ? Number(player?.screenStateUpdatedAt ?? player?.updatedAt)
+              : null,
             isOnline:
               "isOnline" in (player || {}) ? Boolean(player.isOnline) : true,
             joinedAt: player?.joinedAt ? new Date(player.joinedAt) : new Date(),
@@ -717,6 +790,11 @@ onMounted(async () => {
 
   // 강제 종료 감지를 위한 beforeunload 이벤트 리스너 추가
   window.addEventListener("beforeunload", handleBeforeUnload);
+
+  // 친구 데이터 초기화 (패널 오픈 시 바로 보이도록)
+  friendStore.loadInitialData().catch(() => {
+    // 실패해도 방 입장은 계속 진행
+  });
 
   // Room 초기화 전에 접근 권한 확인
   try {
@@ -900,7 +978,7 @@ const formatUpdateTime = (timestamp) => {
   height: 100vh;
   position: relative;
   padding: var(--spacing-md);
-  padding-top: 5rem;
+  padding-top: 2rem;
   overflow: hidden;
   max-width: 100vw;
 }
@@ -945,6 +1023,16 @@ const formatUpdateTime = (timestamp) => {
   min-width: 320px;
   display: flex;
   flex-direction: column;
+}
+
+/* ─── 친구 플로팅 버튼 영역 ─────────────────────── */
+.friend-floating-area {
+  position: fixed;
+  top: 1rem;
+  right: 1.25rem;
+  z-index: 200;
+  display: flex;
+  align-items: center;
 }
 
 .panel-section {
@@ -1007,14 +1095,14 @@ const formatUpdateTime = (timestamp) => {
 }
 
 .status-indicator.connected {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  background: var(--color-success);
   color: white;
   box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
   animation: pulse-green 2s infinite;
 }
 
 .status-indicator.disconnected {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  background: var(--color-warning);
   color: white;
   box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
   animation: pulse-orange 2s infinite;
@@ -1026,7 +1114,7 @@ const formatUpdateTime = (timestamp) => {
   justify-content: center;
   width: 20px;
   height: 20px;
-  color: #667eea;
+  color: var(--color-primary);
   font-size: 0.8rem;
 }
 
@@ -1057,21 +1145,21 @@ const formatUpdateTime = (timestamp) => {
   align-items: center;
   justify-content: center;
   padding: 3rem 1rem;
-  color: #64748b;
+  color: var(--color-text-secondary);
   gap: 1rem;
 }
 
 .loading-spinner {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--color-primary);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-size: 1.2rem;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(82, 222, 229, 0.35);
 }
 
 .loading-players p {
@@ -1084,12 +1172,12 @@ const formatUpdateTime = (timestamp) => {
 .last-update-time {
   margin-top: 1rem;
   padding-top: 0.75rem;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--color-border);
   text-align: center;
 }
 
 .last-update-time small {
-  color: #94a3b8;
+  color: var(--color-text-tertiary);
   font-size: 0.75rem;
   font-weight: 500;
   display: flex;
@@ -1182,22 +1270,9 @@ const formatUpdateTime = (timestamp) => {
     z-index: 1000;
     background: var(--color-surface);
     border-radius: var(--radius-lg);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35); /* 어두운 배경 없이 채팅창을 부각시키기 위한 그림자 */
     padding: 1rem;
     overflow: hidden;
-  }
-
-  /* 모바일 채팅창 배경 오버레이 */
-  .right-panel:not(.hidden-mobile)::before {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: -1;
-    pointer-events: none;
   }
 }
 

@@ -40,6 +40,7 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     onNextRoundShow: null,
     onNextRound: null, // 새로 추가 - 라운드 데이터 처리용
     onGameFinish: null,
+    onTimerStart: null,
     onTimerSync: null,
     onGamePlayersUpdate: null,
     onRoundResultUpdate: null, // 라운드 결과 업데이트 콜백
@@ -208,6 +209,10 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
 
     ensureSubmissionSubscription(message?.gameId)
 
+    if (callbacks.onTimerStart) {
+      callbacks.onTimerStart(message)
+    }
+
     const detectedRoundId = message?.roundInfo?.roundId ?? message?.roundId
     if (detectedRoundId != null) {
       const parsedRoundId = Number(detectedRoundId)
@@ -369,9 +374,12 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     }
 
     // PlayerSubmissionMessage: { playerId, roundId, timestamp }
-    const playerId = message?.playerId
-    if (!playerId) {
-      console.warn('[Solo Flow] 플레이어 제출 메시지에 playerId가 없음:', message)
+    const playerId = message?.playerId ?? null
+    const memberId = message?.memberId ?? null
+    const actorId = playerId ?? memberId
+
+    if (!actorId) {
+      console.warn('[Solo Flow] 플레이어 제출 메시지에 식별자가 없음:', message)
       return
     }
 
@@ -392,24 +400,39 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     }
 
     // 더미 모드용: gameStore.state.players 업데이트 (하위 호환성)
-    const player = gameStore.state.players.find(p => p.id === playerId)
+    const player = gameStore.state.players.find((candidate) => {
+      const candidateId = candidate?.id != null ? String(candidate.id) : null
+      const candidateMemberId = candidate?.memberId != null
+        ? String(candidate.memberId)
+        : null
+
+      const idsToMatch = [playerId, memberId]
+        .filter((value) => value != null)
+        .map((value) => String(value))
+
+      return idsToMatch.some(
+        (value) => value === candidateId || value === candidateMemberId,
+      )
+    })
+
     if (player) {
       player.hasSubmitted = true
-      console.log(`[Solo Flow] 플레이어 ${player.nickname || playerId} 제출 완료 (더미 모드)`)
+      console.log(`[Solo Flow] 플레이어 ${player.nickname || actorId} 제출 완료 (더미 모드)`)
     } else {
       // 더미 모드에서 플레이어를 찾을 수 없는 경우 (정상, 서버 모드에서는 gamePlayers 사용)
       if (gameStore.state.players && gameStore.state.players.length > 0) {
-        console.warn(`[Solo Flow] 플레이어를 찾을 수 없음: ${playerId}`)
+        console.warn(`[Solo Flow] 플레이어를 찾을 수 없음: ${actorId}`)
       }
     }
 
     // 서버 모드용: 콜백 호출하여 SoloGameView의 gamePlayers 업데이트
     if (callbacks.onPlayerSubmission) {
       callbacks.onPlayerSubmission({
-        playerId: playerId,
-        memberId: message?.memberId || null, // 선택적
+        playerId: playerId ?? memberId,
+        memberId: memberId ?? playerId,
         roundId: messageRoundId || null,
-        timestamp: message?.timestamp || null
+        timestamp: message?.timestamp || null,
+        gamePlayerStatus: message?.gamePlayerStatus || null,
       })
     }
   }
@@ -844,6 +867,12 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     // playerResults가 유효한 경우에만 finalGameResult 생성
     const playerResults = message.playerResults.map(player => ({
       playerId: player.playerId,
+      memberId:
+        player.memberId != null
+          ? Number(player.memberId)
+          : player.playerId != null
+            ? Number(player.playerId)
+            : null,
       nickname: player.nickname || '알 수 없음',
       markerImageUrl: player.markerImageUrl || null,
       totalScore: player.totalScore != null ? Number(player.totalScore) : 0,

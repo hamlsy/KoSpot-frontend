@@ -10,7 +10,7 @@
         <router-link to="/noticeList" class="nav-link">공지사항</router-link>
         <router-link to="/tempPage" class="nav-link">이벤트</router-link>
         <router-link to="/tempPage" class="nav-link">통계</router-link>
-        <router-link to="/shopMain" class="nav-link">상점</router-link>
+        <router-link to="/shop" class="nav-link">상점</router-link>
         <router-link to="/myProfile" class="nav-link">마이페이지</router-link>
         <router-link v-if="userProfile.isAdmin" to="/admin" class="nav-link admin-link">관리자</router-link>
       </div>
@@ -73,7 +73,7 @@
             <i class="fas fa-chart-bar"></i>
             통계
           </router-link>
-          <router-link to="/shopMain" class="menu-item">
+          <router-link to="/shop" class="menu-item">
             <i class="fas fa-shopping-cart"></i>
             상점
           </router-link>

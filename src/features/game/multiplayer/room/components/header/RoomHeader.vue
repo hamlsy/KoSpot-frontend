@@ -1,5 +1,5 @@
 <template>
-  <div class="room-header">
+  <div class="room-header" :style="roomHeaderColorVars">
     <div class="header-content">
       <!-- 상단: 방 기본 정보 -->
       <div class="room-info-section">
@@ -83,6 +83,23 @@
             </div>
           </button>
 
+          <!-- 친구 버튼 (헤더에 통합) -->
+          <button
+            class="action-button friend-toggle-button"
+            :class="{ 'is-open': friendIsOpen, 'has-notif': friendHasNotification }"
+            @click="$emit('toggle-friend')"
+            title="친구 목록"
+          >
+            <span v-if="friendHasNotification" class="friend-notif-dot"></span>
+            <svg class="friend-btn-icon" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
+                fill="currentColor"
+              />
+            </svg>
+            <span>친구</span>
+          </button>
+
           <button
             class="action-button refresh-button"
             @click="$emit('refresh-room')"
@@ -123,6 +140,10 @@
             <span>시작</span>
           </button>
         </div>
+
+        <p v-if="showStartBlockMessage" class="start-block-message">
+          {{ startBlockMessage }}
+        </p>
       </div>
     </div>
   </div>
@@ -130,6 +151,7 @@
 
 <script setup>
 import { defineProps, defineEmits, computed } from "vue";
+import { BRAND, TEXT, BACKGROUND } from "@/core/constants/colors.js";
 
 const props = defineProps({
   roomData: {
@@ -164,6 +186,22 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  startBlockReason: {
+    type: String,
+    default: null,
+  },
+  joiningCount: {
+    type: Number,
+    default: 0,
+  },
+  friendIsOpen: {
+    type: Boolean,
+    default: false,
+  },
+  friendHasNotification: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const emit = defineEmits([
@@ -172,7 +210,29 @@ const emit = defineEmits([
   "start-game",
   "toggle-chat",
   "refresh-room",
+  "toggle-friend",
 ]);
+
+const roomHeaderColorVars = computed(() => {
+  const hex = BRAND.PRIMARY.replace("#", "");
+  const full = hex.length === 3 ? hex.split("").map((ch) => ch + ch).join("") : hex;
+  const value = Number.parseInt(full, 16);
+
+  return {
+    "--color-primary": BRAND.PRIMARY,
+    "--color-secondary": BRAND.SECONDARY,
+    "--color-success": BRAND.SUCCESS,
+    "--color-warning": BRAND.WARNING,
+    "--color-danger": BRAND.DANGER,
+    "--color-background": BACKGROUND.GRAY,
+    "--color-surface": BACKGROUND.LIGHT,
+    "--color-border": BRAND.SECONDARY,
+    "--color-text-primary": TEXT.PRIMARY,
+    "--color-text-secondary": TEXT.SECONDARY,
+    "--color-text-tertiary": TEXT.MUTED,
+    "--room-header-primary-rgb": `${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}`,
+  };
+});
 
 const gameModeName = computed(() => {
   // 백엔드에서 대문자(ROADVIEW)로 올 수 있으므로 소문자로 변환하여 비교
@@ -205,6 +265,33 @@ const startButtonDisabled = computed(
   () => props.isStarting || (!props.canStartGame && !props.isDummyMode),
 );
 
+const startBlockMessage = computed(() => {
+  switch (props.startBlockReason) {
+    case "joining-players":
+      return props.joiningCount > 0
+        ? `참여 중인 플레이어(${props.joiningCount}명)가 있습니다. 잠시 후 다시 시도해주세요.`
+        : "참여 중인 플레이어가 있습니다. 잠시 후 다시 시도해주세요.";
+    case "non-room-players":
+      return "모든 플레이어가 방 화면으로 돌아오면 시작할 수 있습니다.";
+    case "sync-pending":
+      return "참가자 상태를 확인하는 중입니다. 잠시만 기다려주세요.";
+    case "insufficient-players":
+      return "게임을 시작하기 위한 최소 인원이 필요합니다.";
+    default:
+      return "";
+  }
+});
+
+const showStartBlockMessage = computed(() => {
+  return (
+    showStartButton.value &&
+    !props.isDummyMode &&
+    !props.isStarting &&
+    startButtonDisabled.value &&
+    Boolean(startBlockMessage.value)
+  );
+});
+
 const copyRoomId = () => {
   navigator.clipboard
     .writeText(props.roomData.id)
@@ -226,14 +313,14 @@ const leaveRoomWithConfirm = () => {
 
 <style scoped>
 .room-header {
-  background: white;
+  background: var(--color-surface);
   border-radius: 12px;
   padding: 1rem;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
   margin-bottom: 1rem;
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--color-border);
 }
 
 .room-header::before {
@@ -243,7 +330,7 @@ const leaveRoomWithConfirm = () => {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, #93c5fd 0%, #c4b5fd 100%);
+  background: var(--color-primary);
 }
 
 .header-content {
@@ -270,7 +357,7 @@ const leaveRoomWithConfirm = () => {
 .room-id-badge {
   display: inline-flex;
   align-items: center;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  background: linear-gradient(135deg, var(--color-background) 0%, var(--color-secondary) 100%);
   padding: 0.35rem 0.75rem;
   border-radius: 50px;
   font-size: 0.8rem;
@@ -279,14 +366,14 @@ const leaveRoomWithConfirm = () => {
 }
 
 .room-id-label {
-  color: #64748b;
+  color: var(--color-text-secondary);
   margin-right: 0.4rem;
   font-weight: 500;
 }
 
 .room-id-value {
   font-weight: 700;
-  color: #1e293b;
+  color: var(--color-text-primary);
   letter-spacing: 0.5px;
   font-family: "Courier New", monospace;
 }
@@ -294,7 +381,7 @@ const leaveRoomWithConfirm = () => {
 .copy-button {
   background: none;
   border: none;
-  color: #64748b;
+  color: var(--color-text-secondary);
   cursor: pointer;
   padding: 0.2rem;
   margin-left: 0.4rem;
@@ -308,8 +395,8 @@ const leaveRoomWithConfirm = () => {
 }
 
 .copy-button:hover {
-  background-color: #e2e8f0;
-  color: #475569;
+  background-color: var(--color-secondary);
+  color: var(--color-text-primary);
   transform: scale(1.1);
 }
 
@@ -332,27 +419,27 @@ const leaveRoomWithConfirm = () => {
 }
 
 .privacy-badge {
-  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-  color: #059669;
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--color-success);
   border: 1px solid rgba(5, 150, 105, 0.15);
 }
 
 .privacy-badge.private {
-  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-  color: #dc2626;
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--color-danger);
   border: 1px solid rgba(220, 38, 38, 0.15);
 }
 
 .team-badge {
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  color: #d97706;
+  background: rgba(245, 158, 11, 0.14);
+  color: var(--color-warning);
   border: 1px solid rgba(217, 119, 6, 0.15);
 }
 
 .room-title {
   font-size: 1.25rem;
   font-weight: 800;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0;
   line-height: 1.2;
   letter-spacing: -0.025em;
@@ -385,14 +472,14 @@ const leaveRoomWithConfirm = () => {
   width: 32px;
   height: 32px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  background: linear-gradient(135deg, var(--color-background) 0%, var(--color-secondary) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #667eea;
+  color: var(--color-primary);
   font-size: 0.9rem;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--color-border);
 }
 
 .info-content {
@@ -403,7 +490,7 @@ const leaveRoomWithConfirm = () => {
 
 .info-label {
   font-size: 0.7rem;
-  color: #64748b;
+  color: var(--color-text-secondary);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -412,7 +499,7 @@ const leaveRoomWithConfirm = () => {
 .info-value {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--color-text-primary);
   line-height: 1.2;
 }
 
@@ -421,6 +508,18 @@ const leaveRoomWithConfirm = () => {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+}
+
+.start-block-message {
+  margin: 0;
+  width: 100%;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-warning);
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 10px;
+  padding: 0.5rem 0.65rem;
 }
 
 .action-button {
@@ -441,23 +540,23 @@ const leaveRoomWithConfirm = () => {
 }
 
 .chat-toggle-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--color-primary);
   color: white;
-  border: 1px solid rgba(102, 126, 234, 0.3);
+  border: 1px solid rgba(var(--room-header-primary-rgb), 0.35);
   position: relative;
 }
 
 .chat-toggle-button:hover {
-  background: linear-gradient(135deg, #5a67d8 0%, #553c9a 100%);
+  background: var(--color-primary);
   transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 15px rgba(var(--room-header-primary-rgb), 0.4);
 }
 
 .chat-notification-mini {
   position: absolute;
   top: -4px;
   right: -4px;
-  background: #ef4444;
+  background: var(--color-danger);
   color: white;
   border-radius: 50%;
   width: 16px;
@@ -471,60 +570,103 @@ const leaveRoomWithConfirm = () => {
   border: 2px solid white;
 }
 
+/* 친구 버튼 */
+.friend-toggle-button {
+  background: linear-gradient(135deg, var(--color-background) 0%, var(--color-secondary) 100%);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  position: relative;
+}
+.friend-toggle-button:hover {
+  background: rgba(var(--room-header-primary-rgb), 0.12);
+  color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(var(--room-header-primary-rgb), 0.25);
+}
+.friend-toggle-button.is-open {
+  background: var(--color-primary);
+  color: white;
+  border-color: rgba(var(--room-header-primary-rgb), 0.4);
+}
+.friend-toggle-button.is-open:hover {
+  background: var(--color-primary);
+  box-shadow: 0 4px 15px rgba(var(--room-header-primary-rgb), 0.4);
+}
+.friend-btn-icon {
+  width: 14px;
+  height: 14px;
+}
+/* 알림 뱃지 */
+.friend-notif-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 9px;
+  height: 9px;
+  background: var(--color-danger);
+  border-radius: 50%;
+  border: 2px solid white;
+  animation: pulse-notif 2s ease-in-out infinite;
+}
+@keyframes pulse-notif {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+}
+
 .settings-button {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  color: #475569;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: linear-gradient(135deg, var(--color-background) 0%, var(--color-secondary) 100%);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
 }
 
 .settings-button:hover {
-  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
-  color: #334155;
+  background: var(--color-secondary);
+  color: var(--color-text-primary);
   transform: translateY(-1px);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .refresh-button {
-  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-  color: #059669;
+  background: rgba(16, 185, 129, 0.14);
+  color: var(--color-success);
   border: 1px solid rgba(5, 150, 105, 0.2);
 }
 
 .refresh-button:hover {
-  background: linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%);
-  color: #047857;
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--color-success);
   transform: translateY(-1px);
   box-shadow: 0 4px 15px rgba(5, 150, 105, 0.2);
 }
 
 .leave-button {
-  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-  color: #dc2626;
+  background: rgba(239, 68, 68, 0.14);
+  color: var(--color-danger);
   border: 1px solid rgba(220, 38, 38, 0.15);
 }
 
 .leave-button:hover {
-  background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
-  color: #b91c1c;
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--color-danger);
   transform: translateY(-1px);
   box-shadow: 0 4px 15px rgba(220, 38, 38, 0.15);
 }
 
 .start-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--color-primary);
   color: white;
-  border: 1px solid rgba(102, 126, 234, 0.3);
+  border: 1px solid rgba(var(--room-header-primary-rgb), 0.35);
 }
 
 .start-button:hover {
-  background: linear-gradient(135deg, #5a67d8 0%, #553c9a 100%);
+  background: var(--color-primary);
   transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 15px rgba(var(--room-header-primary-rgb), 0.4);
 }
 
 .start-button.disabled {
-  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-  color: #94a3b8;
+  background: linear-gradient(135deg, var(--color-background) 0%, var(--color-secondary) 100%);
+  color: var(--color-text-tertiary);
   cursor: not-allowed;
   transform: none;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);

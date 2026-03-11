@@ -1,6 +1,6 @@
 <template>
   <transition name="modal-fade">
-    <div v-if="show" class="ranking-modal-overlay" @click.self="close">
+    <div v-if="show" class="ranking-modal-overlay" :style="rankingColorVars" @click.self="close">
       <div class="ranking-modal-content">
         <div class="modal-header">
           <h2>전체 랭킹</h2>
@@ -112,7 +112,7 @@
               </div>
 
               <div v-if="players.length === 0" class="no-players">
-                <p>랭킹 데이터가 없습니다.</p>
+                <p>플레이어 정보가 없습니다.</p>
               </div>
             </div>
           </div>
@@ -170,6 +170,7 @@
 import { ref, computed, watch } from "vue";
 import rankingService from "@/features/game/shared/services/ranking.service.js";
 import PlayerDetailsModal from "@/features/game/multiplayer/room/components/player/PlayerDetailsModal.vue";
+import { BRAND, TEXT, BACKGROUND } from "@/core/constants/colors.js";
 
 const props = defineProps({
   show: {
@@ -206,6 +207,18 @@ const players = ref([]);
 const loading = ref(false);
 const error = ref(null);
 const currentPage = ref(0);
+const totalPages = ref(1);
+
+const rankingColorVars = computed(() => ({
+  "--color-primary": BRAND.PRIMARY,
+  "--color-secondary": BRAND.SECONDARY,
+  "--color-background": BACKGROUND.GRAY,
+  "--color-surface": BACKGROUND.LIGHT,
+  "--color-border": BRAND.SECONDARY,
+  "--color-text-primary": TEXT.PRIMARY,
+  "--color-text-secondary": TEXT.SECONDARY,
+  "--color-text-tertiary": TEXT.MUTED,
+}));
 
 // PlayerDetailsModal 상태
 const selectedPlayer = ref(null);
@@ -217,12 +230,10 @@ const currentUserId = computed(() => {
 });
 
 // 페이징 관련 computed
-const hasNextPage = computed(() => players.value.length >= 20);
+const hasNextPage = computed(() => currentPage.value < totalPages.value - 1);
 const hasPagination = computed(() => {
-  // 플레이어가 있고, 첫 페이지가 아니거나 다음 페이지가 있으면 페이징 표시
-  return (
-    players.value.length > 0 && (currentPage.value > 0 || hasNextPage.value)
-  );
+  // 총 페이지가 2 이상이거나 현재 페이지가 0보다 크면 표시
+  return totalPages.value > 1 || currentPage.value > 0;
 });
 
 // 보이는 페이지 번호 계산 (0부터 시작하지만 표시는 1부터)
@@ -230,9 +241,9 @@ const visiblePages = computed(() => {
   const maxVisible = 5;
   const current = currentPage.value + 1; // 표시용으로 1부터 시작
   const start = Math.max(1, current - Math.floor(maxVisible / 2));
-  const end = start + maxVisible - 1;
+  const end = Math.min(totalPages.value, start + maxVisible - 1); // totalPages로 상한선 제한
   return Array.from(
-    { length: Math.min(maxVisible, end - start + 1) },
+    { length: end - start + 1 },
     (_, i) => start + i,
   );
 });
@@ -254,6 +265,7 @@ async function fetchRanking(tier, page = 0) {
 
     myRank.value = result.myRank;
     players.value = result.players || [];
+    totalPages.value = result.totalPages ?? 1;
     currentPage.value = page;
   } catch (err) {
     console.error("랭킹 조회 중 오류:", err);
@@ -267,7 +279,7 @@ async function fetchRanking(tier, page = 0) {
 
 // 페이지 이동
 function goToPage(page) {
-  if (page >= 0) {
+  if (page >= 0 && page < totalPages.value) {
     fetchRanking(selectedTier.value, page);
   }
 }
@@ -368,7 +380,7 @@ watch(
 }
 
 .ranking-modal-content {
-  background: white;
+  background: var(--color-surface);
   border-radius: 16px;
   max-width: 900px;
   width: 100%;
@@ -383,7 +395,7 @@ watch(
 
 .modal-header {
   padding: 24px 32px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -393,14 +405,14 @@ watch(
   margin: 0;
   font-size: 24px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--color-text-primary);
 }
 
 .close-button {
   background: none;
   border: none;
   font-size: 24px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   cursor: pointer;
   padding: 8px;
   display: flex;
@@ -411,8 +423,8 @@ watch(
 }
 
 .close-button:hover {
-  background: #f3f4f6;
-  color: #1f2937;
+  background: var(--color-background);
+  color: var(--color-text-primary);
 }
 
 /* 티어 탭 스타일 */
@@ -421,8 +433,8 @@ watch(
   flex-wrap: wrap;
   padding: 12px 20px;
   gap: 8px;
-  border-bottom: 1px solid #e5e7eb;
-  background: #f9fafb;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-background);
   flex-shrink: 0;
 }
 
@@ -433,19 +445,19 @@ watch(
   padding: 8px 12px;
   border: 2px solid transparent;
   border-radius: 10px;
-  background: white;
+  background: var(--color-surface);
   cursor: pointer;
   transition: background-color 0.15s ease, transform 0.15s ease,
     box-shadow 0.15s ease;
   white-space: nowrap;
   font-weight: 600;
   font-size: 13px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   flex-shrink: 0;
 }
 
 .tier-tab:hover {
-  background: #f3f4f6;
+  background: var(--color-background);
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
@@ -507,13 +519,13 @@ watch(
   align-items: center;
   justify-content: center;
   height: 300px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
 }
 
 .loading-container i {
   font-size: 48px;
   margin-bottom: 16px;
-  color: #3b82f6;
+  color: var(--color-primary);
 }
 
 .error-container p {
@@ -523,7 +535,7 @@ watch(
 /* 내 랭크 카드 */
 .my-rank-card {
   background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-  border: 2px solid #3b82f6;
+  border: 2px solid var(--color-primary);
   border-radius: 16px;
   padding: 20px;
   margin-bottom: 24px;
@@ -536,12 +548,12 @@ watch(
   gap: 8px;
   margin-bottom: 16px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--color-text-primary);
   font-size: 16px;
 }
 
 .my-rank-header i {
-  color: #3b82f6;
+  color: var(--color-primary);
 }
 
 .my-rank-info {
@@ -569,14 +581,14 @@ watch(
 
 .my-rank-item .label {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   font-weight: 500;
 }
 
 .my-rank-item .value {
   font-size: 16px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--color-text-primary);
 }
 
 /* 플레이어 리스트 */
@@ -591,14 +603,14 @@ watch(
   align-items: center;
   gap: 16px;
   padding: 16px;
-  background: #f9fafb;
+  background: var(--color-background);
   border-radius: 12px;
   transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
   cursor: pointer;
 }
 
 .player-item:hover {
-  background: #f3f4f6;
+  background: var(--color-secondary);
   transform: translateX(4px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
@@ -609,7 +621,7 @@ watch(
     rgba(59, 130, 246, 0.1) 0%,
     rgba(147, 197, 253, 0.05) 100%
   );
-  border: 2px solid #3b82f6;
+  border: 2px solid var(--color-primary);
 }
 
 .player-item.with-border {
@@ -619,13 +631,13 @@ watch(
 .player-rank {
   font-size: 18px;
   font-weight: 700;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   min-width: 40px;
   text-align: center;
 }
 
 .player-item.is-me .player-rank {
-  color: #3b82f6;
+  color: var(--color-primary);
 }
 
 .player-info {
@@ -713,12 +725,12 @@ watch(
 
 .player-nickname {
   font-weight: 600;
-  color: #1f2937;
+  color: var(--color-text-primary);
   font-size: 15px;
 }
 
 .my-badge {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: var(--color-primary);
   color: white;
   padding: 2px 8px;
   border-radius: 12px;
@@ -729,7 +741,7 @@ watch(
 .player-rating {
   font-size: 16px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--color-text-primary);
   min-width: 100px;
   text-align: right;
 }
@@ -781,7 +793,7 @@ watch(
 .no-players {
   text-align: center;
   padding: 60px 20px;
-  color: #9ca3af;
+  color: var(--color-text-tertiary);
 }
 
 .no-players p {
@@ -790,7 +802,7 @@ watch(
 
 .modal-footer {
   padding: 20px 32px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -805,16 +817,16 @@ watch(
 
 .page-button {
   background: white;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border);
   padding: 8px 12px;
   border-radius: 8px;
   cursor: pointer;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   transition: background-color 0.2s, border-color 0.2s;
 }
 
 .page-button:hover:not(:disabled) {
-  background: #f9fafb;
+  background: var(--color-background);
   border-color: #d1d5db;
 }
 
@@ -830,30 +842,30 @@ watch(
 
 .page-number {
   background: white;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border);
   padding: 8px 12px;
   border-radius: 8px;
   cursor: pointer;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   min-width: 40px;
   transition: background-color 0.2s, border-color 0.2s, color 0.2s;
 }
 
 .page-number:hover {
-  background: #f9fafb;
+  background: var(--color-background);
   border-color: #d1d5db;
 }
 
 .page-number.active {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: var(--color-primary);
   color: white;
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
 }
 
 .pagination-info {
   text-align: center;
   font-size: 14px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
 }
 
 /* 애니메이션 */

@@ -1,6 +1,9 @@
+/* ─────────────────────────────────────
+   Slide Menu — Transition
+───────────────────────────────────── */
 .slide-menu-enter-active,
 .slide-menu-leave-active {
-    transition: transform 0.3s ease;
+    transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .slide-menu-enter-from,
@@ -8,47 +11,202 @@
     transform: translateX(100%);
 }
 
+/* ─────────────────────────────────────
+   Profile Menu Panel
+───────────────────────────────────── */
 .profile-menu {
     position: fixed;
     top: 0;
     right: 0;
     bottom: 0;
-    width: 80%;
-    max-width: 300px;
-    background: #ffffff;
-    z-index: 1000;
-    padding: 2rem 1rem;
-    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease-in-out;
-}
-
-.profile-menu-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-}
-
-.profile-menu-header h2 {
-    font-size: 1.5rem;
-    font-weight: 600;
-}
-
-.profile-menu-nav {
+    width: 82%;
+    max-width: 320px;
+    background: var(--color-surface, #ffffff);
+    z-index: 1001;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.14);
+    overflow-y: auto;
 }
 
-.menu-item {
-    font-size: 1rem;
-    color: #333;
-    text-decoration: none;
-    padding: 0.5rem 0;
+/* ─────────────────────────────────────
+   Profile Header
+───────────────────────────────────── */
+.profile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.1rem 1rem;
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+    background: var(--color-surface, #ffffff);
+    position: sticky;
+    top: 0;
+    z-index: 2;
 }
+
+.profile-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.profile-info img {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--color-primary, #667eea);
+}
+
+.profile-text h3 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #111827);
+    margin: 0 0 2px;
+}
+
+.profile-text p {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary, #6b7280);
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 160px;
+}
+
 .close-menu {
     background: none;
     border: none;
-    font-size: 1.5rem;
+    font-size: 1rem;
     cursor: pointer;
+    color: var(--color-text-secondary, #6b7280);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.18s ease, color 0.18s ease;
+    flex-shrink: 0;
+}
+
+.close-menu:hover {
+    background: var(--color-surface-hover, #f3f4f6);
+    color: var(--color-text-primary, #111827);
+}
+
+/* ─────────────────────────────────────
+   Mobile Nav
+───────────────────────────────────── */
+.mobile-nav {
+    display: flex;
+    flex-direction: column;
+    padding: 0.75rem 0.75rem 1.5rem;
+    gap: 2px;
+    flex: 1;
+}
+
+/* 섹션 레이블 */
+.menu-section-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-tertiary, #9ca3af);
+    padding: 0.75rem 0.4rem 0.3rem;
+    margin-top: 0.25rem;
+}
+
+/* 메뉴 아이템 */
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-text-primary, #111827);
+    text-decoration: none;
+    padding: 0.6rem 0.5rem;
+    border-radius: 10px;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
+}
+
+.menu-item:hover,
+.menu-item.router-link-active {
+    background: var(--color-surface-hover, #f3f4f6);
+    color: var(--color-primary, #667eea);
+    transform: translateX(2px);
+}
+
+/* 아이콘 래퍼 */
+.menu-icon-wrap {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+}
+
+.menu-item:hover .menu-icon-wrap {
+    transform: scale(1.08);
+}
+
+/* 아이콘 색상 */
+.menu-icon-roadview {
+    background: rgba(102, 126, 234, 0.12);
+    color: #667eea;
+}
+
+.menu-icon-multi {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+}
+
+.menu-icon-shop {
+    background: rgba(245, 158, 11, 0.12);
+    color: #f59e0b;
+}
+
+.menu-icon-friend {
+    background: rgba(236, 72, 153, 0.12);
+    color: #ec4899;
+}
+
+.menu-icon-notice {
+    background: rgba(59, 130, 246, 0.12);
+    color: #3b82f6;
+}
+
+.menu-icon-profile {
+    background: rgba(99, 102, 241, 0.12);
+    color: #6366f1;
+}
+
+.menu-icon-logout {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+}
+
+.menu-icon-admin {
+    background: rgba(99, 102, 241, 0.14);
+    color: #6366f1;
+}
+
+/* 구분선 */
+.menu-divider {
+    height: 1px;
+    background: var(--color-border, #e5e7eb);
+    margin: 0.4rem 0.4rem;
+    border-radius: 1px;
+}
+
+/* 관리자 메뉴 */
+.admin-menu-item {
+    color: #6366f1 !important;
+    font-weight: 600;
 }

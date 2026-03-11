@@ -1,5 +1,5 @@
 <template>
-  <div class="chat-window">
+  <div class="chat-window" :style="chatColorVars">
     <div class="chat-header">
       <h3 class="chat-title">채팅방</h3>
       <!-- <div class="online-users">
@@ -28,22 +28,32 @@
         <div
           v-else
           class="chat-message"
-          :class="{ 'my-chat': isMyMessage(message) }"
+          :class="{
+            'my-chat': isMyMessage(message),
+            'grouped-message': !shouldShowSender(message, messages[index - 1])
+          }"
         >
           <!-- 다른 사용자 메시지 -->
           <div v-if="!isMyMessage(message)" class="other-message">
             <div class="message-content-wrapper">
-              <div class="message-info">
+              <div
+                v-if="shouldShowSender(message, messages[index - 1])"
+                class="message-info"
+              >
                 <span class="sender-name">{{ message.sender }}</span>
-                <span
-                  v-if="shouldShowTime(message, messages[index - 1])"
-                  class="message-time"
-                  >{{ formatTime(message.timestamp) }}</span
-                >
               </div>
-              <div class="message-bubble other-bubble">
-                <span class="bubble-tail other-tail"></span>
-                {{ message.message }}
+              <div class="message-bubble-row">
+                <div class="message-bubble other-bubble" :class="{ 'no-tail': !shouldShowSender(message, messages[index - 1]) }">
+                  <span
+                    v-if="shouldShowSender(message, messages[index - 1])"
+                    class="bubble-tail other-tail"
+                  ></span>
+                  {{ message.message }}
+                </div>
+                <span
+                  v-if="shouldShowTime(message, messages[index + 1])"
+                  class="message-time message-time-side"
+                >{{ formatTime(message.timestamp) }}</span>
               </div>
             </div>
           </div>
@@ -51,16 +61,18 @@
           <!-- 내 메시지 -->
           <div v-else-if="isMyMessage(message)" class="my-message">
             <div class="my-content-wrapper">
-              <div class="my-message-info">
+              <div class="message-bubble-row">
                 <span
-                  v-if="shouldShowTime(message, messages[index - 1])"
-                  class="message-time"
-                  >{{ formatTime(message.timestamp) }}</span
-                >
-              </div>
-              <div class="message-bubble my-bubble">
-                {{ message.message }}
-                <span class="bubble-tail my-tail"></span>
+                  v-if="shouldShowTime(message, messages[index + 1])"
+                  class="message-time message-time-side my-side"
+                >{{ formatTime(message.timestamp) }}</span>
+                <div class="message-bubble my-bubble" :class="{ 'no-tail': !shouldShowSender(message, messages[index - 1]) }">
+                  {{ message.message }}
+                  <span
+                    v-if="shouldShowSender(message, messages[index - 1])"
+                    class="bubble-tail my-tail"
+                  ></span>
+                </div>
               </div>
             </div>
           </div>
@@ -74,8 +86,9 @@
           type="text"
           v-model="newMessage"
           placeholder="메시지를 입력하세요..."
-          @keydown.stop
-          @keydown="handleKeydown"
+          @keyup.enter="handleEnter"
+          @compositionstart="onCompositionStart"
+          @compositionend="onCompositionEnd"
           @focus="handleInputFocus"
           @blur="handleInputBlur"
           ref="chatInput"
@@ -103,6 +116,8 @@
 </template>
 
 <script>
+import { BRAND, TEXT, BACKGROUND } from '@/core/constants/colors.js';
+
 export default {
   name: "MultiplayerLobbyChatWindow",
 
@@ -127,7 +142,33 @@ export default {
       onlineUsers: 37, // 테스트 데이터, 실제로는 서버에서 받아와야 함
       currentMemberId: null,
       isInputFocused: false,
+      isComposing: false,
     };
+  },
+
+  computed: {
+    chatColorVars() {
+      const hex = BRAND.PRIMARY.replace('#', '');
+      const full = hex.length === 3 ? hex.split('').map((ch) => ch + ch).join('') : hex;
+      const value = Number.parseInt(full, 16);
+      const r = (value >> 16) & 255;
+      const g = (value >> 8) & 255;
+      const b = value & 255;
+
+      return {
+        '--color-primary': BRAND.PRIMARY,
+        '--color-secondary': BRAND.SECONDARY,
+        '--color-success': BRAND.SUCCESS,
+        '--color-danger': BRAND.DANGER,
+        '--color-background': BACKGROUND.GRAY,
+        '--color-surface': BACKGROUND.LIGHT,
+        '--color-border': BRAND.SECONDARY,
+        '--color-text-primary': TEXT.PRIMARY,
+        '--color-text-secondary': TEXT.SECONDARY,
+        '--color-text-tertiary': TEXT.MUTED,
+        '--chat-primary-rgb': `${r}, ${g}, ${b}`,
+      };
+    },
   },
 
   mounted() {
@@ -169,20 +210,24 @@ export default {
       this.currentMemberId = localStorageMemberId || propsUserId;
     },
 
-    /**
-     * Handle keydown event with IME composition check
-     * This prevents double message sending on MacOS when using Korean IME
-     */
-    handleKeydown(event) {
-      // IME 조합 중이면 무시 (한글 등 조합형 문자 입력 시)
-      // isComposing: 표준 속성으로 조합 중인지 확인
-      // keyCode === 229: 일부 브라우저에서 IME 조합 중임을 나타내는 레거시 코드
-      if (event.isComposing || event.keyCode === 229) {
-        return;
-      }
+    onCompositionStart() {
+      this.isComposing = true;
+    },
 
-      // Enter 키가 아니면 무시
-      if (event.key !== "Enter") {
+    onCompositionEnd(event) {
+      // Mac Chrome에서 한글 입력 시 조합 완료와 동시에 엔터 이벤트가 발생할 수 있으므로,
+      // 상태 해제를 미세하게 지연시킵니다.
+      setTimeout(() => {
+        this.isComposing = false;
+      }, 50);
+    },
+
+    /**
+     * Handle enter key event to send message
+     */
+    handleEnter(event) {
+      // IME 조합 중이거나, 이제 막 끝난 상태면 무시
+      if (this.isComposing || event.isComposing) {
         return;
       }
 
@@ -246,20 +291,29 @@ export default {
       return false;
     },
 
-    shouldShowTime(message, previousMessage) {
-      if (!previousMessage) return true; // 첫 메시지는 항상 표시
-      if (message.system) return false; // 시스템 메시지는 시간 표시 안 함
+    shouldShowSender(message, previousMessage) {
+      if (!previousMessage) return true;
+      if (message.system || previousMessage.system) return true;
+      return message.senderId !== previousMessage.senderId;
+    },
+
+    shouldShowTime(message, nextMessage) {
+      if (!nextMessage) return true; // 마지막 메시지는 항상 표시
+      if (message.system || nextMessage.system) return true;
+      
+      // 다음 메시지의 보낸이가 다르면 현재 메시지에 시간을 표시
+      if (message.senderId !== nextMessage.senderId) return true;
 
       const currentTime = new Date(message.timestamp);
-      const prevTime = new Date(previousMessage.timestamp);
+      const nextTime = new Date(nextMessage.timestamp);
 
-      // 같은 분인지 확인 (년, 월, 일, 시, 분 비교)
+      // 다음 메시지와 같은 분이면 표시 안 함, 다른 분이면 표시
       return (
-        currentTime.getFullYear() !== prevTime.getFullYear() ||
-        currentTime.getMonth() !== prevTime.getMonth() ||
-        currentTime.getDate() !== prevTime.getDate() ||
-        currentTime.getHours() !== prevTime.getHours() ||
-        currentTime.getMinutes() !== prevTime.getMinutes()
+        currentTime.getFullYear() !== nextTime.getFullYear() ||
+        currentTime.getMonth() !== nextTime.getMonth() ||
+        currentTime.getDate() !== nextTime.getDate() ||
+        currentTime.getHours() !== nextTime.getHours() ||
+        currentTime.getMinutes() !== nextTime.getMinutes()
       );
     },
   },
@@ -271,12 +325,12 @@ export default {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: white;
+  background: var(--color-surface);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
   flex: 1;
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--color-border);
 }
 
 .chat-header {
@@ -284,15 +338,15 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.2rem;
-  border-bottom: 1px solid #f0f0f0;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-bottom: 1px solid var(--color-border);
+  background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-background) 100%);
   flex-shrink: 0;
 }
 
 .chat-title {
   margin: 0;
   font-size: 1.1rem;
-  color: #1a202c;
+  color: var(--color-text-primary);
   position: relative;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -305,7 +359,7 @@ export default {
   left: 0;
   width: 25px;
   height: 2px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--color-primary);
   border-radius: 2px;
 }
 
@@ -314,7 +368,7 @@ export default {
   align-items: center;
   gap: 0.4rem;
   font-size: 0.8rem;
-  color: #64748b;
+  color: var(--color-text-secondary);
   font-weight: 500;
 }
 
@@ -323,7 +377,7 @@ export default {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #10b981;
+  background: var(--color-success);
   animation: pulse 2s infinite;
 }
 
@@ -341,12 +395,12 @@ export default {
   flex: 1;
   padding: 0.8rem;
   overflow-y: auto;
-  background: #f8fafc;
+  background: var(--color-background);
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-color: var(--color-secondary) transparent;
 }
 
 .chat-messages::-webkit-scrollbar {
@@ -358,13 +412,13 @@ export default {
 }
 
 .chat-messages::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1;
+  background-color: var(--color-secondary);
   border-radius: 4px;
   transition: background-color 0.3s ease;
 }
 
 .chat-messages::-webkit-scrollbar-thumb:hover {
-  background-color: #94a3b8;
+  background-color: var(--color-text-tertiary);
 }
 
 /* 메시지 래퍼 스타일 */
@@ -398,7 +452,7 @@ export default {
 
 .system-content {
   font-size: 0.8rem;
-  color: #64748b;
+  color: var(--color-text-secondary);
   font-style: italic;
   font-weight: 500;
 }
@@ -419,6 +473,8 @@ export default {
 .message-content-wrapper {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .message-info {
@@ -426,18 +482,30 @@ export default {
   align-items: center;
   gap: 0.4rem;
   margin-bottom: 0.2rem;
+  margin-left: 0.4rem;
 }
 
 .sender-name {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--color-text-primary);
 }
 
 .message-time {
   font-size: 0.7rem;
-  color: #9ca3af;
+  color: var(--color-text-tertiary);
   font-weight: 500;
+  white-space: nowrap;
+}
+
+.message-bubble-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.4rem;
+}
+
+.message-time-side {
+  margin-bottom: 0.2rem;
 }
 
 /* 말풍선 공통 스타일 */
@@ -450,7 +518,7 @@ export default {
   word-wrap: break-word;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   transition: all 0.2s ease;
-  max-width: 100%;
+  max-width: fit-content;
 }
 
 .message-bubble:hover {
@@ -460,10 +528,14 @@ export default {
 
 /* 다른 사용자 말풍선 */
 .other-bubble {
-  background: white;
-  color: #374151;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
   border-bottom-left-radius: 4px;
   border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.other-bubble.no-tail {
+  border-bottom-left-radius: 14px;
 }
 
 .other-tail {
@@ -503,23 +575,21 @@ export default {
   max-width: 100%;
 }
 
-.my-message-info {
-  margin-bottom: 0.2rem;
-}
-
-.my-message-info .message-time {
-  font-size: 0.7rem;
-  color: #9ca3af;
-  margin-right: 0.3rem;
+.grouped-message {
+  margin-top: -0.1rem;
 }
 
 /* 내 말풍선 */
 .my-bubble {
-  background: #3b82f6;
+  background: var(--color-primary);
   color: white;
   border-bottom-right-radius: 4px;
   border: none;
   font-weight: 500;
+}
+
+.my-bubble.no-tail {
+  border-bottom-right-radius: 14px;
 }
 
 .my-tail {
@@ -530,15 +600,15 @@ export default {
   height: 0;
   border-style: solid;
   border-width: 4px 0 0 4px;
-  border-color: #3b82f6 transparent transparent transparent;
+  border-color: var(--color-primary) transparent transparent transparent;
 }
 
 /* 채팅 입력 영역 */
 .chat-input {
   display: flex;
   padding: 0.8rem 1rem;
-  border-top: 1px solid #f0f0f0;
-  background: white;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
   flex-shrink: 0;
   gap: 0.6rem;
   align-items: center;
@@ -548,7 +618,7 @@ export default {
   flex: 1;
   display: flex;
   align-items: center;
-  background: #f8fafc;
+  background: var(--color-background);
   border-radius: 20px;
   border: 2px solid transparent;
   transition: all 0.3s ease;
@@ -556,9 +626,9 @@ export default {
 }
 
 .input-wrapper:focus-within {
-  border-color: #3b82f6;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+  box-shadow: 0 0 0 3px rgba(var(--chat-primary-rgb), 0.15);
 }
 
 .chat-input input {
@@ -568,17 +638,17 @@ export default {
   background: transparent;
   font-size: 0.85rem;
   outline: none;
-  color: #374151;
+  color: var(--color-text-primary);
   font-weight: 500;
 }
 
 .chat-input input::placeholder {
-  color: #9ca3af;
+  color: var(--color-text-tertiary);
   font-weight: 400;
 }
 
 .send-button {
-  background: #3b82f6;
+  background: var(--color-primary);
   color: white;
   border: none;
   width: 36px;
@@ -589,25 +659,25 @@ export default {
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 2px 6px rgba(var(--chat-primary-rgb), 0.3);
   transform: translateY(0);
 }
 
 .send-button:hover:not(:disabled) {
-  background: #2563eb;
+  background: var(--color-primary);
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 10px rgba(var(--chat-primary-rgb), 0.4);
 }
 
 .send-button:active:not(:disabled) {
-  background: #1d4ed8;
+  background: var(--color-primary);
   transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 2px 4px rgba(var(--chat-primary-rgb), 0.3);
 }
 
 .send-button:disabled {
-  background: #e5e7eb;
-  color: #9ca3af;
+  background: var(--color-secondary);
+  color: var(--color-text-tertiary);
   cursor: not-allowed;
   box-shadow: none;
   transform: none;
@@ -619,7 +689,7 @@ export default {
 
 /* 채팅방 닫기 버튼 */
 .close-chat-button {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: var(--color-danger);
   color: white;
   border: none;
   width: 36px;

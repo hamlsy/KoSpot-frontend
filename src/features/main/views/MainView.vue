@@ -1,5 +1,5 @@
 <template>
-  <div class="app-container">
+  <div class="app-container" :style="mainColorVars">
     <!-- 닉네임 설정 모달 -->
     <NicknameSetupModal 
       :show="showNicknameModal"
@@ -24,7 +24,7 @@
 
     <!-- 3컬럼 레이아웃 래퍼 -->
     <div class="main-layout">
-      <!-- 좌측 광고 영역 -->
+      <!-- 좌측 광고 영역
       <aside class="ad-sidebar ad-sidebar-left">
         <div class="ad-container" id="google-ad-left">
           <Adsense 
@@ -32,14 +32,14 @@
             ad-slot="YOUR_AD_SLOT_LEFT"
           />
         </div>
-      </aside>
+      </aside> -->
       
       <!-- 중앙 컨텐츠 -->
       <main class="main-content-wrapper">
         <!-- 히어로 섹션과 배너 래퍼 -->
         <div class="hero-banner-wrapper" :class="{ 'has-banner': bannersLoaded && displayBanners && displayBanners.length > 0 }">
           <!-- 히어로 섹션 -->
-          <HeroSection @open-tutorial="showTutorial = false" />
+          <!-- <HeroSection @open-tutorial="showTutorial = false" /> -->
 
           <!-- Featured Challenge Banner Carousel -->
           <div v-if="bannersLoaded && displayBanners && displayBanners.length > 0" class="banner-carousel">
@@ -188,54 +188,13 @@
       </section>
 
       <!-- 인라인 광고 2: 게임 모드와 공지사항 사이 (모바일/태블릿만) -->
-      <div class="ad-inline ad-inline-middle">
+      <!-- <div class="ad-inline ad-inline-middle">
         <Adsense 
           v-if="isMobileOrTablet"
           ad-slot="YOUR_AD_SLOT_2"
         />
-      </div>
+      </div> -->
       
-      <!-- Stats Overview - 베타 버전에서는 숨김 -->
-      <!-- 
-      <div class="stats-container">
-        <router-link to="/noticeList">
-          <div class="stat-card">
-            <div class="stat-icon">📊</div>
-            <div class="stat-info">
-              <span class="stat-value">통계</span>
-              <span class="stat-label">플레이 정보</span>
-            </div>
-          </div>
-        </router-link>
-        <router-link to="/shopMain">
-          <div class="stat-card">
-            <div class="stat-icon">🛒</div>
-            <div class="stat-info">
-              <span class="stat-value">상점</span>
-              <span class="stat-label">아이템 구매</span>
-            </div>
-          </div>
-        </router-link>
-        <router-link to="/myPoints">
-          <div class="stat-card">
-            <div class="stat-icon">⭐️</div>
-            <div class="stat-info">
-              <span class="stat-value">1,234</span>
-              <span class="stat-label">포인트</span>
-            </div>
-          </div>
-        </router-link>
-        <router-link to="/friendsList">
-          <div class="stat-card">
-            <div class="stat-icon">👥</div>
-            <div class="stat-info">
-              <span class="stat-value">15</span>
-              <span class="stat-label">친구</span>
-            </div>
-          </div>
-        </router-link>
-      </div>
-      -->
 
       <!-- 공지사항 섹션 -->
       <section class="notices-section">
@@ -294,14 +253,14 @@
       </main>
       
       <!-- 우측 광고 영역 -->
-      <aside class="ad-sidebar ad-sidebar-right">
+      <!-- <aside class="ad-sidebar ad-sidebar-right">
         <div class="ad-container" id="google-ad-right">
           <Adsense 
             v-if="!isMobileOrTablet"
             ad-slot="YOUR_AD_SLOT_RIGHT"
           />
         </div>
-      </aside>
+      </aside> -->
     </div>
     
     <!-- 수정: 프로필 메뉴 오버레이 추가 -->
@@ -331,42 +290,59 @@
             <i class="fas fa-times"></i>
           </button>
         </div>
-
+        
         <!-- 모바일용 내비게이션 메뉴 추가 -->
         <nav class="mobile-nav">
-          <router-link :to="{ name: 'NoticeListView' }" class="menu-item">
-            <i class="fas fa-bullhorn"></i>
-            공지사항
-          </router-link>
-          <!-- <router-link to="/tempPage" class="menu-item">
-            <i class="fas fa-calendar-alt"></i>
-            이벤트
-          </router-link>
-          <router-link to="/tempPage" class="menu-item">
-            <i class="fas fa-chart-bar"></i>
-            통계
-          </router-link>
-          <router-link to="/shopMain" class="menu-item">
-            <i class="fas fa-shopping-cart"></i>
-            상점
-          </router-link> -->
-          <router-link to="/myProfile" class="menu-item">
-            <i class="fas fa-user-circle"></i>
+          <!-- 계정 섹션 -->
+          <div class="menu-section-label">계정</div>
+          <router-link to="/myProfile" class="menu-item" @click="closeProfileMenu">
+            <span class="menu-icon-wrap menu-icon-profile"><i class="fas fa-user-circle"></i></span>
             마이페이지
           </router-link>
-          <div class="menu-divider"></div>
           <a href="#" class="menu-item" @click.prevent="handleLogout">
-            <i class="fas fa-sign-out-alt"></i>
+            <span class="menu-icon-wrap menu-icon-logout"><i class="fas fa-sign-out-alt"></i></span>
             로그아웃
           </a>
+          <div class="menu-divider"></div>
+          <!-- 게임 섹션 -->
+          <div class="menu-section-label">게임</div>
+          <router-link to="/roadView/main" class="menu-item" @click="closeProfileMenu">
+            <span class="menu-icon-wrap menu-icon-roadview"><i class="fas fa-street-view"></i></span>
+            로드뷰 모드
+          </router-link>
+          <router-link to="/lobby" class="menu-item" @click="closeProfileMenu">
+            <span class="menu-icon-wrap menu-icon-multi"><i class="fas fa-users"></i></span>
+            멀티플레이어
+          </router-link>
 
+          <div class="menu-divider"></div>
+
+          <!-- 소셜 섹션 -->
+          <div class="menu-section-label">소셜</div>
+          <router-link to="/shop" class="menu-item" @click="closeProfileMenu">
+            <span class="menu-icon-wrap menu-icon-shop"><i class="fas fa-shopping-bag"></i></span>
+            상점
+          </router-link>
+          <a href="#" class="menu-item" @click.prevent="() => { closeProfileMenu(); $emit('open-friends'); }">
+            <span class="menu-icon-wrap menu-icon-friend"><i class="fas fa-user-friends"></i></span>
+            친구
+          </a>
+          <router-link :to="{ name: 'NoticeListView' }" class="menu-item" @click="closeProfileMenu">
+            <span class="menu-icon-wrap menu-icon-notice"><i class="fas fa-bullhorn"></i></span>
+            공지사항
+          </router-link>
+
+          <div class="menu-divider"></div>
+
+          
           <!-- 관리자 페이지 링크 추가 -->
           <router-link
             v-if="userProfile.isAdmin"
             to="/admin"
             class="menu-item admin-menu-item"
+            @click="closeProfileMenu"
           >
-            <i class="fas fa-user-shield"></i>
+            <span class="menu-icon-wrap menu-icon-admin"><i class="fas fa-user-shield"></i></span>
             관리자 페이지
           </router-link>
         </nav>
@@ -391,6 +367,7 @@ import NicknameSetupModal from '@/features/intro/components/NicknameSetupModal.v
 import HeroSection from '@/features/intro/components/HeroSection.vue'
 import Adsense from '@/features/game/shared/components/Common/Adsense.vue'
 import { mainService } from '@/features/main/services/main.service.js'
+import { BRAND, TEXT, BACKGROUND } from '@/core/constants/colors.js'
 
 // 라우터 설정
 const router = useRouter();
@@ -446,6 +423,23 @@ const displayBanners = computed(() => {
 // 공지사항 데이터
 const recentNotices = ref([]);
 const noticesLoading = ref(false);
+
+const mainColorVars = computed(() => ({
+  '--color-primary': BRAND.PRIMARY,
+  '--color-secondary': BRAND.SECONDARY,
+  '--color-success': BRAND.SUCCESS,
+  '--color-warning': BRAND.WARNING,
+  '--color-danger': BRAND.DANGER,
+  '--color-info': BRAND.INFO,
+  '--color-background': BACKGROUND.LIGHT,
+  '--color-surface': BACKGROUND.LIGHT,
+  '--color-border': BRAND.SECONDARY,
+  '--color-text-primary': TEXT.PRIMARY,
+  '--color-text-secondary': TEXT.SECONDARY,
+  '--color-text-tertiary': TEXT.MUTED,
+  '--main-highlight-bg': BACKGROUND.HIGHLIGHT,
+  '--main-muted-bg': BACKGROUND.GRAY
+}));
 
 // 반응형 감지
 const windowWidth = ref(window.innerWidth);
@@ -505,6 +499,9 @@ async function loadMainPageData() {
           isFirstVisited.value = false;
           userProfile.value.isFirstVisited = false;
         }
+
+        // 받아온 프로필 정보를 다른 페이지(Lobby 등)에서 재사용할 수 있도록 저장
+        localStorage.setItem('userProfile', JSON.stringify(userProfile.value));
       }
       
       // 게임 모드 상태 업데이트
@@ -560,6 +557,7 @@ onMounted(() => {
   loadMainPageData();
   startBannerRotation();
   window.addEventListener('resize', handleResize);
+  // 친구 소켓 및 구독은 App.vue에서 전역으로 관리됨
 });
 
 // 컴포넌트 언마운트 전 실행
@@ -1035,7 +1033,7 @@ async function handleLogout() {
 }
 
 .multiplayer .mode-icon {
-  background: var(--color-secondary);
+  background: var(--color-primary);
   color: white;
 }
 
@@ -1178,30 +1176,30 @@ async function handleLogout() {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--main-muted-bg);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c5c5c5;
+  background: var(--color-secondary);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: var(--color-text-tertiary);
 }
 
 .admin-link {
-  color: #6366f1;
+  color: var(--color-primary);
   font-weight: 600;
 }
 
 .admin-menu-item {
-  color: #6366f1 !important;
+  color: var(--color-primary) !important;
   font-weight: 600;
 }
 
 .admin-menu-item i {
-  color: #6366f1;
+  color: var(--color-primary);
 }
 
 /* 광고 섹션 스타일 */
@@ -1213,7 +1211,7 @@ async function handleLogout() {
 .ad-container {
   width: 100%;
   height: 120px;
-  background-color: #f8f9fa;
+  background-color: var(--main-muted-bg);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -1227,24 +1225,25 @@ async function handleLogout() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #e9ecef;
-  color: #6c757d;
+  background-color: var(--color-secondary);
+  color: var(--color-text-secondary);
   font-size: 14px;
-  border: 1px dashed #adb5bd;
+  border: 1px dashed var(--color-border);
 }
 
 /* 테스트 링크 스타일 */
 .test-links {
   margin-top: 2rem;
   padding: 1rem;
-  background-color: #fff;
+  background-color: var(--color-surface);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--color-border);
 }
 
 .test-links h3 {
   font-size: 1.2rem;
-  color: #334155;
+  color: var(--color-text-primary);
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
@@ -1262,10 +1261,10 @@ async function handleLogout() {
   align-items: center;
   justify-content: center;
   padding: 1.5rem 1rem;
-  background-color: #f8fafc;
+  background-color: var(--main-muted-bg);
   border-radius: 8px;
   text-decoration: none;
-  color: #334155;
+  color: var(--color-text-primary);
   transition: all 0.2s ease;
   flex: 1;
 }
@@ -1276,13 +1275,13 @@ async function handleLogout() {
 }
 
 .test-link.team-test {
-  background-color: #dbeafe;
-  color: #1d4ed8;
+  background-color: var(--main-highlight-bg);
+  color: var(--color-info);
 }
 
 .test-link.solo-test {
-  background-color: #fef3c7;
-  color: #d97706;
+  background-color: rgba(245, 158, 11, 0.12);
+  color: var(--color-warning);
 }
 
 .test-link:hover {
@@ -1303,13 +1302,13 @@ async function handleLogout() {
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   font-size: 0.9rem;
 }
 
 .loading-spinner i {
   font-size: 1.5rem;
-  color: #667eea;
+  color: var(--color-primary);
 }
 
 /* 토스트 알림 */
@@ -1318,11 +1317,12 @@ async function handleLogout() {
   bottom: 32px;
   left: 50%;
   transform: translateX(-50%);
-  background-color: #334155;
-  color: white;
+  background-color: var(--color-text-primary);
+  color: var(--color-surface);
   padding: 16px 24px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--color-border);
   z-index: 1000;
   animation: slideUp 0.3s ease-out;
   font-size: 14px;

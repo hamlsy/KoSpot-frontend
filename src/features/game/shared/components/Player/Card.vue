@@ -30,6 +30,13 @@
     <!-- Player info -->
     <div class="player-info">
       <div class="player-name">{{ player.nickname }}</div>
+      <div
+        v-if="shouldShowScreenState(player.screenState)"
+        class="screen-state-badge"
+        :class="`state-${String(player.screenState).toLowerCase()}`"
+      >
+        {{ getScreenStateLabel(player.screenState) }}
+      </div>
       <div class="player-stats">
         <div class="player-level">Lv. {{ player.level }}</div>
         <div class="multiplayer-stats" v-if="showMultiplayStats">멀티: {{ player.multiplayCount || 0 }}판</div>
@@ -123,6 +130,24 @@ const getRankLevel = (rank) => {
 const convertToRoman = (num) => {
   const romanNumerals = ['I', 'II', 'III', 'IV', 'V'];
   return romanNumerals[num - 1] || num.toString();
+};
+
+const screenStateLabelMap = {
+  JOINING: '입장 중',
+  RESULT: '결과 화면',
+  ROOM: '방 대기',
+  IN_GAME: '게임 중',
+  DISCONNECTED: '연결 끊김',
+};
+
+const getScreenStateLabel = (screenState) => {
+  const normalized = String(screenState || '').toUpperCase();
+  return screenStateLabelMap[normalized] || '방 대기';
+};
+
+const shouldShowScreenState = (screenState) => {
+  const normalized = String(screenState || '').toUpperCase();
+  return normalized !== 'ROOM' && Boolean(screenStateLabelMap[normalized]);
 };
 </script>
 
@@ -254,6 +279,47 @@ const convertToRoman = (num) => {
   gap: 0.75rem;
   font-size: 0.8rem;
   color: #6b7280;
+}
+
+.screen-state-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 0.25rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.screen-state-badge.state-result {
+  color: #0f766e;
+  background: #ccfbf1;
+  border-color: #99f6e4;
+}
+
+.screen-state-badge.state-joining {
+  color: #92400e;
+  background: #fef3c7;
+  border-color: #fde68a;
+}
+
+.screen-state-badge.state-room {
+  color: #1d4ed8;
+  background: #dbeafe;
+  border-color: #bfdbfe;
+}
+
+.screen-state-badge.state-in_game {
+  color: #9a3412;
+  background: #ffedd5;
+  border-color: #fed7aa;
+}
+
+.screen-state-badge.state-disconnected {
+  color: #7f1d1d;
+  background: #fee2e2;
+  border-color: #fecaca;
 }
 
 /* Rank badges styling */

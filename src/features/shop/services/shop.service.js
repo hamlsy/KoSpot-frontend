@@ -9,12 +9,15 @@ import { apiClient } from 'src/core/api/apiClient.js';
  * 상점 관련 API 엔드포인트
  */
 const SHOP_ENDPOINTS = {
+  // 상점 내 정보 (포인트, 보유 아이템, 장착 아이템) 조회
+  GET_SHOP_INFO: '/member/shop-info',
+
   // 아이템 조회
   GET_ITEMS_BY_TYPE: (itemTypeKey) => `/item/${itemTypeKey}`,
-  
+
   // 아이템 구매
   PURCHASE_ITEM: (itemId) => `/memberItem/${itemId}/purchase`,
-  
+
   // 아이템 장착
   EQUIP_ITEM: (memberItemId) => `/memberItem/${memberItemId}`,
 };
@@ -47,6 +50,23 @@ const SHOP_ENDPOINTS = {
  */
 class ShopService {
   /**
+   * 상점 내 정보 조회 (내 포인트, 장착 아이템, 보유 아이템)
+   * @returns {Promise<ApiResponse>} API 응답 데이터
+   */
+  async getShopInfo() {
+    try {
+      console.log('📤 상점 정보 조회 요청');
+      const response = await apiClient.get(SHOP_ENDPOINTS.GET_SHOP_INFO);
+      console.log('✅ 상점 정보 조회 성공:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ 상점 정보 조회 실패:', error);
+      this._handleApiError(error, '상점 정보 조회에 실패했습니다.');
+      throw error;
+    }
+  }
+
+  /**
    * 아이템 타입별 조회
    * @param {string} itemTypeKey - 아이템 타입 키 (MARKER, NICKNAME, ITEM 등)
    * @returns {Promise<ApiResponse<ShopItemResponse[]>>} API 응답 데이터
@@ -54,9 +74,9 @@ class ShopService {
   async getItemsByType(itemTypeKey) {
     try {
       console.log('📤 상점 아이템 조회 요청:', itemTypeKey);
-      
+
       const response = await apiClient.get(SHOP_ENDPOINTS.GET_ITEMS_BY_TYPE(itemTypeKey));
-      
+
       console.log('✅ 상점 아이템 조회 성공:', response.data);
       return response.data;
     } catch (error) {
@@ -74,9 +94,9 @@ class ShopService {
   async purchaseItem(itemId) {
     try {
       console.log('📤 아이템 구매 요청:', itemId);
-      
+
       const response = await apiClient.get(SHOP_ENDPOINTS.PURCHASE_ITEM(itemId));
-      
+
       console.log('✅ 아이템 구매 성공:', response.data);
       return response.data;
     } catch (error) {
@@ -94,9 +114,9 @@ class ShopService {
   async equipItem(memberItemId) {
     try {
       console.log('📤 아이템 장착 요청:', memberItemId);
-      
-      const response = await apiClient.get(SHOP_ENDPOINTS.EQUIP_ITEM(memberItemId));
-      
+
+      const response = await apiClient.put(SHOP_ENDPOINTS.EQUIP_ITEM(memberItemId));
+
       console.log('✅ 아이템 장착 성공:', response.data);
       return response.data;
     } catch (error) {
@@ -117,7 +137,7 @@ class ShopService {
       // 서버에서 응답을 받았지만 에러 상태코드인 경우
       const { status, data } = error.response;
       console.error(`HTTP ${status} 에러:`, data);
-      
+
       // 서버에서 제공하는 에러 메시지가 있으면 사용
       if (data?.message) {
         throw new Error(data.message);
@@ -127,7 +147,7 @@ class ShopService {
       console.error('네트워크 에러:', error.request);
       throw new Error('서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.');
     }
-    
+
     // 기본 에러 메시지
     throw new Error(defaultMessage);
   }
