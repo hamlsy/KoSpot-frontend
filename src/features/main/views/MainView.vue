@@ -24,7 +24,7 @@
 
     <!-- 3컬럼 레이아웃 래퍼 -->
     <div class="main-layout">
-      <!-- 좌측 광고 영역 -->
+      <!-- 좌측 광고 영역
       <aside class="ad-sidebar ad-sidebar-left">
         <div class="ad-container" id="google-ad-left">
           <Adsense 
@@ -32,7 +32,7 @@
             ad-slot="YOUR_AD_SLOT_LEFT"
           />
         </div>
-      </aside>
+      </aside> -->
       
       <!-- 중앙 컨텐츠 -->
       <main class="main-content-wrapper">
@@ -188,54 +188,13 @@
       </section>
 
       <!-- 인라인 광고 2: 게임 모드와 공지사항 사이 (모바일/태블릿만) -->
-      <div class="ad-inline ad-inline-middle">
+      <!-- <div class="ad-inline ad-inline-middle">
         <Adsense 
           v-if="isMobileOrTablet"
           ad-slot="YOUR_AD_SLOT_2"
         />
-      </div>
+      </div> -->
       
-      <!-- Stats Overview - 베타 버전에서는 숨김 -->
-      <!-- 
-      <div class="stats-container">
-        <router-link to="/noticeList">
-          <div class="stat-card">
-            <div class="stat-icon">📊</div>
-            <div class="stat-info">
-              <span class="stat-value">통계</span>
-              <span class="stat-label">플레이 정보</span>
-            </div>
-          </div>
-        </router-link>
-        <router-link to="/shopMain">
-          <div class="stat-card">
-            <div class="stat-icon">🛒</div>
-            <div class="stat-info">
-              <span class="stat-value">상점</span>
-              <span class="stat-label">아이템 구매</span>
-            </div>
-          </div>
-        </router-link>
-        <router-link to="/myPoints">
-          <div class="stat-card">
-            <div class="stat-icon">⭐️</div>
-            <div class="stat-info">
-              <span class="stat-value">1,234</span>
-              <span class="stat-label">포인트</span>
-            </div>
-          </div>
-        </router-link>
-        <router-link to="/friendsList">
-          <div class="stat-card">
-            <div class="stat-icon">👥</div>
-            <div class="stat-info">
-              <span class="stat-value">15</span>
-              <span class="stat-label">친구</span>
-            </div>
-          </div>
-        </router-link>
-      </div>
-      -->
 
       <!-- 공지사항 섹션 -->
       <section class="notices-section">
@@ -294,14 +253,14 @@
       </main>
       
       <!-- 우측 광고 영역 -->
-      <aside class="ad-sidebar ad-sidebar-right">
+      <!-- <aside class="ad-sidebar ad-sidebar-right">
         <div class="ad-container" id="google-ad-right">
           <Adsense 
             v-if="!isMobileOrTablet"
             ad-slot="YOUR_AD_SLOT_RIGHT"
           />
         </div>
-      </aside>
+      </aside> -->
     </div>
     
     <!-- 수정: 프로필 메뉴 오버레이 추가 -->
@@ -1074,7 +1033,7 @@ async function handleLogout() {
 }
 
 .multiplayer .mode-icon {
-  background: var(--color-secondary);
+  background: var(--color-primary);
   color: white;
 }
 

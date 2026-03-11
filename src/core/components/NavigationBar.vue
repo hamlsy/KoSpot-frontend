@@ -191,7 +191,7 @@
 
           <!-- 소셜 섹션 -->
           <div class="menu-section-label">소셜</div>
-          <router-link to="/shopMain" class="menu-item" @click="closeProfileMenu">
+          <router-link to="/shop" class="menu-item" @click="closeProfileMenu">
             <span class="menu-icon-wrap menu-icon-shop"><i class="fas fa-shopping-bag"></i></span>
             상점
           </router-link>
