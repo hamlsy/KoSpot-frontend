@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isActive" class="modal-backdrop" @click.self="$emit('close')">
+  <div v-if="isActive" class="modal-backdrop" :style="modalColorVars" @click.self="$emit('close')">
     <div class="modal-container">
       <div class="modal-header">
         <h2>방 설정 변경</h2>
@@ -229,7 +229,8 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits, onMounted, watch, nextTick } from 'vue';
+import { ref, defineProps, defineEmits, onMounted, watch, nextTick, computed } from 'vue';
+import { BRAND, TEXT, BACKGROUND } from '@/core/constants/colors.js';
 
 const props = defineProps({
   isActive: {
@@ -243,6 +244,30 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['close', 'save']);
+
+const primaryRgb = computed(() => {
+  const hex = BRAND.PRIMARY.replace('#', '');
+  const full = hex.length === 3 ? hex.split('').map((ch) => ch + ch).join('') : hex;
+  const value = Number.parseInt(full, 16);
+  return {
+    r: (value >> 16) & 255,
+    g: (value >> 8) & 255,
+    b: value & 255
+  };
+});
+
+const modalColorVars = computed(() => ({
+  '--color-primary': BRAND.PRIMARY,
+  '--color-secondary': BRAND.SECONDARY,
+  '--color-warning': BRAND.WARNING,
+  '--color-background': BACKGROUND.GRAY,
+  '--color-surface': BACKGROUND.LIGHT,
+  '--color-border': BRAND.SECONDARY,
+  '--color-text-primary': TEXT.PRIMARY,
+  '--color-text-secondary': TEXT.SECONDARY,
+  '--color-text-tertiary': TEXT.MUTED,
+  '--modal-primary-rgb': `${primaryRgb.value.r}, ${primaryRgb.value.g}, ${primaryRgb.value.b}`,
+}));
 
 // 비밀번호 섹션 ref
 const passwordSectionRef = ref(null);
@@ -346,14 +371,14 @@ onMounted(() => {
 }
 
 .modal-container {
-  background: white;
+  background: var(--color-surface);
   border-radius: 20px;
   width: 500px;
   max-width: 90%;
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
   overflow: hidden;
   animation: slideDown 0.3s ease-out;
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--color-border);
 }
 
 @keyframes slideDown {
@@ -372,14 +397,14 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 1.2rem 1.5rem;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-  background: linear-gradient(to right, rgba(240, 244, 248, 0.5), rgba(215, 227, 252, 0.5));
+  border-bottom: 1px solid var(--color-border);
+  background: linear-gradient(to right, var(--color-background), var(--color-secondary));
 }
 
 .modal-header h2 {
   margin: 0;
   font-size: 1.3rem;
-  color: #111827;
+  color: var(--color-text-primary);
   font-weight: 700;
   position: relative;
   padding-bottom: 5px;
@@ -392,14 +417,14 @@ onMounted(() => {
   left: 0;
   width: 40px;
   height: 3px;
-  background: linear-gradient(90deg, #60a5fa, #8b5cf6);
+  background: var(--color-primary);
   border-radius: 2px;
 }
 
 .close-button {
   background: rgba(240, 244, 248, 0.8);
   border: none;
-  color: #64748b;
+  color: var(--color-text-secondary);
   font-size: 1.1rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -412,8 +437,8 @@ onMounted(() => {
 }
 
 .close-button:hover {
-  color: #1e293b;
-  background: rgba(226, 232, 240, 1);
+  color: var(--color-text-primary);
+  background: var(--color-secondary);
   transform: rotate(90deg);
 }
 
@@ -421,9 +446,9 @@ onMounted(() => {
   padding: 1.5rem;
   max-height: 70vh;
   overflow-y: auto;
-  background: white;
+  background: var(--color-surface);
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-color: var(--color-secondary) transparent;
 }
 
 .modal-body::-webkit-scrollbar {
@@ -435,7 +460,7 @@ onMounted(() => {
 }
 
 .modal-body::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1;
+  background-color: var(--color-secondary);
   border-radius: 6px;
 }
 
@@ -460,7 +485,7 @@ onMounted(() => {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary);
   font-size: 0.95rem;
   letter-spacing: -0.01em;
 }
@@ -469,27 +494,27 @@ onMounted(() => {
 .form-group input[type="password"] {
   width: 100%;
   padding: 0.9rem 1rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   font-size: 0.95rem;
   outline: none;
   transition: all 0.3s ease;
-  background-color: #f8fafc;
-  color: #334155;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
 }
 
 .form-group input[type="text"]:focus,
 .form-group input[type="password"]:focus {
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
-  background-color: white;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(var(--modal-primary-rgb), 0.2);
+  background-color: var(--color-surface);
 }
 
 .form-group small {
   display: block;
   text-align: right;
   margin-top: 0.3rem;
-  color: #999;
+  color: var(--color-text-tertiary);
   font-size: 0.8rem;
 }
 
@@ -518,7 +543,7 @@ onMounted(() => {
 }
 
 .default-badge {
-  color: #60a5fa;
+  color: var(--color-primary);
   font-size: 0.75rem;
   font-weight: 500;
   margin-left: 0.25rem;
@@ -543,26 +568,26 @@ onMounted(() => {
   align-items: center;
   gap: 0.5rem;
   padding: 1.2rem 1rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   transition: all 0.3s ease;
-  background-color: #f8fafc;
+  background-color: var(--color-background);
 }
 
 .radio-content i {
   font-size: 1.5rem;
-  color: #60a5fa;
+  color: var(--color-primary);
   transition: all 0.3s ease;
 }
 
 .radio-option input:checked + .radio-content {
-  border-color: #60a5fa;
-  background: linear-gradient(135deg, rgba(240, 249, 255, 0.9), rgba(224, 242, 254, 0.9));
-  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.15);
+  border-color: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-background), var(--color-secondary));
+  box-shadow: 0 4px 12px rgba(var(--modal-primary-rgb), 0.2);
 }
 
 .radio-option input:checked + .radio-content i {
-  color: #3b82f6;
+  color: var(--color-primary);
   transform: scale(1.1);
 }
 
@@ -573,24 +598,24 @@ onMounted(() => {
 }
 
 .radio-option.disabled .radio-content {
-  background-color: #f1f5f9;
-  border-color: #e2e8f0;
+  background-color: var(--color-background);
+  border-color: var(--color-border);
   position: relative;
 }
 
 .radio-option.disabled .radio-content i {
-  color: #94a3b8;
+  color: var(--color-text-tertiary);
 }
 
 .radio-option.disabled .radio-content span {
-  color: #94a3b8;
+  color: var(--color-text-tertiary);
 }
 
 .badge-disabled {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  background: var(--color-warning);
   color: white;
   font-size: 0.65rem;
   padding: 0.2rem 0.5rem;
@@ -617,7 +642,7 @@ onMounted(() => {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary);
   font-size: 0.95rem;
   letter-spacing: -0.01em;
 }
@@ -635,35 +660,35 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  color: #334155;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.9rem;
 }
 
 .count-btn:hover:not(:disabled) {
-  background: #e2e8f0;
+  background: var(--color-secondary);
   transform: translateY(-2px);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .count-btn:disabled {
-  color: #ccc;
+  color: var(--color-text-tertiary);
   cursor: not-allowed;
 }
 
 .player-count {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary);
   min-width: 60px;
   text-align: center;
-  background: #f8fafc;
+  background: var(--color-background);
   padding: 0.5rem 0.8rem;
   border-radius: 10px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
 }
 
 .settings-group {
@@ -684,7 +709,7 @@ onMounted(() => {
 }
 
 .toggle-option:hover {
-  background: rgba(240, 244, 248, 0.5);
+  background: rgba(var(--modal-primary-rgb), 0.08);
 }
 
 .toggle-label-content {
@@ -697,13 +722,13 @@ onMounted(() => {
 .toggle-label-text {
   font-size: 0.95rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary);
   line-height: 1.4;
 }
 
 .toggle-description {
   font-size: 0.8rem;
-  color: #64748b;
+  color: var(--color-text-secondary);
   font-weight: 400;
   line-height: 1.4;
 }
@@ -729,7 +754,7 @@ onMounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #cbd5e1;
+  background-color: var(--color-secondary);
   transition: 0.4s;
   border-radius: 24px;
 }
@@ -748,7 +773,7 @@ onMounted(() => {
 }
 
 .toggle-switch input:checked + .toggle-slider {
-  background-color: #60a5fa;
+  background-color: var(--color-primary);
 }
 
 .toggle-switch input:checked + .toggle-slider:before {
@@ -756,7 +781,7 @@ onMounted(() => {
 }
 
 .toggle-switch input:focus + .toggle-slider {
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+  box-shadow: 0 0 0 3px rgba(var(--modal-primary-rgb), 0.2);
 }
 
 .private-room-notice {
@@ -764,10 +789,10 @@ onMounted(() => {
   align-items: flex-start;
   gap: 0.8rem;
   padding: 1.2rem;
-  background: linear-gradient(135deg, rgba(240, 249, 255, 0.7), rgba(224, 242, 254, 0.7));
+  background: linear-gradient(135deg, var(--color-background), var(--color-secondary));
   border-radius: 12px;
   margin-top: 1rem;
-  border: 1px solid rgba(186, 230, 253, 0.5);
+  border: 1px solid var(--color-border);
   animation: fadeIn 0.3s ease-out;
 }
 
@@ -779,19 +804,19 @@ onMounted(() => {
 .password-input {
   width: 100%;
   padding: 0.9rem 1rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   font-size: 0.95rem;
   outline: none;
   transition: all 0.3s ease;
-  background-color: white;
-  color: #334155;
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
 }
 
 .password-input:focus {
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(var(--modal-primary-rgb), 0.2);
 }
 
 .modal-footer {
@@ -799,16 +824,16 @@ onMounted(() => {
   justify-content: flex-end;
   gap: 1rem;
   padding: 1.2rem 1.5rem;
-  border-top: 1px solid rgba(226, 232, 240, 0.8);
-  background: linear-gradient(to right, rgba(240, 244, 248, 0.5), rgba(215, 227, 252, 0.5));
+  border-top: 1px solid var(--color-border);
+  background: linear-gradient(to right, var(--color-background), var(--color-secondary));
 }
 
 .cancel-button {
   padding: 0.8rem 1.5rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: white;
-  color: #64748b;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
@@ -817,15 +842,15 @@ onMounted(() => {
 }
 
 .cancel-button:hover {
-  background: #f8fafc;
-  color: #334155;
+  background: var(--color-background);
+  color: var(--color-text-primary);
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
 }
 
 .create-button {
   padding: 0.8rem 1.5rem;
-  background: linear-gradient(135deg, #60a5fa 0%, #8b5cf6 100%);
+  background: var(--color-primary);
   color: white;
   border: none;
   border-radius: 12px;
@@ -833,36 +858,19 @@ onMounted(() => {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(96, 165, 250, 0.25);
+  box-shadow: 0 4px 15px rgba(var(--modal-primary-rgb), 0.35);
   position: relative;
   overflow: hidden;
   z-index: 1;
 }
 
-.create-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, #8b5cf6 0%, #60a5fa 100%);
-  opacity: 0;
-  z-index: -1;
-  transition: opacity 0.3s ease;
-}
-
 .create-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(96, 165, 250, 0.35);
-}
-
-.create-button:hover:not(:disabled)::before {
-  opacity: 1;
+  box-shadow: 0 8px 20px rgba(var(--modal-primary-rgb), 0.45);
 }
 
 .create-button:disabled {
-  background: #cbd5e1;
+  background: var(--color-secondary);
   cursor: not-allowed;
   transform: none;
   box-shadow: none;

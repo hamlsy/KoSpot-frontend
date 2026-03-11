@@ -1,5 +1,5 @@
 <template>
-  <div class="multiplayer-room-waiting">
+  <div class="multiplayer-room-waiting" :style="roomColorVars">
     <!-- 배경 요소 -->
     <div class="mode-background"></div>
 
@@ -231,6 +231,7 @@ import FriendPanel from "@/features/friend/components/FriendPanel.vue";
 import FriendChatWindow from "@/features/friend/components/FriendChatWindow.vue";
 import UserSearchModal from "@/features/friend/components/UserSearchModal.vue";
 import { useFriendStore } from "@/features/friend/stores/friend.store.js";
+import { BRAND, TEXT, BACKGROUND } from "@/core/constants/colors.js";
 
 // Composables
 import { useRoom } from "../composables/useRoom";
@@ -265,6 +266,21 @@ if (shouldUseDummyMode && !currentUserId) {
 }
 
 const normalizedCurrentUserId = currentUserId ? currentUserId.toString() : "";
+
+const roomColorVars = computed(() => ({
+  "--color-primary": BRAND.PRIMARY,
+  "--color-secondary": BRAND.SECONDARY,
+  "--color-success": BRAND.SUCCESS,
+  "--color-warning": BRAND.WARNING,
+  "--color-danger": BRAND.DANGER,
+  "--color-info": BRAND.INFO,
+  "--color-background": BACKGROUND.GRAY,
+  "--color-surface": BACKGROUND.LIGHT,
+  "--color-border": BRAND.SECONDARY,
+  "--color-text-primary": TEXT.PRIMARY,
+  "--color-text-secondary": TEXT.SECONDARY,
+  "--color-text-tertiary": TEXT.MUTED,
+}));
 
 // Router state에서 전달받은 데이터 확인 (방 생성 시 LobbyView에서 전달)
 const routerState = history.state?.roomData || null;
@@ -962,7 +978,7 @@ const formatUpdateTime = (timestamp) => {
   height: 100vh;
   position: relative;
   padding: var(--spacing-md);
-  padding-top: 5rem;
+  padding-top: 2rem;
   overflow: hidden;
   max-width: 100vw;
 }
@@ -1079,14 +1095,14 @@ const formatUpdateTime = (timestamp) => {
 }
 
 .status-indicator.connected {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  background: var(--color-success);
   color: white;
   box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
   animation: pulse-green 2s infinite;
 }
 
 .status-indicator.disconnected {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  background: var(--color-warning);
   color: white;
   box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
   animation: pulse-orange 2s infinite;
@@ -1098,7 +1114,7 @@ const formatUpdateTime = (timestamp) => {
   justify-content: center;
   width: 20px;
   height: 20px;
-  color: #667eea;
+  color: var(--color-primary);
   font-size: 0.8rem;
 }
 
@@ -1129,21 +1145,21 @@ const formatUpdateTime = (timestamp) => {
   align-items: center;
   justify-content: center;
   padding: 3rem 1rem;
-  color: #64748b;
+  color: var(--color-text-secondary);
   gap: 1rem;
 }
 
 .loading-spinner {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--color-primary);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-size: 1.2rem;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(82, 222, 229, 0.35);
 }
 
 .loading-players p {
@@ -1156,12 +1172,12 @@ const formatUpdateTime = (timestamp) => {
 .last-update-time {
   margin-top: 1rem;
   padding-top: 0.75rem;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--color-border);
   text-align: center;
 }
 
 .last-update-time small {
-  color: #94a3b8;
+  color: var(--color-text-tertiary);
   font-size: 0.75rem;
   font-weight: 500;
   display: flex;
@@ -1254,22 +1270,9 @@ const formatUpdateTime = (timestamp) => {
     z-index: 1000;
     background: var(--color-surface);
     border-radius: var(--radius-lg);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35); /* 어두운 배경 없이 채팅창을 부각시키기 위한 그림자 */
     padding: 1rem;
     overflow: hidden;
-  }
-
-  /* 모바일 채팅창 배경 오버레이 */
-  .right-panel:not(.hidden-mobile)::before {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: -1;
-    pointer-events: none;
   }
 }
 

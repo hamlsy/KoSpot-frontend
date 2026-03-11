@@ -1,5 +1,5 @@
 <template>
-  <div class="chat-window">
+  <div class="chat-window" :style="chatColorVars">
     <div class="chat-header">
       <h3 class="chat-title">채팅방</h3>
       <!-- <div class="online-users">
@@ -116,6 +116,8 @@
 </template>
 
 <script>
+import { BRAND, TEXT, BACKGROUND } from '@/core/constants/colors.js';
+
 export default {
   name: "MultiplayerLobbyChatWindow",
 
@@ -142,6 +144,31 @@ export default {
       isInputFocused: false,
       isComposing: false,
     };
+  },
+
+  computed: {
+    chatColorVars() {
+      const hex = BRAND.PRIMARY.replace('#', '');
+      const full = hex.length === 3 ? hex.split('').map((ch) => ch + ch).join('') : hex;
+      const value = Number.parseInt(full, 16);
+      const r = (value >> 16) & 255;
+      const g = (value >> 8) & 255;
+      const b = value & 255;
+
+      return {
+        '--color-primary': BRAND.PRIMARY,
+        '--color-secondary': BRAND.SECONDARY,
+        '--color-success': BRAND.SUCCESS,
+        '--color-danger': BRAND.DANGER,
+        '--color-background': BACKGROUND.GRAY,
+        '--color-surface': BACKGROUND.LIGHT,
+        '--color-border': BRAND.SECONDARY,
+        '--color-text-primary': TEXT.PRIMARY,
+        '--color-text-secondary': TEXT.SECONDARY,
+        '--color-text-tertiary': TEXT.MUTED,
+        '--chat-primary-rgb': `${r}, ${g}, ${b}`,
+      };
+    },
   },
 
   mounted() {
@@ -298,12 +325,12 @@ export default {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: white;
+  background: var(--color-surface);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
   flex: 1;
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--color-border);
 }
 
 .chat-header {
@@ -311,15 +338,15 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.2rem;
-  border-bottom: 1px solid #f0f0f0;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-bottom: 1px solid var(--color-border);
+  background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-background) 100%);
   flex-shrink: 0;
 }
 
 .chat-title {
   margin: 0;
   font-size: 1.1rem;
-  color: #1a202c;
+  color: var(--color-text-primary);
   position: relative;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -332,7 +359,7 @@ export default {
   left: 0;
   width: 25px;
   height: 2px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--color-primary);
   border-radius: 2px;
 }
 
@@ -341,7 +368,7 @@ export default {
   align-items: center;
   gap: 0.4rem;
   font-size: 0.8rem;
-  color: #64748b;
+  color: var(--color-text-secondary);
   font-weight: 500;
 }
 
@@ -350,7 +377,7 @@ export default {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #10b981;
+  background: var(--color-success);
   animation: pulse 2s infinite;
 }
 
@@ -368,12 +395,12 @@ export default {
   flex: 1;
   padding: 0.8rem;
   overflow-y: auto;
-  background: #f8fafc;
+  background: var(--color-background);
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-color: var(--color-secondary) transparent;
 }
 
 .chat-messages::-webkit-scrollbar {
@@ -385,13 +412,13 @@ export default {
 }
 
 .chat-messages::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1;
+  background-color: var(--color-secondary);
   border-radius: 4px;
   transition: background-color 0.3s ease;
 }
 
 .chat-messages::-webkit-scrollbar-thumb:hover {
-  background-color: #94a3b8;
+  background-color: var(--color-text-tertiary);
 }
 
 /* 메시지 래퍼 스타일 */
@@ -425,7 +452,7 @@ export default {
 
 .system-content {
   font-size: 0.8rem;
-  color: #64748b;
+  color: var(--color-text-secondary);
   font-style: italic;
   font-weight: 500;
 }
@@ -461,12 +488,12 @@ export default {
 .sender-name {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--color-text-primary);
 }
 
 .message-time {
   font-size: 0.7rem;
-  color: #9ca3af;
+  color: var(--color-text-tertiary);
   font-weight: 500;
   white-space: nowrap;
 }
@@ -501,8 +528,8 @@ export default {
 
 /* 다른 사용자 말풍선 */
 .other-bubble {
-  background: white;
-  color: #374151;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
   border-bottom-left-radius: 4px;
   border: 1px solid rgba(0, 0, 0, 0.04);
 }
@@ -554,7 +581,7 @@ export default {
 
 /* 내 말풍선 */
 .my-bubble {
-  background: #3b82f6;
+  background: var(--color-primary);
   color: white;
   border-bottom-right-radius: 4px;
   border: none;
@@ -573,15 +600,15 @@ export default {
   height: 0;
   border-style: solid;
   border-width: 4px 0 0 4px;
-  border-color: #3b82f6 transparent transparent transparent;
+  border-color: var(--color-primary) transparent transparent transparent;
 }
 
 /* 채팅 입력 영역 */
 .chat-input {
   display: flex;
   padding: 0.8rem 1rem;
-  border-top: 1px solid #f0f0f0;
-  background: white;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
   flex-shrink: 0;
   gap: 0.6rem;
   align-items: center;
@@ -591,7 +618,7 @@ export default {
   flex: 1;
   display: flex;
   align-items: center;
-  background: #f8fafc;
+  background: var(--color-background);
   border-radius: 20px;
   border: 2px solid transparent;
   transition: all 0.3s ease;
@@ -599,9 +626,9 @@ export default {
 }
 
 .input-wrapper:focus-within {
-  border-color: #3b82f6;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+  box-shadow: 0 0 0 3px rgba(var(--chat-primary-rgb), 0.15);
 }
 
 .chat-input input {
@@ -611,17 +638,17 @@ export default {
   background: transparent;
   font-size: 0.85rem;
   outline: none;
-  color: #374151;
+  color: var(--color-text-primary);
   font-weight: 500;
 }
 
 .chat-input input::placeholder {
-  color: #9ca3af;
+  color: var(--color-text-tertiary);
   font-weight: 400;
 }
 
 .send-button {
-  background: #3b82f6;
+  background: var(--color-primary);
   color: white;
   border: none;
   width: 36px;
@@ -632,25 +659,25 @@ export default {
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 2px 6px rgba(var(--chat-primary-rgb), 0.3);
   transform: translateY(0);
 }
 
 .send-button:hover:not(:disabled) {
-  background: #2563eb;
+  background: var(--color-primary);
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 10px rgba(var(--chat-primary-rgb), 0.4);
 }
 
 .send-button:active:not(:disabled) {
-  background: #1d4ed8;
+  background: var(--color-primary);
   transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 2px 4px rgba(var(--chat-primary-rgb), 0.3);
 }
 
 .send-button:disabled {
-  background: #e5e7eb;
-  color: #9ca3af;
+  background: var(--color-secondary);
+  color: var(--color-text-tertiary);
   cursor: not-allowed;
   box-shadow: none;
   transform: none;
@@ -662,7 +689,7 @@ export default {
 
 /* 채팅방 닫기 버튼 */
 .close-chat-button {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: var(--color-danger);
   color: white;
   border: none;
   width: 36px;
