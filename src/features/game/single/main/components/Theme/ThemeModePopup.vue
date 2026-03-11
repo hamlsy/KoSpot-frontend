@@ -1,5 +1,5 @@
 <template>
-  <div class="theme-mode-popup" v-if="show" @click.self="closePopup">
+  <div class="theme-mode-popup" v-if="show" :style="themeColorVars" @click.self="closePopup">
     <div class="popup-content">
       <div class="popup-header">
         <h2>테마 게임</h2>
@@ -10,7 +10,7 @@
 
       <div class="popup-body">
         <!-- 왼쪽: 테마 리스트 -->
-        <div class="theme-list-container" style="background-color: #f8fafc">
+        <div class="theme-list-container" style="background-color: var(--color-background)">
           <h3 class="section-title">테마 선택</h3>
           <div class="theme-list">
             <div
@@ -45,7 +45,7 @@
         <div
           class="theme-detail-container"
           v-if="selectedThemeData"
-          style="background-color: #ffffff"
+          style="background-color: var(--color-surface)"
         >
           <div class="theme-detail-header">
             <div
@@ -206,6 +206,7 @@ import InstagramHotPlace from "@/shared/assets/images/theme/instgram-hot-place-t
 import KMovie from "@/shared/assets/images/theme/k-movie-theme.png";
 import NightMarket from "@/shared/assets/images/theme/night-market-theme.webp";
 import KPopMusicVideo from "@/shared/assets/images/theme/k-pop-music-video-theme.jpg";
+import { BRAND, TEXT, BACKGROUND } from "@/core/constants/colors.js";
 
 export default {
   name: "ThemeModePopup",
@@ -358,6 +359,20 @@ export default {
     };
   },
   computed: {
+    themeColorVars() {
+      return {
+        '--color-primary': BRAND.PRIMARY,
+        '--color-secondary': BRAND.SECONDARY,
+        '--color-success': BRAND.SUCCESS,
+        '--color-warning': BRAND.WARNING,
+        '--color-background': BACKGROUND.GRAY,
+        '--color-surface': BACKGROUND.LIGHT,
+        '--color-border': BRAND.SECONDARY,
+        '--color-text-primary': TEXT.PRIMARY,
+        '--color-text-secondary': TEXT.SECONDARY,
+        '--color-text-tertiary': TEXT.MUTED,
+      };
+    },
     selectedThemeData() {
       if (!this.selectedTheme) return null;
       return this.themes.find((theme) => theme.id === this.selectedTheme);

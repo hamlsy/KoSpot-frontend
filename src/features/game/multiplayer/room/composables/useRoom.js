@@ -24,8 +24,8 @@ import soloGameWebSocket from '@/features/game/multiplayer/roadview/services/sol
 export function useRoom(props, emit, options = {}) {
   const { toastRef = null, onGameStartMessage = null, dummyMode = false } = options || {};
   // 로컬 상태 (props 복사)
-  const localRoomData = ref({...props.roomData});
-  
+  const localRoomData = ref({ ...props.roomData });
+
   // 실시간 업데이트 상태
   const isLoadingPlayerList = ref(false);
   const lastPlayerListUpdate = ref(Date.now());
@@ -68,7 +68,7 @@ export function useRoom(props, emit, options = {}) {
     }
   };
 
-  
+
   // 각 기능별 composables 초기화
   const roomWebSocket = useRoomWebSocket();
   const roomModal = useRoomModal();
@@ -77,7 +77,7 @@ export function useRoom(props, emit, options = {}) {
 
   // props 변경 시 로컬 상태 업데이트
   watch(() => props.roomData, (newVal) => {
-    localRoomData.value = {...newVal};
+    localRoomData.value = { ...newVal };
   }, { deep: true });
 
   // Computed properties
@@ -342,7 +342,7 @@ export function useRoom(props, emit, options = {}) {
 
   // 초기 방 데이터 로딩 핸들러
   const loadInitialRoomData = async (preloadedRoomDetail = null) => {
-    
+
     try {
       isLoadingPlayerList.value = true;
 
@@ -350,24 +350,24 @@ export function useRoom(props, emit, options = {}) {
         await loadDummyRoomData('initial-dummy-mode');
         return;
       }
-      
+
       // preloadedRoomDetail이 있으면 사용, 없으면 API 호출
       let roomDetail = preloadedRoomDetail;
-      
+
       if (!roomDetail) {
         // 방 상세 정보 + 초기 플레이어 목록 조회
         roomDetail = await roomApiService.getRoomDetail(localRoomData.value.id);
       } else {
         console.log('✅ 사전 로드된 방 상세 정보 사용 (접근 권한 확인에서 받음)');
       }
-      
+
       if (!roomDetail) {
         // 방이 존재하지 않는 경우
         const error = new Error('방을 찾을 수 없습니다.');
         error.code = 'ROOM_NOT_FOUND';
         throw error;
       }
-      
+
       localRoomData.value = {
         ...localRoomData.value,
         id: roomDetail.roomId ?? localRoomData.value.id,
@@ -390,13 +390,13 @@ export function useRoom(props, emit, options = {}) {
         localRoomData.value.currentPlayerCount = transformedPlayers.length;
         console.log('✅ 초기 플레이어 목록 로딩 완료:', transformedPlayers.length, '명');
       }
-      
+
       // 마지막 업데이트 시간 갱신
       lastPlayerListUpdate.value = Date.now();
-      
+
     } catch (error) {
       console.error('❌ 초기 방 데이터 로딩 실패:', error);
-      
+
       // 더미 모드로 전환하지 않고 에러를 다시 throw하여 RoomView에서 처리하도록 함
       // RoomView에서 로비로 리다이렉트 처리
       const redirectError = new Error(error.message || '방을 조회할 수 없습니다.');
@@ -432,7 +432,7 @@ export function useRoom(props, emit, options = {}) {
   // RoomView에서 미리 구독하여 타이밍 문제 방지
   const handleLoadingStatus = (loadingStatusMessage) => {
     console.log('📥 게임 로딩 상태 수신 (RoomView):', loadingStatusMessage);
-    
+
     // soloGameWebSocket의 핸들러를 통해 SoloGameView로 전달
     // soloGameWebSocket은 싱글톤이므로 핸들러가 설정되어 있으면 자동으로 전달됨
     if (soloGameWebSocket && typeof soloGameWebSocket.handleLoadingStatus === 'function') {
@@ -443,12 +443,12 @@ export function useRoom(props, emit, options = {}) {
   // 게임 방 알림 통합 핸들러 (Spring Boot GameRoomNotification과 연동)
   const handleGameRoomNotification = (notification) => {
     console.log('📥 게임 방 알림 수신:', notification);
-    
+
     const { playerInfo, players, message } = notification;
-    
+
     try {
       isLoadingPlayerList.value = true;
-      
+
       const notificationType = notification?.type;
       const hasPlayersArray = Array.isArray(players);
       const hasPlayerInfo = !!playerInfo;
@@ -464,10 +464,10 @@ export function useRoom(props, emit, options = {}) {
         if (newHostInfo) {
           const newHostId = newHostInfo.id || newHostInfo.memberId?.toString();
           const oldHostId = localRoomData.value.hostId?.toString();
-          
+
           // 방 데이터의 hostId 업데이트
           localRoomData.value.hostId = newHostId;
-          
+
           // 플레이어 목록에서 방장 상태 업데이트
           const updatedPlayers = roomPlayer.localPlayers.value.map(player => {
             const playerId = player.id?.toString();
@@ -480,14 +480,14 @@ export function useRoom(props, emit, options = {}) {
             }
             return player;
           });
-          
+
           roomPlayer.updatePlayerList(updatedPlayers);
           emit('player-list-updated', updatedPlayers);
-          
+
           // 시스템 메시지 추가
           const hostChangeMessage = `방장이 ${newHostInfo.nickname || '플레이어'}님으로 변경되었습니다.`;
           roomChat.addSystemMessage(hostChangeMessage);
-          
+
           // 토스트 알림 표시
           if (toastRef?.value) {
             if (newHostId === props.currentUserId?.toString()) {
@@ -498,7 +498,7 @@ export function useRoom(props, emit, options = {}) {
               toastRef.value.showSuccessNotification('방장 변경', `${newHostInfo.nickname || '플레이어'}님이 새로운 방장이 되었습니다.`);
             }
           }
-          
+
           console.log(`✅ 방장 변경 완료: ${oldHostId} -> ${newHostId}`);
         }
       } else if (notificationType === 'SCREEN_STATE_UPDATED' && hasPlayerInfo) {
@@ -541,7 +541,7 @@ export function useRoom(props, emit, options = {}) {
           }
         }
       }
-      
+
       // 실시간 알림 표시
       if (toastRef?.value) {
         switch (notificationType) {
@@ -550,13 +550,13 @@ export function useRoom(props, emit, options = {}) {
               toastRef.value.showPlayerJoinNotification(playerInfo?.nickname || '플레이어');
             }
             break;
-            
+
           case 'PLAYER_LEFT':
             if (playerInfo?.memberId?.toString() !== props.currentUserId) {
               toastRef.value.showPlayerLeaveNotification(playerInfo?.nickname || '플레이어');
             }
             break;
-            
+
           case 'PLAYER_LIST_UPDATED':
             // API 명세서: 10초마다 주기적으로 발생하므로 토스트 알림은 표시하지 않음
             console.log('🔄 플레이어 목록 자동 동기화 (토스트 알림 없음)');
@@ -565,7 +565,7 @@ export function useRoom(props, emit, options = {}) {
           case 'SCREEN_STATE_UPDATED':
             // 화면 상태는 빈도가 높아 토스트 미표시
             break;
-            
+
           case 'TEAM_CHANGED':
             if (playerInfo?.memberId?.toString() === props.currentUserId) {
               // 자신의 팀 변경
@@ -581,7 +581,7 @@ export function useRoom(props, emit, options = {}) {
               );
             }
             break;
-            
+
           case 'PLAYER_KICKED':
             if (playerInfo?.memberId?.toString() === props.currentUserId) {
               // 자신이 강퇴당한 경우: 알림 표시 후 로비로 이동
@@ -599,12 +599,12 @@ export function useRoom(props, emit, options = {}) {
             break;
         }
       }
-      
+
       // 시스템 메시지 추가 (HOST_CHANGED는 이미 처리됨)
       if (message && notificationType !== 'HOST_CHANGED' && notificationType !== 'SCREEN_STATE_UPDATED') {
         roomChat.addSystemMessage(message);
       }
-      
+
       // 강퇴 처리 (자신이 강퇴당한 경우) - toastRef가 없는 경우를 위한 fallback
       if (notificationType === 'PLAYER_KICKED' && playerInfo?.memberId?.toString() === props.currentUserId) {
         // 알림이 없는 경우 기본 alert 사용 후 즉시 이동
@@ -615,10 +615,10 @@ export function useRoom(props, emit, options = {}) {
         }
         return;
       }
-      
+
       // 마지막 업데이트 시간 갱신
       lastPlayerListUpdate.value = Date.now();
-      
+
     } catch (error) {
       console.error('❌ 게임 방 알림 처리 실패:', error);
     } finally {
@@ -635,19 +635,19 @@ export function useRoom(props, emit, options = {}) {
   // 연결 상태 변경 핸들러 (재연결 등)
   const handleConnectionStatusChange = (statusEvent) => {
     console.log('🔗 연결 상태 변경:', statusEvent);
-    
+
     const { type, message } = statusEvent;
-    
+
     if (toastRef?.value) {
       switch (type) {
         case 'RECONNECTED':
           toastRef.value.showSuccessNotification('연결 복구', message);
           break;
-          
+
         case 'DISCONNECTED':
           toastRef.value.showErrorNotification('연결 끊김', message);
           break;
-          
+
         default:
           console.log('기타 연결 상태 변경:', type);
       }
@@ -657,9 +657,9 @@ export function useRoom(props, emit, options = {}) {
   // GameRoomUpdateMessage 처리 핸들러 (Spring Boot GameRoomUpdateMessage와 연동)
   const handleGameRoomSettingsUpdate = (settingsEvent) => {
     console.log('⚙️ 게임 방 설정 업데이트 수신:', settingsEvent);
-    
+
     const { type, roomId, settings, message, timestamp } = settingsEvent;
-    
+
     if (type === 'SETTINGS_UPDATED' && settings) {
       try {
         // 로컬 방 데이터 업데이트
@@ -672,9 +672,9 @@ export function useRoom(props, emit, options = {}) {
           teamCount: settings.teamCount || localRoomData.value.teamCount,
           maxPlayers: localRoomData.value.maxPlayers // 기존 값 유지
         };
-        
+
         console.log('✅ 방 설정 업데이트 완료:', localRoomData.value);
-        
+
         // 실시간 알림 표시
         if (toastRef?.value) {
           const settingNames = [];
@@ -683,26 +683,26 @@ export function useRoom(props, emit, options = {}) {
           if (settings.isTeamMode !== undefined) settingNames.push('팀 모드');
           if (settings.isPrivate !== undefined) settingNames.push('공개 설정');
           if (settings.teamCount !== undefined) settingNames.push('팀 수');
-          
+
           const settingText = settingNames.length > 0 ? settingNames.join(', ') : '방 설정';
           toastRef.value.showSettingsChangeNotification(settingText);
         }
-        
+
         // 팀 모드 변경 시 플레이어 팀 정보 초기화 필요
         if (settings.isTeamMode !== undefined && settings.isTeamMode !== isTeamMode.value) {
           console.log('🏀 팀 모드 변경 감지:', settings.isTeamMode);
           // 팀 모드 변경 시 UI 재렌더링을 위한 이벤트 발행
           emit('team-mode-changed', settings.isTeamMode);
         }
-        
+
         // 시스템 메시지 추가
         if (message) {
           roomChat.addSystemMessage(message);
         }
-        
+
         // 마지막 업데이트 시간 갱신
         lastPlayerListUpdate.value = Date.now();
-        
+
       } catch (error) {
         console.error('❌ 방 설정 업데이트 처리 실패:', error);
       }
@@ -712,26 +712,26 @@ export function useRoom(props, emit, options = {}) {
   // 게임 방 상태 변경 핸들러 (게임 시작 등)
   const handleGameRoomStatusChange = (statusEvent) => {
     console.log('📊 게임 방 상태 변경:', statusEvent);
-    
+
     const { type, data, message } = statusEvent;
-    
+
     switch (type) {
       case 'GAME_STARTED':
         // 게임 시작 처리
         console.log('🎮 게임 시작 이벤트 수신');
-        
+
         // 실시간 알림 표시
         if (toastRef?.value) {
           toastRef.value.showGameStartNotification();
         }
-        
+
         emit('start-game', statusEvent);
         break;
-        
+
       default:
         console.log('📊 기타 상태 변경:', type);
     }
-    
+
     // 시스템 메시지 추가
     if (message) {
       roomChat.addSystemMessage(message);
@@ -750,7 +750,7 @@ export function useRoom(props, emit, options = {}) {
       };
       // rounds 필드 제거 (totalRounds만 사용)
       delete transformedSettings.rounds;
-      
+
       localRoomData.value = {
         ...localRoomData.value,
         ...transformedSettings
@@ -771,12 +771,12 @@ export function useRoom(props, emit, options = {}) {
       };
       // rounds 필드 제거 (totalRounds만 사용)
       delete transformedSettings.rounds;
-      
+
       localRoomData.value = {
         ...localRoomData.value,
         ...transformedSettings
       };
-      
+
       // API 호출로 방 설정 업데이트
       const updateData = {
         title: settings.title || localRoomData.value.title,
@@ -790,33 +790,33 @@ export function useRoom(props, emit, options = {}) {
         maxPlayers: settings.maxPlayers !== undefined ? settings.maxPlayers : localRoomData.value.maxPlayers,
         poiNameVisible: settings.poiNameVisible !== undefined ? settings.poiNameVisible : localRoomData.value.poiNameVisible
       };
-      
+
       await roomApiService.updateGameRoom(localRoomData.value.id, updateData);
-      
+
       // WebSocket으로 방 설정 변경 알림
       const success = roomWebSocketService.publishRoomSettings(
         localRoomData.value.id,
         transformedSettings,
         props.currentUserId
       );
-      
+
       if (!success) {
         console.warn('⚠️ WebSocket 방 설정 변경 알림 실패');
       }
-      
+
       // 시스템 메시지 및 알림은 WebSocket으로 설정 변경 메시지를 받을 때 표시됨 (handleGameRoomSettingsUpdate)
       // 방장에게 중복 알림을 방지하기 위해 여기서는 알림을 표시하지 않음
-      
+
       // 기존 emit 유지 (하위 호환성)
       emit('update-room-settings', transformedSettings);
       roomModal.closeRoomSettings();
-      
+
       console.log('✅ 방 설정 업데이트 성공');
     } catch (error) {
       console.error('❌ 방 설정 업데이트 실패:', error);
       // 로컬 상태 복원
-      localRoomData.value = {...props.roomData};
-      
+      localRoomData.value = { ...props.roomData };
+
       // 실시간 알림 표시
       if (toastRef?.value) {
         toastRef.value.showErrorNotification('오류', '방 설정 변경에 실패했습니다.');
@@ -836,17 +836,15 @@ export function useRoom(props, emit, options = {}) {
     try {
       setDisconnectReason('leave-room');
       await disconnectWebSocket();
-      
-  
-    
-      // API 호출 (방장이 아닌 경우만)
-      if (!props.isHost) {
-        await roomApiService.leaveGameRoom(localRoomData.value.id);
-      }
-      
+
+
+
+      // API 호출 (접속자 모두 호출)
+      await roomApiService.leaveGameRoom(localRoomData.value.id);
+
       // 기존 emit 유지
       emit('leave-room');
-      
+
       console.log('✅ 방 퇴장 완료');
     } catch (error) {
       console.error('❌ 방 퇴장 실패:', error);
@@ -901,7 +899,7 @@ export function useRoom(props, emit, options = {}) {
       console.log('▶️ 게임 시작 요청이 이미 진행 중입니다.');
       return false;
     }
-    
+
     if (isDummyMode.value) {
       if (isStartingGame.value) {
         return false;
@@ -954,7 +952,7 @@ export function useRoom(props, emit, options = {}) {
 
   const kickPlayer = async () => {
     if (!roomModal.playerToKick.value) return;
-    
+
     if (isDummyMode.value) {
       const targetPlayer = roomModal.playerToKick.value;
       const updatedPlayers = roomPlayer.localPlayers.value.filter(player => player.id !== targetPlayer.id);
@@ -965,31 +963,31 @@ export function useRoom(props, emit, options = {}) {
       emit('kick-player', targetPlayer);
       return;
     }
-    
+
     try {
       const targetPlayer = roomModal.playerToKick.value;
-      
+
       // API 호출로 강퇴 실행
       await roomApiService.kickPlayer(
         localRoomData.value.id,
         targetPlayer.id
       );
-      
+
       // WebSocket으로 강퇴 이벤트 발행
       const success = roomWebSocketService.publishKickPlayer(
         localRoomData.value.id,
         targetPlayer.id,
         props.currentUserId
       );
-      
+
       if (success) {
         console.log(`✅ 강퇴 완료: ${targetPlayer.nickname}`);
       } else {
         console.warn('⚠️ WebSocket 강퇴 이벤트 발행 실패');
-      
-      
+
+
       }
-      
+
       roomModal.closeKickModal();
     } catch (error) {
       console.error('❌ 플레이어 강퇴 실패:', error);
@@ -1003,26 +1001,26 @@ export function useRoom(props, emit, options = {}) {
     const currentPlayerIndex = roomPlayer.localPlayers.value.findIndex(
       player => player.id === props.currentUserId
     );
-    
+
     if (currentPlayerIndex !== -1) {
       const previousTeamId = roomPlayer.localPlayers.value[currentPlayerIndex].teamId;
-      
+
       // 즉시 UI 업데이트
       const updatedPlayers = [...roomPlayer.localPlayers.value];
       updatedPlayers[currentPlayerIndex] = {
         ...updatedPlayers[currentPlayerIndex],
         teamId: teamId
       };
-      
+
       roomPlayer.updatePlayerList(updatedPlayers);
-      
+
       console.log(`🏀 팀 변경 즉시 UI 업데이트: ${props.currentUserId} -> 팀 ${teamId}`);
-      
+
       // 시스템 메시지 추가
       const currentPlayerNickname = roomPlayer.getCurrentPlayerNickname(props.currentUserId);
       roomChat.addSystemMessage(`${currentPlayerNickname}님이 팀을 변경했습니다.`);
     }
-    
+
     // 기존 emit 유지 (하위 호환성)
     if (currentPlayerIndex !== -1) {
       emit('join-team', { teamId, updatedPlayers: roomPlayer.localPlayers.value });
@@ -1038,7 +1036,7 @@ export function useRoom(props, emit, options = {}) {
       teamId,
       props.currentUserId
     );
-    
+
     if (success) {
       console.log(`✅ 팀 변경 이벤트 발행: ${teamId}`);
     } else {
@@ -1050,7 +1048,7 @@ export function useRoom(props, emit, options = {}) {
   const sendChatMessage = (message = null) => {
     // 파라미터로 받은 메시지 우선 사용, 없으면 chatInput에서 읽기
     const messageToSend = message !== null ? message : roomChat.chatInput.value;
-    
+
     if (!messageToSend || !messageToSend.trim()) return;
 
     if (isDummyMode.value) {
@@ -1072,14 +1070,14 @@ export function useRoom(props, emit, options = {}) {
       }
       return;
     }
-    
+
     // WebSocket으로 채팅 메시지 발행
     const success = roomWebSocketService.publishChatMessage(
       localRoomData.value.id,
       messageToSend.trim(),
       props.currentUserId
     );
-    
+
     if (success) {
       // chatInput이 아닌 경우에만 clearChatInput 호출
       if (message === null) {
@@ -1113,7 +1111,7 @@ export function useRoom(props, emit, options = {}) {
   const getTeamName = (teamId) => {
     const teamNames = {
       1: '블루',
-      2: '레드', 
+      2: '레드',
       3: '그린',
       4: '옐로우'
     };
@@ -1127,7 +1125,7 @@ export function useRoom(props, emit, options = {}) {
     try {
       console.log('🚀 RoomView 초기화 시작');
       hasReceivedPlayerListSignal.value = false;
-      
+
       // 1. 초기 환영 메시지 추가
       roomChat.addSystemMessage('채팅방에 오신 것을 환영합니다!');
       roomChat.scrollChatToBottom();
@@ -1141,7 +1139,7 @@ export function useRoom(props, emit, options = {}) {
         console.log('🧪 더미 모드로 실행 중이므로 WebSocket 연결을 생략합니다.');
         return;
       }
-      
+
       // 3. WebSocket 이벤트 핸들러 설정 (Spring Boot 채널 구조에 맞춤)
       const eventHandlers = {
         onGameRoomNotification: handleGameRoomNotification,      // 플레이어 목록 통합 알림
@@ -1152,7 +1150,7 @@ export function useRoom(props, emit, options = {}) {
         onGameStartCountdown: handleGameStartCountdown,          // 게임 시작 카운트다운
         onLoadingStatus: handleLoadingStatus                     // 게임 로딩 상태 (SoloGameView에서 사용)
       };
-      
+
       // 4. WebSocket 연결 시도
       const wsConnected = await roomWebSocketService.connectToRoom(
         localRoomData.value.id,
@@ -1162,7 +1160,7 @@ export function useRoom(props, emit, options = {}) {
 
       // 5. 방 데이터 로딩 완료 대기
       await roomDataLoadPromise;
-      
+
       if (wsConnected) {
         console.log('✅ WebSocket 연결 성공 - 실시간 모드');
         roomChat.addSystemMessage('실시간 채팅에 연결되었습니다.');
@@ -1179,9 +1177,9 @@ export function useRoom(props, emit, options = {}) {
         console.warn('⚠️ WebSocket 연결 실패 - 연결 재시도 필요');
         roomChat.addSystemMessage('채팅 연결 중... 잠시만 기다려주세요.');
       }
-      
+
       console.log('🎉 RoomView 초기화 완료');
-      
+
     } catch (error) {
       console.error('❌ RoomView 초기화 중 오류:', error);
       // 에러를 다시 throw하여 RoomView에서 처리하도록 함
@@ -1203,32 +1201,32 @@ export function useRoom(props, emit, options = {}) {
     joiningPlayers,
     isPlayerListReady,
     isStartingGame,
-    
+
     // WebSocket 및 로딩 상태
     isWebSocketConnected: computed(() => isDummyMode.value ? false : roomWebSocketService.isConnected),
     isLoadingPlayerList,
     lastPlayerListUpdate,
     isDummyMode: computed(() => isDummyMode.value),
-    
+
     // 모달 상태
     isRoomSettingsOpen: roomModal.isRoomSettingsOpen,
     isKickModalOpen: roomModal.isKickModalOpen,
     isPlayerDetailsOpen: roomModal.isPlayerDetailsOpen,
     playerToKick: roomModal.playerToKick,
     selectedPlayer: roomModal.selectedPlayer,
-    
+
     // 채팅 상태
     chatMessages: roomChat.chatMessages,
     chatInput: roomChat.chatInput,
     unreadMessages: roomChat.unreadMessages,
     chatMessagesRef: roomChat.chatMessagesRef,
-    
+
     // 플레이어 상태
     localPlayers: roomPlayer.localPlayers,
     playerMessages: roomPlayer.playerMessages,
     availableTeams: roomPlayer.availableTeams,
     maxPlayersPerTeam: roomPlayer.maxPlayersPerTeam,
-    
+
     // 방 관련 메서드
     updateRoomSettings,
     leaveRoom,
@@ -1236,7 +1234,7 @@ export function useRoom(props, emit, options = {}) {
     kickPlayer,
     joinTeam,
     sendChatMessage,
-    
+
     // 실시간 업데이트 메서드
     loadInitialRoomData,
     initializeRoom,
@@ -1245,7 +1243,7 @@ export function useRoom(props, emit, options = {}) {
     handleGameRoomSettingsUpdate,
     handleGameRoomStatusChange,
     handleGameStartCountdown,
-    
+
     // 모달 메서드
     openRoomSettings: roomModal.openRoomSettings,
     closeRoomSettings: roomModal.closeRoomSettings,
@@ -1253,12 +1251,12 @@ export function useRoom(props, emit, options = {}) {
     closePlayerDetails: roomModal.closePlayerDetails,
     confirmKickPlayer,
     closeKickModal: roomModal.closeKickModal,
-    
+
     // 채팅 메서드
     toggleChat: roomChat.toggleChat,
     scrollChatToBottom: roomChat.scrollChatToBottom,
     addSystemMessage: roomChat.addSystemMessage,
-    
+
     // 플레이어 메서드
     getCurrentPlayerNickname: roomPlayer.getCurrentPlayerNickname,
     getCurrentPlayerTeam: roomPlayer.getCurrentPlayerTeam,

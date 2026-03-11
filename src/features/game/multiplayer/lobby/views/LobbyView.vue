@@ -1,5 +1,5 @@
 <template>
-  <div class="multiplayer-container">
+  <div class="multiplayer-container" :style="lobbyColorVars">
     <!-- 일관 네비게이션바 -->
     <NavigationBar />
 
@@ -100,6 +100,7 @@ import NavigationBar from '@/core/components/NavigationBar.vue';
 import GameRoomList from '../components/RoomList.vue';
 import ChatWindow from '../../chat/components/Lobby/ChatWindow.vue';
 import CreateRoomModal from '../components/CreateRoomModal.vue';
+import { BRAND, TEXT, BACKGROUND } from '@/core/constants/colors.js';
 
 // Vue3 script setup에서 process.env 접근을 위한 정의
 // const isDevelopment = process.env.NODE_ENV === 'development';
@@ -147,6 +148,39 @@ const isInitialized = ref(false);
 const isMobile = ref(false);
 const isChatVisible = ref(false);
 const windowWidth = ref(window.innerWidth);
+
+const hexToRgb = (hex) => {
+  const normalizedHex = hex.replace('#', '');
+  const fullHex = normalizedHex.length === 3
+    ? normalizedHex.split('').map((char) => char + char).join('')
+    : normalizedHex;
+
+  const value = Number.parseInt(fullHex, 16);
+
+  return {
+    r: (value >> 16) & 255,
+    g: (value >> 8) & 255,
+    b: value & 255,
+  };
+};
+
+const primaryRgb = hexToRgb(BRAND.PRIMARY);
+
+const lobbyColorVars = computed(() => ({
+  '--color-primary': BRAND.PRIMARY,
+  '--color-secondary': BRAND.SECONDARY,
+  '--color-success': BRAND.SUCCESS,
+  '--color-warning': BRAND.WARNING,
+  '--color-danger': BRAND.DANGER,
+  '--color-info': BRAND.INFO,
+  '--color-background': BACKGROUND.GRAY,
+  '--color-surface': BACKGROUND.LIGHT,
+  '--color-border': BRAND.SECONDARY,
+  '--color-text-primary': TEXT.PRIMARY,
+  '--color-text-secondary': TEXT.SECONDARY,
+  '--color-text-tertiary': TEXT.MUTED,
+  '--lobby-primary-rgb': `${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}`,
+}));
 
 // 계산된 속성
 const formattedChatMessages = computed(() => {
@@ -421,7 +455,7 @@ onBeforeUnmount(async () => {
   align-items: center;
   justify-content: center;
   padding: 1.1rem 1.5rem;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #1d4ed8 100%);
+  background: var(--color-primary);
   color: white;
   border: none;
   border-radius: var(--radius-lg);
@@ -430,7 +464,7 @@ onBeforeUnmount(async () => {
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-normal);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 4px 12px rgba(var(--lobby-primary-rgb), 0.35);
   width: 100%;
   margin-top: auto;
 }
@@ -442,12 +476,12 @@ onBeforeUnmount(async () => {
 
 .create-room-button:hover {
   transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 8px 24px rgba(var(--lobby-primary-rgb), 0.45);
 }
 
 .create-room-button:active {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 4px 12px rgba(var(--lobby-primary-rgb), 0.35);
 }
 
 /* 로딩 오버레이 */
@@ -508,7 +542,7 @@ onBeforeUnmount(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #1d4ed8 100%);
+  background: var(--color-primary);
   color: white;
   border: none;
   border-radius: var(--radius-full);
@@ -518,7 +552,7 @@ onBeforeUnmount(async () => {
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-normal);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 12px rgba(var(--lobby-primary-rgb), 0.4);
   z-index: 50;
 }
 
@@ -528,11 +562,11 @@ onBeforeUnmount(async () => {
 
 .chat-toggle-button:hover {
   transform: translateY(-3px) scale(1.05);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 8px 24px rgba(var(--lobby-primary-rgb), 0.5);
 }
 
 .chat-toggle-button.active {
-  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  background: var(--color-primary);
 }
 
 /* 에러 토스트 */
@@ -540,11 +574,11 @@ onBeforeUnmount(async () => {
   position: fixed;
   top: 70px;
   right: 20px;
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: var(--color-danger);
   color: white;
   padding: 1rem 1.5rem;
   border-radius: 12px;
-  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.25);
   z-index: 1000;
   cursor: pointer;
   animation: slideInRight 0.3s ease-out;
@@ -560,7 +594,7 @@ onBeforeUnmount(async () => {
 
 .error-content i {
   font-size: 1.1rem;
-  color: #fef2f2;
+  color: var(--color-surface);
 }
 
 .error-content span {
@@ -600,11 +634,11 @@ onBeforeUnmount(async () => {
   position: fixed;
   top: 70px;
   left: var(--spacing-xl);
-  background: linear-gradient(135deg, var(--color-primary) 0%, #1d4ed8 100%);
+  background: var(--color-primary);
   color: white;
   padding: 1rem 1.5rem;
   border-radius: var(--radius-lg);
-  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 8px 25px rgba(var(--lobby-primary-rgb), 0.4);
   z-index: 1000;
   animation: slideInLeft 0.3s ease-out;
   max-width: 400px;
@@ -619,7 +653,7 @@ onBeforeUnmount(async () => {
 
 .dummy-content i {
   font-size: 1.1rem;
-  color: #dbeafe;
+  color: var(--color-surface);
 }
 
 .dummy-content span {

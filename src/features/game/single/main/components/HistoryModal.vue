@@ -1,6 +1,6 @@
 <template>
   <transition name="modal-fade">
-    <div v-if="show" class="history-modal-overlay" @click.self="close">
+    <div v-if="show" class="history-modal-overlay" :style="historyColorVars" @click.self="close">
       <div class="history-modal-content">
         <div class="modal-header">
           <h2>전체 기록</h2>
@@ -98,6 +98,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import roadViewMainService from '../services/roadViewMain.service';
+import { BRAND, TEXT, BACKGROUND } from '@/core/constants/colors.js';
 
 const props = defineProps({
   show: {
@@ -115,6 +116,18 @@ const currentPage = ref(0);
 const totalPages = ref(0);
 const totalElements = ref(0);
 const pageSize = ref(10);
+
+const historyColorVars = computed(() => ({
+  '--color-primary': BRAND.PRIMARY,
+  '--color-secondary': BRAND.SECONDARY,
+  '--color-warning': BRAND.WARNING,
+  '--color-background': BACKGROUND.GRAY,
+  '--color-surface': BACKGROUND.LIGHT,
+  '--color-border': BRAND.SECONDARY,
+  '--color-text-primary': TEXT.PRIMARY,
+  '--color-text-secondary': TEXT.SECONDARY,
+  '--color-text-tertiary': TEXT.MUTED,
+}));
 
 // 보이는 페이지 번호 계산
 const visiblePages = computed(() => {
@@ -250,7 +263,7 @@ watch(() => props.show, (newVal) => {
 }
 
 .history-modal-content {
-  background: white;
+  background: var(--color-surface);
   border-radius: 16px;
   max-width: 800px;
   width: 100%;
@@ -262,7 +275,7 @@ watch(() => props.show, (newVal) => {
 
 .modal-header {
   padding: 24px 32px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -272,14 +285,14 @@ watch(() => props.show, (newVal) => {
   margin: 0;
   font-size: 24px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--color-text-primary);
 }
 
 .close-button {
   background: none;
   border: none;
   font-size: 24px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   cursor: pointer;
   padding: 8px;
   display: flex;
@@ -290,8 +303,8 @@ watch(() => props.show, (newVal) => {
 }
 
 .close-button:hover {
-  background: #f3f4f6;
-  color: #1f2937;
+  background: var(--color-background);
+  color: var(--color-text-primary);
 }
 
 .modal-body {
@@ -307,7 +320,7 @@ watch(() => props.show, (newVal) => {
   align-items: center;
   justify-content: center;
   height: 300px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
 }
 
 .loading-container i {
@@ -330,13 +343,13 @@ watch(() => props.show, (newVal) => {
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  background: #f9fafb;
+  background: var(--color-background);
   border-radius: 12px;
   transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 
 .history-item:hover {
-  background: #f3f4f6;
+  background: var(--color-secondary);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
@@ -361,18 +374,18 @@ watch(() => props.show, (newVal) => {
 }
 
 .rank-mode {
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  background: var(--color-warning);
   color: white;
 }
 
 .practice-mode {
-  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  background: var(--color-primary);
   color: white;
 }
 
 .history-poi {
   font-weight: 500;
-  color: #1f2937;
+  color: var(--color-text-primary);
   min-width: 120px;
 }
 
@@ -380,14 +393,14 @@ watch(() => props.show, (newVal) => {
   display: flex;
   gap: 12px;
   font-size: 14px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
 }
 
 .history-score {
   margin: 0;
   font-weight: 600;
   font-size: 16px;
-  color: #1f2937;
+  color: var(--color-text-primary);
   margin-left: auto;
 }
 
@@ -401,21 +414,21 @@ watch(() => props.show, (newVal) => {
 
 .history-region {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   padding: 2px 8px;
-  background: #e5e7eb;
+  background: var(--color-secondary);
   border-radius: 4px;
 }
 
 .history-date {
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--color-text-tertiary);
 }
 
 .no-records {
   text-align: center;
   padding: 60px 20px;
-  color: #9ca3af;
+  color: var(--color-text-tertiary);
 }
 
 .no-records p {
@@ -424,7 +437,7 @@ watch(() => props.show, (newVal) => {
 
 .modal-footer {
   padding: 20px 32px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -438,18 +451,18 @@ watch(() => props.show, (newVal) => {
 }
 
 .page-button {
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   padding: 8px 12px;
   border-radius: 8px;
   cursor: pointer;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   transition: background-color 0.2s, border-color 0.2s;
 }
 
 .page-button:hover:not(:disabled) {
-  background: #f9fafb;
-  border-color: #d1d5db;
+  background: var(--color-background);
+  border-color: var(--color-secondary);
 }
 
 .page-button:disabled {
@@ -463,31 +476,31 @@ watch(() => props.show, (newVal) => {
 }
 
 .page-number {
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   padding: 8px 12px;
   border-radius: 8px;
   cursor: pointer;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   min-width: 40px;
   transition: background-color 0.2s, border-color 0.2s, color 0.2s;
 }
 
 .page-number:hover {
-  background: #f9fafb;
-  border-color: #d1d5db;
+  background: var(--color-background);
+  border-color: var(--color-secondary);
 }
 
 .page-number.active {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: var(--color-primary);
   color: white;
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
 }
 
 .pagination-info {
   text-align: center;
   font-size: 14px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
 }
 
 /* 애니메이션 */

@@ -1,6 +1,6 @@
 <template>
   <transition name="tutorial-modal-fade">
-    <div v-if="show" class="tutorial-overlay" @click.self="skipTutorial">
+    <div v-if="show" class="tutorial-overlay" :style="tutorialColorVars" @click.self="skipTutorial">
       <div class="tutorial-container">
         <!-- 진행 표시기 -->
         <div class="progress-dots">
@@ -78,6 +78,7 @@ import Tutorial1 from "@/shared/assets/images/tutorial/practice/tutorial_1.png";
 import Tutorial2 from "@/shared/assets/images/tutorial/practice/tutorial_2.png";
 import Tutorial4 from "@/shared/assets/images/tutorial/practice/tutorial_4.png";
 import Tutorial5 from "@/shared/assets/images/tutorial/practice/tutorial_5.png";
+import { BRAND, TEXT, BACKGROUND } from "@/core/constants/colors.js";
 
 const props = defineProps({
   show: {
@@ -90,6 +91,17 @@ const emit = defineEmits(["close", "complete"]);
 
 const currentSlide = ref(0);
 const slideDirection = ref("next");
+
+const tutorialColorVars = computed(() => ({
+  "--color-primary": BRAND.PRIMARY,
+  "--color-success": BRAND.SUCCESS,
+  "--color-secondary": BRAND.SECONDARY,
+  "--color-background": BACKGROUND.GRAY,
+  "--color-surface": BACKGROUND.LIGHT,
+  "--color-text-primary": TEXT.PRIMARY,
+  "--color-text-secondary": TEXT.SECONDARY,
+  "--color-text-tertiary": TEXT.MUTED,
+}));
 
 // 튜토리얼 슬라이드 데이터
 const slides = [
@@ -200,7 +212,7 @@ const completeTutorial = () => {
 
 /* 튜토리얼 컨테이너 */
 .tutorial-container {
-  background: #ffffff;
+  background: var(--color-surface);
   border-radius: 24px;
   width: 100%;
   max-width: 700px;
@@ -259,19 +271,19 @@ const completeTutorial = () => {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #e5e7eb;
+  background: var(--color-secondary);
   cursor: pointer;
   transition: background-color 0.18s ease, width 0.18s ease;
 }
 
 .dot.active {
-  background: #2563eb;
+  background: var(--color-primary);
   width: 32px;
   border-radius: 5px;
 }
 
 .dot:hover {
-  background: #cbd5e1;
+  background: var(--color-text-tertiary);
 }
 
 /* 닫기 버튼 */
@@ -284,7 +296,7 @@ const completeTutorial = () => {
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.05);
   border: none;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   font-size: 1.1rem;
   cursor: pointer;
   transition: background-color 0.2s, color 0.2s;
@@ -296,7 +308,7 @@ const completeTutorial = () => {
 
 .close-button:hover {
   background: rgba(0, 0, 0, 0.1);
-  color: #111827;
+  color: var(--color-text-primary);
 }
 
 /* 슬라이드 래퍼 */
@@ -361,7 +373,7 @@ const completeTutorial = () => {
   border-radius: 16px;
   /* overflow: hidden; */
   border-radius: 13px;
-  background: #f3f4f6;
+  background: var(--color-background);
   aspect-ratio: 16 / 9;
   position: relative;
 }
@@ -391,14 +403,14 @@ const completeTutorial = () => {
 .slide-title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text-primary);
   margin: 0 0 12px 0;
   line-height: 1.3;
 }
 
 .slide-text {
   font-size: 1rem;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   line-height: 1.6;
   margin: 0;
 }
@@ -410,8 +422,8 @@ const completeTutorial = () => {
   align-items: center;
   padding: 16px 20px 24px;
   flex-shrink: 0;
-  border-top: 1px solid #e5e7eb;
-  background: #ffffff;
+  border-top: 1px solid var(--color-secondary);
+  background: var(--color-surface);
   gap: 10px;
 }
 
@@ -434,14 +446,14 @@ const completeTutorial = () => {
 }
 
 .prev-button {
-  background: #f3f4f6;
-  color: #6b7280;
+  background: var(--color-background);
+  color: var(--color-text-secondary);
   margin-right: auto;
 }
 
 .prev-button:hover {
-  background: #e5e7eb;
-  color: #111827;
+  background: var(--color-secondary);
+  color: var(--color-text-primary);
 }
 
 .next-button,
@@ -450,7 +462,7 @@ const completeTutorial = () => {
 }
 
 .next-button {
-  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  background: var(--color-primary);
   color: white;
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
 }
@@ -460,7 +472,7 @@ const completeTutorial = () => {
 }
 
 .complete-button {
-  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  background: var(--color-success);
   color: white;
   box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
 }

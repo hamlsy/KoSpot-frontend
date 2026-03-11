@@ -1,6 +1,7 @@
 <template>
   <div 
     class="mvp-root" 
+    :style="mvpColorVars"
     :class="{ 'is-loaded': isLoaded, 'is-empty': !mvp && isLoaded }"
     @click="handleCardClick"
   >
@@ -115,6 +116,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { fetchDailyMvp } from '../services/dailyMvp.service.js'
+import { BRAND, TEXT, BACKGROUND } from '@/core/constants/colors.js'
 
 // ─── Emits ────────────────────────────────────────────────────────────
 const emit = defineEmits(['show-player-details']);
@@ -125,6 +127,19 @@ const mvp = ref(null)
 const isLoading = ref(true)
 const isLoaded = ref(false)
 const isError = ref(false)
+
+const mvpColorVars = computed(() => ({
+  '--color-primary': BRAND.PRIMARY,
+  '--color-secondary': BRAND.SECONDARY,
+  '--color-warning': BRAND.WARNING,
+  '--color-danger': BRAND.DANGER,
+  '--color-background': BACKGROUND.GRAY,
+  '--color-surface': BACKGROUND.LIGHT,
+  '--color-border': BRAND.SECONDARY,
+  '--color-text-primary': TEXT.PRIMARY,
+  '--color-text-secondary': TEXT.SECONDARY,
+  '--color-text-tertiary': TEXT.MUTED,
+}))
 
 // ─── Computed ─────────────────────────────────────────────────────────
 const formattedDate = computed(() => {
@@ -241,9 +256,9 @@ onMounted(async () => {
   position: relative;
   width: 100%;
   height: 260px; /* 기존 카드들의 3배 정도 높이 고정 (가로형) */
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-background) 100%);
   border-radius: 20px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   /* box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); */
   overflow: hidden;
   display: flex;
@@ -357,7 +372,7 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: #0ea5e9;
+  background: var(--color-primary);
   color: #ffffff;
   font-size: 0.9rem;
   font-weight: 600;
@@ -370,7 +385,7 @@ onMounted(async () => {
 }
 
 .empty-play-btn:hover {
-  background: #0284c7;
+  background: var(--color-primary);
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(14, 165, 233, 0.3);
 }
@@ -420,7 +435,7 @@ onMounted(async () => {
   margin: 0 0 0.5rem 0;
   font-size: 1.85rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--color-text-primary);
   letter-spacing: -0.02em;
   line-height: 1.1;
 }
@@ -555,7 +570,7 @@ onMounted(async () => {
 .rating-value {
   font-size: 2rem;
   font-weight: 800;
-  color: #0ea5e9;
+  color: var(--color-primary);
   line-height: 1;
 }
 
@@ -605,7 +620,7 @@ onMounted(async () => {
 }
 
 .stat-value.highlight {
-  color: #0ea5e9;
+  color: var(--color-primary);
 }
 
 .stat-dec {
