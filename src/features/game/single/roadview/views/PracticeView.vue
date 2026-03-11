@@ -156,10 +156,11 @@
         :showElapsedTime="true"
         :elapsedTimeText="formattedPlaytime"
         :shareLoading="isShareLoading"
-        :shareButtonText="isShareCopied ? '복사완료!' : '게임 공유'"
+        :shareButtonText="isShareCopied ? '복사완료!' : '대전 링크 생성'"
         @share="shareGame"
         @restart="nextRound"
         @exit="exitGame"
+        @toast="showToastMessage"
       />
 
       <SharedPracticeResultOverlay
@@ -177,6 +178,7 @@
         :markerImageUrl="markerImageUrl"
         @login="goToLogin"
         @restart="nextRound"
+        @toast="showToastMessage"
       />
 
       <!-- 종료 확인 모달 -->
@@ -1492,7 +1494,7 @@ export default {
     },
 
     // 토스트 메시지 표시
-    showToastMessage(message) {
+    showToastMessage(message, duration = 3000) {
       if (!this.isComponentActive) {
         return;
       }
@@ -1508,7 +1510,7 @@ export default {
         }
         this.showToast = false;
         this.toastTimeout = null;
-      }, 3000);
+      }, duration);
     },
 
     // 거리 계산 (Haversine 공식)

@@ -1,6 +1,6 @@
 <template>
   <div v-if="show" class="result-overlay">
-    <div class="result-content">
+    <div class="result-content" ref="resultContent">
       <!-- 브랜드 포인트 바 -->
       <div class="brand-bar"></div>
 
@@ -85,6 +85,17 @@
         </button>
       </div>
 
+      <!-- 결과 이미지 액션 (복사·저장·공유) -->
+      <ResultImageActions
+        :captureEl="$refs.resultContent"
+        :fileName="'kospot-shared-result'"
+        :shareTitle="'KoSpot 공유 게임 결과'"
+        :shareText="`나: ${myScore}점 vs ${sharerNickname}: ${sharerScore}점 | KoSpot에서 도전해보세요!`"
+        :currentLocation="currentLocation"
+        :guessedLocation="guessedLocation"
+        @toast="onImageActionToast"
+      />
+
       <!-- 다시하기 버튼 -->
       <div class="footer-action">
         <button class="btn-restart" type="button" @click="$emit('restart')">
@@ -98,13 +109,15 @@
 
 <script>
 import ResultMapSection from "src/features/game/single/roadview/components/Result/ResultMapSection.vue";
+import ResultImageActions from "./ResultImageActions.vue";
 
 export default {
   name: "SharedPracticeResultOverlay",
   components: {
     ResultMapSection,
+    ResultImageActions,
   },
-  emits: ["restart", "login"],
+  emits: ["restart", "login", "toast"],
   props: {
     show: {
       type: Boolean,
@@ -192,6 +205,9 @@ export default {
       return `${mins.toString().padStart(2, "0")}:${secs
         .toString()
         .padStart(2, "0")}.${fract.toString().padStart(2, "0")}`;
+    },
+    onImageActionToast(message, duration) {
+      this.$emit('toast', message, duration);
     },
   },
 };

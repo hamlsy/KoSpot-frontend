@@ -36,5 +36,13 @@ app.config.globalProperties.$env = environmentConfig;
 app.use(createPinia());
 app.use(router);
 
+// 카카오 공유 SDK 초기화 (지도 SDK와 분리된 공유 전용 SDK)
+if (window.Kakao && !window.Kakao.isInitialized()) {
+  const kakaoShareKey = process.env.VUE_APP_KAKAO_SHARE_APP_KEY;
+  if (kakaoShareKey) {
+    window.Kakao.init(kakaoShareKey);
+  }
+}
+
 // 앱 마운트
 app.mount('#app');

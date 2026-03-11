@@ -1,6 +1,6 @@
 <template>
   <div v-if="show" class="result-overlay">
-    <div class="result-content">
+    <div class="result-content" ref="resultContent">
       <!-- 브랜드 포인트 바 -->
       <div class="brand-bar"></div>
 
@@ -67,8 +67,8 @@
       <!-- 공유 유도 -->
       <div class="share-section">
         <p class="share-hint">
-          <i class="fas fa-users"></i>
-          친구들도함께 도전할 수 있게 공유해보세요!
+          <i class="fas fa-swords"></i>
+          친구와 같은 장소로 대전해보세요!
         </p>
         <ShareGameButton
           :buttonText="shareButtonText"
@@ -76,6 +76,17 @@
           @share="$emit('share')"
         />
       </div>
+
+      <!-- 결과 이미지 액션 (복사·저장·공유) -->
+      <ResultImageActions
+        :captureEl="$refs.resultContent"
+        :fileName="'kospot-practice-result'"
+        :shareTitle="'KoSpot 연습 게임 결과'"
+        :shareText="`점수: ${score}점 | 거리: ${formattedDistance} | KoSpot에서 도전해보세요!`"
+        :currentLocation="currentLocation"
+        :guessedLocation="guessedLocation"
+        @toast="onImageActionToast"
+      />
 
       <!-- 하단 버튼 행 -->
       <div class="action-row">
@@ -94,14 +105,16 @@
 <script>
 import ResultMapSection from "src/features/game/single/roadview/components/Result/ResultMapSection.vue";
 import ShareGameButton from "./ShareGameButton.vue";
+import ResultImageActions from "./ResultImageActions.vue";
 
 export default {
   name: "PracticeResultOverlay",
   components: {
     ResultMapSection,
     ShareGameButton,
+    ResultImageActions,
   },
-  emits: ["restart", "exit", "share"],
+  emits: ["restart", "exit", "share", "toast"],
   props: {
     show: {
       type: Boolean,
@@ -160,6 +173,11 @@ export default {
   computed: {
     formattedDistance() {
       return `${this.distance.toFixed(2)} km`;
+    },
+  },
+  methods: {
+    onImageActionToast(message, duration) {
+      this.$emit('toast', message, duration);
     },
   },
 };
