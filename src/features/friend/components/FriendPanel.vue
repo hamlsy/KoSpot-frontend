@@ -9,6 +9,20 @@
           <span class="friend-count">{{ friends.length }}</span>
         </div>
         <div class="header-actions">
+          <!-- 새로고침 버튼 -->
+          <button 
+            class="action-btn refresh-btn" 
+            :class="{ 'is-loading': isRefreshing }"
+            :disabled="isRefreshing"
+            @click="refreshFriends" 
+            title="새로고침"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 4v6h-6"></path>
+              <path d="M1 20v-6h6"></path>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+          </button>
           <button class="action-btn add-friend-btn" @click="openUserSearch" title="친구 추가">
             <svg viewBox="0 0 24 24" fill="none">
               <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/>
@@ -169,6 +183,8 @@
 </template>
 
 <script>
+import { useFriendStore } from '@/features/friend/stores/friend.store.js';
+
 const RANK_LABELS = {
   BRONZE: '브론즈',
   SILVER: '실버',
@@ -193,6 +209,7 @@ export default {
       searchQuery: '',
       confirmDeleteId: null,
       RANK_LABELS,
+      isRefreshing: false,
     }
   },
   computed: {
@@ -259,6 +276,21 @@ export default {
       if (event.target.closest('.user-search-modal') || event.target.closest('.modal-overlay')) return;
 
       this.$emit('close');
+    },
+    async refreshFriends() {
+      if (this.isRefreshing) return;
+      
+      this.isRefreshing = true;
+      try {
+        const store = useFriendStore();
+        await store.loadInitialData();
+      } catch (error) {
+        console.error('친구 리스트 새로고침에 실패했습니다', error);
+      } finally {
+        setTimeout(() => {
+          this.isRefreshing = false;
+        }, 1000);
+      }
     },
   },
   mounted() {
@@ -355,6 +387,21 @@ export default {
 }
 
 .action-btn svg { width: 18px; height: 18px; }
+
+.refresh-btn:hover {
+  color: var(--color-primary);
+  background: var(--color-surface-hover);
+}
+
+.refresh-btn.is-loading svg {
+  animation: rotate-cw 1s linear infinite;
+  opacity: 0.6;
+}
+
+@keyframes rotate-cw {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
 
 .add-friend-btn:hover {
   color: var(--color-primary);

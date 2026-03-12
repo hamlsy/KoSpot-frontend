@@ -242,6 +242,23 @@ export const useFriendStore = defineStore('friend', () => {
             openChats.value.shift();
         }
 
+        // 로그인 유저의 memberId 확보 (isMine 판별용)
+        let resolvedMyId = myMemberId;
+        if (!resolvedMyId) {
+            try {
+                const directMemberId = localStorage.getItem('memberId');
+                if (directMemberId) {
+                    resolvedMyId = directMemberId;
+                } else {
+                    const raw = localStorage.getItem('memberInfo');
+                    if (raw) {
+                        const parsed = JSON.parse(raw);
+                        resolvedMyId = parsed.memberId ?? parsed.id ?? null;
+                    }
+                }
+            } catch (_) { /* Ignore */ }
+        }
+
         const chatEntry = {
             friend,
             roomId: null,
@@ -274,7 +291,7 @@ export const useFriendStore = defineStore('friend', () => {
 
                 // 서버는 최신순으로 줄 수 있으므로 오래된 순 정렬
                 loadedMessages = msgArr
-                    .map((m) => _mapMessage(m, myMemberId))
+                    .map((m) => _mapMessage(m, resolvedMyId))
                     .sort((a, b) => a.timestamp - b.timestamp);
             }
 
@@ -288,21 +305,6 @@ export const useFriendStore = defineStore('friend', () => {
 
             // 3. STOMP 채팅방 구독
             if (roomId) {
-                let resolvedMyId = myMemberId;
-                if (!resolvedMyId) {
-                    try {
-                        const directMemberId = localStorage.getItem('memberId');
-                        if (directMemberId) {
-                            resolvedMyId = directMemberId;
-                        } else {
-                            const raw = localStorage.getItem('memberInfo');
-                            if (raw) {
-                                const parsed = JSON.parse(raw);
-                                resolvedMyId = parsed.memberId ?? parsed.id ?? null;
-                            }
-                        }
-                    } catch (_) { /* Ignore */ }
-                }
                 subscribeToChatRoom(roomId, (rawMsg) => {
                     onMessageReceived(roomId, rawMsg, resolvedMyId);
                 });

@@ -6,7 +6,7 @@
     :aria-label="buttonText"
     @click="$emit('share')"
   >
-    <i class="fas fa-share-alt"></i>
+    <i class="fas fa-swords"></i>
     <span>{{ disabled ? "링크 생성 중..." : buttonText }}</span>
   </button>
 </template>

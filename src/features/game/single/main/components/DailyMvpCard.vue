@@ -1,10 +1,6 @@
 <template>
-  <div 
-    class="mvp-root" 
-    :style="mvpColorVars"
-    :class="{ 'is-loaded': isLoaded, 'is-empty': !mvp && isLoaded }"
-    @click="handleCardClick"
-  >
+  <div class="mvp-root" :style="mvpColorVars" :class="{ 'is-loaded': isLoaded, 'is-empty': !mvp && isLoaded }"
+    @click="handleCardClick">
     <!-- 로딩 상태 -->
     <transition name="fade">
       <div v-if="isLoading" class="loading-overlay">
@@ -20,7 +16,7 @@
           <i class="fas fa-crown empty-icon"></i>
         </div>
         <h2 class="empty-title">TODAY'S MVP</h2>
-        <p class="empty-text">아직 MVP가 없네요!<br/>지금 당장 랭크 플레이로 MVP를 노려보세요!</p>
+        <p class="empty-text">아직 MVP가 없네요!<br />지금 당장 랭크 플레이로 MVP를 노려보세요!</p>
         <button class="empty-play-btn" @click.stop="goToRankPlay">
           랭크 게임 하러 가기 <i class="fas fa-arrow-right"></i>
         </button>
@@ -38,7 +34,7 @@
     <!-- MVP 콘텐츠 (가로형 레이아웃) -->
     <transition name="fade">
       <div v-if="mvp && isLoaded" class="mvp-content-horizontal">
-        
+
         <!-- 왼쪽: 타이틀 섹션 -->
         <div class="hz-section section-left">
           <div class="title-eyebrow">
@@ -46,7 +42,7 @@
           </div>
           <h1 class="title-main">TODAY'S MVP</h1>
           <div class="title-date">{{ formattedDate }}</div>
-          
+
           <!-- 모바일/좁은 화면에선 이 타이틀 밑에 마커 이미지가 오도록 재배치될 수 있음 -->
         </div>
 
@@ -54,13 +50,8 @@
         <div class="hz-section section-center">
           <div class="marker-wrapper">
             <div class="marker-frame">
-              <img
-                v-if="mvp.equippedMarkerImageUrl"
-                :src="mvp.equippedMarkerImageUrl"
-                :alt="mvp.nickname"
-                class="marker-img"
-                @error="onImgError"
-              />
+              <img v-if="mvp.equippedMarkerImageUrl" :src="mvp.equippedMarkerImageUrl" :alt="mvp.nickname"
+                class="marker-img" @error="onImgError" />
               <div v-else class="marker-placeholder">
                 <span>{{ mvp.nickname?.charAt(0)?.toUpperCase() }}</span>
               </div>
@@ -86,7 +77,8 @@
         <div class="hz-section section-right">
           <div class="rating-box">
             <span class="rating-label">레이팅 점수</span>
-            <span class="rating-value">{{ mvp.ratingScore?.toLocaleString() }} <span class="rating-unit">RP</span></span>
+            <span class="rating-value">{{ mvp.ratingScore?.toLocaleString() }} <span
+                class="rating-unit">RP</span></span>
           </div>
 
           <div class="stats-row">
@@ -100,7 +92,7 @@
               <div class="stat-value">{{ mvp.poiName || '-' }}</div>
             </div>
           </div>
-<!-- 
+          <!-- 
           <div class="interaction-hint">
             <span>자세히 보기</span>
             <i class="fas fa-chevron-right"></i>
@@ -196,7 +188,7 @@ function formatTierName(tier) {
 
 function formatTierLevel(level) {
   if (!level) return 'I';
-  
+
   const levelMap = {
     'ONE': 'I',
     'TWO': 'II',
@@ -204,11 +196,11 @@ function formatTierLevel(level) {
     'FOUR': 'IV',
     'FIVE': 'V'
   };
-  
+
   if (levelMap[level.toUpperCase()]) {
     return levelMap[level.toUpperCase()];
   }
-  
+
   return level.toString();
 }
 
@@ -221,7 +213,7 @@ onMounted(async () => {
   try {
     const response = await fetchDailyMvp()
     const responseData = response.data || response;
-    
+
     // API 응답 구조를 명확히 판별하여 처리
     if (responseData && typeof responseData === 'object' && 'isSuccess' in responseData) {
       if (responseData.isSuccess) {
@@ -234,7 +226,7 @@ onMounted(async () => {
       // 구조가 다르거나 데이터가 직접 포함된 경우 fallback 처리
       mvp.value = responseData?.result !== undefined ? responseData.result : responseData;
     }
-    
+
     // 데이터 유효성 추가 검사 (빈 객체 등)
     if (mvp.value && typeof mvp.value === 'object' && Object.keys(mvp.value).length === 0) {
       mvp.value = null;
@@ -242,7 +234,7 @@ onMounted(async () => {
   } catch (e) {
     console.error('MVP fetch error:', e)
     isError.value = true
-    mvp.value = null; 
+    mvp.value = null;
   } finally {
     isLoading.value = false
     isLoaded.value = true
@@ -255,14 +247,16 @@ onMounted(async () => {
 .mvp-root {
   position: relative;
   width: 100%;
-  height: 260px; /* 기존 카드들의 3배 정도 높이 고정 (가로형) */
+  height: 260px;
+  /* 기존 카드들의 3배 정도 높이 고정 (가로형) */
   background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-background) 100%);
   border-radius: 20px;
   border: 1px solid var(--color-border);
   /* box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); */
   overflow: hidden;
   display: flex;
-  min-height: 260px; /* 고정 최소 높이 설정 (내부 absolute 요소들 때문) */
+  min-height: 260px;
+  /* 고정 최소 높이 설정 (내부 absolute 요소들 때문) */
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
@@ -311,9 +305,10 @@ onMounted(async () => {
   animation: pulse 1.5s ease-in-out infinite;
 }
 
-.error-icon { 
-  font-size: 2rem; 
-  color: #ef4444; /* 빨간색 계열 */
+.error-icon {
+  font-size: 2rem;
+  color: #ef4444;
+  /* 빨간색 계열 */
 }
 
 .error-text {
@@ -372,7 +367,7 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: var(--color-primary);
+  background: #f59e0b;
   color: #ffffff;
   font-size: 0.9rem;
   font-weight: 600;
@@ -385,7 +380,7 @@ onMounted(async () => {
 }
 
 .empty-play-btn:hover {
-  background: var(--color-primary);
+  background: #f59e0b;
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(14, 165, 233, 0.3);
 }
@@ -537,17 +532,35 @@ onMounted(async () => {
 }
 
 /* 티어 심볼 색상 */
-.tier-bronze .tier-icon { color: #b45309; }
-.tier-silver .tier-icon { color: #64748b; }
-.tier-gold .tier-icon { color: #ca8a04; }
-.tier-platinum .tier-icon { color: #0891b2; }
-.tier-diamond .tier-icon { color: #0ea5e9; }
-.tier-master .tier-icon { color: #7c3aed; }
+.tier-bronze .tier-icon {
+  color: #b45309;
+}
+
+.tier-silver .tier-icon {
+  color: #64748b;
+}
+
+.tier-gold .tier-icon {
+  color: #ca8a04;
+}
+
+.tier-platinum .tier-icon {
+  color: #0891b2;
+}
+
+.tier-diamond .tier-icon {
+  color: #0ea5e9;
+}
+
+.tier-master .tier-icon {
+  color: #7c3aed;
+}
 
 /* 오른쪽: 점수/스탯 표시 */
 .section-right {
   flex: 0 0 32%;
-  align-items: flex-end; /* 오른쪽 정렬 지원, 세부영역은 우측으로 붙임 */
+  align-items: flex-end;
+  /* 오른쪽 정렬 지원, 세부영역은 우측으로 붙임 */
   background: #f8fafc;
   border-left: 1px solid #f1f5f9;
 }
@@ -647,23 +660,40 @@ onMounted(async () => {
 }
 
 /* ─── Transitions ─────────────────────────────────────────────────── */
-.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* ─── Responsive ──────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .mvp-root {
     height: auto;
-    min-height: 260px; /* 모바일에서도 최소 높이 유지 */
+    min-height: 260px;
+    /* 모바일에서도 최소 높이 유지 */
   }
 
   .mvp-content-horizontal {
