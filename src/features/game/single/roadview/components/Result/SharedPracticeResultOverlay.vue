@@ -29,7 +29,7 @@
           <p class="card-name">{{ sharerNickname }}</p>
           <p class="card-score-number">{{ sharerScore }}</p>
           <p class="card-score-unit">점</p>
-          
+
           <div class="card-meta-list">
             <div class="meta-badge">
               <i class="fas fa-stopwatch"></i> {{ formatPlaytime(sharerPlaytime) }}
@@ -50,7 +50,7 @@
           <p class="card-name">나</p>
           <p class="card-score-number card-score-number--me">{{ myScore }}</p>
           <p class="card-score-unit">점</p>
-          
+
           <div class="card-meta-list">
             <div class="meta-badge meta-badge--me">
               <i class="fas fa-stopwatch"></i> {{ formatPlaytime(myPlaytime) }}
@@ -64,13 +64,9 @@
 
       <!-- 지도 -->
       <div class="map-wrapper" :class="{ 'map-expanded': isMapExpanded }">
-        <ResultMapSection
-          :currentLocation="currentLocation"
-          :guessedLocation="guessedLocation"
-          :markerImageUrl="markerImageUrl"
-          :isExpanded="isMapExpanded"
-          @toggle-expand="isMapExpanded = !isMapExpanded"
-        />
+        <ResultMapSection :currentLocation="currentLocation" :guessedLocation="guessedLocation"
+          :markerImageUrl="markerImageUrl" :isExpanded="isMapExpanded"
+          @toggle-expand="isMapExpanded = !isMapExpanded" />
       </div>
 
       <!-- 로그인 CTA -->
@@ -86,20 +82,12 @@
       </div>
 
       <!-- 결과 이미지 액션 (복사·저장·공유) -->
-      <ResultImageActions
-        :fileName="'kospot-shared-result'"
-        :shareTitle="'KoSpot 공유 게임 결과'"
+      <ResultImageActions :fileName="'kospot-shared-result'" :shareTitle="'KoSpot 공유 게임 결과'"
         :shareText="`나: ${myScore}점 vs ${sharerNickname}: ${sharerScore}점 | KoSpot에서 도전해보세요!`"
-        :currentLocation="currentLocation"
-        :guessedLocation="guessedLocation"
-        :myScore="myScore"
-        :sharerScore="sharerScore"
-        :sharerNickname="sharerNickname"
-        :comparisonOutcome="comparisonOutcome"
-        :poiName="poiName"
-        :fullAddress="fullAddress"
-        @toast="onImageActionToast"
-      />
+        :currentLocation="currentLocation" :guessedLocation="guessedLocation" :myScore="myScore"
+        :sharerScore="sharerScore" :sharerNickname="sharerNickname" :comparisonOutcome="comparisonOutcome"
+        :myPlaytime="myPlaytime" :myHintsUsed="myHintsUsed" :sharerPlaytime="sharerPlaytime"
+        :sharerHintsUsed="sharerHintsUsed" :poiName="poiName" :fullAddress="fullAddress" @toast="onImageActionToast" />
 
       <!-- 다시하기 버튼 -->
       <div class="footer-action">
@@ -165,6 +153,14 @@ export default {
       default: null,
     },
     markerImageUrl: {
+      type: String,
+      default: null,
+    },
+    poiName: {
+      type: String,
+      default: null,
+    },
+    fullAddress: {
       type: String,
       default: null,
     },
@@ -344,9 +340,11 @@ export default {
 .outcome-win .outcome-icon {
   color: #0d9488;
 }
+
 .outcome-tie .outcome-icon {
   color: #6b7280;
 }
+
 .outcome-lose .outcome-icon {
   color: #d97706;
 }
@@ -526,7 +524,8 @@ export default {
 
 .map-expanded :deep(.result-map-container) {
   flex: 1;
-  height: 100% !important; /* 모바일 대응 높이 무시 */
+  height: 100% !important;
+  /* 모바일 대응 높이 무시 */
 }
 
 /* ═══════════════════════════════════════
@@ -634,51 +633,118 @@ export default {
 }
 
 @media (max-height: 850px) {
-  .result-header { padding: 10px 22px 0; }
+  .result-header {
+    padding: 10px 22px 0;
+  }
+
   .outcome-hero {
     margin: 10px 22px;
     padding: 12px 16px 10px;
   }
+
   .outcome-icon-wrap {
-    width: 42px; height: 42px;
+    width: 42px;
+    height: 42px;
   }
-  .outcome-icon { font-size: 1.1rem; }
-  .outcome-label-text { font-size: 1.1rem; }
+
+  .outcome-icon {
+    font-size: 1.1rem;
+  }
+
+  .outcome-label-text {
+    font-size: 1.1rem;
+  }
+
   .comparison-section {
     margin: 0 22px 10px;
   }
-  .compare-card { padding: 8px; }
-  .card-score-number { font-size: 1.6rem; }
+
+  .compare-card {
+    padding: 8px;
+  }
+
+  .card-score-number {
+    font-size: 1.6rem;
+  }
+
   .map-wrapper {
     margin: 0 22px 10px;
   }
+
   .map-wrapper :deep(.result-map-container) {
     height: 140px;
   }
-  .cta-section { margin: 0 22px 10px; }
-  .cta-text-row { padding: 6px 14px; }
-  .btn-login { padding: 10px 16px; font-size: 0.85rem; }
-  .footer-action { padding: 0 22px 10px; }
-  .btn-restart { padding: 10px; }
+
+  .cta-section {
+    margin: 0 22px 10px;
+  }
+
+  .cta-text-row {
+    padding: 6px 14px;
+  }
+
+  .btn-login {
+    padding: 10px 16px;
+    font-size: 0.85rem;
+  }
+
+  .footer-action {
+    padding: 0 22px 10px;
+  }
+
+  .btn-restart {
+    padding: 10px;
+  }
 }
 
 @media (max-height: 700px) {
-  .result-header { padding: 6px 22px 0; }
+  .result-header {
+    padding: 6px 22px 0;
+  }
+
   .outcome-hero {
     margin: 6px 22px;
     padding: 8px 16px;
   }
-  .comparison-section { margin: 0 22px 6px; }
-  .card-score-number { font-size: 1.4rem; }
-  .meta-badge { font-size: 0.65rem; padding: 2px 6px; }
-  .map-wrapper { margin: 0 22px 6px; }
+
+  .comparison-section {
+    margin: 0 22px 6px;
+  }
+
+  .card-score-number {
+    font-size: 1.4rem;
+  }
+
+  .meta-badge {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+  }
+
+  .map-wrapper {
+    margin: 0 22px 6px;
+  }
+
   .map-wrapper :deep(.result-map-container) {
     height: 100px;
   }
-  .cta-section { margin: 0 22px 6px; }
-  .cta-copy { font-size: 0.7rem; }
-  .btn-login, .btn-restart { padding: 8px; font-size: 0.8rem; }
-  .footer-action { padding: 0 22px 8px; }
+
+  .cta-section {
+    margin: 0 22px 6px;
+  }
+
+  .cta-copy {
+    font-size: 0.7rem;
+  }
+
+  .btn-login,
+  .btn-restart {
+    padding: 8px;
+    font-size: 0.8rem;
+  }
+
+  .footer-action {
+    padding: 0 22px 8px;
+  }
 }
 
 /* ═══════════════════════════════════════
@@ -688,6 +754,7 @@ export default {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -698,6 +765,7 @@ export default {
     opacity: 0;
     transform: translateY(12px) scale(0.98);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -709,6 +777,7 @@ export default {
     opacity: 0;
     transform: translateY(6px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -716,6 +785,7 @@ export default {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .result-overlay,
   .result-content,
   .outcome-hero {

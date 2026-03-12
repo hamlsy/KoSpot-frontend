@@ -62,13 +62,9 @@
 
       <!-- 지도 -->
       <div class="map-wrapper" :class="{ 'map-expanded': isMapExpanded }">
-        <ResultMapSection
-          :currentLocation="currentLocation"
-          :guessedLocation="guessedLocation"
-          :markerImageUrl="markerImageUrl"
-          :isExpanded="isMapExpanded"
-          @toggle-expand="isMapExpanded = !isMapExpanded"
-        />
+        <ResultMapSection :currentLocation="currentLocation" :guessedLocation="guessedLocation"
+          :markerImageUrl="markerImageUrl" :isExpanded="isMapExpanded"
+          @toggle-expand="isMapExpanded = !isMapExpanded" />
       </div>
 
       <!-- 공유 유도 -->
@@ -77,29 +73,15 @@
           <i class="fas fa-swords"></i>
           친구와 같은 장소로 대전해보세요!
         </p>
-        <ShareGameButton
-          :buttonText="shareButtonText"
-          :disabled="shareLoading"
-          @share="$emit('share')"
-        />
+        <ShareGameButton :buttonText="shareButtonText" :disabled="shareLoading" @share="$emit('share')" />
       </div>
 
       <!-- 결과 이미지 액션 (복사·저장·공유) -->
-      <ResultImageActions
-        :fileName="'kospot-practice-result'"
-        :shareTitle="'KoSpot 연습 게임 결과'"
+      <ResultImageActions :fileName="'kospot-practice-result'" :shareTitle="'KoSpot 연습 게임 결과'"
         :shareText="`점수: ${score}점 | 거리: ${formattedDistance} | 힌트: ${hintsUsed}회 | 소요 시간: ${elapsedTimeText} | KoSpot에서 도전해보세요!`"
-        :currentLocation="currentLocation"
-        :guessedLocation="guessedLocation"
-        :score="score"
-        :distanceText="formattedDistance"
-        :elapsedTimeText="elapsedTimeText"
-        :showElapsedTime="showElapsedTime"
-        :hintsUsed="hintsUsed"
-        :poiName="poiName"
-        :fullAddress="fullAddress"
-        @toast="onImageActionToast"
-      />
+        :currentLocation="currentLocation" :guessedLocation="guessedLocation" :score="score"
+        :distanceText="formattedDistance" :elapsedTimeText="elapsedTimeText" :showElapsedTime="showElapsedTime"
+        :hintsUsed="hintsUsed" :poiName="poiName" :fullAddress="fullAddress" @toast="onImageActionToast" />
 
       <!-- 하단 버튼 행 -->
       <div class="action-row">
@@ -443,7 +425,8 @@ export default {
 
 .map-expanded :deep(.result-map-container) {
   flex: 1;
-  height: 100% !important; /* 모바일 대응 높이 무시 */
+  height: 100% !important;
+  /* 모바일 대응 높이 무시 */
 }
 
 /* ═══════════════════════════════════════
@@ -569,40 +552,51 @@ export default {
   .result-header {
     padding: 12px 22px 0;
   }
+
   .score-hero {
     padding: 10px 22px 0;
   }
+
   .score-ring {
     width: 85px;
     height: 85px;
     border-width: 3px;
   }
+
   .score-number {
     font-size: 1.7rem;
   }
+
   .stats-row {
     margin: 12px 22px;
   }
+
   .stat-item {
     padding: 10px 8px;
   }
+
   .location-section,
   .map-wrapper,
   .share-section {
     margin-bottom: 12px;
   }
+
   .location-section-header {
     padding: 7px 14px;
   }
+
   .location-body {
     padding: 8px 14px;
   }
+
   .share-section {
     padding: 8px 14px;
   }
+
   .action-row {
     padding: 0 22px 14px;
   }
+
   .map-wrapper :deep(.result-map-container) {
     height: 150px;
   }
@@ -612,34 +606,43 @@ export default {
   .result-header {
     padding: 8px 22px 0;
   }
+
   .score-hero {
     padding: 6px 22px 0;
   }
+
   .score-ring {
     width: 65px;
     height: 65px;
     border-width: 2px;
   }
+
   .score-number {
     font-size: 1.4rem;
   }
+
   .stats-row {
     margin: 8px 22px;
   }
+
   .stat-item {
     padding: 6px 4px;
   }
+
   .location-section,
   .map-wrapper,
   .share-section {
     margin-bottom: 8px;
   }
+
   .share-section {
     padding: 6px 14px;
   }
+
   .action-row {
     padding: 0 22px 10px;
   }
+
   .map-wrapper :deep(.result-map-container) {
     height: 120px;
   }
@@ -652,6 +655,7 @@ export default {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -662,6 +666,7 @@ export default {
     opacity: 0;
     transform: translateY(12px) scale(0.98);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -673,6 +678,7 @@ export default {
     transform: scale(0.7);
     opacity: 0;
   }
+
   to {
     transform: scale(1);
     opacity: 1;
@@ -680,6 +686,7 @@ export default {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .result-overlay,
   .result-content,
   .score-ring {

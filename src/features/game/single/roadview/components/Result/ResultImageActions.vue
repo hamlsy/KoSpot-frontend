@@ -3,35 +3,20 @@
     <!-- 액션 버튼 행 -->
     <div class="action-btn-row">
       <!-- 결과 복사 (PC 전용) -->
-      <button
-        v-if="!isMobile"
-        class="action-btn action-btn--copy"
-        :class="{ 'action-btn--done': copyDone }"
-        :disabled="isCapturing"
-        @click="handleCopy"
-        title="결과 이미지 복사"
-      >
+      <button v-if="!isMobile" class="action-btn action-btn--copy" :class="{ 'action-btn--done': copyDone }"
+        :disabled="isCapturing" @click="handleCopy" title="결과 이미지 복사">
         <i :class="copyDone ? 'fas fa-check' : 'fas fa-copy'"></i>
         <span>{{ copyDone ? '복사됨' : '결과 복사' }}</span>
       </button>
 
       <!-- 사진 저장 -->
-      <button
-        class="action-btn action-btn--save"
-        :disabled="isCapturing"
-        @click="handleSave"
-        title="결과 이미지 저장"
-      >
+      <button class="action-btn action-btn--save" :disabled="isCapturing" @click="handleSave" title="결과 이미지 저장">
         <i class="fas fa-download"></i>
-        <span>사진 저장</span>
+        <span>결과 저장</span>
       </button>
 
       <!-- 공유 버튼 -->
-      <button
-        class="action-btn action-btn--share"
-        @click.stop="toggleSharePanel"
-        title="SNS 공유"
-      >
+      <button class="action-btn action-btn--share" @click.stop="toggleSharePanel" title="SNS 공유">
         <i class="fas fa-paper-plane"></i>
         <span>공유하기</span>
       </button>
@@ -55,11 +40,7 @@
 
         <div class="share-options">
           <!-- 기기 공유 (Web Share API - 모바일 우선) -->
-          <button
-            v-if="supportsWebShare"
-            class="share-option-btn share-option-btn--device"
-            @click="handleWebShare"
-          >
+          <button v-if="supportsWebShare" class="share-option-btn share-option-btn--device" @click="handleWebShare">
             <div class="share-icon-wrap share-icon-wrap--device">
               <i class="fas fa-share-from-square"></i>
             </div>
@@ -70,20 +51,19 @@
           <button class="share-option-btn share-option-btn--twitter" @click="shareToTwitter">
             <div class="share-icon-wrap share-icon-wrap--twitter">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="16" height="16">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.742l7.732-8.835L1.254 2.25H8.08l4.259 5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                <path
+                  d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.742l7.732-8.835L1.254 2.25H8.08l4.259 5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
               </svg>
             </div>
             <span>X (트위터)</span>
           </button>
 
           <!-- 카카오톡 -->
-          <button
-            class="share-option-btn share-option-btn--kakao"
-            @click="shareToKakao"
-          >
+          <button class="share-option-btn share-option-btn--kakao" @click="shareToKakao">
             <div class="share-icon-wrap share-icon-wrap--kakao">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black" width="16" height="16">
-                <path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.685 1.645 5.025 4.125 6.374L5.25 20.25l4.077-2.178A10.6 10.6 0 0012 18c5.523 0 10-3.477 10-7.5S17.523 3 12 3z"/>
+                <path
+                  d="M12 3C6.477 3 2 6.477 2 10.5c0 2.685 1.645 5.025 4.125 6.374L5.25 20.25l4.077-2.178A10.6 10.6 0 0012 18c5.523 0 10-3.477 10-7.5S17.523 3 12 3z" />
               </svg>
             </div>
             <span>카카오톡</span>
@@ -106,11 +86,8 @@
           </button>
 
           <!-- 링크 복사 -->
-          <button
-            class="share-option-btn share-option-btn--link"
-            :class="{ 'share-option-btn--done': linkCopied }"
-            @click="copyLink"
-          >
+          <button class="share-option-btn share-option-btn--link" :class="{ 'share-option-btn--done': linkCopied }"
+            @click="copyLink">
             <div class="share-icon-wrap share-icon-wrap--link">
               <i :class="linkCopied ? 'fas fa-check' : 'fas fa-link'"></i>
             </div>
@@ -153,6 +130,8 @@ export default {
     elapsedTimeText: { type: String, default: '' },
     /** 소요시간 표시 여부 */
     showElapsedTime: { type: Boolean, default: false },
+    /** 사용한 힌트 개수 */
+    hintsUsed: { type: Number, default: 0 },
     /** 정답 장소명 */
     poiName: { type: String, default: '' },
     /** 정답 주소 */
@@ -166,6 +145,14 @@ export default {
     sharerNickname: { type: String, default: '' },
     /** 승/패/무 ('win'|'lose'|'tie') */
     comparisonOutcome: { type: String, default: '' },
+    /** 공유자 소요시간 (ms) */
+    sharerPlaytime: { type: Number, default: 0 },
+    /** 공유자 사용 힌트 횟수 */
+    sharerHintsUsed: { type: Number, default: 0 },
+    /** 내 소요시간 (ms) */
+    myPlaytime: { type: Number, default: 0 },
+    /** 내 사용 힌트 횟수 */
+    myHintsUsed: { type: Number, default: 0 },
   },
   data() {
     return {
@@ -178,8 +165,8 @@ export default {
   },
   watch: {
     currentLocation() { this.cachedBlob = null; },
-    score()           { this.cachedBlob = null; },
-    myScore()         { this.cachedBlob = null; },
+    score() { this.cachedBlob = null; },
+    myScore() { this.cachedBlob = null; },
   },
   computed: {
     isMobile() {
@@ -202,7 +189,7 @@ export default {
       const CARD_W = 420;
       // 시스템 폰트마다 baseline이 달라 html2canvas에서 텍스트가 아래로 밀리는 현상 방지.
       // 맑은 고딕, 애플-SD 계열 등 한글 폰트를 명시적으로 지정
-      const FONT   = '"Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
+      const FONT = '"Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
 
       const card = document.createElement('div');
       card.style.cssText = [
@@ -221,10 +208,9 @@ export default {
       // CSS 리셋: html2canvas가 렌더링할 때 영향을 최소화하도록 리셋
       const style = document.createElement('style');
       style.textContent = `
-        * { margin:0; padding:0; box-sizing:border-box; }
-        /* html2canvas 텍스트 아래 치우침(baseline 오차) 보정을 위한 공통 위로 올림 */
-        .txt-fix { display: inline-block; transform: translateY(-3%); }
-      `;
+  * { margin:0; padding:0; box-sizing:border-box; line-height:normal; }
+  .txt-fix { display: inline-block; transform: translateY(-50%);}
+`;
       card.appendChild(style);
 
       // ① 브랜드 바
@@ -239,11 +225,11 @@ export default {
       // 플렉스로 맞추면 아이콘 내부 텍스트도 중앙이 엇나갈 수 있어 padding이나 line-height 미세조정 사용
       headerIcon.style.cssText = 'width:30px;height:30px;border-radius:50%;background:#33fbe8;display:flex;align-items:center;justify-content:center;font-size:0.8rem;flex-shrink:0;margin-right:9px;';
       headerIcon.innerHTML = '<span class="txt-fix" style="font-size:16px;">📍</span>';
-      
+
       const headerTitle = document.createElement('span');
       headerTitle.style.cssText = 'font-size:0.95rem;font-weight:700;color:#6b7280;letter-spacing:0.02em;';
       headerTitle.innerHTML = `<span class="txt-fix">${this.isSharedMode ? '공유 게임 결과' : '게임 결과'}</span>`;
-      
+
       header.appendChild(headerIcon);
       header.appendChild(headerTitle);
       card.appendChild(header);
@@ -255,14 +241,14 @@ export default {
         const hero = document.createElement('div');
         const oc = this.comparisonOutcome || 'tie';
         hero.style.cssText = `margin:14px 22px;border-radius:18px;padding:20px 16px 16px;text-align:center;border:1.5px solid ${outcomeColors[oc] || '#e5e7eb'};background:#f8fafc;`;
-        
+
         const heroLabel = document.createElement('p');
         heroLabel.style.cssText = 'margin:0 0 8px;padding:0;font-size:1.3rem;font-weight:800;color:#111827;line-height:1;';
         heroLabel.innerHTML = `<span class="txt-fix">${outcomeLabels[oc] || ''}</span>`;
         hero.appendChild(heroLabel);
-        
+
         const deltaBadge = document.createElement('div');
-        const delta = Math.abs((this.myScore || 0) - (this.sharerScore || 0));
+        const delta = Number(Math.abs((this.myScore || 0) - (this.sharerScore || 0)).toFixed(2));
         if (delta > 0) {
           deltaBadge.style.cssText = 'display:inline-block;padding:5px 12px 3px;border-radius:999px;font-size:0.75rem;font-weight:700;background:rgba(0,0,0,0.07);color:#111827;line-height:1;';
           deltaBadge.innerHTML = `<span class="txt-fix">${delta}점 차이</span>`;
@@ -274,11 +260,13 @@ export default {
         const cmp = document.createElement('div');
         cmp.style.cssText = 'display:grid;grid-template-columns:1fr 36px 1fr;margin:0 22px 16px;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden;';
 
-        const formatSecs = (s) => {
-          if (!s) return '0초';
-          const m = Math.floor(s / 60);
-          const rr = s % 60;
-          return m > 0 ? `${m}분 ${rr}초` : `${rr}초`;
+        const formatSecs = (ms) => {
+          if (!ms || ms === 0) return '00:00.00';
+          const totalSeconds = ms / 1000;
+          const mins = Math.floor(totalSeconds / 60);
+          const secs = Math.floor(totalSeconds % 60);
+          const fract = Math.floor((ms % 1000) / 10);
+          return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${fract.toString().padStart(2, '0')}`;
         };
 
         const makeCard = (name, sc, isMe, playtime, hints) => {
@@ -313,17 +301,17 @@ export default {
         // ── 연습 모드 레이아웃 ──────────────────────────────────────
         const scoreHero = document.createElement('div');
         scoreHero.style.cssText = 'display:flex;flex-direction:column;align-items:center;padding:24px 22px 8px;';
-        
+
         const ring = document.createElement('div');
         // line-height 오차를 줄이기 위해 ring 내부도 padding 보정
         ring.style.cssText = 'width:110px;height:110px;border-radius:50%;border:4px solid #33fbe8;background:linear-gradient(135deg,#f0fffe 0%,#ffffff 100%);box-shadow:0 0 0 8px rgba(51,251,232,0.1);display:flex;flex-direction:column;align-items:center;justify-content:center;margin-bottom:14px;padding-top:6px;';
         ring.innerHTML = `<span class="txt-fix" style="font-size:2rem;font-weight:800;color:#111827;line-height:1;margin-bottom:2px;">${this.score ?? 0}</span>
                           <span class="txt-fix" style="font-size:0.8rem;font-weight:600;color:#6b7280;line-height:1;">점</span>`;
-        
+
         const scoreCap = document.createElement('p');
         scoreCap.style.cssText = 'margin:0;padding:0;font-size:0.82rem;color:#9ca3af;font-weight:500;line-height:1;text-align:center;';
         scoreCap.innerHTML = '<span class="txt-fix">획득 점수</span>';
-        
+
         scoreHero.appendChild(ring);
         scoreHero.appendChild(scoreCap);
         card.appendChild(scoreHero);
@@ -346,10 +334,10 @@ export default {
 
         statsRow.appendChild(makeStat('📏', this.distanceText || '—', '거리'));
         statsRow.appendChild(createDivider());
-        
+
         if (this.showElapsedTime) {
           statsRow.appendChild(makeStat('⏱', this.elapsedTimeText || '—', '걸린 시간'));
-          
+
           if (this.hintsUsed > 0) {
             statsRow.appendChild(createDivider());
             statsRow.appendChild(makeStat('💡', `${this.hintsUsed}회`, '사용 힌트'));
@@ -357,7 +345,7 @@ export default {
         } else {
           statsRow.appendChild(makeStat('🎯', '연습 모드', '게임 유형'));
         }
-        
+
         card.appendChild(statsRow);
       }
 
@@ -365,12 +353,12 @@ export default {
       if (this.poiName || this.fullAddress) {
         const loc = document.createElement('div');
         loc.style.cssText = 'margin:0 22px 16px;border-radius:13px;border:1px solid #b2f5f0;overflow:hidden;';
-        
+
         const locHeader = document.createElement('div');
         // 타이틀이 중앙으로 오도록 flex 컨테이너에 약간의 윗 여백
         locHeader.style.cssText = 'display:flex;align-items:center;padding:10px 14px 9px;background:#f0fffe;border-bottom:1px solid #b2f5f0;font-size:0.78rem;font-weight:600;color:#0f766e;line-height:1;';
         locHeader.innerHTML = '<span class="txt-fix" style="font-size:1rem;">📍</span> <span class="txt-fix" style="margin-left:7px;">정답 위치</span>';
-        
+
         const locBody = document.createElement('div');
         locBody.style.cssText = 'padding:12px 14px 10px;';
         if (this.poiName) {
@@ -412,8 +400,13 @@ export default {
         // ① Off-screen 카드 DOM 생성 (맵 없이)
         offScreenCard = this.buildOffScreenCard();
 
-        // ② 브라우저가 화면상 레이아웃을 계산할 수 있도록 대기
-        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        // // ② 브라우저가 화면상 레이아웃을 계산할 수 있도록 대기
+        // await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        // 카드가 DOM에 붙은 뒤 폰트 적용 + reflow 완료 대기
+        await document.fonts.ready;
+        offScreenCard.offsetHeight; // 강제 reflow
+        await new Promise(r => setTimeout(r, 80));
+
 
         // ④ html2canvas로 캡처 (allowTaint: true 유지, useCORS는 true)
         const canvas = await html2canvas(offScreenCard, {
@@ -511,7 +504,7 @@ export default {
     shareToTwitter() {
       this.showSharePanel = false;
       const text = encodeURIComponent(`${this.shareText}\n\n#KoSpot #한국지리`);
-      const url  = encodeURIComponent(this.pageUrl);
+      const url = encodeURIComponent(this.pageUrl);
       window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank', 'width=600,height=450');
     },
 
@@ -583,7 +576,6 @@ export default {
 </script>
 
 <style scoped>
-
 /* ═══════════════════════════════════════
    래퍼
 ═══════════════════════════════════════ */
@@ -639,6 +631,7 @@ export default {
   color: #6366f1;
   background: #eef2ff;
 }
+
 .action-btn--copy.action-btn--done {
   border-color: #10b981;
   color: #10b981;
@@ -708,6 +701,7 @@ export default {
   font-size: 0.85rem;
   transition: color 0.15s;
 }
+
 .close-btn:hover {
   color: #374151;
 }
@@ -761,15 +755,35 @@ export default {
 }
 
 /* 플랫폼별 색상 */
-.share-icon-wrap--device   { background: linear-gradient(135deg, #33fbe8, #0d9488); color: white; }
-.share-icon-wrap--twitter  { background: #000000; color: white; }
-.share-icon-wrap--kakao    { background: #FEE500; color: #3C1E1E; }
+.share-icon-wrap--device {
+  background: linear-gradient(135deg, #33fbe8, #0d9488);
+  color: white;
+}
+
+.share-icon-wrap--twitter {
+  background: #000000;
+  color: white;
+}
+
+.share-icon-wrap--kakao {
+  background: #FEE500;
+  color: #3C1E1E;
+}
+
 .share-icon-wrap--instagram {
   background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
   color: white;
 }
-.share-icon-wrap--facebook { background: #1877f2; color: white; }
-.share-icon-wrap--link     { background: #6366f1; color: white; }
+
+.share-icon-wrap--facebook {
+  background: #1877f2;
+  color: white;
+}
+
+.share-icon-wrap--link {
+  background: #6366f1;
+  color: white;
+}
 
 /* ═══════════════════════════════════════
    패널 backdrop
@@ -787,6 +801,7 @@ export default {
 .panel-slide-leave-active {
   transition: opacity 0.2s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
+
 .panel-slide-enter-from,
 .panel-slide-leave-to {
   opacity: 0;
@@ -800,6 +815,7 @@ export default {
   .action-btn span {
     display: none;
   }
+
   .action-btn {
     padding: 9px;
   }

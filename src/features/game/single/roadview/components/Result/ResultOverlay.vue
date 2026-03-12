@@ -1,152 +1,119 @@
 <template>
   <div v-if="show" class="result-overlay">
-    <div class="result-container">
+    <div class="result-content" ref="resultContent">
+      <!-- 브랜드 포인트 바 -->
+      <div class="brand-bar"></div>
+
+      <!-- 헤더: 좌측 정렬, 컴팩트 -->
       <div class="result-header">
-        <h2>라운드 결과</h2>
+        <div class="header-icon">
+          <i class="fas fa-trophy"></i>
+        </div>
+        <span class="result-title">라운드 결과</span>
       </div>
 
-      <div class="result-content">
-        <div class="content-grid">
-          <!-- 좌측: 플레이어 정보 및 통계 -->
-          <div class="left-section">
-            <!-- 플레이어 정보 -->
-            <div class="player-info-section">
-              <div class="player-avatar">
-                <img 
-                  v-if="markerImageUrl" 
-                  :src="markerImageUrl" 
-                  alt="마커"
-                  @error="handleImageError"
-                />
-                <div v-else class="default-avatar">
-                  <i class="fas fa-user"></i>
-                </div>
-              </div>
-              <div class="player-details">
-                <div class="player-label">플레이어</div>
-                <div class="player-name">{{ userNickname }}</div>
-              </div>
-            </div>
+      <!-- 점수 히어로 섹션: 정보 계층 최상위 -->
+      <div class="score-hero">
+        <div class="score-ring">
+          <span class="score-number">{{ Number(score).toFixed(1) }}</span>
+          <span class="score-unit">점</span>
+        </div>
+        <p class="score-caption">획득 점수</p>
+      </div>
 
-            <!-- 티어 변화 섹션 -->
-            <div class="rank-change-section compact" v-if="hasRankChange" :class="{ downgrade: isDowngrade }">
-                <div class="rank-change-header">
-                  <i :class="isDowngrade ? 'fas fa-arrow-down' : 'fas fa-arrow-up'"></i>
-                  <span>{{ isDowngrade ? '랭크 하락' : '랭크 상승' }}</span>
-                </div>
-                <div class="rank-change-content">
-                  <div class="rank-badge previous">
-                    <div class="rank-tier-icon" :class="getTierClass(previousRankTier)">
-                      <i :class="getTierIcon(previousRankTier)"></i>
-                    </div>
-                    <div class="rank-text">
-                      <div class="tier-name">{{ formatTier(previousRankTier) }}</div>
-                      <div class="tier-level">{{ formatLevel(previousRankLevel) }}</div>
-                    </div>
-                  </div>
-                  
-                  <div class="rank-arrow">
-                    <i class="fas fa-arrow-right"></i>
-                  </div>
-                  
-                  <div class="rank-badge current">
-                    <div class="rank-tier-icon" :class="getTierClass(currentRankTier)">
-                      <i :class="getTierIcon(currentRankTier)"></i>
-                    </div>
-                    <div class="rank-text">
-                      <div class="tier-name">{{ formatTier(currentRankTier) }}</div>
-                      <div class="tier-level">{{ formatLevel(currentRankLevel) }}</div>
-                    </div>
-                  </div>
-                </div>
-            </div>
-
-            <div class="result-score-section compact">
-              <div class="score-distance-row">
-                <div class="score-display">
-                  <div class="score-icon">
-                    <i class="fas fa-star"></i>
-                  </div>
-                  <div class="score-label"> 점수</div>
-                  <div class="score-value">{{ score.toFixed(1) }}</div>
-                </div>
-
-                <div class="distance-display">
-                  <div class="distance-icon">
-                    <i class="fas fa-ruler"></i>
-                  </div>
-                  <div class="distance-label"> 거리</div>
-                  <div class="distance-value">{{ formattedDistance }}</div>
-                </div>
-              </div>
-
-              <div class="rank-points-display">
-                <div class="rank-icon">
-                  <i class="fas fa-trophy"></i>
-                </div>
-                <div class="rank-points-label"> 레이팅 점수</div>
-                <div
-                  class="rank-points-value"
-                  :class="{
-                    'points-increase': rankPointChange > 0,
-                    'points-decrease': rankPointChange < 0,
-                  }"
-                >
-                  <span class="current-points">{{ currentRankPoints }}</span>
-                  <span v-if="rankPointChange !== 0" class="points-change">
-                    {{ rankPointChange > 0 ? "+" : "" }}{{ rankPointChange }}
-                  </span>
-                </div>
-              </div>
-            </div>
+      <!-- 보조 통계 행: 플레이어 + 거리 + 레이팅 점수 -->
+      <div class="stats-row">
+        <div class="stat-item" style="flex: 1.2;">
+          <div class="stat-avatar">
+            <img v-if="markerImageUrl" :src="markerImageUrl" @error="handleImageError" />
+            <i v-else class="fas fa-user default-avatar-icon"></i>
           </div>
-          <div class="right-section">
-            <!-- POI 이름 -->
-            <div v-if="poiName" class="poi-name-section">
-              <div class="poi-icon">
-                <i class="fas fa-map-marker-alt"></i>
-              </div>
-              <div class="poi-text">
-                <div class="poi-label"> 정답 위치</div>
-                <div class="poi-name">{{ poiName }}</div>
-              </div>
-            </div>
-
-            <!-- 전체 주소 -->
-            <div v-if="fullAddress" class="full-address-section">
-              <div class="address-icon">
-                <i class="fas fa-home"></i>
-              </div>
-              <div class="address-text">
-                <div class="address-label">상세 주소</div>
-                <div class="address-value">{{ fullAddress }}</div>
-              </div>
-            </div>
-
-            <div class="map-wrapper" :class="{ 'map-expanded': isMapExpanded }">
-              <ResultMapSection
-                :currentLocation="currentLocation"
-                :guessedLocation="guessedLocation"
-                :locationDescription="locationDescription"
-                :markerImageUrl="markerImageUrl"
-                :isExpanded="isMapExpanded"
-                @toggle-expand="isMapExpanded = !isMapExpanded"
-              />
-            </div>
+          <span class="stat-value player-name-val">{{ userNickname }}</span>
+          <span class="stat-label">플레이어</span>
+        </div>
+        <div class="stat-divider"></div>
+        
+        <div class="stat-item">
+          <i class="fas fa-ruler stat-icon"></i>
+          <span class="stat-value">{{ formattedDistance }}</span>
+          <span class="stat-label">떨어진 거리</span>
+        </div>
+        
+        <div class="stat-divider"></div>
+        
+        <div class="stat-item" style="flex: 1.2;">
+          <i class="fas fa-star stat-icon" style="color: #8b5cf6;"></i>
+          <div style="display: flex; align-items: baseline; gap: 4px;">
+            <span class="stat-value" style="color: #6d28d9;">{{ currentRankPoints }}</span>
+            <span class="points-change" v-if="rankPointChange !== 0" :class="rankPointChange > 0 ? 'text-green' : 'text-red'">
+              {{ rankPointChange > 0 ? '+' : '' }}{{ rankPointChange }}
+            </span>
           </div>
-          
-
-          <!-- 우측: 지도 및 위치 정보 -->
-          
+          <span class="stat-label">레이팅 점수</span>
         </div>
       </div>
 
-      <div class="result-actions">
-        <button class="btn-restart" @click="onRestart">
-          <i class="fas fa-redo"></i> 다시하기
+      <!-- 티어 변화 섹션 -->
+      <div class="rank-change-section compact" v-if="hasRankChange" :class="{ downgrade: isDowngrade }">
+        <div class="rank-change-header">
+          <i :class="isDowngrade ? 'fas fa-arrow-down' : 'fas fa-arrow-up'"></i>
+          <span>{{ isDowngrade ? '랭크 하락' : '랭크 상승' }}</span>
+        </div>
+        <div class="rank-change-content">
+          <div class="rank-badge previous">
+            <div class="rank-tier-icon" :class="getTierClass(previousRankTier)">
+              <i :class="getTierIcon(previousRankTier)"></i>
+            </div>
+            <div class="rank-text">
+              <div class="tier-name">{{ formatTier(previousRankTier) }}</div>
+              <div class="tier-level">{{ formatLevel(previousRankLevel) }}</div>
+            </div>
+          </div>
+          
+          <div class="rank-arrow">
+            <i class="fas fa-arrow-right"></i>
+          </div>
+          
+          <div class="rank-badge current">
+            <div class="rank-tier-icon" :class="getTierClass(currentRankTier)">
+              <i :class="getTierIcon(currentRankTier)"></i>
+            </div>
+            <div class="rank-text">
+              <div class="tier-name">{{ formatTier(currentRankTier) }}</div>
+              <div class="tier-level">{{ formatLevel(currentRankLevel) }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 정답 위치 정보 -->
+      <div v-if="poiName || fullAddress" class="location-section">
+        <div class="location-section-header">
+          <i class="fas fa-map-marker-alt"></i>
+          <span>정답 위치</span>
+        </div>
+        <div class="location-body">
+          <p v-if="poiName" class="location-poi">{{ poiName }}</p>
+          <p v-if="fullAddress" class="location-address">{{ fullAddress }}</p>
+        </div>
+      </div>
+
+      <!-- 지도 -->
+      <div class="map-wrapper" :class="{ 'map-expanded': isMapExpanded }">
+        <ResultMapSection :currentLocation="currentLocation" :guessedLocation="guessedLocation"
+          :locationDescription="locationDescription"
+          :markerImageUrl="markerImageUrl" :isExpanded="isMapExpanded"
+          @toggle-expand="isMapExpanded = !isMapExpanded" />
+      </div>
+
+      <!-- 하단 버튼 행 -->
+      <div class="action-row">
+        <button class="btn-restart" type="button" @click="onRestart">
+          <i class="fas fa-redo-alt"></i>
+          다시하기
         </button>
-        <button class="btn-exit" @click="onExit">
-          <i class="fas fa-door-open"></i> 나가기
+        <button class="btn-exit" type="button" @click="onExit">
+          나가기
         </button>
       </div>
     </div>
@@ -162,94 +129,30 @@ export default {
     ResultMapSection,
   },
   props: {
-    show: {
-      type: Boolean,
-      default: false,
-    },
-    score: {
-      type: Number,
-      default: 0,
-    },
-    distance: {
-      type: Number,
-      default: 0,
-    },
-    currentRankPoints: {
-      type: Number,
-      default: 0,
-    },
-    rankPointChange: {
-      type: Number,
-      default: 0,
-    },
-    previousRatingScore: {
-      type: Number,
-      default: 0,
-    },
-    currentRatingScore: {
-      type: Number,
-      default: 0,
-    },
-    previousRankTier: {
-      type: String,
-      default: null,
-    },
-    previousRankLevel: {
-      type: String,
-      default: null,
-    },
-    currentRankTier: {
-      type: String,
-      default: null,
-    },
-    currentRankLevel: {
-      type: String,
-      default: null,
-    },
-    currentLocation: {
-      type: Object,
-      default: null,
-    },
-    guessedLocation: {
-      type: Object,
-      default: null,
-    },
-    locationDescription: {
-      type: String,
-      default: "",
-    },
-    poiName: {
-      type: String,
-      default: null,
-    },
-    fullAddress: {
-      type: String,
-      default: null,
-    },
-    markerImageUrl: {
-      type: String,
-      default: null,
-    },
-    userNickname: {
-      type: String,
-      default: "플레이어",
-    },
+    show: { type: Boolean, default: false },
+    score: { type: Number, default: 0 },
+    distance: { type: Number, default: 0 },
+    currentRankPoints: { type: Number, default: 0 },
+    rankPointChange: { type: Number, default: 0 },
+    previousRatingScore: { type: Number, default: 0 },
+    currentRatingScore: { type: Number, default: 0 },
+    previousRankTier: { type: String, default: null },
+    previousRankLevel: { type: String, default: null },
+    currentRankTier: { type: String, default: null },
+    currentRankLevel: { type: String, default: null },
+    currentLocation: { type: Object, default: null },
+    guessedLocation: { type: Object, default: null },
+    locationDescription: { type: String, default: "" },
+    poiName: { type: String, default: null },
+    fullAddress: { type: String, default: null },
+    markerImageUrl: { type: String, default: null },
+    userNickname: { type: String, default: "플레이어" },
   },
   data() {
     return {
       isMapExpanded: false,
-      options: {
-        duration: 1.1,
-        useEasing: true,
-        useGrouping: true,
-        separator: ",",
-        suffix: "KM",
-        decimal: ".",
-        decimalPlaces: 3,
-      },
     };
   },
-
   computed: {
     formattedDistance() {
       if (this.distance === null || this.distance === undefined)
@@ -279,16 +182,13 @@ export default {
         return tierOrder.indexOf(currTier) < tierOrder.indexOf(prevTier);
       }
 
-      // 같은 티어에서는 레벨 숫자 비교 (레벨 값이 로마숫자/문자일 수 있으므로 맵핑 시도)
       const levelMap = { ONE: 1, TWO: 2, THREE: 3, FOUR: 4, FIVE: 5, I: 1, II: 2, III: 3, IV: 4, V: 5 };
       const prevLevelNum = levelMap[this.previousRankLevel] ?? Number(this.previousRankLevel);
       const currLevelNum = levelMap[this.currentRankLevel] ?? Number(this.currentRankLevel);
       if (Number.isFinite(prevLevelNum) && Number.isFinite(currLevelNum)) {
-        // 숫자가 클수록 하위 레벨로 가정 (예: 1이 상위, 5가 하위)
         return currLevelNum > prevLevelNum;
       }
 
-      // 보조 판단: 포인트 감소면 하락으로 간주
       return (this.rankPointChange ?? 0) < 0;
     }
   },
@@ -314,11 +214,12 @@ export default {
     onExit() {
       this.$emit("exit");
     },
-    // 이미지 로드 에러 처리
     handleImageError(event) {
       event.target.style.display = 'none';
+      if(event.target.nextElementSibling) {
+        event.target.nextElementSibling.style.display = 'flex';
+      }
     },
-    // 티어 이름 포맷팅 (영어 -> 한글)
     formatTier(tier) {
       const tierMap = {
         BRONZE: '브론즈',
@@ -330,7 +231,6 @@ export default {
       };
       return tierMap[tier] || tier;
     },
-    // 레벨 포맷팅 (영어 -> 숫자)
     formatLevel(level) {
       const levelMap = {
         ONE: 'I',
@@ -341,12 +241,10 @@ export default {
       };
       return levelMap[level] || level;
     },
-    // 티어별 CSS 클래스
     getTierClass(tier) {
       if (!tier) return '';
       return `tier-${tier.toLowerCase()}`;
     },
-    // 티어별 아이콘
     getTierIcon(tier) {
       const iconMap = {
         BRONZE: 'fas fa-award',
@@ -363,114 +261,383 @@ export default {
 </script>
 
 <style scoped>
+/* ═══════════════════════════════════════
+   오버레이 배경
+═══════════════════════════════════════ */
 .result-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  z-index: 30;
+  position: absolute;
+  inset: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  animation: fadeIn 0.4s ease;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.result-container {
-  background-color: white;
-  border-radius: 20px;
-  width: 95%;
-  max-width: 1000px;
-  max-height: 90vh;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  display: flex;
-  flex-direction: column;
-  animation: slideUp 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-  overflow: hidden;
-  position: relative;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.result-header {
-  padding: 20px 25px;
-  background: white;
-  color: #0f172a;
-  border-radius: 20px 20px 0 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 2px solid #e2e8f0;
-}
-
-.result-header h2 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: -0.3px;
-}
-
-.result-content {
-  padding: 20px;
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
-}
-
-.content-grid {
-  display: grid;
-  grid-template-columns: 1fr 1.5fr;
-  gap: 20px;
-  height: 100%;
-}
-
-.left-section {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.right-section {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  min-height: 0;
+  background-color: rgba(17, 24, 39, 0.78);
+  z-index: 25;
+  backdrop-filter: blur(5px);
+  animation: overlay-in 200ms ease;
 }
 
 /* ═══════════════════════════════════════
-   지도 래퍼 & 확장 상태
+   결과 카드
+═══════════════════════════════════════ */
+.result-content {
+  background: #ffffff;
+  border-radius: 22px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 20px 48px rgba(0, 0, 0, 0.18);
+  max-width: 520px;
+  width: 92%;
+  max-height: 92vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  animation: card-in 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ═══════════════════════════════════════
+   브랜드 포인트 바
+═══════════════════════════════════════ */
+.brand-bar {
+  height: 5px;
+  background: linear-gradient(90deg, #33fbe8 0%, #a5f3f0 60%, #e0fffe 100%);
+  border-radius: 22px 22px 0 0;
+}
+
+/* ═══════════════════════════════════════
+   헤더 — 컴팩트, 좌측 정렬
+═══════════════════════════════════════ */
+.result-header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 18px 22px 0;
+}
+
+.header-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #33fbe8;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.result-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #6b7280;
+  letter-spacing: 0.02em;
+}
+
+/* ═══════════════════════════════════════
+   점수 히어로 — 정보 계층 최상위
+═══════════════════════════════════════ */
+.score-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 22px 4px;
+  gap: 8px;
+}
+
+.score-ring {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 4px solid #33fbe8;
+  background: linear-gradient(135deg, #f0fffe 0%, #ffffff 100%);
+  box-shadow: 0 0 0 8px rgba(51, 251, 232, 0.1),
+    0 8px 24px rgba(51, 251, 232, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  animation: ring-pop 350ms cubic-bezier(0.34, 1.56, 0.64, 1) 100ms both;
+}
+
+.score-number {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1;
+}
+
+.score-unit {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6b7280;
+  line-height: 1;
+}
+
+.score-caption {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+/* ═══════════════════════════════════════
+   보조 통계 행 — 거리 + 소요시간 + 아바타
+═══════════════════════════════════════ */
+.stats-row {
+  display: flex;
+  align-items: stretch;
+  margin: 16px 22px;
+  background: #f0fffe;
+  border: 1px solid #b2f5f0;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 8px;
+  text-align: center;
+}
+
+.stat-icon {
+  color: #0d9488;
+  font-size: 0.85rem;
+}
+
+.stat-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f766e;
+}
+
+.stat-label {
+  font-size: 0.72rem;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.stat-divider {
+  width: 1px;
+  background: #b2f5f0;
+  margin: 12px 0;
+}
+
+/* ═══════════════════════════════════════
+   아바타 특화
+═══════════════════════════════════════ */
+.stat-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #cbd5e1;
+  margin-bottom: 2px;
+}
+
+.stat-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.default-avatar-icon {
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.player-name-val {
+  font-size: 0.95rem !important;
+  max-width: 80px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.text-green { color: #10b981; }
+.text-red { color: #ef4444; }
+.points-change { font-size: 0.75rem; font-weight: 700; }
+
+/* ═══════════════════════════════════════
+   티어 변화 섹션
+═══════════════════════════════════════ */
+.rank-change-section {
+  margin: 0 22px 16px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #fde68a;
+  border-radius: 13px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.15);
+  animation: slideInFromLeft 0.6s ease-out 0.1s both;
+}
+
+.rank-change-section.downgrade {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+.rank-change-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #92400e;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+  justify-content: center;
+}
+
+.rank-change-section.downgrade .rank-change-header {
+  color: #475569;
+}
+
+.rank-change-header i {
+  color: #f59e0b;
+}
+
+.rank-change-section.downgrade .rank-change-header i {
+  color: #64748b;
+}
+
+.rank-change-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.rank-badge {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.rank-badge.previous {
+  opacity: 0.7;
+  border-color: #cbd5e1;
+  transform: scale(0.95);
+}
+
+.rank-badge.current {
+  border-color: #fbbf24;
+  box-shadow: 0 4px 8px rgba(251, 191, 36, 0.2);
+}
+
+.rank-change-section.downgrade .rank-badge.current {
+  border-color: #94a3b8;
+  box-shadow: 0 4px 8px rgba(100, 116, 139, 0.2);
+}
+
+.rank-tier-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: white;
+  flex-shrink: 0;
+}
+
+/* 티어별 색상 */
+.tier-bronze { background: #92400e; }
+.tier-silver { background: #64748b; }
+.tier-gold { background: #ca8a04; }
+.tier-platinum { background: #0891b2; }
+.tier-diamond { background: #0ea5e9; }
+.tier-master { background: #dc2626; }
+
+.rank-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.tier-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.tier-level {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.rank-arrow {
+  color: #94a3b8;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════
+   정답 위치 섹션 — 심플한 인라인 카드
+═══════════════════════════════════════ */
+.location-section {
+  margin: 0 22px 16px;
+  border-radius: 13px;
+  border: 1px solid #b2f5f0;
+  overflow: hidden;
+}
+
+.location-section-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  background: #f0fffe;
+  border-bottom: 1px solid #b2f5f0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #0f766e;
+}
+
+.location-section-header i {
+  color: #0d9488;
+  filter: drop-shadow(0 0 3px rgba(13, 148, 136, 0.4));
+}
+
+.location-body {
+  padding: 10px 14px;
+}
+
+.location-poi {
+  margin: 0 0 2px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.location-address {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
+/* ═══════════════════════════════════════
+   지도 래퍼
 ═══════════════════════════════════════ */
 .map-wrapper {
-  margin: 0;
+  margin: 0 22px 16px;
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid #e5e7eb;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   position: relative;
   background: white;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 250px;
 }
 
 /* 지도 확장 상태 */
@@ -496,750 +663,146 @@ export default {
 
 .map-expanded :deep(.result-map-container) {
   flex: 1;
-  height: 100% !important; /* 모바일 대응 높이 무시 */
+  height: 100% !important;
 }
 
-/* 플레이어 정보 섹션 */
-.player-info-section {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  border: 2px solid #e2e8f0;
-  padding: 12px 15px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  animation: slideInFromTop 0.5s ease-out;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.player-avatar {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: #e2e8f0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  border: 2px solid #cbd5e1;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition: transform 0.3s ease;
-}
-
-.player-avatar:hover {
-  transform: scale(1.05);
-}
-
-.player-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.default-avatar {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #cbd5e1;
-  color: #64748b;
-  font-size: 1.3rem;
-}
-
-.player-details {
-  flex: 1;
-}
-
-.player-label {
-  font-size: 0.75rem;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 500;
-  margin-bottom: 2px;
-}
-
-.player-name {
-  font-size: 1.1rem;
-  color: #0f172a;
-  font-weight: 700;
-  letter-spacing: -0.3px;
-}
-
-/* POI 이름 섹션 */
-.poi-name-section,
-.full-address-section {
-  background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
-  border: 2px solid #93c5fd;
-  padding: 14px 18px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  animation: slideInFromRight 0.6s ease-out;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-  transition: all 0.3s ease;
-}
-
-.poi-name-section:hover,
-.full-address-section:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.2);
-}
-
-.poi-icon,
-.address-icon {
-  width: 42px;
-  height: 42px;
-  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-  color: white;
-  flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
-  animation: subtlePulse 2s ease-in-out infinite;
-}
-
-@keyframes subtlePulse {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-}
-
-.poi-text,
-.address-text {
-  flex: 1;
-}
-
-.poi-label,
-.address-label {
-  font-size: 0.75rem;
-  color: #1e40af;
-  margin-bottom: 2px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.poi-name {
-  font-size: 1.2rem;
-  color: #1e3a8a;
-  font-weight: 700;
-  letter-spacing: -0.3px;
-}
-
-.address-value {
-  font-size: 1rem;
-  color: #1e3a8a;
-  font-weight: 700;
-  letter-spacing: -0.3px;
-  line-height: 1.4;
-}
-
-/* 티어 변화 섹션 */
-.rank-change-section {
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  border: 2px solid #fbbf24;
-  border-radius: 12px;
-  padding: 15px;
-  animation: slideInFromLeft 0.6s ease-out 0.1s both;
-  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.15);
-  transition: all 0.3s ease;
-}
-
-.rank-change-section.compact {
-  padding: 12px 15px;
-}
-
-.rank-change-section:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(251, 191, 36, 0.2);
-}
-
-.rank-change-header {
-  display: flex;
-  align-items: center;
+/* ═══════════════════════════════════════
+   하단 버튼 행
+═══════════════════════════════════════ */
+.action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
-  color: #92400e;
-  font-size: 0.9rem;
-  font-weight: 600;
-  margin-bottom: 12px;
-  justify-content: center;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  padding: 0 22px 22px;
 }
 
-.rank-change-header i {
-  font-size: 1rem;
-  color: #f59e0b;
-  animation: subtleRotate 3s ease-in-out infinite;
-}
-
-@keyframes subtleRotate {
-  0%, 100% {
-    transform: rotate(0deg);
-  }
-  25% {
-    transform: rotate(-10deg);
-  }
-  75% {
-    transform: rotate(10deg);
-  }
-}
-
-.rank-change-content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  flex-wrap: nowrap;
-}
-
-.rank-badge {
-  background: white;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  flex: 1 1 0;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.rank-badge.previous {
-  opacity: 0.7;
-  border-color: #cbd5e1;
-  transform: scale(0.95);
-}
-
-.rank-badge.current {
-  border-color: #fbbf24;
-  box-shadow: 0 4px 16px rgba(251, 191, 36, 0.25);
-  animation: emphasize 0.6s ease-out 0.8s;
-}
-
-@keyframes emphasize {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-}
-
-.rank-tier-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  color: white;
-  flex-shrink: 0;
-}
-
-/* 티어별 색상 */
-.tier-bronze {
-  background: #92400e;
-}
-
-.tier-silver {
-  background: #64748b;
-}
-
-.tier-gold {
-  background: #ca8a04;
-}
-
-.tier-platinum {
-  background: #0891b2;
-}
-
-.tier-diamond {
-  background: #0ea5e9;
-}
-
-.tier-master {
-  background: #dc2626;
-}
-
-.rank-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.tier-name {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #0f172a;
-}
-
-.tier-level {
-  font-size: 0.8rem;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.rank-arrow {
-  color: #94a3b8;
-  font-size: 1.5rem;
-  flex-shrink: 0;
-}
-
-/* 티어 변화 페이드 애니메이션 */
-.rank-change-fade-enter-active {
-  animation: rankChangeFadeIn 0.8s ease-out;
-}
-
-.rank-change-fade-leave-active {
-  animation: rankChangeFadeOut 0.4s ease-in;
-}
-
-@keyframes rankChangeFadeIn {
-  0% {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.9);
-  }
-  50% {
-    transform: translateY(5px) scale(1.02);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes rankChangeFadeOut {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-}
-
-/* 슬라이드 인 애니메이션들 */
-@keyframes slideInFromTop {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideInFromLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slideInFromRight {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.result-score-section {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.score-distance-row {
-  display: flex;
-  gap: 12px;
-  align-items: stretch;
-  flex-wrap: nowrap;
-}
-
-.score-distance-row > div {
-  flex: 1 1 0;
-  min-width: 0;
-}
-
-.result-score-section.compact {
-  gap: 10px;
-}
-
-.score-display,
-.distance-display,
-.rank-points-display {
-  background-color: white;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 12px 15px;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.score-display {
-  animation: slideInFromLeft 0.5s ease-out 0.2s both;
-}
-
-.distance-display {
-  animation: slideInFromLeft 0.5s ease-out 0.3s both;
-}
-
-.rank-points-display {
-  animation: slideInFromLeft 0.5s ease-out 0.4s both;
-}
-
-.score-display:hover,
-.distance-display:hover,
-.rank-points-display:hover {
-  transform: translateX(3px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.result-score-section.compact .score-display,
-.result-score-section.compact .distance-display,
-.result-score-section.compact .rank-points-display {
-  padding: 10px 12px;
-}
-
-.score-icon,
-.distance-icon,
-.rank-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-  color: white;
-  flex-shrink: 0;
-  transition: transform 0.3s ease;
-}
-
-.score-display:hover .score-icon,
-.distance-display:hover .distance-icon,
-.rank-points-display:hover .rank-icon {
-  transform: rotate(5deg) scale(1.1);
-}
-
-.score-icon {
-  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
-  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
-}
-
-.distance-icon {
-  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
-}
-
-.rank-icon {
-  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
-  box-shadow: 0 4px 10px rgba(139, 92, 246, 0.3);
-}
-
-.score-label,
-.distance-label,
-.rank-points-label {
-  font-size: 0.8rem;
-  color: #64748b;
-  font-weight: 500;
-  flex: 1;
-  text-align: left;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.score-value {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #0f172a;
-  margin-left: auto;
-  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.distance-value {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #0f172a;
-  margin-left: auto;
-  background: linear-gradient(135deg, #10b981 0%, #065f46 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.rank-points-value {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #0f172a;
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.current-points {
-  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.points-increase {
-  color: #0f172a;
-}
-
-.points-decrease {
-  color: #0f172a;
-}
-
-.points-change {
-  font-size: 1rem;
-  font-weight: 600;
-  display: inline-block;
-}
-
-.points-increase .points-change {
-  color: #10b981;
-}
-
-.points-decrease .points-change {
-  color: #ef4444;
-}
-
-.result-actions {
-  padding: 20px;
-  display: flex;
-  justify-content: space-between;
-  gap: 15px;
-  border-top: 2px solid #e2e8f0;
-  background-color: white;
-  border-radius: 0 0 20px 20px;
-}
-
-.btn-restart,
-.btn-exit {
-  flex: 1;
-  padding: 12px 20px;
-  border-radius: 10px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.3s ease;
-  border: 2px solid transparent;
-  font-size: 0.95rem;
-  position: relative;
-  overflow: hidden;
-}
-
-
+/* 다시하기 — 브랜드 민트 PRIMARY CTA */
 .btn-restart {
-  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 13px 8px;
+  border: none;
+  border-radius: 13px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.92rem;
   color: #111827;
-  border-color: #e5e7eb;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #33fbe8 0%, #67fdf2 100%);
+  box-shadow: 0 4px 14px rgba(51, 251, 232, 0.32);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .btn-restart:hover {
-  background: #f9fafb;
-  border-color: #d1d5db;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 7px 20px rgba(51, 251, 232, 0.42);
 }
 
-.btn-restart:active {
-  transform: translateY(0);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+.btn-restart i {
+  font-size: 0.82rem;
 }
 
-.btn-restart i,
-.btn-exit i {
-  position: relative;
-  z-index: 1;
-}
-
-.btn-restart span,
-.btn-exit span {
-  position: relative;
-  z-index: 1;
-}
-
+/* 종료하기 — 중립 ghost 버튼 */
 .btn-exit {
-  background: white;
-  color: #111827;
-  border-color: #e5e7eb;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 13px 8px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 13px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: #6b7280;
+  background: #ffffff;
+  transition: border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
 }
 
 .btn-exit:hover {
-  background: #f9fafb;
-  border-color: #d1d5db;
+  border-color: #9ca3af;
+  color: #374151;
   transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
-.btn-exit:active {
-  transform: translateY(0);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+.btn-restart:focus-visible,
+.btn-exit:focus-visible {
+  outline: 2px solid #111827;
+  outline-offset: 2px;
 }
 
-@media (max-width: 768px) {
-  .content-grid {
-    grid-template-columns: 1fr;
-    gap: 15px;
-  }
-
-}
-
+/* ═══════════════════════════════════════
+   반응형
+═══════════════════════════════════════ */
 @media (max-width: 480px) {
-  .result-container {
-    width: 98%;
+  .score-ring {
+    width: 100px;
+    height: 100px;
   }
 
-  .result-header {
-    padding: 12px 15px;
+  .score-number {
+    font-size: 1.5rem;
   }
 
-  .result-header h2 {
-    font-size: 1.3rem;
+  .action-row {
+    grid-template-columns: 1fr;
   }
 
-  .result-content {
-    padding: 15px;
-  }
-
-  .result-actions {
-    padding: 12px 15px;
+  .rank-change-content {
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
   }
-
-  .btn-restart,
-  .btn-exit {
-    padding: 10px;
-    font-size: 0.9rem;
-  }
-
-  .player-info-section {
-    padding: 10px 12px;
-  }
-
-  .player-avatar {
-    width: 45px;
-    height: 45px;
-  }
-
-  .player-name {
-    font-size: 1rem;
-  }
-
-  .rank-change-section {
-    padding: 12px;
-  }
-
-  .rank-badge {
-    min-width: 100px;
-    padding: 10px 12px;
-  }
-
-  .rank-tier-icon {
-    width: 35px;
-    height: 35px;
-    font-size: 1rem;
-  }
-
-  .tier-name {
-    font-size: 0.85rem;
-  }
-
-  .tier-level {
-    font-size: 0.7rem;
-  }
-
-  .poi-name-section,
-  .full-address-section {
-    padding: 10px 14px;
-  }
-
-  .poi-icon,
-  .address-icon {
-    width: 38px;
-    height: 38px;
-    font-size: 1rem;
-  }
-
-  .poi-name {
-    font-size: 1.05rem;
-  }
-
-  .address-value {
-    font-size: 0.9rem;
-  }
-
-  .score-icon,
-  .distance-icon,
-  .rank-icon {
-    width: 35px;
-    height: 35px;
-    font-size: 0.95rem;
-  }
-
-  .score-value,
-  .distance-value,
-  .rank-points-value {
-    font-size: 1.2rem;
+  .rank-arrow {
+    transform: rotate(90deg);
   }
 }
 
-/* Downgrade visual theme */
-.rank-change-section.downgrade {
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  border: 2px solid #cbd5e1;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+@media (max-height: 850px) {
+  .result-header { padding: 12px 22px 0; }
+  .score-hero { padding: 10px 22px 0; }
+  .score-ring { width: 85px; height: 85px; border-width: 3px; }
+  .score-number { font-size: 1.3rem; }
+  .stats-row { margin: 12px 22px; }
+  .stat-item { padding: 10px 6px; }
+  .location-section, .map-wrapper, .rank-change-section { margin-bottom: 12px; }
+  .action-row { padding: 0 22px 14px; }
+  .map-wrapper :deep(.result-map-container) { height: 150px; }
 }
-.rank-change-section.downgrade .rank-change-header {
-  color: #475569;
+
+@media (max-height: 700px) {
+  .result-header { padding: 8px 22px 0; }
+  .score-hero { padding: 6px 22px 0; }
+  .score-ring { width: 65px; height: 65px; border-width: 2px; }
+  .score-number { font-size: 1.1rem; }
+  .stats-row { margin: 8px 22px; }
+  .stat-item { padding: 6px 4px; }
+  .location-section, .map-wrapper, .rank-change-section { margin-bottom: 8px; }
+  .action-row { padding: 0 22px 10px; }
+  .map-wrapper :deep(.result-map-container) { height: 120px; }
 }
-.rank-change-section.downgrade .rank-change-header i {
-  color: #64748b;
+
+/* ═══════════════════════════════════════
+   애니메이션
+═══════════════════════════════════════ */
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
-.rank-change-section.downgrade .rank-badge.current {
-  border-color: #94a3b8;
-  box-shadow: 0 4px 16px rgba(100, 116, 139, 0.2);
+
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes ring-pop {
+  from { transform: scale(0.7); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes slideInFromLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .result-overlay, .result-content, .score-ring { animation: none; }
+  .btn-restart, .btn-exit { transition: none; }
 }
 </style>

@@ -148,6 +148,7 @@
         :show="showResult"
         :distance="distance"
         :score="score"
+        :hintsUsed="usedHints"
         :poiName="poiName"
         :fullAddress="fullAddress"
         :currentLocation="currentLocation"
@@ -176,6 +177,8 @@
         :currentLocation="currentLocation"
         :guessedLocation="guessedLocation"
         :markerImageUrl="markerImageUrl"
+        :poiName="poiName"
+        :fullAddress="fullAddress"
         @login="goToLogin"
         @restart="nextRound"
         @toast="showToastMessage"
@@ -562,7 +565,8 @@ export default {
         };
       }
 
-      this.gameTitle = `${this.selectedRegion.name} 로드뷰 공유게임`;
+      this.gameTitle = `${nickname}님의 ${this.selectedRegion.name} 공유 게임!`;
+      this.gameContent = `${this.selectedRegion.name} 로드뷰에 오신 것을 환영합니다.`;
       this.poiName = poiName;
       this.fullAddress = fullAddress;
       this.sharedSource = { nickname, score, hintsUsed, playtimeMs };
