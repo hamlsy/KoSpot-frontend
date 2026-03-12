@@ -5,7 +5,7 @@
 
 // 브랜드 색상
 export const BRAND = {
-  PRIMARY: '#52DEE5',       // 메인 브랜드 색상 (로고 색상)
+  PRIMARY: '#4cc9cfff',       // 메인 브랜드 색상 (로고 색상)
   SECONDARY: '#EEE5E9',     // 보조 브랜드 색상 (배지 색상)
   SUCCESS: '#10b981',       // 성공 상태 색상
   WARNING: '#f59e0b',       // 경고 상태 색상
