@@ -148,6 +148,7 @@
         :show="showResult"
         :distance="distance"
         :score="score"
+        :hintsUsed="usedHints"
         :poiName="poiName"
         :fullAddress="fullAddress"
         :currentLocation="currentLocation"
@@ -156,10 +157,11 @@
         :showElapsedTime="true"
         :elapsedTimeText="formattedPlaytime"
         :shareLoading="isShareLoading"
-        :shareButtonText="isShareCopied ? '복사완료!' : '게임 공유'"
+        :shareButtonText="isShareCopied ? '복사완료!' : '대전 링크 생성'"
         @share="shareGame"
         @restart="nextRound"
         @exit="exitGame"
+        @toast="showToastMessage"
       />
 
       <SharedPracticeResultOverlay
@@ -175,8 +177,11 @@
         :currentLocation="currentLocation"
         :guessedLocation="guessedLocation"
         :markerImageUrl="markerImageUrl"
+        :poiName="poiName"
+        :fullAddress="fullAddress"
         @login="goToLogin"
         @restart="nextRound"
+        @toast="showToastMessage"
       />
 
       <!-- 종료 확인 모달 -->
@@ -560,7 +565,8 @@ export default {
         };
       }
 
-      this.gameTitle = `${this.selectedRegion.name} 로드뷰 공유게임`;
+      this.gameTitle = `${nickname}님의 ${this.selectedRegion.name} 공유 게임!`;
+      this.gameContent = `${this.selectedRegion.name} 로드뷰에 오신 것을 환영합니다.`;
       this.poiName = poiName;
       this.fullAddress = fullAddress;
       this.sharedSource = { nickname, score, hintsUsed, playtimeMs };
@@ -1492,7 +1498,7 @@ export default {
     },
 
     // 토스트 메시지 표시
-    showToastMessage(message) {
+    showToastMessage(message, duration = 3000) {
       if (!this.isComponentActive) {
         return;
       }
@@ -1508,7 +1514,7 @@ export default {
         }
         this.showToast = false;
         this.toastTimeout = null;
-      }, 3000);
+      }, duration);
     },
 
     // 거리 계산 (Haversine 공식)

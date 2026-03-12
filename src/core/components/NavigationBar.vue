@@ -389,11 +389,8 @@ export default {
     if (this.hasToken) {
       this.checkAuthStatus();
     }
-    // 알림 미읽은 수 초기 로드
+    // 알림 미읽은 수 초기 로드는 appWebSocket.service.js에서 통합 처리하므로 중복 호출 제거
     // 친구 목록/소켓 초기화는 App.vue에서 전역으로 처리됨
-    if (this.hasToken) {
-      this.notificationStore.fetchUnreadCount();
-    }
     // 외부 클릭으로 알림 드롭다운 닫기
     document.addEventListener('click', this.handleGlobalClick);
   },
