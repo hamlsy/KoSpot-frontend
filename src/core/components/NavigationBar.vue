@@ -29,53 +29,34 @@
               <i class="fas fa-question-circle"></i>
               <span class="tutorial-text">게임 소개</span>
             </button>
-            
+
             <!-- 알림 아이콘 (로그인 시에만 표시) -->
             <div v-if="actualIsLoggedIn" class="notification-wrapper" ref="notificationWrapperRef">
-              <button
-                class="notification-button"
-                @click="toggleNotificationDropdown"
-                title="알림"
-                :class="{ 'notification-button--active': showNotificationDropdown }"
-                aria-label="알림 보기"
-              >
+              <button class="notification-button" @click="toggleNotificationDropdown" title="알림"
+                :class="{ 'notification-button--active': showNotificationDropdown }" aria-label="알림 보기">
                 <i class="fas fa-bell"></i>
-                <span
-                  v-if="notificationUnreadCount > 0"
-                  class="notification-badge"
-                >
+                <span v-if="notificationUnreadCount > 0" class="notification-badge">
                   {{ notificationUnreadCount > 99 ? '99+' : notificationUnreadCount }}
                 </span>
               </button>
 
               <!-- 알림 드롭다운 -->
-              <NotificationDropdown
-                :is-open="showNotificationDropdown"
-                @close="closeNotificationDropdown"
-              />
+              <NotificationDropdown :is-open="showNotificationDropdown" @close="closeNotificationDropdown" />
             </div>
 
             <!-- 친구 토글 버튼 (로그인 시에만 표시) -->
-            <FriendToggleButton
-              v-if="actualIsLoggedIn"
-              :is-open="friendStore.isPanelOpen"
+            <FriendToggleButton v-if="actualIsLoggedIn" :is-open="friendStore.isPanelOpen"
               :has-notification="friendStore.hasAnyNotification"
-              :notification-count="friendStore.totalNotificationCount"
-              @toggle="friendStore.togglePanel"
-            />
+              :notification-count="friendStore.totalNotificationCount" @toggle="friendStore.togglePanel" />
 
             <!-- 다크모드 토글 버튼 (웹에만 표시) -->
             <!-- <button class="theme-toggle desktop-only" @click="toggleTheme" :title="isDarkMode ? '라이트 모드로 전환' : '다크 모드로 전환'">
               <i class="fas" :class="isDarkMode ? 'fa-sun' : 'fa-moon'"></i>
             </button> -->
-            
+
             <div class="user-profile" @click="toggleProfileMenu">
               <div class="user-avatar" :class="{ 'guest-avatar': !actualIsLoggedIn }">
-                <img
-                  v-if="actualIsLoggedIn"
-                  :src="userProfile.avatar"
-                  alt="프로필"
-                />
+                <img v-if="actualIsLoggedIn" :src="userProfile.avatar" alt="프로필" />
                 <span v-else class="guest-text">Guest</span>
               </div>
             </div>
@@ -83,44 +64,36 @@
         </template>
       </div>
     </header>
-    
+
     <!-- 프로필 메뉴 오버레이 - header 밖으로 이동 -->
     <transition name="fade">
-      <div
-        v-if="showProfileMenu"
-        class="overlay"
-        @click="closeProfileMenu"
-      ></div>
+      <div v-if="showProfileMenu" class="overlay" @click="closeProfileMenu"></div>
     </transition>
 
     <!-- Contact Modal - 버그/문의 모달 -->
     <transition name="fade">
-      <div
-        v-if="showContactModal"
-        class="contact-modal-overlay"
-        @click.self="closeContactModal"
-      >
+      <div v-if="showContactModal" class="contact-modal-overlay" @click.self="closeContactModal">
         <div class="contact-modal">
           <button class="contact-modal-close" @click="closeContactModal">
             <i class="fas fa-times"></i>
           </button>
-          
+
           <div class="contact-modal-icon">
             <i class="fas fa-envelope"></i>
           </div>
-          
+
           <h2 class="contact-modal-title">버그/문의</h2>
-          
+
           <p class="contact-modal-description">
-            버그 또는 기타 문의가 필요할 경우<br/>
+            버그 또는 기타 문의가 필요할 경우<br />
             아래 연락처로 메일을 보내주세요!
           </p>
-          
+
           <p class="contact-modal-tip">
             <i class="fas fa-lightbulb"></i>
             버그 제보일 경우 스크린샷 또는 설명이 자세할수록 좋습니다
           </p>
-          
+
           <div class="contact-email-card">
             <span class="email-address">kospotdev25@gmail.com</span>
             <div class="email-actions">
@@ -153,7 +126,7 @@
             <i class="fas fa-user-circle"></i>
           </div>
           <h3>로그인이 필요합니다</h3>
-          <p>다양한 기능을 이용하려면<br/>로그인해주세요</p>
+          <p>다양한 기능을 이용하려면<br />로그인해주세요</p>
           <button @click="goToLogin" class="login-prompt-button">
             <i class="fas fa-sign-in-alt"></i>
             로그인하러 가기
@@ -163,10 +136,7 @@
         <!-- 로그인했을 때 프로필 정보 -->
         <div v-else class="profile-info-section">
           <div class="profile-info">
-            <img
-              :src="userProfile.avatar"
-              alt="프로필"
-            />
+            <img :src="userProfile.avatar" alt="프로필" />
             <div class="profile-text">
               <h3>{{ userProfile.name }}</h3>
               <p>{{ userProfile.email }}</p>
@@ -220,7 +190,7 @@
             <span class="menu-icon-wrap menu-icon-logout"><i class="fas fa-sign-out-alt"></i></span>
             로그아웃
           </a>
-          
+
           <!-- 관리자 페이지 링크 추가 -->
           <router-link v-if="actualIsAdmin" to="/admin" class="menu-item admin-menu-item" @click="closeProfileMenu">
             <span class="menu-icon-wrap menu-icon-admin"><i class="fas fa-user-shield"></i></span>
@@ -231,41 +201,20 @@
     </transition>
 
     <!-- 친구 패널 -->
-    <FriendPanel
-      v-if="actualIsLoggedIn"
-      :is-open="friendStore.isPanelOpen"
-      :friends="friendStore.friends"
-      :pending-requests="friendStore.pendingRequests"
-      @close="friendStore.closePanel"
-      @open-chat="handleOpenChat"
-      @open-user-search="friendStore.openSearch"
-      @accept-request="friendStore.acceptFriendRequest"
-      @decline-request="friendStore.declineFriendRequest"
-      @delete-friend="(f) => friendStore.deleteFriend(f.id)"
-    />
+    <FriendPanel v-if="actualIsLoggedIn" :is-open="friendStore.isPanelOpen" :friends="friendStore.friends"
+      :pending-requests="friendStore.pendingRequests" @close="friendStore.closePanel" @open-chat="handleOpenChat"
+      @open-user-search="friendStore.openSearch" @accept-request="friendStore.acceptFriendRequest"
+      @decline-request="friendStore.declineFriendRequest" @delete-friend="(f) => friendStore.deleteFriend(f.id)" />
 
     <!-- 사용자 검색 모달 -->
-    <UserSearchModal
-      v-if="actualIsLoggedIn"
-      :is-open="friendStore.isSearchOpen"
-      @close="friendStore.closeSearch"
-    />
+    <UserSearchModal v-if="actualIsLoggedIn" :is-open="friendStore.isSearchOpen" @close="friendStore.closeSearch" />
 
     <!-- 채팅 창들 (최대 3개) -->
-    <FriendChatWindow
-      v-for="(chat, index) in friendStore.openChats"
-      :key="chat.friend.id"
-      :is-open="true"
-      :friend="chat.friend"
-      :messages="chat.messages"
-      :is-loading="chat.isLoading"
-      :initial-x="computeChatInitialX(index)"
-      :initial-y="computeChatInitialY()"
-      :z-index="chat.zIndex"
-      @close="friendStore.closeChatRoom(chat.friend.id)"
-      @send-message="handleSendMessage"
-      @focus="friendStore.bringToFront(chat.friend.id)"
-    />
+    <FriendChatWindow v-for="(chat, index) in friendStore.openChats" :key="chat.friend.id" :is-open="true"
+      :friend="chat.friend" :messages="chat.messages" :is-loading="chat.isLoading"
+      :initial-x="computeChatInitialX(index)" :initial-y="computeChatInitialY()" :z-index="chat.zIndex"
+      @close="friendStore.closeChatRoom(chat.friend.id)" @send-message="handleSendMessage"
+      @focus="friendStore.bringToFront(chat.friend.id)" />
   </div>
 </template>
 
@@ -316,7 +265,7 @@ export default {
     const { isDarkMode, toggleTheme } = useTheme();
     const notificationStore = useNotificationStore();
     const friendStore = useFriendStore();
-    
+
     return {
       isDarkMode,
       toggleTheme,
@@ -355,12 +304,12 @@ export default {
     isMainPage() {
       const path = this.$route?.path || '';
       const routeName = this.$route?.name || '';
-      
+
       // 공지사항 관련 페이지에서는 항상 false 반환
       if (path.startsWith('/notice') || routeName === 'NoticeListView' || routeName === 'NoticeDetailView' || routeName === 'NoticeWriteView') {
         return false;
       }
-      
+
       // 메인 페이지인 경우만 true 반환
       return path === '/main' || path === '/';
     },
@@ -506,7 +455,7 @@ export default {
     goToMain() {
       // 메인 페이지로 새로고침 이동
       // window.location.href = '/main';
-      
+
       this.$router.push('/main');
     },
     // 인증 상태 확인
@@ -515,7 +464,7 @@ export default {
       if (this.userInfo && this.userInfo.name && this.userInfo.name !== "김코스팟") {
         return;
       }
-      
+
       const token = localStorage.getItem('accessToken');
       if (token) {
         try {
@@ -767,7 +716,7 @@ export default {
 .user-avatar img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .guest-avatar {
@@ -835,8 +784,15 @@ export default {
 }
 
 @keyframes badge-bounce {
-  from { transform: scale(0); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* 오버레이 스타일 */
@@ -896,6 +852,7 @@ export default {
   height: 56px;
   border-radius: var(--radius-full);
   border: 2px solid var(--color-border);
+  object-fit: contain;
 }
 
 .profile-text h3 {
@@ -996,15 +953,50 @@ export default {
 }
 
 /* 아이콘 색상 */
-.menu-icon-roadview { background: rgba(102, 126, 234, 0.12); color: #667eea; }
-.menu-icon-multi    { background: rgba(16, 185, 129, 0.12);  color: #10b981; }
-.menu-icon-shop     { background: rgba(245, 158, 11, 0.12);  color: #f59e0b; }
-.menu-icon-friend   { background: rgba(236, 72, 153, 0.12);  color: #ec4899; }
-.menu-icon-notice   { background: rgba(59, 130, 246, 0.12);  color: #3b82f6; }
-.menu-icon-contact  { background: rgba(20, 184, 166, 0.12);  color: #14b8a6; }
-.menu-icon-profile  { background: rgba(99, 102, 241, 0.12);  color: #6366f1; }
-.menu-icon-logout   { background: rgba(239, 68, 68, 0.12);   color: #ef4444; }
-.menu-icon-admin    { background: rgba(99, 102, 241, 0.14);  color: #6366f1; }
+.menu-icon-roadview {
+  background: rgba(102, 126, 234, 0.12);
+  color: #667eea;
+}
+
+.menu-icon-multi {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+}
+
+.menu-icon-shop {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+}
+
+.menu-icon-friend {
+  background: rgba(236, 72, 153, 0.12);
+  color: #ec4899;
+}
+
+.menu-icon-notice {
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+}
+
+.menu-icon-contact {
+  background: rgba(20, 184, 166, 0.12);
+  color: #14b8a6;
+}
+
+.menu-icon-profile {
+  background: rgba(99, 102, 241, 0.12);
+  color: #6366f1;
+}
+
+.menu-icon-logout {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+.menu-icon-admin {
+  background: rgba(99, 102, 241, 0.14);
+  color: #6366f1;
+}
 
 .menu-divider {
   height: 1px;
@@ -1103,19 +1095,23 @@ export default {
 }
 
 /* 트랜지션 애니메이션 */
-.fade-enter-active, .fade-leave-active {
+.fade-enter-active,
+.fade-leave-active {
   transition: opacity var(--transition-slow);
 }
 
-.fade-enter-from, .fade-leave-to {
+.fade-enter-from,
+.fade-leave-to {
   opacity: 0;
 }
 
-.slide-menu-enter-active, .slide-menu-leave-active {
+.slide-menu-enter-active,
+.slide-menu-leave-active {
   transition: transform var(--transition-slow) ease-out;
 }
 
-.slide-menu-enter-from, .slide-menu-leave-to {
+.slide-menu-enter-from,
+.slide-menu-leave-to {
   transform: translateX(100%);
 }
 
@@ -1153,6 +1149,7 @@ export default {
     opacity: 0;
     transform: translateY(-20px) scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -1293,67 +1290,67 @@ export default {
   .desktop-only {
     display: none;
   }
-  
+
   .header-content {
     padding: var(--spacing-md) var(--spacing-md);
   }
-  
+
   /* 모바일에서 로고 크기 축소 */
   .logo-image {
     height: 24px;
   }
-  
+
   .badge {
     font-size: 0.5rem;
     padding: 2px 5px;
   }
-  
+
   .main-nav {
     margin-left: var(--spacing-lg);
     gap: var(--spacing-lg);
   }
-  
+
   .tutorial-button {
     padding: var(--spacing-sm) var(--spacing-md);
   }
-  
+
   .tutorial-text {
     display: none;
   }
-  
+
   .profile-menu {
     width: 100%;
     max-width: 320px;
   }
-  
+
   .contact-modal-overlay {
     padding: var(--spacing-md);
   }
-  
+
   .contact-modal {
     padding: var(--spacing-xl);
     max-width: 100%;
   }
-  
+
   .contact-modal-icon {
     width: 56px;
     height: 56px;
   }
-  
+
   .contact-modal-icon i {
     font-size: 1.5rem;
   }
-  
+
   .contact-modal-title {
     font-size: 1.25rem;
   }
-  
+
   .email-actions {
     flex-direction: column;
   }
-  
+
   .email-action-btn {
     justify-content: center;
   }
 }
-</style> 
+</style>

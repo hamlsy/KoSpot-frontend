@@ -1,10 +1,7 @@
 <template>
   <div class="profile-page">
-    <NavigationBar 
-      :is-logged-in="isLoggedIn"
-      :user-info="userInfoForNav"
-    />
-    
+    <NavigationBar :is-logged-in="isLoggedIn" :user-info="userInfoForNav" />
+
     <div class="profile-content">
       <!-- 로딩 상태 -->
       <div v-if="isLoading" class="loading-container">
@@ -22,11 +19,11 @@
             <div class="profile-avatar">
               <img :src="profile.profileImageUrl || '/assets/avatars/default.png'" :alt="profile.nickname">
             </div>
-          
-          <div class="profile-info">
+
+            <div class="profile-info">
               <h1 class="profile-nickname">{{ profile.nickname }}</h1>
               <p class="profile-email">{{ profile.email }}</p>
-              
+
               <!-- 가입일 & 마지막 플레이 (추후 구현 예정) -->
               <div class="profile-dates" v-if="profile.joinedAt || profile.lastPlayedAt">
                 <span class="date-item" v-if="profile.joinedAt">
@@ -38,16 +35,13 @@
                   최근: {{ formatDate(profile.lastPlayedAt) }}
                 </span>
               </div>
-                </div>
-              </div>
-              
+            </div>
+          </div>
+
           <!-- 연속 플레이 스트릭 (추후 구현 예정) -->
           <div class="streak-section" v-if="hasStreakData">
-            <div
-              v-if="profile.currentStreak !== undefined && profile.currentStreak !== null"
-              class="streak-card"
-              :class="{ 'streak-active': profile.currentStreak > 0 }"
-            >
+            <div v-if="profile.currentStreak !== undefined && profile.currentStreak !== null" class="streak-card"
+              :class="{ 'streak-active': profile.currentStreak > 0 }">
               <div class="streak-icon">
                 <i class="fas fa-fire" :class="{ 'fire-active': profile.currentStreak > 0 }"></i>
               </div>
@@ -57,10 +51,8 @@
               </div>
             </div>
 
-            <div
-              v-if="profile.longestStreak !== undefined && profile.longestStreak !== null"
-              class="streak-card longest-streak-card"
-            >
+            <div v-if="profile.longestStreak !== undefined && profile.longestStreak !== null"
+              class="streak-card longest-streak-card">
               <div class="streak-icon">
                 <i class="fas fa-crown"></i>
               </div>
@@ -71,7 +63,7 @@
             </div>
           </div>
         </div>
-        
+
         <!-- 포인트 & 인벤토리 섹션 -->
         <div class="point-inventory-section">
           <div class="point-card">
@@ -99,18 +91,13 @@
 
           <!-- 모드 탭 -->
           <div class="mode-tabs">
-            <button 
-              v-for="tab in modeTabs" 
-              :key="tab.id"
-              class="mode-tab"
-              :class="{ active: activeTab === tab.id }"
-              @click="activeTab = tab.id"
-            >
+            <button v-for="tab in modeTabs" :key="tab.id" class="mode-tab" :class="{ active: activeTab === tab.id }"
+              @click="activeTab = tab.id">
               <i :class="tab.icon"></i>
               {{ tab.label }}
-              </button>
-            </div>
-            
+            </button>
+          </div>
+
           <!-- 로드뷰 통계 -->
           <div v-if="activeTab === 'roadview'" class="tab-content">
             <div class="roadview-stats-layout">
@@ -136,11 +123,13 @@
                   <div class="stat-details">
                     <div class="stat-row">
                       <span class="stat-label">게임 수</span>
-                      <span class="stat-value">{{ formatNumber(profile.statistics?.roadView?.practice?.totalGames || 0) }}</span>
+                      <span class="stat-value">{{ formatNumber(profile.statistics?.roadView?.practice?.totalGames || 0)
+                        }}</span>
                     </div>
                     <div class="stat-row">
                       <span class="stat-label">평균 점수</span>
-                      <span class="stat-value">{{ formatNumber(profile.statistics?.roadView?.practice?.averageScore || 0) }}</span>
+                      <span class="stat-value">{{ formatNumber(profile.statistics?.roadView?.practice?.averageScore ||
+                        0) }}</span>
                     </div>
                   </div>
                 </div>
@@ -154,18 +143,20 @@
                   <div class="stat-details">
                     <div class="stat-row">
                       <span class="stat-label">게임 수</span>
-                      <span class="stat-value">{{ formatNumber(profile.statistics?.roadView?.rank?.totalGames || 0) }}</span>
+                      <span class="stat-value">{{ formatNumber(profile.statistics?.roadView?.rank?.totalGames || 0)
+                        }}</span>
                     </div>
                     <div class="stat-row">
                       <span class="stat-label">평균 점수</span>
-                      <span class="stat-value">{{ formatAverageScore(profile.statistics?.roadView?.rank?.averageScore || 0) }}</span>
+                      <span class="stat-value">{{ formatAverageScore(profile.statistics?.roadView?.rank?.averageScore ||
+                        0) }}</span>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          
+
           <!-- 멀티플레이 전체 통계 -->
           <div v-if="activeTab === 'multiplayer'" class="tab-content">
             <div class="multiplayer-stats">
@@ -173,17 +164,19 @@
                 <i class="fas fa-trophy"></i>
                 랭킹 기록
               </h3>
-              
+
               <div class="rank-counts">
                 <div class="rank-count-item first">
                   <div class="rank-count-icon">🥇</div>
-                  <div class="rank-count-value">{{ formatNumber(profile.statistics?.roadView?.multi?.firstPlaceCount || 0) }}</div>
+                  <div class="rank-count-value">{{ formatNumber(profile.statistics?.roadView?.multi?.firstPlaceCount ||
+                    0) }}</div>
                   <div class="rank-count-label">1위</div>
                 </div>
-                
+
                 <div class="rank-count-item">
                   <div class="rank-count-icon">🎮</div>
-                  <div class="rank-count-value">{{ formatNumber(profile.statistics?.roadView?.multi?.totalGames || 0) }}</div>
+                  <div class="rank-count-value">{{ formatNumber(profile.statistics?.roadView?.multi?.totalGames || 0) }}
+                  </div>
                   <div class="rank-count-label">총 게임 수</div>
                 </div>
               </div>
@@ -214,14 +207,9 @@
 
           <div class="modal-body">
             <div class="inventory-tabs">
-              <button 
-                v-for="tab in inventoryTabs" 
-                :key="tab.id"
-                class="inventory-tab"
-                :class="{ active: activeInventoryTab === tab.id, disabled: tab.disabled }"
-                :disabled="tab.disabled"
-                @click="!tab.disabled && (activeInventoryTab = tab.id)"
-              >
+              <button v-for="tab in inventoryTabs" :key="tab.id" class="inventory-tab"
+                :class="{ active: activeInventoryTab === tab.id, disabled: tab.disabled }" :disabled="tab.disabled"
+                @click="!tab.disabled && (activeInventoryTab = tab.id)">
                 <i :class="tab.icon"></i>
                 {{ tab.label }}
               </button>
@@ -235,20 +223,11 @@
 
             <!-- 인벤토리 그리드 -->
             <div v-else class="inventory-grid">
-              <div 
-                v-for="item in filteredInventoryItems" 
-                :key="item.id"
-                class="inventory-item"
+              <div v-for="item in filteredInventoryItems" :key="item.id" class="inventory-item"
                 :class="{ equipped: item.equipped, clickable: !item.equipped }"
-                @click="!item.equipped && equipInventoryItem(item)"
-              >
+                @click="!item.equipped && equipInventoryItem(item)">
                 <div class="item-image">
-                  <img 
-                    v-if="item.itemImageUrl" 
-                    :src="item.itemImageUrl" 
-                    :alt="item.name"
-                    class="item-image-img"
-                  />
+                  <img v-if="item.itemImageUrl" :src="item.itemImageUrl" :alt="item.name" class="item-image-img" />
                   <span v-else class="item-icon-fallback">{{ item.icon }}</span>
                 </div>
                 <div class="item-info">
@@ -397,7 +376,7 @@ const userInfoForNav = computed(() => {
   if (!profile.value || !profile.value.nickname) {
     return {};
   }
-  
+
   return {
     name: profile.value.nickname,
     email: profile.value.email || '',
@@ -408,8 +387,8 @@ const userInfoForNav = computed(() => {
 
 // 더미 데이터 생성 함수
 function getDummyProfileData() {
-    return {
-        nickname: '코스팟마스터',
+  return {
+    nickname: '코스팟마스터',
     email: 'kospot@example.com',
     profileImageUrl: 'https://via.placeholder.com/150/667eea/ffffff?text=KS',
     currentPoint: 12450,
@@ -426,13 +405,13 @@ function getDummyProfileData() {
         rank: {
           totalGames: 128,
           averageScore: 8920
-      },
+        },
         multi: {
-        totalGames: 89,
-        averageScore: 7650,
-        firstPlaceCount: 23,
-        secondPlaceCount: 31,
-        thirdPlaceCount: 18
+          totalGames: 89,
+          averageScore: 7650,
+          firstPlaceCount: 23,
+          secondPlaceCount: 31,
+          thirdPlaceCount: 18
         }
       },
       photo: {
@@ -473,9 +452,9 @@ function getDummyProfileData() {
 async function loadProfile() {
   try {
     isLoading.value = true;
-    
+
     const response = await userService.getProfile();
-    
+
     if (response.isSuccess && response.result) {
       profile.value = response.result;
       console.log('✅ 프로필 로드 완료:', profile.value);
@@ -485,10 +464,10 @@ async function loadProfile() {
   } catch (error) {
     console.error('❌ 프로필 로드 실패:', error);
     console.log('📦 더미 데이터를 표시합니다.');
-    
+
     // API 실패 시 더미 데이터 사용
     profile.value = getDummyProfileData();
-    
+
     showErrorToast('API 연결 실패. 더미 데이터를 표시합니다.');
   } finally {
     isLoading.value = false;
@@ -536,12 +515,12 @@ function showErrorToast(message) {
 
 // 전체 게임 수 계산
 function getTotalGames() {
-  const roadViewTotal = 
-    (profile.value.statistics?.roadView?.practice?.totalGames || 0) + 
+  const roadViewTotal =
+    (profile.value.statistics?.roadView?.practice?.totalGames || 0) +
     (profile.value.statistics?.roadView?.rank?.totalGames || 0) +
     (profile.value.statistics?.roadView?.multi?.totalGames || 0);
-  const photoTotal = 
-    (profile.value.statistics?.photo?.practice?.totalGames || 0) + 
+  const photoTotal =
+    (profile.value.statistics?.photo?.practice?.totalGames || 0) +
     (profile.value.statistics?.photo?.rank?.totalGames || 0) +
     (profile.value.statistics?.photo?.multi?.totalGames || 0);
   return formatNumber(roadViewTotal + photoTotal);
@@ -555,10 +534,10 @@ function getAverageScore() {
   const photoPractice = profile.value.statistics?.photo?.practice?.averageScore || 0;
   const photoRank = profile.value.statistics?.photo?.rank?.averageScore || 0;
   const photoMulti = profile.value.statistics?.photo?.multi?.averageScore || 0;
-  
+
   const scores = [roadViewPractice, roadViewRank, roadViewMulti, photoPractice, photoRank, photoMulti].filter(s => s > 0);
   if (scores.length === 0) return '0';
-  
+
   const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
   return formatNumber(Math.round(avg));
 }
@@ -573,9 +552,9 @@ function getCurrentTabLabel() {
 async function loadInventory() {
   try {
     isLoadingInventory.value = true;
-    
+
     const response = await userService.getInventory();
-    
+
     if (response.isSuccess && response.result) {
       // API 응답을 프론트엔드 형식으로 변환
       inventoryItems.value = response.result.map(item => {
@@ -592,7 +571,7 @@ async function loadInventory() {
           description: item.description || ''
         };
       });
-      
+
       console.log('✅ 인벤토리 로드 완료:', inventoryItems.value.length, '개');
     } else {
       throw new Error(response.message || '인벤토리 조회 실패');
@@ -648,7 +627,7 @@ function getItemIcon(apiType, name) {
 async function equipInventoryItem(item) {
   try {
     const response = await userService.equipItem(item.id);
-    
+
     if (response.isSuccess) {
       // 같은 타입의 다른 아이템 장착 해제
       inventoryItems.value.forEach(i => {
@@ -656,13 +635,13 @@ async function equipInventoryItem(item) {
           i.equipped = false;
         }
       });
-      
+
       // 선택한 아이템 장착
       const itemIndex = inventoryItems.value.findIndex(i => i.id === item.id);
       if (itemIndex !== -1) {
         inventoryItems.value[itemIndex].equipped = true;
       }
-      
+
       showErrorToast(`${item.name}을(를) 장착했습니다.`);
     } else {
       throw new Error(response.message || '아이템 장착 실패');
@@ -769,7 +748,7 @@ watch(showInventoryModal, (newValue) => {
   height: 80px;
   border-radius: 50%;
   border: 3px solid #e5e7eb;
-  object-fit: cover;
+  object-fit: contain;
   background: #f3f4f6;
 }
 
@@ -1297,6 +1276,7 @@ watch(showInventoryModal, (newValue) => {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1677,6 +1657,7 @@ watch(showInventoryModal, (newValue) => {
     opacity: 0;
     transform: translateX(-50%) translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
@@ -1692,12 +1673,12 @@ watch(showInventoryModal, (newValue) => {
   .overall-stats {
     grid-template-columns: 1fr;
   }
-  
+
   .rank-card-inline {
     flex-direction: column;
     text-align: center;
   }
-  
+
   .rank-details {
     text-align: center;
   }
@@ -1767,7 +1748,7 @@ watch(showInventoryModal, (newValue) => {
   .inventory-grid {
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   }
-  
+
   .inventory-tabs {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -1777,4 +1758,4 @@ watch(showInventoryModal, (newValue) => {
     flex-shrink: 0;
   }
 }
-</style> 
+</style>
