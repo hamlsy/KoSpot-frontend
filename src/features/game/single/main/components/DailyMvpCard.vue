@@ -1,5 +1,5 @@
 <template>
-  <div class="mvp-root" :style="mvpColorVars" :class="{ 'is-loaded': isLoaded, 'is-empty': !mvp && isLoaded }"
+  <div class="mvp-root" :style="mvpColorVars" :class="{ 'is-loaded': isLoaded, 'is-empty': !todayMvp && isLoaded }"
     @click="handleCardClick">
     <!-- 로딩 상태 -->
     <transition name="fade">
@@ -11,7 +11,21 @@
 
     <!-- 에러 및 데이터 없음 (Empty State) 상태 -->
     <transition name="fade">
-      <div v-if="isLoaded && !mvp" class="empty-state">
+      <div v-if="isLoaded && !todayMvp" class="empty-state">
+        <!-- 어제의 MVP 미니 배지 (오늘 데이터가 없을 때) -->
+        <div v-if="yesterdayMvp" class="inline-yesterday-badge empty-state-badge" @click.stop="handleYesterdayClick">
+          <div class="yb-avatar">
+            <img v-if="yesterdayMvp.equippedMarkerImageUrl" :src="yesterdayMvp.equippedMarkerImageUrl"
+              @error="onImgError" />
+            <i v-else class="fas fa-user yb-placeholder"></i>
+          </div>
+          <div class="yb-text">
+            <span class="yb-title">YESTERDAY'S MVP</span>
+            <span class="yb-nickname">{{ yesterdayMvp.nickname }}</span>
+          </div>
+          <i class="fas fa-chevron-right yb-arrow"></i>
+        </div>
+
         <div class="empty-icon-wrapper">
           <i class="fas fa-crown empty-icon"></i>
         </div>
@@ -25,7 +39,7 @@
 
     <!-- 에러 상태 (API 오류 등) -->
     <transition name="fade">
-      <div v-if="isError && !mvp" class="error-overlay">
+      <div v-if="isError && !todayMvp" class="error-overlay">
         <i class="fas fa-exclamation-triangle error-icon"></i>
         <span class="error-text">MVP 데이터를 불러올 수 없습니다</span>
       </div>
@@ -33,27 +47,40 @@
 
     <!-- MVP 콘텐츠 (가로형 레이아웃) -->
     <transition name="fade">
-      <div v-if="mvp && isLoaded" class="mvp-content-horizontal">
+      <div v-if="todayMvp && isLoaded" class="mvp-content-horizontal">
 
         <!-- 왼쪽: 타이틀 섹션 -->
         <div class="hz-section section-left">
+          <!-- 어제의 MVP 미니 배지 (오늘 데이터가 있을 때) -->
+          <div v-if="yesterdayMvp" class="inline-yesterday-badge" @click.stop="handleYesterdayClick">
+            <div class="yb-avatar">
+              <img v-if="yesterdayMvp.equippedMarkerImageUrl" :src="yesterdayMvp.equippedMarkerImageUrl"
+                @error="onImgError" />
+              <i v-else class="fas fa-user yb-placeholder"></i>
+            </div>
+            <div class="yb-text">
+              <span class="yb-title">YESTERDAY'S MVP</span>
+              <span class="yb-nickname">{{ yesterdayMvp.nickname }}</span>
+            </div>
+            <i class="fas fa-chevron-right yb-arrow"></i>
+          </div>
+
           <div class="title-eyebrow">
             <span class="eyebrow-text">HALL OF GLORY</span>
           </div>
           <h1 class="title-main">TODAY'S MVP</h1>
           <div class="title-date">{{ formattedDate }}</div>
 
-          <!-- 모바일/좁은 화면에선 이 타이틀 밑에 마커 이미지가 오도록 재배치될 수 있음 -->
         </div>
 
         <!-- 중앙: 프로필 및 티어 섹션 -->
         <div class="hz-section section-center">
           <div class="marker-wrapper">
             <div class="marker-frame">
-              <img v-if="mvp.equippedMarkerImageUrl" :src="mvp.equippedMarkerImageUrl" :alt="mvp.nickname"
-                class="marker-img" @error="onImgError" />
+              <img v-if="todayMvp.equippedMarkerImageUrl" :src="todayMvp.equippedMarkerImageUrl"
+                :alt="todayMvp.nickname" class="marker-img" @error="onImgError" />
               <div v-else class="marker-placeholder">
-                <span>{{ mvp.nickname?.charAt(0)?.toUpperCase() }}</span>
+                <span>{{ todayMvp.nickname?.charAt(0)?.toUpperCase() }}</span>
               </div>
             </div>
             <div class="mvp-badge">
@@ -63,11 +90,12 @@
           </div>
 
           <div class="identity-section">
-            <h2 class="nickname">{{ mvp.nickname }}</h2>
+            <h2 class="nickname">{{ todayMvp.nickname }}</h2>
             <div class="tier-wrapper">
-              <span class="tier-badge" :class="`tier-${mvp.rankTier?.toLowerCase()}`">
-                <i :class="getTierIcon(mvp.rankTier)" class="tier-icon"></i>
-                <span class="tier-name">{{ formatTierName(mvp.rankTier) }} {{ formatTierLevel(mvp.rankLevel) }}</span>
+              <span class="tier-badge" :class="`tier-${todayMvp.rankTier?.toLowerCase()}`">
+                <i :class="getTierIcon(todayMvp.rankTier)" class="tier-icon"></i>
+                <span class="tier-name">{{ formatTierName(todayMvp.rankTier) }} {{ formatTierLevel(todayMvp.rankLevel)
+                  }}</span>
               </span>
             </div>
           </div>
@@ -75,28 +103,27 @@
 
         <!-- 오른쪽: 점수 및 액션 섹션 -->
         <div class="hz-section section-right">
-          <div class="rating-box">
-            <span class="rating-label">레이팅 점수</span>
-            <span class="rating-value">{{ mvp.ratingScore?.toLocaleString() }} <span
-                class="rating-unit">RP</span></span>
+          <!-- [강조 1] 메인 게임 점수 -->
+          <div class="primary-score-box">
+            <span class="score-label">BEST GAME SCORE</span>
+            <div class="score-value highlight">
+              {{ scoreInt }}.<span class="score-dec">{{ scoreDec }}</span>
+            </div>
           </div>
 
-          <div class="stats-row">
+          <!-- [강조 2] 플레이 지역 뱃지 -->
+          <div class="region-badge">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>{{ todayMvp.poiName || '-' }}</span>
+          </div>
+
+          <!-- [강등] 보조 정보 (레이팅 점수) -->
+          <div class="stats-row secondary-stats">
             <div class="stat-item">
-              <div class="stat-label">게임 점수</div>
-              <div class="stat-value highlight">{{ scoreInt }}.<span class="stat-dec">{{ scoreDec }}</span></div>
-            </div>
-            <div class="stat-divider"></div>
-            <div class="stat-item">
-              <div class="stat-label">플레이 지역</div>
-              <div class="stat-value">{{ mvp.poiName || '-' }}</div>
+              <div class="stat-label">레이팅 점수 (RP)</div>
+              <div class="stat-value">{{ todayMvp.ratingScore?.toLocaleString() || '-' }}</div>
             </div>
           </div>
-          <!-- 
-          <div class="interaction-hint">
-            <span>자세히 보기</span>
-            <i class="fas fa-chevron-right"></i>
-          </div> -->
         </div>
 
       </div>
@@ -115,7 +142,8 @@ const emit = defineEmits(['show-player-details']);
 const router = useRouter();
 
 // ─── State ───────────────────────────────────────────────────────────
-const mvp = ref(null)
+const todayMvp = ref(null)
+const yesterdayMvp = ref(null)
 const isLoading = ref(true)
 const isLoaded = ref(false)
 const isError = ref(false)
@@ -135,25 +163,31 @@ const mvpColorVars = computed(() => ({
 
 // ─── Computed ─────────────────────────────────────────────────────────
 const formattedDate = computed(() => {
-  if (!mvp.value?.mvpDate) return ''
-  const d = new Date(mvp.value.mvpDate)
+  if (!todayMvp.value?.mvpDate) return ''
+  const d = new Date(todayMvp.value.mvpDate)
   return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
 })
 
 const scoreInt = computed(() => {
-  if (mvp.value?.gameScore == null) return '0'
-  return Math.floor(mvp.value.gameScore).toString()
+  if (todayMvp.value?.gameScore == null) return '0'
+  return Math.floor(todayMvp.value.gameScore).toString()
 })
 
 const scoreDec = computed(() => {
-  if (mvp.value?.gameScore == null) return '0'
-  return (mvp.value.gameScore % 1).toFixed(1).split('.')[1]
+  if (todayMvp.value?.gameScore == null) return '0'
+  return (todayMvp.value.gameScore % 1).toFixed(1).split('.')[1]
 })
 
 // ─── Methods ──────────────────────────────────────────────────────────
 function handleCardClick() {
-  if (mvp.value && isLoaded.value) {
-    emit('show-player-details', mvp.value);
+  if (todayMvp.value && isLoaded.value) {
+    emit('show-player-details', todayMvp.value);
+  }
+}
+
+function handleYesterdayClick() {
+  if (yesterdayMvp.value && isLoaded.value) {
+    emit('show-player-details', yesterdayMvp.value);
   }
 }
 
@@ -217,24 +251,31 @@ onMounted(async () => {
     // API 응답 구조를 명확히 판별하여 처리
     if (responseData && typeof responseData === 'object' && 'isSuccess' in responseData) {
       if (responseData.isSuccess) {
-        // 성공 시 result가 null이면 MVP 없음(Empty State)으로 처리
-        mvp.value = responseData.result || null;
+        todayMvp.value = responseData.result?.today || null;
+        yesterdayMvp.value = responseData.result?.yesterday || null;
       } else {
-        mvp.value = null;
+        todayMvp.value = null;
+        yesterdayMvp.value = null;
       }
     } else {
       // 구조가 다르거나 데이터가 직접 포함된 경우 fallback 처리
-      mvp.value = responseData?.result !== undefined ? responseData.result : responseData;
+      const rawResult = responseData?.result !== undefined ? responseData.result : responseData;
+      todayMvp.value = rawResult?.today || null;
+      yesterdayMvp.value = rawResult?.yesterday || null;
     }
 
     // 데이터 유효성 추가 검사 (빈 객체 등)
-    if (mvp.value && typeof mvp.value === 'object' && Object.keys(mvp.value).length === 0) {
-      mvp.value = null;
+    if (todayMvp.value && typeof todayMvp.value === 'object' && Object.keys(todayMvp.value).length === 0) {
+      todayMvp.value = null;
+    }
+    if (yesterdayMvp.value && typeof yesterdayMvp.value === 'object' && Object.keys(yesterdayMvp.value).length === 0) {
+      yesterdayMvp.value = null;
     }
   } catch (e) {
     console.error('MVP fetch error:', e)
     isError.value = true
-    mvp.value = null;
+    todayMvp.value = null;
+    yesterdayMvp.value = null;
   } finally {
     isLoading.value = false
     isLoaded.value = true
@@ -252,7 +293,6 @@ onMounted(async () => {
   background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-background) 100%);
   border-radius: 20px;
   border: 1px solid var(--color-border);
-  /* box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); */
   overflow: hidden;
   display: flex;
   min-height: 260px;
@@ -267,10 +307,6 @@ onMounted(async () => {
 /* Hover Micro-interaction (데이터가 있을 때만) - 애니메이션 제거 (피로도 감소) */
 .mvp-root:not(.is-empty):hover {
   border-color: #cbd5e1;
-}
-
-.mvp-root:not(.is-empty):hover .interaction-hint i {
-  color: #0ea5e9;
 }
 
 /* ─── Loading / Error ─────────────────────────────────────────────── */
@@ -308,7 +344,6 @@ onMounted(async () => {
 .error-icon {
   font-size: 2rem;
   color: #ef4444;
-  /* 빨간색 계열 */
 }
 
 .error-text {
@@ -560,47 +595,78 @@ onMounted(async () => {
 .section-right {
   flex: 0 0 32%;
   align-items: flex-end;
-  /* 오른쪽 정렬 지원, 세부영역은 우측으로 붙임 */
   background: #f8fafc;
   border-left: 1px solid #f1f5f9;
 }
 
-.rating-box {
+/* --- 우측 우승 수치 (게임 점수) 강조 --- */
+.primary-score-box {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  margin-bottom: 1.5rem;
+  /* 데스크탑 우측 정렬 */
+  margin-bottom: 0.5rem;
   width: 100%;
 }
 
-.rating-label {
+.score-label {
   font-size: 0.75rem;
   color: #64748b;
   margin-bottom: 0.2rem;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.05em;
 }
 
-.rating-value {
-  font-size: 2rem;
+.score-value {
+  font-size: 2.3rem;
+  /* 기존 레이팅 점수보다 약간 더 크게 배치 */
   font-weight: 800;
   color: var(--color-primary);
   line-height: 1;
+  text-shadow: 0 2px 4px rgba(14, 165, 233, 0.1);
 }
 
-.rating-unit {
-  font-size: 1rem;
+.score-dec {
+  font-size: 1.2rem;
+  /* 소수점은 살짝 작게 */
   opacity: 0.8;
+}
+
+/* --- 플레이 지역 뱃지 (Point UI) --- */
+.region-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  color: #334155;
+  font-size: 0.9rem;
   font-weight: 700;
+  margin-bottom: 1.5rem;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.region-badge i {
+  color: #ef4444;
+  /* 마커 전용 레드 컬러로 강도 높은 주목성 부여 */
+  font-size: 1.1rem;
+}
+
+/* --- 보조 정보 패널 --- */
+.secondary-stats {
+  padding: 0.6rem;
+  background: transparent;
+  border: 1px dashed #cbd5e1;
+  /* 중요도가 낮음을 시각적으로 표현 */
+  margin-bottom: 0px;
 }
 
 .stats-row {
   display: flex;
   width: 100%;
-  background: #ffffff;
   border-radius: 12px;
-  padding: 0.75rem;
-  border: 1px solid #e2e8f0;
-  margin-bottom: 1.5rem;
 }
 
 .stat-item {
@@ -612,18 +678,10 @@ onMounted(async () => {
   gap: 0.2rem;
 }
 
-.stat-divider {
-  width: 1px;
-  background: #e2e8f0;
-  margin: 0 0.5rem;
-}
-
 .stat-label {
   font-size: 0.65rem;
   font-weight: 600;
   color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .stat-value {
@@ -632,32 +690,85 @@ onMounted(async () => {
   color: #1e293b;
 }
 
-.stat-value.highlight {
-  color: var(--color-primary);
+/* --- 어제의 MVP 뱃지 (Inline / Empty State) --- */
+.inline-yesterday-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f8fafc;
+  padding: 0.35rem 0.75rem 0.35rem 0.35rem;
+  border-radius: 100px;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 2rem;
 }
 
-.stat-dec {
-  font-size: 0.75rem;
-  opacity: 0.7;
+.inline-yesterday-badge:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
-/* 인터랙션 안내 우측 하단 */
-.interaction-hint {
+.empty-state-badge {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  margin-bottom: 0;
+  background: #ffffff;
+  z-index: 10;
+}
+
+.yb-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  overflow: hidden;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 0.4rem;
-  width: 100%;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #94a3b8;
-  transition: color 0.2s ease;
+  justify-content: center;
 }
 
-.interaction-hint i {
-  font-size: 0.75rem;
-  transition: transform 0.2s ease, color 0.2s ease;
+.yb-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
+
+.yb-placeholder {
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+
+.yb-text {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.yb-title {
+  font-size: 0.55rem;
+  font-weight: 800;
+  color: #0369a1;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.1rem;
+}
+
+.yb-nickname {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1;
+}
+
+.yb-arrow {
+  font-size: 0.6rem;
+  color: #94a3b8;
+  margin-left: 0.25rem;
+}
+
 
 /* ─── Transitions ─────────────────────────────────────────────────── */
 .fade-enter-active,
@@ -693,7 +804,6 @@ onMounted(async () => {
   .mvp-root {
     height: auto;
     min-height: 260px;
-    /* 모바일에서도 최소 높이 유지 */
   }
 
   .mvp-content-horizontal {
@@ -776,21 +886,24 @@ onMounted(async () => {
     margin-top: 0.5rem;
   }
 
-  .rating-box {
+  .primary-score-box {
     align-items: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .score-value {
+    font-size: 2rem;
+  }
+
+  .region-badge {
     margin-bottom: 1rem;
   }
 
-  .rating-value {
-    font-size: 1.75rem;
-  }
-
-  .stats-row {
-    margin-bottom: 1rem;
-  }
-
-  .interaction-hint {
-    justify-content: center;
+  .empty-state-badge {
+    position: relative;
+    top: 0;
+    left: 0;
+    margin-bottom: 1.5rem;
   }
 }
 </style>
