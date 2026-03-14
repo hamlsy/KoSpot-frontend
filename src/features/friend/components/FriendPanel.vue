@@ -576,7 +576,7 @@ export default {
 }
 
 .avatar-img {
-  object-fit: cover;
+  object-fit: contain;
   border: 1.5px solid var(--color-border);
   background: var(--color-background);
 }

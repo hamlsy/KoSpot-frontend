@@ -16,7 +16,13 @@
       >
         <div class="chat-header-left">
           <div class="chat-avatar-wrap">
-            <div class="chat-avatar" :style="{ background: friend.avatarColor }">
+            <img
+              v-if="friend.markerImageUrl"
+              :src="friend.markerImageUrl"
+              class="chat-avatar-img"
+              :alt="friend.nickname"
+            />
+            <div v-else class="chat-avatar" :style="{ background: friend.avatarColor }">
               {{ friend.nickname[0].toUpperCase() }}
             </div>
             <span class="chat-online-dot" :class="{ online: friend.isOnline }"></span>
@@ -60,20 +66,32 @@
             <p>{{ friend.nickname }}님과 대화를 시작해보세요</p>
           </div>
 
-          <div
-            v-for="(msg, i) in messages"
-            :key="msg.id"
-            class="message-item"
-            :class="{
-              'is-mine': msg.isMine,
-              'show-avatar': shouldShowAvatar(i),
-            }"
-          >
+          <template v-for="(msg, i) in messages" :key="msg.id">
+            <!-- 날짜 구분선 -->
+            <div v-if="shouldShowDateSeparator(i)" class="chat-date-separator">
+              <span>{{ formatDateSeparator(msg.timestamp) }}</span>
+            </div>
+
+            <div
+              class="message-item"
+              :class="{
+                'is-mine': msg.isMine,
+                'show-avatar': shouldShowAvatar(i),
+              }"
+            >
             <!-- 상대방 메시지 -->
             <template v-if="!msg.isMine">
-              <div v-if="shouldShowAvatar(i)" class="msg-avatar" :style="{ background: friend.avatarColor }">
-                {{ friend.nickname[0].toUpperCase() }}
-              </div>
+              <template v-if="shouldShowAvatar(i)">
+                <img
+                  v-if="friend.markerImageUrl"
+                  :src="friend.markerImageUrl"
+                  class="msg-avatar-img"
+                  :alt="friend.nickname"
+                />
+                <div v-else class="msg-avatar" :style="{ background: friend.avatarColor }">
+                  {{ friend.nickname[0].toUpperCase() }}
+                </div>
+              </template>
               <div v-else class="msg-avatar-spacer"></div>
               <div class="msg-bubble other-bubble">
                 <p class="msg-text">{{ msg.text }}</p>
@@ -88,7 +106,8 @@
                 <span v-if="shouldShowTime(i)" class="msg-time">{{ formatTime(msg.timestamp) }}</span>
               </div>
             </template>
-          </div>
+            </div>
+          </template>
         </div>
 
         <!-- 맨 아래로 이동 버튼 -->
@@ -290,6 +309,25 @@ export default {
       return !sameMinute
     }
 
+    // 날짜 구분선
+    function shouldShowDateSeparator(index) {
+      if (index === 0) return true
+      const msg = props.messages[index]
+      const prev = props.messages[index - 1]
+      const msgDate = new Date(msg.timestamp).toLocaleDateString()
+      const prevDate = new Date(prev.timestamp).toLocaleDateString()
+      return msgDate !== prevDate
+    }
+
+    function formatDateSeparator(timestamp) {
+      if (!timestamp) return ''
+      return new Date(timestamp).toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+    }
+
     function formatTime(timestamp) {
       if (!timestamp) return ''
       return new Date(timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
@@ -308,7 +346,8 @@ export default {
       isAtBottom,
       onHeaderClick, onWindowFocus, onScroll,
       scrollToBottomManual,
-      sendMessage, shouldShowAvatar, shouldShowTime, formatTime, autoResize,
+      sendMessage, shouldShowAvatar, shouldShowTime, 
+      shouldShowDateSeparator, formatDateSeparator, formatTime, autoResize,
     }
   },
 }
@@ -394,6 +433,15 @@ export default {
   font-size: 13px;
   font-weight: 700;
   color: #ffffff;
+}
+
+.chat-avatar-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: contain;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-background);
 }
 
 .chat-online-dot {
@@ -525,6 +573,23 @@ export default {
 .chat-empty-icon { font-size: 22px; color: var(--color-border-dark); }
 .chat-empty p { margin: 0; }
 
+.chat-date-separator {
+  text-align: center;
+  margin: 16px 0 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  display: flex;
+  justify-content: center;
+}
+
+.chat-date-separator span {
+  background: var(--color-surface-hover);
+  padding: 4px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+}
+
 /* ── 메시지 아이템 ───────────────────────────────────────── */
 .message-item {
   display: flex;
@@ -545,6 +610,17 @@ export default {
   font-size: 10px;
   font-weight: 700;
   color: #ffffff;
+  flex-shrink: 0;
+  margin-bottom: 2px;
+}
+
+.msg-avatar-img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: contain;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-background);
   flex-shrink: 0;
   margin-bottom: 2px;
 }

@@ -4,13 +4,13 @@
  */
 
 // 유저 마커 크기 (플레이어가 선택한 위치에 표시되는 마커)
-export const USER_MARKER_SIZE = { width: 24, height: 35 };
+export const USER_MARKER_SIZE = { width: 26, height: 37 };
 
 // 결과 마커 크기 (정답 위치에 표시되는 마커)
-export const RESULT_MARKER_SIZE = { width: 24, height: 35 };
+export const RESULT_MARKER_SIZE = { width: 26, height: 37 };
 
 // 게임 중 마커 크기 (지도 클릭 시 표시되는 인터랙티브 마커)
-export const GAME_MARKER_SIZE = { width: 24, height: 35 };
+export const GAME_MARKER_SIZE = { width: 26, height: 37 };
 
 // 게임 중 마커 offset (마커 이미지의 앵커 포인트)
 export const GAME_MARKER_OFFSET = { x: 12, y: 35 };
