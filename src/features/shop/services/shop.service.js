@@ -31,9 +31,9 @@ const SHOP_ENDPOINTS = {
  * @property {number} price - 아이템 가격
  * @property {number} stock - 재고 수량
  * @property {string} imageUrl - 이미지 URL
- * @property {boolean} owned - 보유 여부
- * @property {number} [memberItemId] - 사용자 보유 아이템 ID (owned가 true일 때)
- * @property {boolean} [equipped] - 장착 여부 (마커 등에서 사용)
+ * @property {boolean} isOwned - 보유 여부
+ * @property {number|null} [ownedMemberItemId] - 사용자 보유 아이템 ID (isOwned가 true일 때)
+ * @property {boolean} [isEquipped] - 현재 장착 여부
  */
 
 /**
@@ -50,7 +50,7 @@ const SHOP_ENDPOINTS = {
  */
 class ShopService {
   /**
-   * 상점 내 정보 조회 (내 포인트, 장착 아이템, 보유 아이템)
+   * 상점 내 정보 조회 (내 포인트, 장착 아이템)
    * @returns {Promise<ApiResponse>} API 응답 데이터
    */
   async getShopInfo() {
@@ -191,9 +191,9 @@ class ShopService {
       price: item.price,
       stock: 999, // 더미 재고
       imageUrl: item.image,
-      owned: item.owned,
-      memberItemId: item.owned ? Math.floor(Math.random() * 10000) : null,
-      equipped: item.equipped || false,
+      isOwned: item.owned,
+      ownedMemberItemId: item.owned ? Math.floor(Math.random() * 10000) : null,
+      isEquipped: item.equipped || false,
       rarity: item.rarity,
       isNew: item.isNew,
       currencyType: item.currencyType
@@ -217,9 +217,9 @@ class ShopService {
       image: apiItem.imageUrl,
       category: categoryId,
       isNew: apiItem.isNew || false,
-      owned: apiItem.owned,
-      memberItemId: apiItem.memberItemId,
-      equipped: apiItem.equipped || false,
+      owned: apiItem.isOwned ?? apiItem.owned ?? false,
+      memberItemId: apiItem.ownedMemberItemId ?? apiItem.memberItemId ?? null,
+      equipped: apiItem.isEquipped ?? apiItem.equipped ?? false,
       stock: apiItem.stock,
       itemId: apiItem.itemId
     };

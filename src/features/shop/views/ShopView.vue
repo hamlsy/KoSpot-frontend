@@ -88,6 +88,9 @@
                 <span class="rarity-chip" :class="getRarityClass(item.rarity)">
                   {{ item.rarity }}
                 </span>
+                <span v-if="item.stock > 0" class="stock-chip">
+                  수량: {{ formatNumber(item.stock) }}
+                </span>
               </div>
               <h3 class="card-name">{{ item.name }}</h3>
               <p class="card-desc">{{ item.description }}</p>
@@ -119,11 +122,12 @@
                   v-if="isEquippableCategory"
                   class="action-btn equip-btn"
                   :class="{ active: item.equipped }"
-                  :disabled="loading"
+                  :disabled="loading || !item.memberItemId"
+                  :title="!item.memberItemId ? '장착 가능한 보유 아이템 정보가 없습니다.' : ''"
                   @click="equipItem(item)"
                 >
-                  <i :class="item.equipped ? 'fas fa-check' : 'fas fa-hand-pointer'"></i>
-                  {{ item.equipped ? '장착중' : '장착하기' }}
+                  <i :class="item.equipped ? 'fas fa-check' : (item.memberItemId ? 'fas fa-hand-pointer' : 'fas fa-ban')"></i>
+                  {{ item.equipped ? '장착중' : (item.memberItemId ? '장착하기' : '장착 불가') }}
                 </button>
               </template>
             </div>
@@ -157,7 +161,7 @@
       v-if="showCompleteModal"
       :item="completedItem"
       :remainingCoins="userCoins"
-      :canEquip="isEquippableCategory && completedItem && !completedItem.equipped"
+      :canEquip="isEquippableCategory && completedItem && !completedItem.equipped && !!completedItem.memberItemId"
       @close="closeCompleteModal"
       @equip="equipFromCompleteModal"
     />
@@ -169,7 +173,6 @@ import PurchaseModal from '@/features/shop/components/PurchaseModal.vue'
 import PurchaseCompleteModal from '@/features/shop/components/PurchaseCompleteModal.vue'
 import NavigationBar from '@/core/components/NavigationBar.vue'
 import { shopService } from '@/features/shop/services/shop.service.js'
-import { userService } from '@/features/user/services/user.service.js'
 import { mainService } from '@/features/main/services/main.service.js'
 
 export default {
@@ -183,8 +186,6 @@ export default {
   data() {
     return {
       userCoins: 0,
-      ownedItems: [],
-      equippedItems: [],
       navUserInfo: {},
       currentCategory: 'markers',
       currentFilter: 'all',
@@ -249,14 +250,10 @@ export default {
         if (response.isSuccess && response.result) {
           const result = response.result
           this.userCoins = result.currentPoint || 0
-          this.ownedItems = result.ownedItems || []
-          this.equippedItems = result.equippedItems || []
         }
       } catch (error) {
         console.error('상점 정보 로드 실패:', error)
         this.userCoins = 0
-        this.ownedItems = []
-        this.equippedItems = []
       }
     },
 
@@ -291,19 +288,17 @@ export default {
         if (response.isSuccess) {
           const items = response.result.map(item => {
             const uiItem = shopService.convertApiToUiFormat(item, this.currentCategory)
-            
-            // shopInfo 기반으로 보유/장착 여부 오버라이드
-            const ownedItem = this.ownedItems.find(oi => oi.name === item.name || (oi.itemId && oi.itemId === item.itemId))
-            if (ownedItem) {
-              uiItem.owned = true
-              uiItem.memberItemId = ownedItem.memberItemId
-              // 장착 여부 확인
-              const isEquipped = this.equippedItems.some(ei => ei.memberItemId === ownedItem.memberItemId) || ownedItem.equipped
-              uiItem.equipped = isEquipped
-            } else {
-              uiItem.owned = false
-              uiItem.equipped = false
-            }
+            const rawMemberItemId = item.ownedMemberItemId ?? item.memberItemId ?? uiItem.memberItemId
+            const resolvedMemberItemId = rawMemberItemId !== null && rawMemberItemId !== undefined
+              ? Number(rawMemberItemId)
+              : null
+            const ownedFromItemResponse = item.isOwned ?? item.owned
+            const equippedFromItemResponse = item.isEquipped ?? item.equipped
+
+            // 보유/장착은 item API 스키마를 우선 신뢰
+            uiItem.owned = Boolean(ownedFromItemResponse || resolvedMemberItemId !== null)
+            uiItem.memberItemId = resolvedMemberItemId
+            uiItem.equipped = uiItem.owned && Boolean(equippedFromItemResponse)
 
             return uiItem
           })
@@ -347,18 +342,21 @@ export default {
         const response = await shopService.purchaseItem(this.selectedItem.itemId)
         if (response.isSuccess) {
           // 서버 데이터 최신화
-          await this.loadShopInfo()
-          
-          const items = this.apiItems[this.currentCategory]
-          const idx = items.findIndex(i => i.itemId === this.selectedItem.itemId)
-          if (idx !== -1) {
-            items[idx].owned = true
-            // 새롭게 갱신된 보유 아이템에서 memberItemId를 찾아서 할당
-            const updatedOwnedItem = this.ownedItems.find(oi => oi.name === items[idx].name || oi.itemId === items[idx].itemId)
-            if (updatedOwnedItem) items[idx].memberItemId = updatedOwnedItem.memberItemId
-          }
+          await Promise.all([
+            this.loadShopInfo(),
+            this.loadItems()
+          ])
+
+          const refreshedItems = this.apiItems[this.currentCategory] || []
+          const refreshedItem = refreshedItems.find(i => i.itemId === this.selectedItem.itemId)
+
           // alert() 대신 완료 모달 표시
-          this.completedItem = { ...this.selectedItem, memberItemId: items[idx]?.memberItemId || response.result?.memberItemId }
+          this.completedItem = {
+            ...(refreshedItem || this.selectedItem),
+            owned: true,
+            memberItemId: refreshedItem?.memberItemId ?? response.result?.memberItemId ?? this.selectedItem.memberItemId,
+            equipped: refreshedItem?.equipped || false
+          }
           this.showCompleteModal = true
         }
       } catch (error) {
@@ -389,18 +387,19 @@ export default {
     },
 
     async equipItem(item) {
-      if (!item.owned || !item.memberItemId) return
+      if (!item.owned || !item.memberItemId) {
+        console.warn('장착 실패: memberItemId가 없습니다.', item)
+        return
+      }
       try {
         this.loading = true
         const response = await shopService.equipItem(item.memberItemId)
         if (response.isSuccess) {
           // 상태 최신화
-          await this.loadShopInfo()
-          
-          const items = this.apiItems[this.currentCategory]
-          items.forEach(i => { if (i.memberItemId) i.equipped = false })
-          const idx = items.findIndex(i => i.memberItemId === item.memberItemId)
-          if (idx !== -1) items[idx].equipped = true
+          await Promise.all([
+            this.loadShopInfo(),
+            this.loadItems()
+          ])
         }
       } catch (error) {
         console.error('장착 실패:', error)
@@ -766,6 +765,21 @@ export default {
 
 .card-meta {
   margin-bottom: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.stock-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: var(--radius-sm);
+  background: var(--color-background);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
 }
 
 .rarity-chip {
