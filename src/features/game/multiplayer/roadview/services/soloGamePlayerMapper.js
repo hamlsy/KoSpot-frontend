@@ -117,6 +117,10 @@ export const updatePlayersFromRoundResult = (gamePlayers = [], roundResultData) 
       if (result.timeToAnswer != null) {
         targetPlayer.timeToAnswer = Number(result.timeToAnswer);
       }
+
+      if (result.markerImageUrl) {
+        targetPlayer.markerImageUrl = result.markerImageUrl;
+      }
     });
 
     return nextPlayers;
@@ -184,6 +188,12 @@ export const updatePlayersFromRoundResult = (gamePlayers = [], roundResultData) 
 
     if (submission.earnedScore != null) {
       targetPlayer.lastRoundScore = Number(submission.earnedScore);
+    }
+
+    if (submission.markerImageUrl) {
+      targetPlayer.markerImageUrl = submission.markerImageUrl;
+    } else if (result.markerImageUrl) {
+      targetPlayer.markerImageUrl = result.markerImageUrl;
     }
 
     if (submission.timeToAnswer != null) {

@@ -99,10 +99,11 @@ const gameStore = {
   endGameRound() {
     this.state.playersGuesses = [];
     this.state.roundEnded = true;
+    const matchType = this.state.roomData?.matchType;
     
     // 실제 로직에서는 서버에서 계산된 점수 받아옴
     // 여기서는 테스트를 위해 간단히 구현
-    if (this.state.roomData.matchType === 'team') {
+    if (matchType === 'team') {
       this.state.teams.forEach(team => {
         const teamPlayers = this.state.players.filter(p => p.teamId === team.id);
         const teamScore = Math.floor(Math.random() * 500) + 500;

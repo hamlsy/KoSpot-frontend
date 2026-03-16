@@ -720,7 +720,12 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
             playerName: submission?.nickname || player?.nickname || '알 수 없음',
             position,
             color: '#3b82f6',
-            markerImageUrl: player?.markerImageUrl || player?.equippedMarker || player?.equippedMarkerImageUrl || null,
+            markerImageUrl:
+              submission?.markerImageUrl ||
+              player?.markerImageUrl ||
+              player?.equippedMarker ||
+              player?.equippedMarkerImageUrl ||
+              null,
             score: submission?.earnedScore ?? submission?.roundScore ?? null,
             distance: submission?.distance ?? null,
             timeToAnswer: submission?.timeToAnswer != null ? Number(submission.timeToAnswer) : null,
