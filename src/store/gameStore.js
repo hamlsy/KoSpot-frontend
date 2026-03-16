@@ -19,6 +19,8 @@ const gameStore = {
     // 게임 플레이 상태
     currentRound: 1,
     totalRounds: 5,
+    roundId: null,
+    roundVersion: null,
     remainingTime: 120,
     currentLocation: null,
     actualLocation: null,
@@ -36,6 +38,8 @@ const gameStore = {
     showRoundResults: false,
     showGameResults: false,
     isLoading: false,
+    timerStarted: false,
+    canReissue: true,
     
     // 팀 모드 관련 상태
     canSubmitGuess: true
@@ -59,6 +63,8 @@ const gameStore = {
     // 라운드 및 게임 진행 상태 초기화
     this.state.currentRound = 1;
     this.state.totalRounds = 5;
+    this.state.roundId = null;
+    this.state.roundVersion = null;
     this.state.remainingTime = 120;
     this.state.roundEnded = false;
     this.state.hasSubmittedGuess = false;
@@ -66,6 +72,8 @@ const gameStore = {
     this.state.showGameResults = false;
     this.state.guessPosition = null;
     this.state.isLoading = false;
+    this.state.timerStarted = false;
+    this.state.canReissue = true;
     this.state.canSubmitGuess = true;
     
     // 채팅 메시지 초기화 (이전 게임의 채팅이 남지 않도록)
@@ -143,6 +151,8 @@ const gameStore = {
     this.state.currentRound++;
     this.state.roundEnded = false;
     this.state.hasSubmittedGuess = false;
+    this.state.timerStarted = false;
+    this.state.canReissue = true;
     this.state.guessPosition = null;
     this.state.actualLocation = null;
     this.state.isLoading = true;

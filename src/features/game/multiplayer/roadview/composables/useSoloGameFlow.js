@@ -52,6 +52,97 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     Object.assign(callbacks, nextCallbacks)
   }
 
+  const toNullableNumber = (value) => {
+    if (value == null) {
+      return null
+    }
+
+    const parsed = Number(value)
+    return Number.isNaN(parsed) ? null : parsed
+  }
+
+  const extractMessageRoundId = (message = {}) => {
+    return toNullableNumber(message?.roundInfo?.roundId ?? message?.roundId)
+  }
+
+  const extractMessageRoundVersion = (message = {}) => {
+    return toNullableNumber(message?.roundVersion ?? message?.roundInfo?.roundVersion)
+  }
+
+  const getCurrentRoundState = () => {
+    return {
+      roundId: toNullableNumber(gameStore?.state?.roundId),
+      roundVersion: toNullableNumber(gameStore?.state?.roundVersion),
+      currentRound: toNullableNumber(gameStore?.state?.currentRound)
+    }
+  }
+
+  const updateStoreRoundState = ({ nextRoundId = null, nextRoundVersion = null }) => {
+    if (!gameStore?.state) {
+      return
+    }
+
+    if (nextRoundId != null) {
+      gameStore.state.roundId = nextRoundId
+    }
+
+    if (nextRoundVersion != null) {
+      gameStore.state.roundVersion = nextRoundVersion
+    }
+  }
+
+  const shouldApplyRoundPayload = (message = {}, options = {}) => {
+    const { allowRoundAdvance = false } = options
+    const incomingRoundId = extractMessageRoundId(message)
+    const incomingRoundVersion = extractMessageRoundVersion(message)
+    const { roundId: currentRoundId, roundVersion: currentRoundVersion, currentRound } = getCurrentRoundState()
+
+    if (
+      incomingRoundId != null &&
+      currentRoundId != null &&
+      incomingRoundId !== currentRoundId
+    ) {
+      const incomingRoundNumber = toNullableNumber(message?.currentRound)
+      const isRoundAdvance =
+        allowRoundAdvance &&
+        incomingRoundNumber != null &&
+        currentRound != null &&
+        incomingRoundNumber > currentRound
+
+      if (!isRoundAdvance) {
+        return {
+          shouldApply: false,
+          reason: 'ROUND_ID_MISMATCH',
+          incomingRoundId,
+          incomingRoundVersion,
+        }
+      }
+    }
+
+    if (
+      incomingRoundId != null &&
+      currentRoundId != null &&
+      incomingRoundId === currentRoundId &&
+      incomingRoundVersion != null &&
+      currentRoundVersion != null &&
+      incomingRoundVersion < currentRoundVersion
+    ) {
+      return {
+        shouldApply: false,
+        reason: 'STALE_ROUND_VERSION',
+        incomingRoundId,
+        incomingRoundVersion,
+      }
+    }
+
+    return {
+      shouldApply: true,
+      reason: null,
+      incomingRoundId,
+      incomingRoundVersion,
+    }
+  }
+
   const toComparableId = (value) => {
     if (value == null) {
       return null
@@ -221,12 +312,20 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
       // 게임 데이터 저장
       gameId.value = result.gameId
       roundId.value = result.roundInfo.roundId
+
+      const initialRoundVersion = extractMessageRoundVersion(result)
+      updateStoreRoundState({
+        nextRoundId: toNullableNumber(result?.roundInfo?.roundId),
+        nextRoundVersion: initialRoundVersion,
+      })
       
       // 게임 스토어 업데이트
       if (gameStore) {
         gameStore.state.gameId = result.gameId
         gameStore.state.currentRound = result.currentRound
         gameStore.state.totalRounds = result.totalRounds
+        gameStore.state.timerStarted = false
+        gameStore.state.canReissue = true
         gameStore.state.currentLocation = {
           lat: result.roundInfo.targetLat,
           lng: result.roundInfo.targetLng
@@ -308,6 +407,15 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
 
     ensureSubmissionSubscription(message?.gameId)
 
+    if (gameStore?.state) {
+      gameStore.state.timerStarted = true
+      gameStore.state.canReissue = false
+    }
+
+    if (isRetryingRoadview.value) {
+      isRetryingRoadview.value = false
+    }
+
     if (callbacks.onTimerStart) {
       callbacks.onTimerStart(message)
     }
@@ -317,6 +425,7 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
       const parsedRoundId = Number(detectedRoundId)
       if (!Number.isNaN(parsedRoundId)) {
         roundId.value = parsedRoundId
+        updateStoreRoundState({ nextRoundId: parsedRoundId })
       }
     }
 
@@ -832,6 +941,10 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
 
     ensureSubmissionSubscription(message?.gameId)
 
+    const messageRoundId = extractMessageRoundId(message)
+    const reIssueGuard = shouldApplyRoundPayload(message, { allowRoundAdvance: false })
+    const roundGuard = shouldApplyRoundPayload(message, { allowRoundAdvance: true })
+
     // 좌표 추출 (roundInfo가 있으면 roundInfo에서, 없으면 직접 메시지에서)
     const targetLat = message.roundInfo?.targetLat ?? message.targetLat
     const targetLng = message.roundInfo?.targetLng ?? message.targetLng
@@ -842,10 +955,39 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     }
 
     // 재발급 메시지인지 확인 (roundInfo가 없거나, roundInfo.roundId가 현재 roundId와 같고 재시도 중인 경우)
-    const messageRoundId = message.roundInfo?.roundId ?? message.roundId
-    const isReIssueMessage = isRetryingRoadview.value || 
-                             (!message.roundInfo && message.targetLat != null && message.targetLng != null) ||
-                             (messageRoundId != null && Number(messageRoundId) === roundId.value && isRetryingRoadview.value)
+    const isLikelyRoundStartMessage =
+      message?.roundInfo != null &&
+      message?.currentRound != null
+
+    const isReIssueMessage =
+      !isLikelyRoundStartMessage &&
+      (
+        isRetryingRoadview.value ||
+        (!message.roundInfo && message.targetLat != null && message.targetLng != null) ||
+        (messageRoundId != null && Number(messageRoundId) === roundId.value && isRetryingRoadview.value)
+      )
+
+    if (isReIssueMessage && !reIssueGuard.shouldApply) {
+      console.log('[Solo Flow] 재발급 메시지 무시:', {
+        reason: reIssueGuard.reason,
+        incomingRoundId: reIssueGuard.incomingRoundId,
+        incomingRoundVersion: reIssueGuard.incomingRoundVersion,
+        currentRoundId: gameStore?.state?.roundId,
+        currentRoundVersion: gameStore?.state?.roundVersion,
+      })
+      return
+    }
+
+    if (!isReIssueMessage && !roundGuard.shouldApply) {
+      console.log('[Solo Flow] 라운드 메시지 무시:', {
+        reason: roundGuard.reason,
+        incomingRoundId: roundGuard.incomingRoundId,
+        incomingRoundVersion: roundGuard.incomingRoundVersion,
+        currentRoundId: gameStore?.state?.roundId,
+        currentRoundVersion: gameStore?.state?.roundVersion,
+      })
+      return
+    }
 
     // 내부 상태 관리: gameId, roundId 업데이트
     if (message.gameId != null) {
@@ -853,11 +995,10 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     }
     
     if (messageRoundId != null) {
-      const parsedRoundId = Number(messageRoundId)
-      if (!Number.isNaN(parsedRoundId)) {
-        roundId.value = parsedRoundId
-      }
+      roundId.value = messageRoundId
     }
+
+    const parsedRoundVersion = extractMessageRoundVersion(message)
 
     // 재발급 메시지 처리
     if (isReIssueMessage) {
@@ -870,6 +1011,11 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
         reIssueAttempts.value = 0
         console.log('[Solo Flow] 재발급 성공 - 재시도 플래그 해제')
       }
+
+      updateStoreRoundState({
+        nextRoundId: messageRoundId,
+        nextRoundVersion: parsedRoundVersion,
+      })
 
       // 재발급 메시지도 콜백으로 전달 (gameStore 업데이트는 컴포넌트에서)
       if (callbacks.onNextRound) {
@@ -901,6 +1047,16 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     // 타이머 관련 내부 상태만 초기화 (gameStore는 컴포넌트에서 업데이트)
     roundStartTime.value = null
     timerDurationMs.value = 120000
+
+    if (gameStore?.state) {
+      gameStore.state.timerStarted = false
+      gameStore.state.canReissue = true
+    }
+
+    updateStoreRoundState({
+      nextRoundId: messageRoundId,
+      nextRoundVersion: parsedRoundVersion,
+    })
     
     // 첫 번째 라운드인지 확인 (currentRound === 1)
     const isFirstRound = message.currentRound === 1
@@ -957,12 +1113,34 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
    * 로드뷰 표시 실패 시 재발급 요청
    */
   const requestRoadviewReIssue = async () => {
-    
-    if (!roomId.value || !gameId.value || !roundId.value) {
+    const activeRoundId = roundId.value ?? toNullableNumber(gameStore?.state?.roundId)
+    const expectedRoundVersion = toNullableNumber(gameStore?.state?.roundVersion)
+    const canReissue = Boolean(gameStore?.state?.canReissue)
+    const timerStarted = Boolean(gameStore?.state?.timerStarted)
+
+    if (!canReissue || timerStarted) {
+      console.log('[Solo Flow] 타이머 시작 후 재발급 차단:', {
+        canReissue,
+        timerStarted
+      })
+      isRetryingRoadview.value = false
+      return false
+    }
+
+    if (!roomId.value || !gameId.value || !activeRoundId) {
       console.error('[Solo Flow] 재발급 불가: 게임 정보 없음', {
         roomId: roomId.value || '없음',
         gameId: gameId.value || '없음',
-        roundId: roundId.value || '없음'
+        roundId: activeRoundId || '없음'
+      })
+      isRetryingRoadview.value = false
+      return false
+    }
+
+    if (expectedRoundVersion == null) {
+      console.warn('[Solo Flow] 재발급 불가: expectedRoundVersion 없음', {
+        roundId: activeRoundId,
+        roundVersion: gameStore?.state?.roundVersion
       })
       isRetryingRoadview.value = false
       return false
@@ -978,7 +1156,38 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
       reIssueAttempts.value++
       isRetryingRoadview.value = true
 
-      const result = await soloGameApi.reIssueRoadview(roomId.value, gameId.value, roundId.value)
+      const result = await soloGameApi.reIssueRoadview(roomId.value, gameId.value, activeRoundId, {
+        expectedRoundVersion,
+        reason: 'ROADVIEW_LOAD_FAILED'
+      })
+
+      const responseRoundProblem = result?.roundProblem && typeof result.roundProblem === 'object'
+        ? result.roundProblem
+        : null
+
+      const hasRoundPayload = Boolean(responseRoundProblem) ||
+        result?.targetLat != null ||
+        result?.targetLng != null ||
+        result?.roundInfo
+
+      if (hasRoundPayload) {
+        const mappedRoundPayload = {
+          ...(responseRoundProblem || result),
+          gameId: result?.gameId ?? gameId.value,
+          roundId: responseRoundProblem?.roundId ?? result?.roundId ?? activeRoundId,
+          roundVersion:
+            responseRoundProblem?.roundVersion ??
+            result?.roundVersion ??
+            expectedRoundVersion,
+        }
+
+        handleNextRound(mappedRoundPayload)
+      }
+
+      if (result?.reissued === false) {
+        console.log('[Solo Flow] 재발급 선점됨(reissued=false) - 정상 처리')
+      }
+
       // 새로운 좌표를 받으면 handleNextRound에서 자동으로 로드뷰를 다시 로드함
       return true
     } catch (error) {
@@ -1177,6 +1386,13 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     roundStartTime.value = null
     timerDurationMs.value = 120000
     timeDiff.value = 0
+
+    if (gameStore?.state) {
+      gameStore.state.roundId = null
+      gameStore.state.roundVersion = null
+      gameStore.state.timerStarted = false
+      gameStore.state.canReissue = true
+    }
 
   }
 
