@@ -229,6 +229,7 @@ import FriendToggleButton from '@/features/friend/components/FriendToggleButton.
 import FriendPanel from '@/features/friend/components/FriendPanel.vue';
 import UserSearchModal from '@/features/friend/components/UserSearchModal.vue';
 import FriendChatWindow from '@/features/friend/components/FriendChatWindow.vue';
+import { lockBodyScroll, unlockBodyScroll, unlockBodyScrollByPrefix } from '@/core/utils/scrollLock.js';
 
 export default {
   name: 'NavigationBar',
@@ -332,6 +333,9 @@ export default {
       immediate: true,
       deep: true
     },
+    $route() {
+      this.releaseAllOwnScrollLocks();
+    }
   },
   mounted() {
     // 토큰이 있으면 사용자 정보 조회
@@ -344,9 +348,15 @@ export default {
     document.addEventListener('click', this.handleGlobalClick);
   },
   beforeUnmount() {
+    this.releaseAllOwnScrollLocks();
     document.removeEventListener('click', this.handleGlobalClick);
   },
   methods: {
+    releaseAllOwnScrollLocks() {
+      unlockBodyScrollByPrefix('navigation-bar-');
+      this.showProfileMenu = false;
+      this.showContactModal = false;
+    },
     /**
      * 친구 채팅창 열기 핸들러
      */
@@ -390,14 +400,14 @@ export default {
     toggleProfileMenu() {
       this.showProfileMenu = !this.showProfileMenu;
       if (this.showProfileMenu) {
-        document.body.style.overflow = "hidden";
+        lockBodyScroll('navigation-bar-profile');
       } else {
-        document.body.style.overflow = "";
+        unlockBodyScroll('navigation-bar-profile');
       }
     },
     closeProfileMenu() {
       this.showProfileMenu = false;
-      document.body.style.overflow = "";
+      unlockBodyScroll('navigation-bar-profile');
     },
     toggleNotificationDropdown() {
       this.showNotificationDropdown = !this.showNotificationDropdown;
@@ -421,12 +431,12 @@ export default {
     openContactModal() {
       this.showContactModal = true;
       this.emailCopied = false;
-      document.body.style.overflow = "hidden";
+      lockBodyScroll('navigation-bar-contact');
     },
     // 문의 모달 닫기
     closeContactModal() {
       this.showContactModal = false;
-      document.body.style.overflow = "";
+      unlockBodyScroll('navigation-bar-contact');
     },
     // 이메일 복사
     async copyEmail() {
