@@ -52,6 +52,105 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     Object.assign(callbacks, nextCallbacks)
   }
 
+  const toComparableId = (value) => {
+    if (value == null) {
+      return null
+    }
+    return String(value)
+  }
+
+  const collectEntityIds = (entity = {}) => {
+    const keys = ['playerId', 'memberId', 'id']
+    return keys
+      .map((key) => toComparableId(entity?.[key]))
+      .filter(Boolean)
+  }
+
+  const buildEntityMapByIds = (items = []) => {
+    const map = new Map()
+    items.forEach((item) => {
+      collectEntityIds(item).forEach((id) => {
+        if (!map.has(id)) {
+          map.set(id, item)
+        }
+      })
+    })
+    return map
+  }
+
+  const findBySharedId = (map, entity) => {
+    const ids = collectEntityIds(entity)
+    for (const id of ids) {
+      if (map.has(id)) {
+        return map.get(id)
+      }
+    }
+    return null
+  }
+
+  const resolveGuessPosition = (entry = {}) => {
+    const position = entry?.position || entry?.guessPosition
+    if (position?.lat != null && position?.lng != null) {
+      return {
+        lat: Number(position.lat),
+        lng: Number(position.lng),
+      }
+    }
+
+    const lat = entry?.lat ?? entry?.guessLat ?? entry?.submissionLat
+    const lng = entry?.lng ?? entry?.guessLng ?? entry?.submissionLng
+    if (lat == null || lng == null) {
+      return null
+    }
+
+    return {
+      lat: Number(lat),
+      lng: Number(lng),
+    }
+  }
+
+  const normalizeRoundPlayerResult = (entry = {}) => {
+    const position = resolveGuessPosition(entry)
+    if (!position) {
+      return null
+    }
+
+    return {
+      playerId: entry?.playerId ?? entry?.memberId ?? entry?.id ?? null,
+      memberId: entry?.memberId ?? entry?.playerId ?? entry?.id ?? null,
+      playerName: entry?.nickname || entry?.playerName || entry?.name || '알 수 없음',
+      position,
+      color: entry?.color || '#3b82f6',
+      markerImageUrl:
+        entry?.markerImageUrl || entry?.equippedMarker || entry?.equippedMarkerImageUrl || null,
+      score: entry?.earnedScore ?? entry?.roundScore ?? entry?.score ?? null,
+      distance: entry?.distance ?? entry?.distanceToTarget ?? null,
+      timeToAnswer: entry?.timeToAnswer != null ? Number(entry.timeToAnswer) : null,
+      totalScore: entry?.totalScore != null ? Number(entry.totalScore) : null,
+      roundRank: entry?.roundRank != null ? Number(entry.roundRank) : null,
+      gamePlayerStatus: entry?.gamePlayerStatus || null,
+      nickname: entry?.nickname || entry?.playerName || entry?.name || '알 수 없음',
+    }
+  }
+
+  const extractServerRoundResults = (message = {}) => {
+    const candidates = [
+      message?.roundPlayerResults,
+      message?.playerRoundResults,
+      message?.results?.roundPlayerResults,
+      message?.results?.playerRoundResults,
+    ]
+
+    const raw = candidates.find((candidate) => Array.isArray(candidate) && candidate.length > 0)
+    if (!raw) {
+      return []
+    }
+
+    return raw
+      .map((entry) => normalizeRoundPlayerResult(entry))
+      .filter(Boolean)
+  }
+
   const ensureSubmissionSubscription = (incomingGameId) => {
     if (incomingGameId == null) {
       return
@@ -573,32 +672,68 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
       })
     }
 
+    const serverRoundResults = extractServerRoundResults(message)
+
     // 플레이어 추측 위치 설정 (지도 표시용)
-    // playerSubmissionResults에서 nickname을 직접 가져오고, playerTotalResults에서 다른 정보 가져오기
-    const playerGuessesData = message.playerSubmissionResults.map((submission, index) => {
-      const player = message.playerTotalResults[index]
-      
-      // 마커 이미지 URL은 playerTotalResults에서 가져오거나 기본값 사용
-      // (SoloGameView의 onRoundResultUpdate에서 gamePlayers의 markerImageUrl로 업데이트됨)
-      const markerImageUrl = player.markerImageUrl || null
-      
-      return {
-        playerId: player.playerId,
-        memberId: player.memberId != null ? Number(player.memberId) : player.playerId, // memberId 추가
-        playerName: submission.nickname || player.nickname, // playerSubmissionResults의 nickname 우선 사용, 없으면 playerTotalResults에서 가져오기
-        position: { lat: submission.lat, lng: submission.lng },
-        color: '#3b82f6', // 기본값: 파란색
-        markerImageUrl: markerImageUrl, // 플레이어 마커 이미지 (SoloGameView에서 gamePlayers로 업데이트됨)
-        score: submission.earnedScore,
-        distance: submission.distance,
-        timeToAnswer: submission.timeToAnswer != null ? Number(submission.timeToAnswer) : null // timeToAnswer 추가
-      }
-    })
+    // 1) 서버가 단일 결과 배열을 주면 우선 사용
+    // 2) 없으면 playerId/memberId 기반 조인으로 fallback
+    let playerGuessesData = []
+
+    if (serverRoundResults.length > 0) {
+      playerGuessesData = serverRoundResults.map((result) => ({
+        playerId: result.playerId,
+        memberId: result.memberId != null ? Number(result.memberId) : result.playerId,
+        playerName: result.playerName,
+        position: result.position,
+        color: result.color || '#3b82f6',
+        markerImageUrl: result.markerImageUrl || null,
+        score: result.score,
+        distance: result.distance,
+        timeToAnswer: result.timeToAnswer,
+      }))
+    } else {
+      const submissionResults = Array.isArray(message?.playerSubmissionResults)
+        ? message.playerSubmissionResults
+        : []
+      const totalResults = Array.isArray(message?.playerTotalResults)
+        ? message.playerTotalResults
+        : []
+
+      const totalResultById = buildEntityMapByIds(totalResults)
+
+      playerGuessesData = submissionResults
+        .map((submission) => {
+          const player = findBySharedId(totalResultById, submission)
+          const position = resolveGuessPosition(submission)
+          if (!position) {
+            return null
+          }
+
+          return {
+            playerId: submission?.playerId ?? player?.playerId ?? submission?.memberId ?? player?.memberId ?? null,
+            memberId:
+              submission?.memberId != null
+                ? Number(submission.memberId)
+                : player?.memberId != null
+                  ? Number(player.memberId)
+                  : submission?.playerId ?? player?.playerId ?? null,
+            playerName: submission?.nickname || player?.nickname || '알 수 없음',
+            position,
+            color: '#3b82f6',
+            markerImageUrl: player?.markerImageUrl || player?.equippedMarker || player?.equippedMarkerImageUrl || null,
+            score: submission?.earnedScore ?? submission?.roundScore ?? null,
+            distance: submission?.distance ?? null,
+            timeToAnswer: submission?.timeToAnswer != null ? Number(submission.timeToAnswer) : null,
+          }
+        })
+        .filter(Boolean)
+    }
     
     // 플레이어 결과 업데이트는 SoloGameView의 gamePlayers에서 처리
     // 라운드 결과 정보를 콜백으로 전달하여 gamePlayers 업데이트 및 playerGuesses의 markerImageUrl 업데이트
     if (callbacks.onRoundResultUpdate) {
       callbacks.onRoundResultUpdate({
+        roundPlayerResults: serverRoundResults,
         playerTotalResults: message.playerTotalResults,
         playerSubmissionResults: message.playerSubmissionResults,
         playerGuesses: playerGuessesData
@@ -608,15 +743,30 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
       gameStore.state.playerGuesses = playerGuessesData
     }
 
-    // 최고 점수 플레이어 설정 (playerTotalResults에서 직접 계산)
-    if (message.playerTotalResults && message.playerTotalResults.length > 0) {
+    // 최고 점수 플레이어 설정
+    if (serverRoundResults.length > 0) {
+      const sortedServerResults = [...serverRoundResults].sort(
+        (a, b) => (b.totalScore || 0) - (a.totalScore || 0),
+      )
+      const topResult = sortedServerResults[0]
+      if (topResult) {
+        gameStore.state.topPlayer = {
+          playerName: topResult.nickname || topResult.playerName || '알 수 없음',
+          distance: topResult.distance || 0,
+        }
+      }
+    } else if (Array.isArray(message?.playerTotalResults) && message.playerTotalResults.length > 0) {
       const sortedResults = [...message.playerTotalResults].sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0))
       const topResult = sortedResults[0]
-      const topSubmissionIndex = message.playerTotalResults.findIndex(r => r.playerId === topResult.playerId)
-      const topSubmission = message.playerSubmissionResults[topSubmissionIndex]
+      const submissionResults = Array.isArray(message?.playerSubmissionResults)
+        ? message.playerSubmissionResults
+        : []
+      const submissionById = buildEntityMapByIds(submissionResults)
+      const topSubmission = findBySharedId(submissionById, topResult)
+
       gameStore.state.topPlayer = {
-        playerName: topResult.nickname,
-        distance: topSubmission?.distance || 0
+        playerName: topResult?.nickname || '알 수 없음',
+        distance: topSubmission?.distance || 0,
       }
     }
 
