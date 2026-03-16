@@ -19,6 +19,9 @@
           <span class="score-unit">점</span>
         </div>
         <p class="score-caption">획득 점수</p>
+        <p v-if="hasBonusScore" class="bonus-score-caption">
+          보너스 +{{ Number(bonusScore).toFixed(1) }}점
+        </p>
       </div>
 
       <!-- 보조 통계 행: 플레이어 + 거리 + 레이팅 점수 -->
@@ -131,6 +134,7 @@ export default {
   props: {
     show: { type: Boolean, default: false },
     score: { type: Number, default: 0 },
+    bonusScore: { type: Number, default: 0 },
     distance: { type: Number, default: 0 },
     currentRankPoints: { type: Number, default: 0 },
     rankPointChange: { type: Number, default: 0 },
@@ -170,6 +174,9 @@ export default {
       return this.previousRankTier && this.currentRankTier &&
              (this.previousRankTier !== this.currentRankTier ||
               this.previousRankLevel !== this.currentRankLevel);
+    },
+    hasBonusScore() {
+      return Number(this.bonusScore) > 0;
     },
     isDowngrade() {
       if (!this.hasRankChange) return false;
@@ -377,6 +384,18 @@ export default {
   font-size: 0.82rem;
   color: #9ca3af;
   font-weight: 500;
+}
+
+.bonus-score-caption {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #0d9488;
+  background: rgba(51, 251, 232, 0.18);
+  border: 1px solid rgba(13, 148, 136, 0.25);
+  border-radius: 999px;
+  padding: 3px 8px;
+  line-height: 1.2;
 }
 
 /* ═══════════════════════════════════════
