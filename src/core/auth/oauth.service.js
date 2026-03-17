@@ -16,7 +16,7 @@ export const buildOAuthAuthorizeUrl = (provider) => {
   const baseUrl = getApiBaseUrl()
   const url = new URL(`${baseUrl}/oauth2/authorization/${provider}`, window.location.origin)
 
-  if (isNativeApp()) {
+  if (isNativeApp() && isMobileOAuthEnabled()) {
     url.searchParams.set('platform', 'app')
     url.searchParams.set('client_type', getPlatform())
   }
