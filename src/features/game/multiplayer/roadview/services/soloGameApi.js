@@ -119,12 +119,23 @@ export const leaveGameRoom = async (roomId) => {
  * @param {String} roomId - 게임방 ID
  * @param {Number} gameId - 게임 ID
  * @param {Number} roundId - 라운드 ID
+ * @param {Object} payload - 재발급 요청 바디
+ * @param {Number} payload.expectedRoundVersion - 현재 화면 문제 버전 (필수)
+ * @param {String} [payload.reason] - 재발급 사유 (선택)
  * @returns {Promise<Object>} 재발급 응답 데이터
  */
-export const reIssueRoadview = async (roomId, gameId, roundId) => {
+export const reIssueRoadview = async (roomId, gameId, roundId, payload = {}) => {
   try {
+    if (payload.expectedRoundVersion == null) {
+      throw new Error('expectedRoundVersion이 필요합니다.')
+    }
+
     const response = await apiClient.post(
-      `/rooms/${roomId}/roadview/games/${gameId}/rounds/${roundId}/reIssue`
+      `/rooms/${roomId}/roadview/games/${gameId}/rounds/${roundId}/reIssue`,
+      {
+        expectedRoundVersion: payload.expectedRoundVersion,
+        reason: payload.reason
+      }
     )
 
     if (response.data?.isSuccess) {

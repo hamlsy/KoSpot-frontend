@@ -480,6 +480,8 @@ export default {
     this.roomPlayerScreenStates = {};
     this.gameStore.state.roundEnded = false;
     this.gameStore.state.hasSubmittedGuess = false;
+    this.gameStore.state.timerStarted = false;
+    this.gameStore.state.canReissue = true;
     this.gameStore.state.showRoundResults = false;
     this.gameStore.state.currentRound = 1;
     this.gameStore.state.userGuess = null;
@@ -949,6 +951,8 @@ export default {
       }
 
       this.hasServerTimerStarted = true;
+      this.gameStore.state.timerStarted = true;
+      this.gameStore.state.canReissue = false;
 
       const baseGame = this.$refs.baseGame;
       const hasBlockingOverlay =

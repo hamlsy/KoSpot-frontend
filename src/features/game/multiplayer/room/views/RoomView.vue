@@ -140,6 +140,7 @@
     <!-- 유저 검색 모달 -->
     <UserSearchModal
       v-if="friendStore.isSearchOpen"
+      :is-open="friendStore.isSearchOpen"
       @close="friendStore.closeSearch()"
     />
 
@@ -147,11 +148,12 @@
     <FriendChatWindow
       v-for="chat in friendStore.openChats"
       :key="chat.friend.id"
+      :is-open="true"
       :friend="chat.friend"
       :messages="chat.messages"
       :is-loading="chat.isLoading"
       @close="friendStore.closeChatRoom(chat.friend.id)"
-      @send="(text) => friendStore.sendMessage(chat.friend.id, text)"
+      @send-message="({ friendId, text }) => friendStore.sendMessage(friendId, text)"
     />
 
     <!-- 방 설정 모달 -->

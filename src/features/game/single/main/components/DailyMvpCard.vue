@@ -120,8 +120,18 @@
           <!-- [강등] 보조 정보 (레이팅 점수) -->
           <div class="stats-row secondary-stats">
             <div class="stat-item">
-              <div class="stat-label">레이팅 점수 (RP)</div>
+              <div class="stat-label">
+                <i class="fas fa-bolt stat-icon"></i>
+                <span>레이팅 점수 (RP)</span>
+              </div>
               <div class="stat-value">{{ todayMvp.ratingScore?.toLocaleString() || '-' }}</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">
+                <i class="fas fa-stopwatch stat-icon"></i>
+                <span>정답 시간</span>
+              </div>
+              <div class="stat-value">{{ formattedAnswerTime }}</div>
             </div>
           </div>
         </div>
@@ -176,6 +186,19 @@ const scoreInt = computed(() => {
 const scoreDec = computed(() => {
   if (todayMvp.value?.gameScore == null) return '0'
   return (todayMvp.value.gameScore % 1).toFixed(1).split('.')[1]
+})
+
+const formattedAnswerTime = computed(() => {
+  const raw = todayMvp.value?.answerTime
+  if (raw == null || raw === '') return '-'
+
+  const totalSeconds = Number(raw)
+  if (!Number.isFinite(totalSeconds) || totalSeconds < 0) return '-'
+
+  const seconds = Math.round(totalSeconds)
+  const minutesPart = Math.floor(seconds / 60)
+  const secondsPart = seconds % 60
+  return `${minutesPart}분 ${secondsPart}초`
 })
 
 // ─── Methods ──────────────────────────────────────────────────────────
@@ -656,38 +679,54 @@ onMounted(async () => {
 
 /* --- 보조 정보 패널 --- */
 .secondary-stats {
-  padding: 0.6rem;
-  background: transparent;
-  border: 1px dashed #cbd5e1;
-  /* 중요도가 낮음을 시각적으로 표현 */
+  width: 100%;
+  padding: 0.7rem;
+  background: #ffffff;
+  border: 1px dashed #dbe4ef;
+  /* 중요도가 낮은 보조정보를 차분한 패널로 구분 */
   margin-bottom: 0px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
 }
 
 .stats-row {
-  display: flex;
   width: 100%;
   border-radius: 12px;
 }
 
 .stat-item {
-  flex: 1;
+  min-height: 58px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.2rem;
+  gap: 0.35rem;
+  padding: 0.45rem 0.25rem;
+  border: 1px solid #e5edf6;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
 }
 
 .stat-label {
-  font-size: 0.65rem;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.68rem;
+  font-weight: 700;
   color: #64748b;
 }
 
+.stat-icon {
+  color: #0ea5e9;
+  font-size: 0.7rem;
+}
+
 .stat-value {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: #1e293b;
+  line-height: 1.2;
 }
 
 /* --- 어제의 MVP 뱃지 (Inline / Empty State) --- */
@@ -884,6 +923,12 @@ onMounted(async () => {
     align-items: center;
     padding-top: 1rem;
     margin-top: 0.5rem;
+  }
+
+  .secondary-stats {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+    max-width: 320px;
   }
 
   .primary-score-box {

@@ -66,11 +66,77 @@ export const mapGamePlayersToLocalPlayers = (gamePlayers = []) => {
 };
 
 export const updatePlayersFromRoundResult = (gamePlayers = [], roundResultData) => {
-  if (!roundResultData?.playerTotalResults) {
+  const hasRoundPlayerResults =
+    Array.isArray(roundResultData?.roundPlayerResults) &&
+    roundResultData.roundPlayerResults.length > 0;
+  const hasLegacyTotalResults =
+    Array.isArray(roundResultData?.playerTotalResults) &&
+    roundResultData.playerTotalResults.length > 0;
+
+  if (!hasRoundPlayerResults && !hasLegacyTotalResults) {
     return gamePlayers;
   }
 
   const nextPlayers = gamePlayers.map((player) => ({ ...player }));
+
+  if (hasRoundPlayerResults) {
+    roundResultData.roundPlayerResults.forEach((result) => {
+      const resultIds = [result?.playerId, result?.memberId, result?.id];
+      const targetPlayer = nextPlayers.find((player) =>
+        resultIds.some((id) => isMatchingPlayerId(player, id)),
+      );
+
+      if (!targetPlayer) {
+        return;
+      }
+
+      if (result.memberId != null) {
+        targetPlayer.memberId = Number(result.memberId);
+      }
+
+      if (result.gamePlayerStatus != null) {
+        targetPlayer.gamePlayerStatus = result.gamePlayerStatus;
+      }
+
+      if (result.totalScore != null) {
+        targetPlayer.totalScore = Number(result.totalScore);
+      }
+
+      if (result.roundRank != null) {
+        targetPlayer.roundRank = Number(result.roundRank);
+      }
+
+      if (result.distance != null) {
+        targetPlayer.distanceToTarget = Number(result.distance);
+      }
+
+      if (result.score != null) {
+        targetPlayer.lastRoundScore = Number(result.score);
+      }
+
+      if (result.timeToAnswer != null) {
+        targetPlayer.timeToAnswer = Number(result.timeToAnswer);
+      }
+
+      if (result.markerImageUrl) {
+        targetPlayer.markerImageUrl = result.markerImageUrl;
+      }
+    });
+
+    return nextPlayers;
+  }
+
+  const submissionById = new Map();
+  (roundResultData.playerSubmissionResults || []).forEach((submission) => {
+    [submission?.playerId, submission?.memberId, submission?.id]
+      .map((id) => toComparableId(id))
+      .filter(Boolean)
+      .forEach((id) => {
+        if (!submissionById.has(id)) {
+          submissionById.set(id, submission);
+        }
+      });
+  });
 
   roundResultData.playerTotalResults.forEach((result, index) => {
     const resultIds = [result?.playerId, result?.memberId];
@@ -98,7 +164,20 @@ export const updatePlayersFromRoundResult = (gamePlayers = [], roundResultData) 
       targetPlayer.roundRank = Number(result.roundRank);
     }
 
-    const submission = roundResultData.playerSubmissionResults?.[index];
+    let submission = null;
+    for (const id of resultIds) {
+      const normalizedId = toComparableId(id);
+      if (normalizedId && submissionById.has(normalizedId)) {
+        submission = submissionById.get(normalizedId);
+        break;
+      }
+    }
+
+    // 하위 호환: 식별자가 없는 응답에서는 기존 인덱스 fallback
+    if (!submission) {
+      submission = roundResultData.playerSubmissionResults?.[index];
+    }
+
     if (!submission) {
       return;
     }
@@ -109,6 +188,12 @@ export const updatePlayersFromRoundResult = (gamePlayers = [], roundResultData) 
 
     if (submission.earnedScore != null) {
       targetPlayer.lastRoundScore = Number(submission.earnedScore);
+    }
+
+    if (submission.markerImageUrl) {
+      targetPlayer.markerImageUrl = submission.markerImageUrl;
+    } else if (result.markerImageUrl) {
+      targetPlayer.markerImageUrl = result.markerImageUrl;
     }
 
     if (submission.timeToAnswer != null) {

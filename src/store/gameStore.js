@@ -19,6 +19,8 @@ const gameStore = {
     // 게임 플레이 상태
     currentRound: 1,
     totalRounds: 5,
+    roundId: null,
+    roundVersion: null,
     remainingTime: 120,
     currentLocation: null,
     actualLocation: null,
@@ -36,6 +38,8 @@ const gameStore = {
     showRoundResults: false,
     showGameResults: false,
     isLoading: false,
+    timerStarted: false,
+    canReissue: true,
     
     // 팀 모드 관련 상태
     canSubmitGuess: true
@@ -59,6 +63,8 @@ const gameStore = {
     // 라운드 및 게임 진행 상태 초기화
     this.state.currentRound = 1;
     this.state.totalRounds = 5;
+    this.state.roundId = null;
+    this.state.roundVersion = null;
     this.state.remainingTime = 120;
     this.state.roundEnded = false;
     this.state.hasSubmittedGuess = false;
@@ -66,6 +72,8 @@ const gameStore = {
     this.state.showGameResults = false;
     this.state.guessPosition = null;
     this.state.isLoading = false;
+    this.state.timerStarted = false;
+    this.state.canReissue = true;
     this.state.canSubmitGuess = true;
     
     // 채팅 메시지 초기화 (이전 게임의 채팅이 남지 않도록)
@@ -99,10 +107,11 @@ const gameStore = {
   endGameRound() {
     this.state.playersGuesses = [];
     this.state.roundEnded = true;
+    const matchType = this.state.roomData?.matchType;
     
     // 실제 로직에서는 서버에서 계산된 점수 받아옴
     // 여기서는 테스트를 위해 간단히 구현
-    if (this.state.roomData.matchType === 'team') {
+    if (matchType === 'team') {
       this.state.teams.forEach(team => {
         const teamPlayers = this.state.players.filter(p => p.teamId === team.id);
         const teamScore = Math.floor(Math.random() * 500) + 500;
@@ -142,6 +151,8 @@ const gameStore = {
     this.state.currentRound++;
     this.state.roundEnded = false;
     this.state.hasSubmittedGuess = false;
+    this.state.timerStarted = false;
+    this.state.canReissue = true;
     this.state.guessPosition = null;
     this.state.actualLocation = null;
     this.state.isLoading = true;

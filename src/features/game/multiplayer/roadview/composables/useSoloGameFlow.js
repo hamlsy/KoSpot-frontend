@@ -52,6 +52,196 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     Object.assign(callbacks, nextCallbacks)
   }
 
+  const toNullableNumber = (value) => {
+    if (value == null) {
+      return null
+    }
+
+    const parsed = Number(value)
+    return Number.isNaN(parsed) ? null : parsed
+  }
+
+  const extractMessageRoundId = (message = {}) => {
+    return toNullableNumber(message?.roundInfo?.roundId ?? message?.roundId)
+  }
+
+  const extractMessageRoundVersion = (message = {}) => {
+    return toNullableNumber(message?.roundVersion ?? message?.roundInfo?.roundVersion)
+  }
+
+  const getCurrentRoundState = () => {
+    return {
+      roundId: toNullableNumber(gameStore?.state?.roundId),
+      roundVersion: toNullableNumber(gameStore?.state?.roundVersion),
+      currentRound: toNullableNumber(gameStore?.state?.currentRound)
+    }
+  }
+
+  const updateStoreRoundState = ({ nextRoundId = null, nextRoundVersion = null }) => {
+    if (!gameStore?.state) {
+      return
+    }
+
+    if (nextRoundId != null) {
+      gameStore.state.roundId = nextRoundId
+    }
+
+    if (nextRoundVersion != null) {
+      gameStore.state.roundVersion = nextRoundVersion
+    }
+  }
+
+  const shouldApplyRoundPayload = (message = {}, options = {}) => {
+    const { allowRoundAdvance = false } = options
+    const incomingRoundId = extractMessageRoundId(message)
+    const incomingRoundVersion = extractMessageRoundVersion(message)
+    const { roundId: currentRoundId, roundVersion: currentRoundVersion, currentRound } = getCurrentRoundState()
+
+    if (
+      incomingRoundId != null &&
+      currentRoundId != null &&
+      incomingRoundId !== currentRoundId
+    ) {
+      const incomingRoundNumber = toNullableNumber(message?.currentRound)
+      const isRoundAdvance =
+        allowRoundAdvance &&
+        incomingRoundNumber != null &&
+        currentRound != null &&
+        incomingRoundNumber > currentRound
+
+      if (!isRoundAdvance) {
+        return {
+          shouldApply: false,
+          reason: 'ROUND_ID_MISMATCH',
+          incomingRoundId,
+          incomingRoundVersion,
+        }
+      }
+    }
+
+    if (
+      incomingRoundId != null &&
+      currentRoundId != null &&
+      incomingRoundId === currentRoundId &&
+      incomingRoundVersion != null &&
+      currentRoundVersion != null &&
+      incomingRoundVersion < currentRoundVersion
+    ) {
+      return {
+        shouldApply: false,
+        reason: 'STALE_ROUND_VERSION',
+        incomingRoundId,
+        incomingRoundVersion,
+      }
+    }
+
+    return {
+      shouldApply: true,
+      reason: null,
+      incomingRoundId,
+      incomingRoundVersion,
+    }
+  }
+
+  const toComparableId = (value) => {
+    if (value == null) {
+      return null
+    }
+    return String(value)
+  }
+
+  const collectEntityIds = (entity = {}) => {
+    const keys = ['playerId', 'memberId', 'id']
+    return keys
+      .map((key) => toComparableId(entity?.[key]))
+      .filter(Boolean)
+  }
+
+  const buildEntityMapByIds = (items = []) => {
+    const map = new Map()
+    items.forEach((item) => {
+      collectEntityIds(item).forEach((id) => {
+        if (!map.has(id)) {
+          map.set(id, item)
+        }
+      })
+    })
+    return map
+  }
+
+  const findBySharedId = (map, entity) => {
+    const ids = collectEntityIds(entity)
+    for (const id of ids) {
+      if (map.has(id)) {
+        return map.get(id)
+      }
+    }
+    return null
+  }
+
+  const resolveGuessPosition = (entry = {}) => {
+    const position = entry?.position || entry?.guessPosition
+    if (position?.lat != null && position?.lng != null) {
+      return {
+        lat: Number(position.lat),
+        lng: Number(position.lng),
+      }
+    }
+
+    const lat = entry?.lat ?? entry?.guessLat ?? entry?.submissionLat
+    const lng = entry?.lng ?? entry?.guessLng ?? entry?.submissionLng
+    if (lat == null || lng == null) {
+      return null
+    }
+
+    return {
+      lat: Number(lat),
+      lng: Number(lng),
+    }
+  }
+
+  const normalizeRoundPlayerResult = (entry = {}) => {
+    const position = resolveGuessPosition(entry)
+    if (!position) {
+      return null
+    }
+
+    return {
+      playerId: entry?.playerId ?? entry?.memberId ?? entry?.id ?? null,
+      memberId: entry?.memberId ?? entry?.playerId ?? entry?.id ?? null,
+      playerName: entry?.nickname || entry?.playerName || entry?.name || '알 수 없음',
+      position,
+      color: entry?.color || '#3b82f6',
+      markerImageUrl:
+        entry?.markerImageUrl || entry?.equippedMarker || entry?.equippedMarkerImageUrl || null,
+      score: entry?.earnedScore ?? entry?.roundScore ?? entry?.score ?? null,
+      distance: entry?.distance ?? entry?.distanceToTarget ?? null,
+      timeToAnswer: entry?.timeToAnswer != null ? Number(entry.timeToAnswer) : null,
+      totalScore: entry?.totalScore != null ? Number(entry.totalScore) : null,
+      roundRank: entry?.roundRank != null ? Number(entry.roundRank) : null,
+      gamePlayerStatus: entry?.gamePlayerStatus || null,
+      nickname: entry?.nickname || entry?.playerName || entry?.name || '알 수 없음',
+    }
+  }
+
+  const extractServerRoundResults = (message = {}) => {
+    const candidates = [
+      message?.roundPlayerResults,
+      message?.playerRoundResults,
+      message?.results?.roundPlayerResults,
+      message?.results?.playerRoundResults,
+    ]
+
+    const raw = candidates.find((candidate) => Array.isArray(candidate) && candidate.length > 0)
+    if (!raw) {
+      return []
+    }
+
+    return raw
+      .map((entry) => normalizeRoundPlayerResult(entry))
+      .filter(Boolean)
+  }
+
   const ensureSubmissionSubscription = (incomingGameId) => {
     if (incomingGameId == null) {
       return
@@ -122,12 +312,20 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
       // 게임 데이터 저장
       gameId.value = result.gameId
       roundId.value = result.roundInfo.roundId
+
+      const initialRoundVersion = extractMessageRoundVersion(result)
+      updateStoreRoundState({
+        nextRoundId: toNullableNumber(result?.roundInfo?.roundId),
+        nextRoundVersion: initialRoundVersion,
+      })
       
       // 게임 스토어 업데이트
       if (gameStore) {
         gameStore.state.gameId = result.gameId
         gameStore.state.currentRound = result.currentRound
         gameStore.state.totalRounds = result.totalRounds
+        gameStore.state.timerStarted = false
+        gameStore.state.canReissue = true
         gameStore.state.currentLocation = {
           lat: result.roundInfo.targetLat,
           lng: result.roundInfo.targetLng
@@ -209,6 +407,15 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
 
     ensureSubmissionSubscription(message?.gameId)
 
+    if (gameStore?.state) {
+      gameStore.state.timerStarted = true
+      gameStore.state.canReissue = false
+    }
+
+    if (isRetryingRoadview.value) {
+      isRetryingRoadview.value = false
+    }
+
     if (callbacks.onTimerStart) {
       callbacks.onTimerStart(message)
     }
@@ -218,6 +425,7 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
       const parsedRoundId = Number(detectedRoundId)
       if (!Number.isNaN(parsedRoundId)) {
         roundId.value = parsedRoundId
+        updateStoreRoundState({ nextRoundId: parsedRoundId })
       }
     }
 
@@ -573,32 +781,73 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
       })
     }
 
+    const serverRoundResults = extractServerRoundResults(message)
+
     // 플레이어 추측 위치 설정 (지도 표시용)
-    // playerSubmissionResults에서 nickname을 직접 가져오고, playerTotalResults에서 다른 정보 가져오기
-    const playerGuessesData = message.playerSubmissionResults.map((submission, index) => {
-      const player = message.playerTotalResults[index]
-      
-      // 마커 이미지 URL은 playerTotalResults에서 가져오거나 기본값 사용
-      // (SoloGameView의 onRoundResultUpdate에서 gamePlayers의 markerImageUrl로 업데이트됨)
-      const markerImageUrl = player.markerImageUrl || null
-      
-      return {
-        playerId: player.playerId,
-        memberId: player.memberId != null ? Number(player.memberId) : player.playerId, // memberId 추가
-        playerName: submission.nickname || player.nickname, // playerSubmissionResults의 nickname 우선 사용, 없으면 playerTotalResults에서 가져오기
-        position: { lat: submission.lat, lng: submission.lng },
-        color: '#3b82f6', // 기본값: 파란색
-        markerImageUrl: markerImageUrl, // 플레이어 마커 이미지 (SoloGameView에서 gamePlayers로 업데이트됨)
-        score: submission.earnedScore,
-        distance: submission.distance,
-        timeToAnswer: submission.timeToAnswer != null ? Number(submission.timeToAnswer) : null // timeToAnswer 추가
-      }
-    })
+    // 1) 서버가 단일 결과 배열을 주면 우선 사용
+    // 2) 없으면 playerId/memberId 기반 조인으로 fallback
+    let playerGuessesData = []
+
+    if (serverRoundResults.length > 0) {
+      playerGuessesData = serverRoundResults.map((result) => ({
+        playerId: result.playerId,
+        memberId: result.memberId != null ? Number(result.memberId) : result.playerId,
+        playerName: result.playerName,
+        position: result.position,
+        color: result.color || '#3b82f6',
+        markerImageUrl: result.markerImageUrl || null,
+        score: result.score,
+        distance: result.distance,
+        timeToAnswer: result.timeToAnswer,
+      }))
+    } else {
+      const submissionResults = Array.isArray(message?.playerSubmissionResults)
+        ? message.playerSubmissionResults
+        : []
+      const totalResults = Array.isArray(message?.playerTotalResults)
+        ? message.playerTotalResults
+        : []
+
+      const totalResultById = buildEntityMapByIds(totalResults)
+
+      playerGuessesData = submissionResults
+        .map((submission) => {
+          const player = findBySharedId(totalResultById, submission)
+          const position = resolveGuessPosition(submission)
+          if (!position) {
+            return null
+          }
+
+          return {
+            playerId: submission?.playerId ?? player?.playerId ?? submission?.memberId ?? player?.memberId ?? null,
+            memberId:
+              submission?.memberId != null
+                ? Number(submission.memberId)
+                : player?.memberId != null
+                  ? Number(player.memberId)
+                  : submission?.playerId ?? player?.playerId ?? null,
+            playerName: submission?.nickname || player?.nickname || '알 수 없음',
+            position,
+            color: '#3b82f6',
+            markerImageUrl:
+              submission?.markerImageUrl ||
+              player?.markerImageUrl ||
+              player?.equippedMarker ||
+              player?.equippedMarkerImageUrl ||
+              null,
+            score: submission?.earnedScore ?? submission?.roundScore ?? null,
+            distance: submission?.distance ?? null,
+            timeToAnswer: submission?.timeToAnswer != null ? Number(submission.timeToAnswer) : null,
+          }
+        })
+        .filter(Boolean)
+    }
     
     // 플레이어 결과 업데이트는 SoloGameView의 gamePlayers에서 처리
     // 라운드 결과 정보를 콜백으로 전달하여 gamePlayers 업데이트 및 playerGuesses의 markerImageUrl 업데이트
     if (callbacks.onRoundResultUpdate) {
       callbacks.onRoundResultUpdate({
+        roundPlayerResults: serverRoundResults,
         playerTotalResults: message.playerTotalResults,
         playerSubmissionResults: message.playerSubmissionResults,
         playerGuesses: playerGuessesData
@@ -608,15 +857,30 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
       gameStore.state.playerGuesses = playerGuessesData
     }
 
-    // 최고 점수 플레이어 설정 (playerTotalResults에서 직접 계산)
-    if (message.playerTotalResults && message.playerTotalResults.length > 0) {
+    // 최고 점수 플레이어 설정
+    if (serverRoundResults.length > 0) {
+      const sortedServerResults = [...serverRoundResults].sort(
+        (a, b) => (b.totalScore || 0) - (a.totalScore || 0),
+      )
+      const topResult = sortedServerResults[0]
+      if (topResult) {
+        gameStore.state.topPlayer = {
+          playerName: topResult.nickname || topResult.playerName || '알 수 없음',
+          distance: topResult.distance || 0,
+        }
+      }
+    } else if (Array.isArray(message?.playerTotalResults) && message.playerTotalResults.length > 0) {
       const sortedResults = [...message.playerTotalResults].sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0))
       const topResult = sortedResults[0]
-      const topSubmissionIndex = message.playerTotalResults.findIndex(r => r.playerId === topResult.playerId)
-      const topSubmission = message.playerSubmissionResults[topSubmissionIndex]
+      const submissionResults = Array.isArray(message?.playerSubmissionResults)
+        ? message.playerSubmissionResults
+        : []
+      const submissionById = buildEntityMapByIds(submissionResults)
+      const topSubmission = findBySharedId(submissionById, topResult)
+
       gameStore.state.topPlayer = {
-        playerName: topResult.nickname,
-        distance: topSubmission?.distance || 0
+        playerName: topResult?.nickname || '알 수 없음',
+        distance: topSubmission?.distance || 0,
       }
     }
 
@@ -677,6 +941,10 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
 
     ensureSubmissionSubscription(message?.gameId)
 
+    const messageRoundId = extractMessageRoundId(message)
+    const reIssueGuard = shouldApplyRoundPayload(message, { allowRoundAdvance: false })
+    const roundGuard = shouldApplyRoundPayload(message, { allowRoundAdvance: true })
+
     // 좌표 추출 (roundInfo가 있으면 roundInfo에서, 없으면 직접 메시지에서)
     const targetLat = message.roundInfo?.targetLat ?? message.targetLat
     const targetLng = message.roundInfo?.targetLng ?? message.targetLng
@@ -687,10 +955,39 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     }
 
     // 재발급 메시지인지 확인 (roundInfo가 없거나, roundInfo.roundId가 현재 roundId와 같고 재시도 중인 경우)
-    const messageRoundId = message.roundInfo?.roundId ?? message.roundId
-    const isReIssueMessage = isRetryingRoadview.value || 
-                             (!message.roundInfo && message.targetLat != null && message.targetLng != null) ||
-                             (messageRoundId != null && Number(messageRoundId) === roundId.value && isRetryingRoadview.value)
+    const isLikelyRoundStartMessage =
+      message?.roundInfo != null &&
+      message?.currentRound != null
+
+    const isReIssueMessage =
+      !isLikelyRoundStartMessage &&
+      (
+        isRetryingRoadview.value ||
+        (!message.roundInfo && message.targetLat != null && message.targetLng != null) ||
+        (messageRoundId != null && Number(messageRoundId) === roundId.value && isRetryingRoadview.value)
+      )
+
+    if (isReIssueMessage && !reIssueGuard.shouldApply) {
+      console.log('[Solo Flow] 재발급 메시지 무시:', {
+        reason: reIssueGuard.reason,
+        incomingRoundId: reIssueGuard.incomingRoundId,
+        incomingRoundVersion: reIssueGuard.incomingRoundVersion,
+        currentRoundId: gameStore?.state?.roundId,
+        currentRoundVersion: gameStore?.state?.roundVersion,
+      })
+      return
+    }
+
+    if (!isReIssueMessage && !roundGuard.shouldApply) {
+      console.log('[Solo Flow] 라운드 메시지 무시:', {
+        reason: roundGuard.reason,
+        incomingRoundId: roundGuard.incomingRoundId,
+        incomingRoundVersion: roundGuard.incomingRoundVersion,
+        currentRoundId: gameStore?.state?.roundId,
+        currentRoundVersion: gameStore?.state?.roundVersion,
+      })
+      return
+    }
 
     // 내부 상태 관리: gameId, roundId 업데이트
     if (message.gameId != null) {
@@ -698,11 +995,10 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     }
     
     if (messageRoundId != null) {
-      const parsedRoundId = Number(messageRoundId)
-      if (!Number.isNaN(parsedRoundId)) {
-        roundId.value = parsedRoundId
-      }
+      roundId.value = messageRoundId
     }
+
+    const parsedRoundVersion = extractMessageRoundVersion(message)
 
     // 재발급 메시지 처리
     if (isReIssueMessage) {
@@ -715,6 +1011,11 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
         reIssueAttempts.value = 0
         console.log('[Solo Flow] 재발급 성공 - 재시도 플래그 해제')
       }
+
+      updateStoreRoundState({
+        nextRoundId: messageRoundId,
+        nextRoundVersion: parsedRoundVersion,
+      })
 
       // 재발급 메시지도 콜백으로 전달 (gameStore 업데이트는 컴포넌트에서)
       if (callbacks.onNextRound) {
@@ -746,6 +1047,16 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     // 타이머 관련 내부 상태만 초기화 (gameStore는 컴포넌트에서 업데이트)
     roundStartTime.value = null
     timerDurationMs.value = 120000
+
+    if (gameStore?.state) {
+      gameStore.state.timerStarted = false
+      gameStore.state.canReissue = true
+    }
+
+    updateStoreRoundState({
+      nextRoundId: messageRoundId,
+      nextRoundVersion: parsedRoundVersion,
+    })
     
     // 첫 번째 라운드인지 확인 (currentRound === 1)
     const isFirstRound = message.currentRound === 1
@@ -802,12 +1113,34 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
    * 로드뷰 표시 실패 시 재발급 요청
    */
   const requestRoadviewReIssue = async () => {
-    
-    if (!roomId.value || !gameId.value || !roundId.value) {
+    const activeRoundId = roundId.value ?? toNullableNumber(gameStore?.state?.roundId)
+    const expectedRoundVersion = toNullableNumber(gameStore?.state?.roundVersion)
+    const canReissue = Boolean(gameStore?.state?.canReissue)
+    const timerStarted = Boolean(gameStore?.state?.timerStarted)
+
+    if (!canReissue || timerStarted) {
+      console.log('[Solo Flow] 타이머 시작 후 재발급 차단:', {
+        canReissue,
+        timerStarted
+      })
+      isRetryingRoadview.value = false
+      return false
+    }
+
+    if (!roomId.value || !gameId.value || !activeRoundId) {
       console.error('[Solo Flow] 재발급 불가: 게임 정보 없음', {
         roomId: roomId.value || '없음',
         gameId: gameId.value || '없음',
-        roundId: roundId.value || '없음'
+        roundId: activeRoundId || '없음'
+      })
+      isRetryingRoadview.value = false
+      return false
+    }
+
+    if (expectedRoundVersion == null) {
+      console.warn('[Solo Flow] 재발급 불가: expectedRoundVersion 없음', {
+        roundId: activeRoundId,
+        roundVersion: gameStore?.state?.roundVersion
       })
       isRetryingRoadview.value = false
       return false
@@ -823,7 +1156,38 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
       reIssueAttempts.value++
       isRetryingRoadview.value = true
 
-      const result = await soloGameApi.reIssueRoadview(roomId.value, gameId.value, roundId.value)
+      const result = await soloGameApi.reIssueRoadview(roomId.value, gameId.value, activeRoundId, {
+        expectedRoundVersion,
+        reason: 'ROADVIEW_LOAD_FAILED'
+      })
+
+      const responseRoundProblem = result?.roundProblem && typeof result.roundProblem === 'object'
+        ? result.roundProblem
+        : null
+
+      const hasRoundPayload = Boolean(responseRoundProblem) ||
+        result?.targetLat != null ||
+        result?.targetLng != null ||
+        result?.roundInfo
+
+      if (hasRoundPayload) {
+        const mappedRoundPayload = {
+          ...(responseRoundProblem || result),
+          gameId: result?.gameId ?? gameId.value,
+          roundId: responseRoundProblem?.roundId ?? result?.roundId ?? activeRoundId,
+          roundVersion:
+            responseRoundProblem?.roundVersion ??
+            result?.roundVersion ??
+            expectedRoundVersion,
+        }
+
+        handleNextRound(mappedRoundPayload)
+      }
+
+      if (result?.reissued === false) {
+        console.log('[Solo Flow] 재발급 선점됨(reissued=false) - 정상 처리')
+      }
+
       // 새로운 좌표를 받으면 handleNextRound에서 자동으로 로드뷰를 다시 로드함
       return true
     } catch (error) {
@@ -1022,6 +1386,13 @@ export function useSoloGameFlow(gameStore, uiCallbacks = {}) {
     roundStartTime.value = null
     timerDurationMs.value = 120000
     timeDiff.value = 0
+
+    if (gameStore?.state) {
+      gameStore.state.roundId = null
+      gameStore.state.roundVersion = null
+      gameStore.state.timerStarted = false
+      gameStore.state.canReissue = true
+    }
 
   }
 

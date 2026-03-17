@@ -25,7 +25,8 @@
 
 <script setup>
 // Vue 3 Composition API 방식으로 구현된 기본 모달 컴포넌트
-import { watch } from 'vue';
+import { onMounted, onBeforeUnmount, watch } from 'vue';
+import { lockBodyScroll, unlockBodyScroll } from '@/core/utils/scrollLock.js';
 
 // 이벤트 정의
 const emit = defineEmits(['update:modelValue', 'close']);
@@ -55,15 +56,22 @@ const props = defineProps({
   }
 });
 
+const scrollLockId = `base-modal-${Math.random().toString(36).slice(2, 10)}`;
+
 // 모달이 열리거나 닫힐 때 body 스크롤 제어
-watch(() => props.modelValue, (isOpen) => {
-  if (isOpen) {
-    document.body.style.overflow = 'hidden';
-  } else {
-    document.body.style.overflow = '';
+watch(
+  () => props.modelValue,
+  (isOpen) => {
+    if (isOpen) {
+      lockBodyScroll(scrollLockId);
+      return;
+    }
+
+    unlockBodyScroll(scrollLockId);
     emit('close');
-  }
-});
+  },
+  { immediate: true }
+);
 
 // 컴포넌트가 언마운트될 때 body 스크롤 복원
 const handleEsc = (e) => {
@@ -73,7 +81,14 @@ const handleEsc = (e) => {
 };
 
 // 키보드 이벤트 리스너 등록 및 해제
-document.addEventListener('keydown', handleEsc);
+onMounted(() => {
+  document.addEventListener('keydown', handleEsc);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', handleEsc);
+  unlockBodyScroll(scrollLockId);
+});
 </script>
 
 <style scoped>

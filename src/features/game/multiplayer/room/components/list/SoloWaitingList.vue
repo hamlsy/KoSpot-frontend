@@ -246,7 +246,7 @@ const shouldShowScreenState = (screenState) => {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  object-fit: cover;
+  object-fit: contain;
   border: 2px solid #e5e7eb;
   transition: all 0.2s ease;
 }

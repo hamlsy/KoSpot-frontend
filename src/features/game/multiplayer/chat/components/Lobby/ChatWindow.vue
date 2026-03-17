@@ -86,7 +86,9 @@
           type="text"
           v-model="newMessage"
           placeholder="메시지를 입력하세요..."
-          @keyup.enter="handleEnter"
+          @keydown="handleInputKeydown"
+          @keyup.stop
+          @keydown.enter="handleEnter"
           @compositionstart="onCompositionStart"
           @compositionend="onCompositionEnd"
           @focus="handleInputFocus"
@@ -179,8 +181,11 @@ export default {
   watch: {
     messages: {
       handler() {
+        const shouldScroll = this.isNearBottom();
         this.$nextTick(() => {
-          this.scrollToBottom();
+          if (shouldScroll) {
+            this.scrollToBottom();
+          }
         });
       },
       deep: true,
@@ -192,10 +197,6 @@ export default {
       },
       immediate: true,
     },
-  },
-
-  updated() {
-    this.scrollToBottom();
   },
 
   methods: {
@@ -220,6 +221,12 @@ export default {
       setTimeout(() => {
         this.isComposing = false;
       }, 50);
+    },
+
+    handleInputKeydown(event) {
+      // 채팅 입력 중에는 상위 컴포넌트/전역 단축키로 키 입력이 전파되지 않도록 차단
+      // 특히 Space 키가 게임 단축키와 충돌해 띄어쓰기가 누락되는 현상을 방지
+      event.stopPropagation();
     },
 
     /**
@@ -264,6 +271,20 @@ export default {
       if (messageContainer) {
         messageContainer.scrollTop = messageContainer.scrollHeight;
       }
+    },
+
+    isNearBottom(threshold = 80) {
+      const messageContainer = this.$refs.messageContainer;
+      if (!messageContainer) {
+        return true;
+      }
+
+      const distanceFromBottom =
+        messageContainer.scrollHeight -
+        messageContainer.scrollTop -
+        messageContainer.clientHeight;
+
+      return distanceFromBottom <= threshold;
     },
 
     formatTime(timestamp) {

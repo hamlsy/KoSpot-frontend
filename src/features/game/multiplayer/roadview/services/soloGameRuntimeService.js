@@ -59,6 +59,24 @@ export const processRoundDataState = ({
   isDummyRuntime = false,
   currentPoiName = "",
 }) => {
+  const messageRoundId =
+    message.roundInfo?.roundId ?? message.roundId ?? null;
+  if (messageRoundId != null) {
+    const parsedRoundId = Number(messageRoundId);
+    if (!Number.isNaN(parsedRoundId)) {
+      gameStore.state.roundId = parsedRoundId;
+    }
+  }
+
+  const messageRoundVersion =
+    message.roundVersion ?? message.roundInfo?.roundVersion ?? null;
+  if (messageRoundVersion != null) {
+    const parsedRoundVersion = Number(messageRoundVersion);
+    if (!Number.isNaN(parsedRoundVersion)) {
+      gameStore.state.roundVersion = parsedRoundVersion;
+    }
+  }
+
   if (message.currentRound != null) {
     gameStore.state.currentRound = Number(message.currentRound);
   }
@@ -106,6 +124,8 @@ export const processRoundDataState = ({
   }
 
   if (!isReIssue) {
+    gameStore.state.timerStarted = false;
+    gameStore.state.canReissue = true;
     gameStore.state.roundEnded = false;
     gameStore.state.hasSubmittedGuess = false;
     gameStore.state.userGuess = null;
