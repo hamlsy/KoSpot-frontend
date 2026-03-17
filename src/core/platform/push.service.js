@@ -1,6 +1,7 @@
 import { isNativeApp, getPlatform } from '@/core/platform/runtime.js'
 import mobileApi from '@/core/api/mobile.api.js'
 import { PushNotifications } from '@capacitor/push-notifications'
+import { authStorage } from '@/core/auth/authStorage.service.js'
 
 const isPushEnabled = () => process.env.VUE_APP_ENABLE_PUSH === 'true'
 
@@ -45,6 +46,7 @@ export const registerPushIfPermitted = async () => {
 
 export const registerPushToken = async ({ token, enabled = true }) => {
   if (!token) return
+  if (!authStorage.isAuthenticated()) return
 
   await mobileApi.upsertPushToken({
     token,
@@ -55,6 +57,21 @@ export const registerPushToken = async ({ token, enabled = true }) => {
     appVersion: getAppVersion(),
     deviceId: getDeviceId()
   })
+}
+
+export const getServerPushPreference = async () => {
+  const response = await mobileApi.getPushPreference()
+  const result = response?.data?.result
+
+  if (typeof result?.enabled === 'boolean') {
+    return result.enabled
+  }
+
+  if (typeof response?.data?.enabled === 'boolean') {
+    return response.data.enabled
+  }
+
+  return null
 }
 
 export const setPushPreference = async (enabled) => {
@@ -113,6 +130,7 @@ export default {
   requestPushPermission,
   registerPushIfPermitted,
   registerPushToken,
+  getServerPushPreference,
   setPushPreference,
   deletePushToken
 }

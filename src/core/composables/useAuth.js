@@ -5,6 +5,7 @@ import { API_ENDPOINTS } from '@/core/api/endPoint.js'
 import { useRouter } from 'vue-router'
 import { tokenRefreshService } from '@/core/services/tokenRefresh.service.js'
 import { authStorage } from '@/core/auth/authStorage.service.js'
+import { registerPushIfPermitted } from '@/core/platform/push.service.js'
 
 // 전역 상태 관리
 const authState = reactive({
@@ -58,6 +59,13 @@ export function useAuth() {
       
       // 토큰 갱신 서비스 시작 (로그인 후 자동 갱신 시작)
       tokenRefreshService.restart()
+
+      // 모바일 앱 + 권한 허용 상태에서만 푸시 등록
+      try {
+        await registerPushIfPermitted()
+      } catch (pushError) {
+        console.warn('푸시 등록 스킵:', pushError)
+      }
       
       return { success: true, memberId }
     } catch (error) {
@@ -142,7 +150,7 @@ export function useAuth() {
     if (!token) return false
     
     try {
-      const response = await apiClient.get(API_ENDPOINTS.USER.PROFILE)
+      const response = await apiClient.get(API_ENDPOINTS.MEMBER.PROFILE)
       authState.user = response.data
       authState.isAuthenticated = true
       return true

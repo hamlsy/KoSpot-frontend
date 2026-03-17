@@ -1,6 +1,14 @@
 import { App as CapacitorApp } from '@capacitor/app'
 
-const parseIncomingUrl = (url) => {
+export const resolveDeepLinkTarget = (url) => {
+  if (!url) {
+    return null
+  }
+
+  if (typeof url === 'string' && url.startsWith('/')) {
+    return url
+  }
+
   try {
     const parsed = new URL(url)
     const pathname = parsed.pathname || '/'
@@ -38,7 +46,7 @@ export const registerDeepLinkListener = async (router) => {
   }
 
   const listener = await CapacitorApp.addListener('appUrlOpen', (event) => {
-    const targetPath = parseIncomingUrl(event?.url)
+    const targetPath = resolveDeepLinkTarget(event?.url)
     if (!targetPath) {
       return
     }
@@ -60,5 +68,6 @@ export const registerDeepLinkListener = async (router) => {
 }
 
 export default {
+  resolveDeepLinkTarget,
   registerDeepLinkListener
 }

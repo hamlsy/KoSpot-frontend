@@ -277,6 +277,7 @@ import NavigationBar from '@/core/components/NavigationBar.vue';
 import { isNativeApp } from '@/core/platform/runtime.js';
 import {
   getPushPermissionStatus,
+  getServerPushPreference,
   requestPushPermission,
   registerPushIfPermitted,
   setPushPreference
@@ -425,9 +426,23 @@ export default {
 
       try {
         const status = await getPushPermissionStatus();
+        let serverEnabled = null;
+
+        try {
+          serverEnabled = await getServerPushPreference();
+        } catch (error) {
+          console.warn('서버 푸시 선호도 조회 실패(초기 상태 기본값 사용):', error);
+        }
+
         this.mobilePush.supported = true;
         this.mobilePush.permissionStatus = status;
-        this.mobilePush.enabled = status === 'granted';
+
+        if (status !== 'granted') {
+          this.mobilePush.enabled = false;
+          return;
+        }
+
+        this.mobilePush.enabled = typeof serverEnabled === 'boolean' ? serverEnabled : true;
       } catch (error) {
         console.error('모바일 푸시 설정 초기화 실패:', error);
         this.mobilePush.supported = false;

@@ -12,7 +12,7 @@ import { useTheme } from '@/core/composables/useTheme.js';
 import NotificationToast from '@/core/components/NotificationToast.vue';
 import { connectAll, disconnectAll } from '@/core/services/appWebSocket.service.js';
 import { authStorage } from '@/core/auth/authStorage.service.js';
-import { registerDeepLinkListener } from '@/core/platform/deeplink.service.js';
+import { registerDeepLinkListener, resolveDeepLinkTarget } from '@/core/platform/deeplink.service.js';
 import { initializePush } from '@/core/platform/push.service.js';
 
 const router = useRouter()
@@ -61,12 +61,12 @@ const handleStorageChange = (e) => {
 // ─── 라이프사이클 ──────────────────────────────────────────────────────────
 
 const handlePushAction = (actionPayload) => {
-  const deeplink = actionPayload?.notification?.data?.deeplink
-  if (!deeplink) {
+  const targetPath = resolveDeepLinkTarget(actionPayload?.notification?.data?.deeplink)
+  if (!targetPath) {
     return
   }
 
-  router.replace(deeplink).catch((error) => {
+  router.replace(targetPath).catch((error) => {
     if (error?.name !== 'NavigationDuplicated') {
       console.warn('[push] Failed to route deeplink:', error)
     }

@@ -20,6 +20,7 @@ import { authStorage } from '@/core/auth/authStorage.service.js';
 import { isMobileOAuthEnabled } from '@/core/auth/oauth.service.js';
 import { getPlatform, isNativeApp } from '@/core/platform/runtime.js';
 import { connectAll } from '@/core/services/appWebSocket.service.js';
+import { registerPushIfPermitted } from '@/core/platform/push.service.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -65,6 +66,13 @@ const persistTokens = ({ accessToken, refreshToken, memberId }) => {
 const navigateAfterLogin = async () => {
   tokenRefreshService.start()
   await connectAll()
+
+  try {
+    await registerPushIfPermitted()
+  } catch (pushError) {
+    console.warn('OAuth 이후 푸시 등록 스킵:', pushError)
+  }
+
   await router.replace('/main')
 }
 
