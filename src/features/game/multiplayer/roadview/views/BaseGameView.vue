@@ -1649,8 +1649,8 @@ export default {
       // 모든 구독 해제
       this.cleanupSubscriptions();
 
-      // 로비로 새로고침 이동
-      window.location.href = "/lobby";
+      // 로비로 이동
+      this.$router.replace("/lobby");
     },
 
     /**
