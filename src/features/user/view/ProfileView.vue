@@ -255,9 +255,10 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import NavigationBar from '@/core/components/NavigationBar.vue';
 import { userService } from '@/features/user/services/user.service.js';
+import { authStorage } from '@/core/auth/authStorage.service.js';
 
 // 로그인 여부 확인
-const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'));
+const isLoggedIn = computed(() => authStorage.isAuthenticated());
 
 // 반응형 상태
 const isLoading = ref(true);
