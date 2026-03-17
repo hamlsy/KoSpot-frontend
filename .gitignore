@@ -7,6 +7,23 @@ node_modules
 .env.local
 .env.*.local
 .env.development
+.env.production
+.env.staging
+
+# mobile local secrets
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+*.cer
+
+# capacitor native local files
+android/local.properties
+android/.gradle/
+android/captures/
+ios/App/Pods/
+ios/App/App.xcworkspace/xcuserdata/
+ios/App/App.xcodeproj/project.xcworkspace/xcuserdata/
 
 # Log files
 npm-debug.log*
