@@ -10,6 +10,9 @@
     "build:dev": "node scripts/setup-env.js development setup && vue-cli-service build --mode development",
     "build:prod": "node scripts/setup-env.js production setup && vue-cli-service build --mode production",
     "lint": "vue-cli-service lint",
+    "mobile:sync": "npm run build:prod && npx cap sync",
+    "mobile:android": "npm run mobile:sync && npx cap open android",
+    "mobile:ios": "npm run mobile:sync && npx cap open ios",
     "fix-imports": "node scripts/fix-imports.js",
     "dedup": "node scripts/deduplicator.js",
     "restore": "node scripts/restore-imports.js",
@@ -19,6 +22,7 @@
     "env:show": "node scripts/setup-env.js development show"
   },
   "dependencies": {
+    "@capacitor/core": "^6.1.2",
     "@fortawesome/fontawesome-free": "^6.7.1",
     "@stomp/stompjs": "^7.1.1",
     "axios": "^1.7.9",
@@ -35,6 +39,9 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/cli": "^6.1.2",
+    "@capacitor/ios": "^6.1.2",
     "@babel/core": "^7.24.0",
     "@babel/eslint-parser": "^7.24.0",
     "@storybook/vue3": "^9.0.12",
