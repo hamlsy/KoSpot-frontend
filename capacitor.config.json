@@ -2,7 +2,6 @@
   "appId": "com.kospot.app",
   "appName": "KoSpot",
   "webDir": "dist",
-  "bundledWebRuntime": false,
   "server": {
     "androidScheme": "https"
   }
