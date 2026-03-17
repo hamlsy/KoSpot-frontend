@@ -1,9 +1,8 @@
 import { isNativeApp, getPlatform } from '@/core/platform/runtime.js'
 import mobileApi from '@/core/api/mobile.api.js'
+import { PushNotifications } from '@capacitor/push-notifications'
 
 const isPushEnabled = () => process.env.VUE_APP_ENABLE_PUSH === 'true'
-
-const getPlugin = () => window?.Capacitor?.Plugins?.PushNotifications
 
 const getAppVersion = () => process.env.VUE_APP_BUILD_VERSION || 'unknown'
 
@@ -21,12 +20,7 @@ export const getPushPermissionStatus = async () => {
     return 'unsupported'
   }
 
-  const plugin = getPlugin()
-  if (!plugin?.checkPermissions) {
-    return 'unsupported'
-  }
-
-  const status = await plugin.checkPermissions()
+  const status = await PushNotifications.checkPermissions()
   return status.receive || 'prompt'
 }
 
@@ -35,13 +29,18 @@ export const requestPushPermission = async () => {
     return 'unsupported'
   }
 
-  const plugin = getPlugin()
-  if (!plugin?.requestPermissions) {
-    return 'unsupported'
+  const permission = await PushNotifications.requestPermissions()
+  return permission.receive || 'prompt'
+}
+
+export const registerPushIfPermitted = async () => {
+  const permissionStatus = await getPushPermissionStatus()
+  if (permissionStatus !== 'granted') {
+    return false
   }
 
-  const permission = await plugin.requestPermissions()
-  return permission.receive || 'prompt'
+  await PushNotifications.register()
+  return true
 }
 
 export const registerPushToken = async ({ token, enabled = true }) => {
@@ -72,46 +71,30 @@ export const initializePush = async ({ onNotificationReceived, onNotificationAct
     return () => {}
   }
 
-  const plugin = getPlugin()
-  if (!plugin?.register) {
-    console.warn('[push] PushNotifications plugin is unavailable')
-    return () => {}
-  }
-
   const subscriptions = []
 
-  const registrationSub = await plugin.addListener('registration', async (tokenPayload) => {
+  const registrationSub = await PushNotifications.addListener('registration', async (tokenPayload) => {
     const token = tokenPayload?.value
     await registerPushToken({ token, enabled: true })
   })
   subscriptions.push(registrationSub)
 
-  const registrationErrorSub = await plugin.addListener('registrationError', (error) => {
+  const registrationErrorSub = await PushNotifications.addListener('registrationError', (error) => {
     console.error('[push] registration error:', error)
   })
   subscriptions.push(registrationErrorSub)
 
   if (onNotificationReceived) {
-    const receiveSub = await plugin.addListener('pushNotificationReceived', onNotificationReceived)
+    const receiveSub = await PushNotifications.addListener('pushNotificationReceived', onNotificationReceived)
     subscriptions.push(receiveSub)
   }
 
   if (onNotificationActionPerformed) {
-    const actionSub = await plugin.addListener('pushNotificationActionPerformed', onNotificationActionPerformed)
+    const actionSub = await PushNotifications.addListener('pushNotificationActionPerformed', onNotificationActionPerformed)
     subscriptions.push(actionSub)
   }
 
-  const permissionStatus = await getPushPermissionStatus()
-  if (permissionStatus === 'prompt') {
-    const requested = await requestPushPermission()
-    if (requested !== 'granted') {
-      return () => {
-        subscriptions.forEach((listener) => listener.remove())
-      }
-    }
-  }
-
-  await plugin.register()
+  await registerPushIfPermitted()
 
   return () => {
     subscriptions.forEach((listener) => {
@@ -128,6 +111,7 @@ export default {
   initializePush,
   getPushPermissionStatus,
   requestPushPermission,
+  registerPushIfPermitted,
   registerPushToken,
   setPushPreference,
   deletePushToken

@@ -1,3 +1,5 @@
+import { App as CapacitorApp } from '@capacitor/app'
+
 const parseIncomingUrl = (url) => {
   try {
     const parsed = new URL(url)
@@ -31,13 +33,11 @@ const parseIncomingUrl = (url) => {
 }
 
 export const registerDeepLinkListener = async (router) => {
-  const appPlugin = window?.Capacitor?.Plugins?.App
-
-  if (!appPlugin?.addListener || !router) {
+  if (!router) {
     return () => {}
   }
 
-  const listener = await appPlugin.addListener('appUrlOpen', (event) => {
+  const listener = await CapacitorApp.addListener('appUrlOpen', (event) => {
     const targetPath = parseIncomingUrl(event?.url)
     if (!targetPath) {
       return

@@ -1,26 +1,11 @@
-const getCapacitorGlobal = () => {
-  if (typeof window === 'undefined') return null
-  return window.Capacitor || null
-}
+import { Capacitor } from '@capacitor/core'
 
 export const isNativeApp = () => {
-  const capacitor = getCapacitorGlobal()
-
-  if (capacitor?.isNativePlatform) {
-    return capacitor.isNativePlatform()
-  }
-
-  return false
+  return Capacitor.isNativePlatform()
 }
 
 export const getPlatform = () => {
-  const capacitor = getCapacitorGlobal()
-
-  if (capacitor?.getPlatform) {
-    return capacitor.getPlatform()
-  }
-
-  return 'web'
+  return Capacitor.getPlatform()
 }
 
 export const isAndroidApp = () => isNativeApp() && getPlatform() === 'android'

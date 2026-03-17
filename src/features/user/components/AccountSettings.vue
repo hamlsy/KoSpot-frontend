@@ -137,6 +137,26 @@
         <!-- 알림 설정 -->
         <div class="settings-section">
           <h3>알림 설정</h3>
+
+          <div class="toggle-group">
+            <div class="toggle-label">
+              <span>앱 푸시 알림</span>
+              <p>
+                모바일 앱 푸시 알림 수신 여부를 설정합니다.
+                <strong class="permission-badge">{{ mobilePushStatusLabel }}</strong>
+              </p>
+              <p v-if="!mobilePush.supported" class="input-hint">현재 환경에서는 모바일 푸시를 지원하지 않습니다.</p>
+            </div>
+            <label class="toggle">
+              <input
+                type="checkbox"
+                :checked="mobilePush.enabled"
+                :disabled="!mobilePush.supported || mobilePush.loading"
+                @change="handleMobilePushToggle"
+              >
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
           
           <div class="toggle-group">
             <div class="toggle-label">
@@ -254,6 +274,13 @@
 
 <script>
 import NavigationBar from '@/core/components/NavigationBar.vue';
+import { isNativeApp } from '@/core/platform/runtime.js';
+import {
+  getPushPermissionStatus,
+  requestPushPermission,
+  registerPushIfPermitted,
+  setPushPreference
+} from '@/core/platform/push.service.js';
 
 export default {
   name: 'AccountSettings',
@@ -282,8 +309,18 @@ export default {
       editingNickname: false,
       editingEmail: false,
       showDeleteAccountModal: false,
-      deleteConfirmText: ''
+      deleteConfirmText: '',
+      mobilePush: {
+        supported: false,
+        enabled: false,
+        loading: false,
+        permissionStatus: 'unsupported'
+      }
     };
+  },
+
+  async mounted() {
+    await this.initializeMobilePushSettings();
   },
   
   computed: {
@@ -342,6 +379,17 @@ export default {
         this.passwordForm.newPassword === this.passwordForm.confirmPassword &&
         this.passwordStrength.percentage >= 50
       );
+    },
+
+    mobilePushStatusLabel() {
+      const statusMap = {
+        granted: '권한 허용',
+        denied: '권한 거부',
+        prompt: '권한 미요청',
+        unsupported: '지원 안됨'
+      };
+
+      return statusMap[this.mobilePush.permissionStatus] || '알 수 없음';
     }
   },
   
@@ -362,6 +410,66 @@ export default {
     saveEmail() {
       // 실제 구현에서는 API를 통해 서버에 저장
       this.editingEmail = false;
+    },
+
+    async initializeMobilePushSettings() {
+      if (!isNativeApp() || process.env.VUE_APP_ENABLE_PUSH !== 'true') {
+        this.mobilePush = {
+          ...this.mobilePush,
+          supported: false,
+          permissionStatus: 'unsupported',
+          enabled: false
+        };
+        return;
+      }
+
+      try {
+        const status = await getPushPermissionStatus();
+        this.mobilePush.supported = true;
+        this.mobilePush.permissionStatus = status;
+        this.mobilePush.enabled = status === 'granted';
+      } catch (error) {
+        console.error('모바일 푸시 설정 초기화 실패:', error);
+        this.mobilePush.supported = false;
+        this.mobilePush.permissionStatus = 'unsupported';
+      }
+    },
+
+    async handleMobilePushToggle(event) {
+      const nextEnabled = !!event.target.checked;
+      const previousEnabled = this.mobilePush.enabled;
+
+      this.mobilePush.loading = true;
+
+      try {
+        if (!nextEnabled) {
+          await setPushPreference(false);
+          this.mobilePush.enabled = false;
+          return;
+        }
+
+        let permissionStatus = this.mobilePush.permissionStatus;
+        if (permissionStatus !== 'granted') {
+          permissionStatus = await requestPushPermission();
+          this.mobilePush.permissionStatus = permissionStatus;
+        }
+
+        if (permissionStatus !== 'granted') {
+          this.mobilePush.enabled = false;
+          alert('푸시 권한이 허용되지 않아 알림을 켤 수 없습니다. 기기 설정에서 권한을 허용해 주세요.');
+          return;
+        }
+
+        await registerPushIfPermitted();
+        await setPushPreference(true);
+        this.mobilePush.enabled = true;
+      } catch (error) {
+        console.error('모바일 푸시 설정 변경 실패:', error);
+        this.mobilePush.enabled = previousEnabled;
+        alert('푸시 설정 변경에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+      } finally {
+        this.mobilePush.loading = false;
+      }
     },
     
     changePassword() {
@@ -622,6 +730,12 @@ export default {
   margin: 0;
   font-size: 0.85rem;
   color: #666;
+}
+
+.permission-badge {
+  margin-left: 8px;
+  color: #1a73e8;
+  font-weight: 600;
 }
 
 .toggle {
