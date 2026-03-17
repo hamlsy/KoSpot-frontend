@@ -2,13 +2,17 @@
 <html lang="ko">
   <head>
     <base href="/" />
+    <% if (process.env.VUE_APP_PLATFORM_TARGET !== 'app') { %>
     <meta name="google-adsense-account" content="ca-pub-7204650236738388">
+    <% } %>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <% if (process.env.VUE_APP_PLATFORM_TARGET !== 'app') { %>
     <meta name="google-adsense-account" content="ca-pub-7204650236738388">
+    <% } %>
     <meta name="google-site-verification" content="MnLnKivRsBHUiDxRrxx_WKNFvMne7is4LAnIU63LN1o" />
     <link rel="icon" type="image/png" href="/images/icon/kospot_icon_1-removebg.png">
     <title>KoSpot!</title>
@@ -26,6 +30,7 @@
     </noscript>
     <div id="app"></div>
   </body>
+  <% if (process.env.VUE_APP_PLATFORM_TARGET !== 'app') { %>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
@@ -33,4 +38,5 @@
     gtag('config', 'UA-xxxxxxxxx-x'); //adsense 
     
   </script>
+  <% } %>
 </html>
