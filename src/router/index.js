@@ -12,6 +12,7 @@ import noticeRoutes from './noticeRoutes.js';
 import shopRoutes from './shopRoutes.js';
 import { connectAll } from '@/core/services/appWebSocket.service.js';
 import TestFinalResultsView from '@/features/game/multiplayer/roadview/views/TestFinalResultsView.vue';
+import { authStorage } from '@/core/auth/authStorage.service.js';
 
 // 봇 여부 확인 헬퍼 함수
 const isBot = () => {
@@ -25,7 +26,7 @@ const isAuthenticated = () => {
     return true
   }
   // 일반 사용자는 accessToken 확인
-  return !!localStorage.getItem('accessToken')
+  return authStorage.isAuthenticated()
 }
 
 // Combine all routes
@@ -104,7 +105,7 @@ router.afterEach((to, from) => {
   const goingToLoginOrSameLogin = to.path === '/loginPage' || to.path === '/login';
 
   if (comingFromLogin && !goingToLoginOrSameLogin) {
-    const token = localStorage.getItem('accessToken');
+    const token = authStorage.getAccessToken();
     if (token) {
       // 로그인 완료 후 WebSocket 연결 (App.vue의 connectAll 재사용)
       connectAll();

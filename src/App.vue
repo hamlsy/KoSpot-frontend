@@ -10,6 +10,7 @@ import { tokenRefreshService } from '@/core/services/tokenRefresh.service.js';
 import { useTheme } from '@/core/composables/useTheme.js';
 import NotificationToast from '@/core/components/NotificationToast.vue';
 import { connectAll, disconnectAll } from '@/core/services/appWebSocket.service.js';
+import { authStorage } from '@/core/auth/authStorage.service.js';
 
 // 테마 초기화
 useTheme();
@@ -17,8 +18,8 @@ useTheme();
 // ─── 토큰 서비스 ──────────────────────────────────────────────────────────
 
 const checkAndStartTokenService = () => {
-  const accessToken = localStorage.getItem('accessToken');
-  const refreshToken = localStorage.getItem('refreshToken');
+  const accessToken = authStorage.getAccessToken();
+  const refreshToken = authStorage.getRefreshToken();
 
   if (accessToken && refreshToken) {
     if (tokenRefreshService.refreshInterval) return;

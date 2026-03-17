@@ -4,6 +4,7 @@ import apiClient from 'src/core/api/apiClient.js'
 import { API_ENDPOINTS } from '@/core/api/endPoint.js'
 import { useRouter } from 'vue-router'
 import { tokenRefreshService } from '@/core/services/tokenRefresh.service.js'
+import { authStorage } from '@/core/auth/authStorage.service.js'
 
 // 전역 상태 관리
 const authState = reactive({
@@ -43,12 +44,11 @@ export function useAuth() {
       const { memberId, accessToken, refreshToken } = response.data
       
       // 토큰 저장
-      localStorage.setItem('accessToken', accessToken)
-      localStorage.setItem('refreshToken', refreshToken)
-      
-      // memberId 저장 (채팅 메시지 소유권 판단용) - String으로 변환하여 저장
-      const memberIdString = String(memberId);
-      localStorage.setItem('memberId', memberIdString);
+      authStorage.setTokens({
+        accessToken,
+        refreshToken,
+        memberId
+      })
       
       // 최소한의 사용자 정보 저장 (memberId만으로 구성)
       authState.user = {
@@ -97,9 +97,7 @@ export function useAuth() {
       // API 호출 실패해도 로컬 상태는 정리
     } finally {
       // 로컬 상태 정리
-      localStorage.removeItem('accessToken')
-      localStorage.removeItem('refreshToken')
-      localStorage.removeItem('memberId')
+      authStorage.clearAuth()
       localStorage.removeItem('isBot') // 봇 정보도 삭제
       authState.user = null
       authState.isAuthenticated = false
@@ -140,7 +138,7 @@ export function useAuth() {
       return true
     }
     
-    const token = localStorage.getItem('accessToken')
+    const token = authStorage.getAccessToken()
     if (!token) return false
     
     try {
@@ -150,9 +148,7 @@ export function useAuth() {
       return true
     } catch (error) {
       // 토큰이 유효하지 않은 경우
-      localStorage.removeItem('accessToken')
-      localStorage.removeItem('refreshToken')
-      localStorage.removeItem('memberId') // memberId도 삭제
+      authStorage.clearAuth()
       return false
     }
   }

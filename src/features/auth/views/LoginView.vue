@@ -56,20 +56,15 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
+import { buildOAuthAuthorizeUrl } from '@/core/auth/oauth.service.js';
+import { hardRedirect } from '@/core/platform/navigation.service.js';
 
 const isLoggedIn = ref(false);
 
-// API Base URL 가져오기 (apiClient.js와 동일한 방식)
-const getBaseURL = () => {
-  return process.env.VUE_APP_API_BASE_URL || 'http:localhost:8080/api';
-};
-
 // 소셜 로그인 리다이렉트
 const socialLogin = (platform) => {
-  const baseURL = getBaseURL();
-  const oauthUrl = `${baseURL}/oauth2/authorization/${platform}`;
-  // const oauthUrl = `http://localhost:8080/login/oauth2/code/${platform}`;
-  window.location.href = oauthUrl;
+  const oauthUrl = buildOAuthAuthorizeUrl(platform);
+  hardRedirect(oauthUrl);
 };
 
 // Google Sign-In handling

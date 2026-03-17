@@ -21,12 +21,13 @@ import { NOTIFICATION_TYPE } from '@/core/constants/notificationTypes.js';
 import { isFriendSocketConnected } from '@/features/friend/services/friendWebSocket.service.js';
 import { useNotificationStore } from '@/store/modules/notificationStore.js';
 import { useFriendStore } from '@/features/friend/stores/friend.store.js';
+import { authStorage } from '@/core/auth/authStorage.service.js';
 
 /**
  * 로그인 상태일 때 모든 WebSocket을 연결하고 초기 데이터를 로드합니다.
  */
 export const connectAll = async () => {
-    const token = localStorage.getItem('accessToken');
+    const token = authStorage.getAccessToken();
     if (!token) return;
 
     const notificationStore = useNotificationStore();
