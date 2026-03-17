@@ -6,11 +6,18 @@
 
 <script setup>
 import { onMounted, onBeforeUnmount } from 'vue';
+import { useRouter } from 'vue-router';
 import { tokenRefreshService } from '@/core/services/tokenRefresh.service.js';
 import { useTheme } from '@/core/composables/useTheme.js';
 import NotificationToast from '@/core/components/NotificationToast.vue';
 import { connectAll, disconnectAll } from '@/core/services/appWebSocket.service.js';
 import { authStorage } from '@/core/auth/authStorage.service.js';
+import { registerDeepLinkListener } from '@/core/platform/deeplink.service.js';
+import { initializePush } from '@/core/platform/push.service.js';
+
+const router = useRouter()
+let removeDeepLinkListener = null
+let removePushListeners = null
 
 // 테마 초기화
 useTheme();
@@ -53,6 +60,19 @@ const handleStorageChange = (e) => {
 
 // ─── 라이프사이클 ──────────────────────────────────────────────────────────
 
+const handlePushAction = (actionPayload) => {
+  const deeplink = actionPayload?.notification?.data?.deeplink
+  if (!deeplink) {
+    return
+  }
+
+  router.replace(deeplink).catch((error) => {
+    if (error?.name !== 'NavigationDuplicated') {
+      console.warn('[push] Failed to route deeplink:', error)
+    }
+  })
+}
+
 onMounted(async () => {
   checkAndStartTokenService();
 
@@ -61,12 +81,25 @@ onMounted(async () => {
   await connectAll();
 
   window.addEventListener('storage', handleStorageChange);
+
+  removeDeepLinkListener = await registerDeepLinkListener(router)
+  removePushListeners = await initializePush({
+    onNotificationActionPerformed: handlePushAction
+  })
 });
 
 onBeforeUnmount(() => {
   tokenRefreshService.stop();
   disconnectAll();
   window.removeEventListener('storage', handleStorageChange);
+
+  if (typeof removeDeepLinkListener === 'function') {
+    removeDeepLinkListener()
+  }
+
+  if (typeof removePushListeners === 'function') {
+    removePushListeners()
+  }
 });
 </script>
 

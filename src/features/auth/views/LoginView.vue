@@ -57,13 +57,19 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { buildOAuthAuthorizeUrl } from '@/core/auth/oauth.service.js';
-import { hardRedirect } from '@/core/platform/navigation.service.js';
+import { hardRedirect, openExternalUrl } from '@/core/platform/navigation.service.js';
+import { isNativeApp } from '@/core/platform/runtime.js';
 
 const isLoggedIn = ref(false);
 
 // 소셜 로그인 리다이렉트
-const socialLogin = (platform) => {
+const socialLogin = async (platform) => {
   const oauthUrl = buildOAuthAuthorizeUrl(platform);
+  if (isNativeApp()) {
+    await openExternalUrl(oauthUrl);
+    return;
+  }
+
   hardRedirect(oauthUrl);
 };
 

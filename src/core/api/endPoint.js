@@ -91,6 +91,12 @@ export const API_ENDPOINTS = {
     UNREAD_COUNT: '/notifications/unread-count',
     READ: (notificationId) => `/notifications/${notificationId}/read`,
     READ_ALL: '/notifications/read-all',
+  },
+
+  // 모바일
+  MOBILE: {
+    PUSH_TOKENS: '/mobile/push-tokens',
+    PUSH_PREFERENCE: '/mobile/push-preference'
   }
 }
 
