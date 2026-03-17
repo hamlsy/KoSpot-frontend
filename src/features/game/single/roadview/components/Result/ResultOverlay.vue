@@ -20,7 +20,7 @@
         </div>
         <p class="score-caption">획득 점수</p>
         <p v-if="hasBonusScore" class="bonus-score-caption">
-          보너스 +{{ Number(bonusScore).toFixed(1) }}점
+          시간 보너스 +{{ Number(bonusScore) }}점
         </p>
       </div>
 

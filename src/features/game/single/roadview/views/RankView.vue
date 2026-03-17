@@ -103,6 +103,7 @@
       <ResultOverlay
         :show="showResult"
         :score="score"
+        :bonusScore="bonusScore"
         :distance="answerDistance"
         :currentRankPoints="currentRankPoints"
         :rankPointChange="rankPointChange"
@@ -212,6 +213,8 @@ export default {
       answerDistance: null,
       nickname: null,
       score: 0,
+      baseScore: 0,
+      bonusScore: 0,
       elapsedTime: 0, // 게임 경과 시간 (초)
 
       // 지도 관련
@@ -701,6 +704,8 @@ export default {
         if (response.isSuccess && response.result) {
           const {
             nickname,
+            baseScore,
+            bonusScore,
             score,
             answerDistance,
             previousRatingScore,
@@ -716,6 +721,8 @@ export default {
 
           // 백엔드에서 계산된 점수와 랭킹 정보로 업데이트
           this.nickname = nickname;
+          this.baseScore = Number(baseScore) || 0;
+          this.bonusScore = Number(bonusScore) || 0;
           this.score = score;
           this.answerDistance = answerDistance;
           this.previousRatingScore = previousRatingScore;

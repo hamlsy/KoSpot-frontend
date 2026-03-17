@@ -64,6 +64,10 @@ const ROADVIEW_ENDPOINTS = {
  * @property {number} code - 응답 코드
  * @property {string} message - 응답 메시지
  * @property {Object} result - 결과 데이터
+ * @property {string} result.nickname - 플레이어 닉네임
+ * @property {number} result.answerDistance - 정답과의 거리 (km)
+ * @property {number} result.baseScore - 기본 점수
+ * @property {number} result.bonusScore - 시간 보너스 점수
  * @property {number} result.score - 게임 점수
  * @property {number} result.previousRatingScore - 게임 전 랭크 점수
  * @property {number} result.currentRatingScore - 게임 후 랭크 점수
