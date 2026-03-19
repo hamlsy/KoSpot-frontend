@@ -6,24 +6,24 @@
     />
     
     <div class="shop-layout">
-      <!-- 페이지 헤더 -->
+      <!-- ?�이지 ?�더 -->
       <div class="shop-header">
         <div class="header-left">
-          <h1 class="shop-title">상점</h1>
-          <p class="shop-subtitle">포인트로 특별한 아이템을 획득하세요</p>
+          <h1 class="shop-title">?�점</h1>
+          <p class="shop-subtitle">?�인?�로 ?�별???�이?�을 ?�득?�세??/p>
         </div>
         <div class="header-right">
           <div class="points-display">
             <i class="fas fa-coins points-icon"></i>
             <div class="points-text">
-              <span class="points-label">보유 포인트</span>
+              <span class="points-label">보유 ?�인??/span>
               <span class="points-value">{{ formatNumber(userCoins) }}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 카테고리 탭 + 필터 -->
+      <!-- 카테고리 ??+ ?�터 -->
       <div class="shop-toolbar">
         <nav class="category-tabs">
           <button
@@ -55,15 +55,15 @@
         </div>
       </div>
 
-      <!-- 메인 콘텐츠 -->
+      <!-- 메인 콘텐�?-->
       <main class="shop-content">
         <!-- 로딩 -->
         <div v-if="loading" class="state-container">
           <div class="loading-spinner"></div>
-          <p class="state-text">아이템을 불러오는 중...</p>
+          <p class="state-text">?�이?�을 불러?�는 �?..</p>
         </div>
 
-        <!-- 아이템 그리드 -->
+        <!-- ?�이??그리??-->
         <div v-else-if="filteredItems.length > 0" class="items-grid">
           <div
             v-for="(item, index) in filteredItems"
@@ -72,82 +72,93 @@
             :class="{ owned: item.owned, equipped: item.equipped }"
             :style="{ animationDelay: `${index * 50}ms` }"
           >
-            <!-- 이미지 영역 -->
+            <!-- ?��?지 ?�역 -->
             <div class="card-image">
               <img :src="item.image" :alt="item.name" @error="handleImageError" />
               <span v-if="item.isNew" class="card-badge new">NEW</span>
-              <span v-if="item.equipped" class="card-badge equipped-badge">장착중</span>
+              <span v-if="item.equipped" class="card-badge equipped-badge">?�착�?/span>
               <div v-if="item.owned && !item.equipped" class="owned-overlay">
                 <i class="fas fa-check-circle"></i>
               </div>
             </div>
 
-            <!-- 정보 영역 -->
+            <!-- ?�보 ?�역 -->
             <div class="card-body">
               <div class="card-meta">
                 <span class="rarity-chip" :class="getRarityClass(item.rarity)">
                   {{ item.rarity }}
                 </span>
                 <span v-if="item.stock > 0" class="stock-chip">
-                  수량: {{ formatNumber(item.stock) }}
+                  ?�량: {{ formatNumber(item.stock) }}
                 </span>
               </div>
               <h3 class="card-name">{{ item.name }}</h3>
               <p class="card-desc">{{ item.description }}</p>
             </div>
 
-            <!-- 액션 영역 -->
+            <!-- ?�션 ?�역 -->
             <div class="card-footer">
               <template v-if="!item.owned">
                 <div class="price-display">
                   <i class="fas fa-coins"></i>
                   <span>{{ formatNumber(item.price) }}</span>
                 </div>
+                <!-- 비회?? 로그???�도 버튼 -->
                 <button
+                  v-if="!isLoggedIn"
+                  class="action-btn buy-btn"
+                  @click="goToLogin"
+                >
+                  <i class="fas fa-sign-in-alt"></i>
+                  로그?�하�?구매
+                </button>
+                <!-- ?�원: ?�반 구매 버튼 -->
+                <button
+                  v-else
                   class="action-btn buy-btn"
                   :class="{ 'cant-afford': !canAfford(item) }"
                   :disabled="!canAfford(item) || loading"
                   @click="buyItem(item)"
                 >
                   <i class="fas fa-shopping-cart"></i>
-                  {{ canAfford(item) ? '구매하기' : '포인트 부족' }}
+                  {{ canAfford(item) ? '구매?�기' : '?�인??부�? }}
                 </button>
               </template>
               <template v-else>
                 <div class="owned-label">
                   <i class="fas fa-check-circle"></i>
-                  <span>보유중</span>
+                  <span>보유�?/span>
                 </div>
                 <button
                   v-if="isEquippableCategory"
                   class="action-btn equip-btn"
                   :class="{ active: item.equipped }"
                   :disabled="loading || !item.memberItemId"
-                  :title="!item.memberItemId ? '장착 가능한 보유 아이템 정보가 없습니다.' : ''"
+                  :title="!item.memberItemId ? '?�착 가?�한 보유 ?�이???�보가 ?�습?�다.' : ''"
                   @click="equipItem(item)"
                 >
                   <i :class="item.equipped ? 'fas fa-check' : (item.memberItemId ? 'fas fa-hand-pointer' : 'fas fa-ban')"></i>
-                  {{ item.equipped ? '장착중' : (item.memberItemId ? '장착하기' : '장착 불가') }}
+                  {{ item.equipped ? '?�착�? : (item.memberItemId ? '?�착?�기' : '?�착 불�?') }}
                 </button>
               </template>
             </div>
           </div>
         </div>
 
-        <!-- 빈 상태 -->
+        <!-- �??�태 -->
         <div v-else class="state-container">
           <div class="empty-icon">
             <i class="fas fa-box-open"></i>
           </div>
-          <p class="state-title">아이템이 없습니다</p>
+          <p class="state-title">?�이?�이 ?�습?�다</p>
           <p class="state-text">
-            {{ currentFilter === 'notOwned' ? '모든 아이템을 보유하고 있습니다!' : '현재 카테고리에 아이템이 없습니다.' }}
+            {{ currentFilter === 'notOwned' ? '모든 ?�이?�을 보유?�고 ?�습?�다!' : '?�재 카테고리???�이?�이 ?�습?�다.' }}
           </p>
         </div>
       </main>
     </div>
 
-    <!-- 구매 확인 모달 -->
+    <!-- 구매 ?�인 모달 -->
     <PurchaseModal
       v-if="showPurchaseModal"
       :item="selectedItem"
@@ -156,7 +167,7 @@
       @cancel="cancelPurchase"
     />
 
-    <!-- 구매 완료 모달 -->
+    <!-- 구매 ?�료 모달 -->
     <PurchaseCompleteModal
       v-if="showCompleteModal"
       :item="completedItem"
@@ -185,6 +196,7 @@ export default {
 
   data() {
     return {
+      isLoggedIn: !!localStorage.getItem('accessToken'),
       userCoins: 0,
       navUserInfo: {},
       currentCategory: 'markers',
@@ -197,8 +209,8 @@ export default {
       apiItems: {},
       categories: [],
       filters: [
-        { id: 'all', name: '전체' },
-        { id: 'notOwned', name: '미보유' }
+        { id: 'all', name: '?�체' },
+        { id: 'notOwned', name: '미보?? }
       ]
     }
   },
@@ -206,7 +218,7 @@ export default {
   computed: {
     currentCategoryName() {
       const cat = this.categories.find(c => c.id === this.currentCategory)
-      return cat?.name || '상점'
+      return cat?.name || '?�점'
     },
     currentCategoryItems() {
       const category = this.categories.find(c => c.id === this.currentCategory)
@@ -236,7 +248,7 @@ export default {
         icon: type.icon,
         disabled: type.disabled
       }))
-      // 병렬 로드: 코인+내비바 정보, 상점 정보 아이템
+      // 병렬 로드: 코인+?�비�??�보, ?�점 ?�보 ?�이??
       await Promise.all([
         this.loadShopInfo(),
         this.loadNavUserInfo()
@@ -252,13 +264,13 @@ export default {
           this.userCoins = result.currentPoint || 0
         }
       } catch (error) {
-        console.error('상점 정보 로드 실패:', error)
+        console.error('?�점 ?�보 로드 ?�패:', error)
         this.userCoins = 0
       }
     },
 
-    // NavigationBar 프로필 정보를 mainService를 통해 로드
-    // (MainView, NoticeListView와 동일한 방식 - equippedMarkerImageUrl 포함)
+    // NavigationBar ?�로???�보�?mainService�??�해 로드
+    // (MainView, NoticeListView?� ?�일??방식 - equippedMarkerImageUrl ?�함)
     async loadNavUserInfo() {
       try {
         const response = await mainService.getMainPageData()
@@ -272,7 +284,7 @@ export default {
           }
         }
       } catch (error) {
-        console.error('내비바 사용자 정보 로드 실패:', error)
+        console.error('?�비�??�용???�보 로드 ?�패:', error)
       }
     },
 
@@ -295,7 +307,7 @@ export default {
             const ownedFromItemResponse = item.isOwned ?? item.owned
             const equippedFromItemResponse = item.isEquipped ?? item.equipped
 
-            // 보유/장착은 item API 스키마를 우선 신뢰
+            // 보유/?�착?� item API ?�키마�? ?�선 ?�뢰
             uiItem.owned = Boolean(ownedFromItemResponse || resolvedMemberItemId !== null)
             uiItem.memberItemId = resolvedMemberItemId
             uiItem.equipped = uiItem.owned && Boolean(equippedFromItemResponse)
@@ -305,7 +317,7 @@ export default {
           this.apiItems = { ...this.apiItems, [this.currentCategory]: items }
         }
       } catch (error) {
-        console.error('아이템 로드 실패:', error)
+        console.error('?�이??로드 ?�패:', error)
       } finally {
         this.loading = false
       }
@@ -341,8 +353,7 @@ export default {
         this.loading = true
         const response = await shopService.purchaseItem(this.selectedItem.itemId)
         if (response.isSuccess) {
-          // 서버 데이터 최신화
-          await Promise.all([
+          // ?�버 ?�이??최신??          await Promise.all([
             this.loadShopInfo(),
             this.loadItems()
           ])
@@ -350,7 +361,7 @@ export default {
           const refreshedItems = this.apiItems[this.currentCategory] || []
           const refreshedItem = refreshedItems.find(i => i.itemId === this.selectedItem.itemId)
 
-          // alert() 대신 완료 모달 표시
+          // alert() ?�???�료 모달 ?�시
           this.completedItem = {
             ...(refreshedItem || this.selectedItem),
             owned: true,
@@ -360,8 +371,8 @@ export default {
           this.showCompleteModal = true
         }
       } catch (error) {
-        console.error('구매 실패:', error)
-        // 에러는 추후 토스트로 대체 가능; 우선 콘솔 처리
+        console.error('구매 ?�패:', error)
+        // ?�러??추후 ?�스?�로 ?��?가?? ?�선 콘솔 처리
       } finally {
         this.loading = false
         this.showPurchaseModal = false
@@ -388,40 +399,45 @@ export default {
 
     async equipItem(item) {
       if (!item.owned || !item.memberItemId) {
-        console.warn('장착 실패: memberItemId가 없습니다.', item)
+        console.warn('?�착 ?�패: memberItemId가 ?�습?�다.', item)
         return
       }
       try {
         this.loading = true
         const response = await shopService.equipItem(item.memberItemId)
         if (response.isSuccess) {
-          // 상태 최신화
-          await Promise.all([
+          // ?�태 최신??          await Promise.all([
             this.loadShopInfo(),
             this.loadItems()
           ])
         }
       } catch (error) {
-        console.error('장착 실패:', error)
+        console.error('?�착 ?�패:', error)
       } finally {
         this.loading = false
       }
     },
 
     getRarityClass(rarity) {
-      const map = { '일반': 'common', '레어': 'rare', '에픽': 'epic', '전설': 'legendary' }
+      const map = { '?�반': 'common', '?�어': 'rare', '?�픽': 'epic', '?�설': 'legendary' }
       return map[rarity] || 'common'
     },
 
     handleImageError(e) {
       e.target.src = '/images/placeholder-item.png'
+    },
+
+    goToLogin() {
+      if (confirm('�������� �����Ϸ��� �α����� �ʿ��մϴ�. �α��� �������� �̵��Ͻðھ��?')) {
+        this.$router.push('/loginPage');
+      }
     }
   }
 }
 </script>
 
 <style scoped>
-/* ===== 페이지 기반 ===== */
+/* ===== ?�이지 기반 ===== */
 .shop-page {
   min-height: 100vh;
   background: var(--color-background);
@@ -435,7 +451,7 @@ export default {
   padding-right: var(--spacing-xl);
 }
 
-/* ===== 페이지 헤더 ===== */
+/* ===== ?�이지 ?�더 ===== */
 .shop-header {
   display: flex;
   justify-content: space-between;
@@ -458,7 +474,7 @@ export default {
   margin: 0;
 }
 
-/* 포인트 디스플레이 */
+/* ?�인???�스?�레??*/
 .points-display {
   display: flex;
   align-items: center;
@@ -500,7 +516,7 @@ export default {
   line-height: 1.2;
 }
 
-/* ===== 툴바 (탭 + 필터) ===== */
+/* ===== ?�바 (??+ ?�터) ===== */
 .shop-toolbar {
   display: flex;
   justify-content: space-between;
@@ -511,7 +527,7 @@ export default {
   flex-wrap: wrap;
 }
 
-/* 카테고리 탭 */
+/* 카테고리 ??*/
 .category-tabs {
   display: flex;
   gap: var(--spacing-xs);
@@ -572,7 +588,7 @@ export default {
   font-weight: 600;
 }
 
-/* 필터 버튼 */
+/* ?�터 버튼 */
 .filter-group {
   display: flex;
   gap: var(--spacing-xs);
@@ -602,7 +618,7 @@ export default {
   color: white;
 }
 
-/* ===== 상태 (로딩/빈 상태) ===== */
+/* ===== ?�태 (로딩/�??�태) ===== */
 .state-container {
   display: flex;
   flex-direction: column;
@@ -657,7 +673,7 @@ export default {
   margin: 0;
 }
 
-/* ===== 아이템 그리드 ===== */
+/* ===== ?�이??그리??===== */
 .items-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -665,7 +681,7 @@ export default {
   padding-bottom: var(--spacing-2xl);
 }
 
-/* ===== 아이템 카드 ===== */
+/* ===== ?�이??카드 ===== */
 .item-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -692,7 +708,7 @@ export default {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* 카드 이미지 */
+/* 카드 ?��?지 */
 .card-image {
   position: relative;
   height: 160px;
@@ -832,7 +848,7 @@ export default {
   line-height: var(--line-height-normal);
 }
 
-/* 카드 푸터 */
+/* 카드 ?�터 */
 .card-footer {
   display: flex;
   justify-content: space-between;
@@ -843,7 +859,7 @@ export default {
   gap: var(--spacing-sm);
 }
 
-/* 가격 */
+/* 가�?*/
 .price-display {
   display: flex;
   align-items: center;
@@ -858,7 +874,7 @@ export default {
   font-size: 0.875rem;
 }
 
-/* 보유중 라벨 */
+/* 보유�??�벨 */
 .owned-label {
   display: flex;
   align-items: center;
@@ -868,7 +884,7 @@ export default {
   color: var(--color-success);
 }
 
-/* 액션 버튼 */
+/* ?�션 버튼 */
 .action-btn {
   display: flex;
   align-items: center;
@@ -921,7 +937,7 @@ export default {
   cursor: not-allowed;
 }
 
-/* ===== 반응형 ===== */
+/* ===== 반응??===== */
 @media (max-width: 768px) {
   .shop-layout {
     padding-left: var(--spacing-md);

@@ -1,15 +1,8 @@
-import Shop from '@/features/shop/views/ShopView.vue'
 import Inventory from '@/features/user/components/Inventory.vue'
 import Profile from '@/features/user/view/ProfileView.vue'
 import AccountSettings from '@/features/user/components/AccountSettings.vue'
 
 const userRoutes = [
-    {
-        path: '/shop',
-        name: "Shop",
-        component: Shop,
-        meta: { requiresAuth: true }
-    },
     {
         path: '/inventory',
         name: "Inventory",

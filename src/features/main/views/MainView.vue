@@ -607,13 +607,14 @@ function handleModeClick(route, isEnabled) {
     return;
   }
   
-  // 로그인하지 않았으면 로그인 필요 메시지 표시
-  if (!isLoggedIn.value) {
+  // 로드뷰 모드와 상점은 비회원도 접근 가능
+  const guestAllowedRoutes = ['roadView/main', 'shop'];
+  if (!isLoggedIn.value && !guestAllowedRoutes.includes(route)) {
     showLoginRequiredMessage();
     return;
   }
   
-  // 로그인되어 있고 모드가 활성화되어 있으면 이동
+  // 로그인되어 있거나 허용된 경로이면 이동
   navigateTo(route);
 }
 

@@ -83,6 +83,21 @@
         :distanceText="formattedDistance" :elapsedTimeText="elapsedTimeText" :showElapsedTime="showElapsedTime"
         :hintsUsed="hintsUsed" :poiName="poiName" :fullAddress="fullAddress" @toast="onImageActionToast" />
 
+      <!-- 손실 회피 CTA: 비회원에게만 표시 -->
+      <div v-if="!isLoggedIn" class="guest-save-cta">
+        <div class="guest-save-cta-icon">
+          <i class="fas fa-exclamation"></i>
+        </div>
+        <div class="guest-save-cta-text">
+          <p class="guest-save-title">앗! {{ score }}점이 저장되지 않아요!</p>
+          <p class="guest-save-desc">로그인하면 기록이 저장되고 전국 랭킹에 도전할 수 있어요.</p>
+        </div>
+        <button class="guest-save-btn" @click="goToLogin">
+          <i class="fas fa-sign-in-alt"></i>
+          로그인하기
+        </button>
+      </div>
+
       <!-- 하단 버튼 행 -->
       <div class="action-row">
         <button class="btn-restart" type="button" @click="$emit('restart')">
@@ -167,6 +182,7 @@ export default {
   data() {
     return {
       isMapExpanded: false,
+      isLoggedIn: !!localStorage.getItem('accessToken'),
     };
   },
   computed: {
@@ -177,6 +193,9 @@ export default {
   methods: {
     onImageActionToast(message, duration) {
       this.$emit('toast', message, duration);
+    },
+    goToLogin() {
+      this.$router.push('/loginPage');
     },
   },
 };
@@ -697,5 +716,72 @@ export default {
   .btn-exit {
     transition: none;
   }
+}
+
+/* ── 비회원 손실 회피 CTA ── */
+.guest-save-cta {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin: 0.75rem 0;
+  padding: 0.9rem 1.1rem;
+  background: linear-gradient(135deg, rgba(76, 201, 207, 0.12) 0%, rgba(238, 229, 233, 0.15) 100%);
+  border: 1.5px solid rgba(76, 201, 207, 0.35);
+  border-radius: 14px;
+  flex-wrap: wrap;
+}
+
+.guest-save-cta-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+.guest-save-cta-text {
+  flex: 1;
+  min-width: 130px;
+}
+
+.guest-save-title {
+  margin: 0 0 2px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.guest-save-desc {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.guest-save-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0.5rem 1rem;
+  background: #4cc9cf;
+  color: #111827;
+  border: none;
+  border-radius: 9px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.17s ease, box-shadow 0.17s ease;
+}
+
+.guest-save-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(76, 201, 207, 0.40);
 }
 </style>

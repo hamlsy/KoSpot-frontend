@@ -50,13 +50,27 @@
           <button
             class="view-all-button"
             @click="showRankingModal = true"
-            v-if="rankInfo"
+            v-if="rankInfo && isLoggedIn"
           >
             전체 랭킹 보기
             <i class="fas fa-arrow-right"></i>
           </button>
         </div>
-        <div class="stats-grid">
+        <!-- 비회원 안내 CTA -->
+        <div v-if="!isLoggedIn" class="guest-stats-cta">
+          <div class="guest-cta-icon">
+            <i class="fas fa-trophy"></i>
+          </div>
+          <div class="guest-cta-text">
+            <p class="guest-cta-title">나의 통계를 기록해보세요!</p>
+            <p class="guest-cta-desc">로그인하면 를크 통계, 최근 기록, 전체 랭킹을 확인할 수 있어요.</p>
+          </div>
+          <button class="guest-cta-btn" @click="$router.push('/loginPage')">
+            <i class="fas fa-sign-in-alt"></i>
+            로그인하기
+          </button>
+        </div>
+        <div v-else class="stats-grid">
           <div v-for="stat in stats" :key="stat.label" class="stat-card">
             <div class="stat-header">
               <i :class="stat.icon"></i>
@@ -167,7 +181,20 @@
             "
             class="rank-mode-options"
           >
-            <div class="rank-info-card">
+            <!-- 비회원: 로그인 유도 패널 -->
+            <div v-if="!isLoggedIn" class="rank-guest-panel">
+              <div class="rank-guest-icon">
+                <i class="fas fa-trophy"></i>
+              </div>
+              <p class="rank-guest-title">전국 랭킹에 도전하세요!</p>
+              <p class="rank-guest-desc">로그인하고 다른 플레이어와 경쟁하며 나만의 랭크를 만들어보세요.</p>
+              <button class="rank-guest-login-btn" @click="$router.push('/loginPage')">
+                <i class="fas fa-sign-in-alt"></i>
+                로그인하기
+              </button>
+            </div>
+            <!-- 회원: 랭크 정보 -->
+            <div v-else class="rank-info-card">
               <div v-if="rankInfo" class="rank-info-content">
                 <!-- 랭크 아이콘 (중앙 배치) -->
                 <div class="rank-icon-container">
@@ -206,7 +233,7 @@
             </div>
 
             <!-- 참고 안내 메시지 -->
-            <div class="info-note">
+            <div v-if="isLoggedIn" class="info-note">
               <i class="fas fa-info-circle"></i>
               <span>게임 중 이탈 시 랭크 포인트가 차감될 수 있어요.</span>
             </div>
@@ -281,6 +308,9 @@ import { BRAND, TEXT, BACKGROUND } from "@/core/constants/colors.js";
 
 // 라우터 설정
 const router = useRouter();
+
+// 로그인 여부
+const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'));
 
 // 반응형 상태 정의
 const selectedGameMode = ref(null);
@@ -491,13 +521,9 @@ onMounted(async () => {
   document.documentElement.scrollTop = 0;
   document.body.scrollTop = 0;
 
-  // 로그인 여부 확인
-  const isLoggedIn = !!localStorage.getItem("accessToken");
-
-  if (!isLoggedIn) {
-    // 로그인하지 않은 경우 메인 페이지로 리다이렉션
-    alert("로그인한 사용자만 접근할 수 있습니다.");
-    router.push("/");
+  // 비회원은 더미 데이터 표시로 처리 (API 호출 없음)
+  if (!isLoggedIn.value) {
+    useDummyData();
     return;
   }
 
@@ -512,6 +538,14 @@ function selectRegion(region) {
 // 게임 시작 함수
 async function startGame() {
   if (!isGameStartReady.value) return;
+
+  // 랭크 게임은 로그인 필수
+  if (selectedGameMode.value.id === "rank" && !isLoggedIn.value) {
+    if (confirm("랭크 게임은 로그인이 필요합니다. 로그인 페이지로 이동할까요?")) {
+      router.push('/loginPage');
+    }
+    return;
+  }
 
   try {
     if (selectedGameMode.value.id === "practice") {
@@ -842,6 +876,132 @@ function startThemeGame(gameData) {
   font-size: 1rem;
   flex-shrink: 0;
 }
+
+/* ── 비회원 통계 CTA ── */
+.guest-stats-cta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, rgba(var(--roadview-primary-rgb), 0.08) 0%, rgba(var(--roadview-primary-rgb), 0.03) 100%);
+  border: 1.5px solid rgba(var(--roadview-primary-rgb), 0.25);
+  border-radius: 16px;
+  flex-wrap: wrap;
+}
+
+.guest-cta-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.guest-cta-text {
+  flex: 1;
+  min-width: 150px;
+}
+
+.guest-cta-title {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.guest-cta-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.guest-cta-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.6rem 1.2rem;
+  background: var(--color-primary);
+  color: #111827;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  white-space: nowrap;
+}
+
+.guest-cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(var(--roadview-primary-rgb), 0.38);
+}
+
+/* ── 랭크 팝업 비회원 패널 ── */
+.rank-guest-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, rgba(var(--roadview-primary-rgb), 0.08) 0%, rgba(var(--roadview-primary-rgb), 0.02) 100%);
+  border: 1.5px solid rgba(var(--roadview-primary-rgb), 0.25);
+  border-radius: 16px;
+  text-align: center;
+}
+
+.rank-guest-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111827;
+  font-size: 1.5rem;
+}
+
+.rank-guest-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.rank-guest-desc {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.rank-guest-login-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.65rem 1.5rem;
+  background: var(--color-primary);
+  color: #111827;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.rank-guest-login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(var(--roadview-primary-rgb), 0.38);
+}
+
+
 
 .popup-header {
   margin: 8px;

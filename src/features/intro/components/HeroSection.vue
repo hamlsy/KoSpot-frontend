@@ -39,9 +39,9 @@ const isClosed = ref(false);
 const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'));
 
 const startRoadView = () => {
-  // 로그인하지 않은 경우 로그인 페이지로 이동
+  // 비회원도 서울 연습게임으로 바로 이동
   if (!isLoggedIn.value) {
-    router.push('/loginPage');
+    router.push({ path: '/roadView/practice', query: { sido: 'SEOUL' } });
     return;
   }
   

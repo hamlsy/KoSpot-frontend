@@ -39,8 +39,22 @@
           </div>
 
           <div v-else class="ranking-content">
-            <!-- 내 랭크 정보 -->
-            <div v-if="myRank" class="my-rank-card">
+            <!-- 비회원: 랭킹 등록 CTA -->
+            <div v-if="!isLoggedIn" class="ranking-guest-cta">
+              <div class="ranking-guest-cta-inner">
+                <i class="fas fa-user-lock ranking-guest-icon"></i>
+                <div class="ranking-guest-text">
+                  <p class="ranking-guest-title">나의 랭킹을 등록하고 싶다면?</p>
+                  <p class="ranking-guest-desc">로그인하고 랭크 게임을 플레이하면 자동으로 랭킹에 등록됩니다.</p>
+                </div>
+                <button class="ranking-guest-btn" @click="goToLogin">
+                  <i class="fas fa-sign-in-alt"></i>
+                  3초만에 로그인
+                </button>
+              </div>
+            </div>
+            <!-- 회원: 내 랭크 정보 -->
+            <div v-else-if="myRank" class="my-rank-card">
               <div class="my-rank-header">
                 <i class="fas fa-user"></i>
                 <span>내 랭크</span>
@@ -190,6 +204,9 @@ const props = defineProps({
 
 const emit = defineEmits(["close"]);
 
+// 로그인 여부
+const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'));
+
 // 티어 목록
 const tierList = [
   { value: "BRONZE", label: "브론즈" },
@@ -287,6 +304,18 @@ function goToPage(page) {
 // 모달 닫기
 function close() {
   emit("close");
+}
+
+// 로그인 페이지로 이동
+function goToLogin() {
+  close();
+  import('vue-router').then(({ useRouter }) => {
+    // eslint-disable-next-line no-unused-vars
+    const router = useRouter();
+    router.push('/loginPage');
+  }).catch(() => {
+    window.location.href = '/loginPage';
+  });
 }
 
 // 플레이어 상세 정보 표시
@@ -960,5 +989,68 @@ watch(
   .page-numbers {
     overflow-x: auto;
   }
+}
+
+/* ── 비회원 랭킹 CTA ── */
+.ranking-guest-cta {
+  margin-bottom: 24px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(76, 201, 207, 0.10) 0%, rgba(238, 229, 233, 0.18) 100%);
+  border: 1.5px solid rgba(76, 201, 207, 0.30);
+  overflow: hidden;
+}
+
+.ranking-guest-cta-inner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  flex-wrap: wrap;
+}
+
+.ranking-guest-icon {
+  font-size: 1.6rem;
+  color: #4cc9cf;
+  flex-shrink: 0;
+}
+
+.ranking-guest-text {
+  flex: 1;
+  min-width: 160px;
+}
+
+.ranking-guest-title {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.ranking-guest-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.ranking-guest-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.6rem 1.2rem;
+  background: #4cc9cf;
+  color: #111827;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.ranking-guest-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(76, 201, 207, 0.38);
 }
 </style>
