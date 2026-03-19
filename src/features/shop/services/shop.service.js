@@ -73,11 +73,11 @@ class ShopService {
    */
   async getItemsByType(itemTypeKey) {
     try {
-      console.log('📤 상점 아이템 조회 요청:', itemTypeKey);
+      
 
       const response = await apiClient.get(SHOP_ENDPOINTS.GET_ITEMS_BY_TYPE(itemTypeKey));
 
-      console.log('✅ 상점 아이템 조회 성공:', response.data);
+      
       return response.data;
     } catch (error) {
       console.error('❌ 상점 아이템 조회 실패:', error);
@@ -93,11 +93,11 @@ class ShopService {
    */
   async purchaseItem(itemId) {
     try {
-      console.log('📤 아이템 구매 요청:', itemId);
+      
 
       const response = await apiClient.get(SHOP_ENDPOINTS.PURCHASE_ITEM(itemId));
 
-      console.log('✅ 아이템 구매 성공:', response.data);
+      
       return response.data;
     } catch (error) {
       console.error('❌ 아이템 구매 실패:', error);
@@ -113,11 +113,11 @@ class ShopService {
    */
   async equipItem(memberItemId) {
     try {
-      console.log('📤 아이템 장착 요청:', memberItemId);
+
 
       const response = await apiClient.put(SHOP_ENDPOINTS.EQUIP_ITEM(memberItemId));
 
-      console.log('✅ 아이템 장착 성공:', response.data);
+      
       return response.data;
     } catch (error) {
       console.error('❌ 아이템 장착 실패:', error);

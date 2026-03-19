@@ -798,7 +798,6 @@ width: 100%;
  * src\features\user\components\FriendsList.vue (.friend-avatar img)
  * src\features\user\components\FriendsList.vue (.request-avatar img)
  * src\features\user\components\FriendsList.vue (.result-avatar img)
- * src\features\game\shared\components\Kakao\VoteOverlay.vue (.player-avatar img)
  * src\features\game\shared\components\Kakao\KakaoMapGame\KakaoMapGame.vue (.player-marker img)
  * src\features\game\multiplayer\shared\components\results\SoloGameResults.vue (.podium-player .player-avatar img)
  * src\features\admin\components\AdminPanel.vue (.admin-avatar img)
@@ -1595,30 +1594,14 @@ position: absolute;
   z-index: 3;
 }
 
-/* Used in:
- * src\features\game\shared\components\Player\List.vue (.vote-choice-badge)
- * src\features\game\shared\components\Player\Card.vue (.vote-choice-badge)
- */
-
 .common-style-119 {
 background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
 }
-
-/* Used in:
- * src\features\game\shared\components\Player\List.vue (.vote-approve)
- * src\features\game\shared\components\Player\Card.vue (.vote-approve)
- * src\features\game\multiplayer\roadview\components\playerlist\TeamPlayersList.vue (.vote-approve)
- */
 
 .common-style-120 {
 background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
 }
 
-/* Used in:
- * src\features\game\shared\components\Player\List.vue (.vote-reject)
- * src\features\game\shared\components\Player\Card.vue (.vote-reject)
- * src\features\game\multiplayer\roadview\components\playerlist\TeamPlayersList.vue (.vote-reject)
- */
 
 .common-style-121 {
 width: 40px;
