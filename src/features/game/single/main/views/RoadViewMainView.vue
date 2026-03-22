@@ -50,7 +50,7 @@
           <button
             class="view-all-button"
             @click="showRankingModal = true"
-            v-if="rankInfo && isLoggedIn"
+            v-if="rankInfo"
           >
             전체 랭킹 보기
             <i class="fas fa-arrow-right"></i>

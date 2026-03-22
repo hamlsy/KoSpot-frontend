@@ -49,6 +49,8 @@
           </div>
           <span class="google-btn-text">Google로 로그인</span>
         </button> -->
+        
+        <span class="privacy-notice">이메일을 제외한 어떤 정보도 받지 않습니다</span>
       </div>
     </div>
   </div>
@@ -298,6 +300,15 @@ onMounted(() => {
 /* Remove the old Google button styles */
 #gSignInWrapper, #customBtn, .icon, .buttonText {
   display: none;
+}
+
+.privacy-notice {
+  font-size: 11px;
+  color: #747775;
+  margin-top: 4px;
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  letter-spacing: -0.3px;
 }
 
 @keyframes fadeIn {

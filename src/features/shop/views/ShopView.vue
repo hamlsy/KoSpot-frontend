@@ -1,6 +1,6 @@
 <template>
   <div class="shop-page">
-    <NavigationBar :is-logged-in="!!navUserInfo.name" :user-info="navUserInfo" />
+    <NavigationBar :is-logged-in="isLoggedIn" :user-info="navUserInfo" />
 
     <div class="shop-layout">
       <!-- 페이지 헤더 -->
@@ -10,11 +10,12 @@
           <p class="shop-subtitle">포인트로 특별한 아이템을 획득하세요</p>
         </div>
         <div class="header-right">
-          <div class="points-display">
+          <div class="points-display" :class="{ 'disabled-points': !isLoggedIn }">
             <i class="fas fa-coins points-icon"></i>
             <div class="points-text">
               <span class="points-label">보유 포인트</span>
-              <span class="points-value">{{ formatNumber(userCoins) }}</span>
+              <span v-if="isLoggedIn" class="points-value">{{ formatNumber(userCoins) }}</span>
+              <span v-else class="points-value" style="font-size: 0.9rem; color: var(--color-text-tertiary);">로그인 필요</span>
             </div>
           </div>
         </div>
@@ -84,7 +85,10 @@
                   <i class="fas fa-coins"></i>
                   <span>{{ formatNumber(item.price) }}</span>
                 </div>
-                <button class="action-btn buy-btn" :class="{ 'cant-afford': !canAfford(item) }"
+                <button v-if="!isLoggedIn" class="action-btn buy-btn cant-afford" disabled>
+                  <i class="fas fa-lock"></i> 로그인 필요
+                </button>
+                <button v-else class="action-btn buy-btn" :class="{ 'cant-afford': !canAfford(item) }"
                   :disabled="!canAfford(item) || loading" @click="buyItem(item)">
                   <i class="fas fa-shopping-cart"></i>
                   {{ canAfford(item) ? '구매하기' : '포인트 부족' }}
@@ -184,6 +188,9 @@ export default {
     },
     isEquippableCategory() {
       return shopService.isEquippableCategory(this.currentCategory)
+    },
+    isLoggedIn() {
+      return !!this.navUserInfo.name
     }
   },
 
@@ -435,6 +442,11 @@ export default {
 
 .points-display:hover {
   box-shadow: var(--shadow-md);
+}
+
+.disabled-points {
+  opacity: 0.6;
+  filter: grayscale(1);
 }
 
 .points-icon {
