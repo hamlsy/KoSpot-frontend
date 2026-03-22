@@ -94,6 +94,7 @@ const ROADVIEW_ENDPOINTS = {
  * @property {string} message - 응답 메시지
  * @property {Object} result - 결과 데이터
  * @property {string} result.gameId - 게임 ID
+ * @property {string} [result.practiceToken] - 익명 사용자용 연습 토큰
  * @property {string} result.targetLat - 목표 위도
  * @property {string} result.targetLng - 목표 경도
  * @property {string} result.markerImageUrl - 마커 이미지 URL
@@ -178,6 +179,13 @@ class RoadViewApiService {
         
         if (response.data && response.data.isSuccess && response.data.result) {
           console.log(`✅ 연습 게임 시작 성공 (시도 ${attempt}/${maxRetries}):`, response.data);
+          
+          const { gameId, practiceToken } = response.data.result;
+          if (practiceToken) {
+            sessionStorage.setItem('practiceToken', practiceToken);
+            sessionStorage.setItem('practiceGameId', gameId);
+          }
+          
           return response.data;
         } else {
           throw new Error(response.data?.message || '연습 게임 시작 응답이 유효하지 않습니다.');
@@ -210,8 +218,20 @@ class RoadViewApiService {
     try {
       console.log('📤 연습 게임 종료 요청:', endData);
       
-      const response = await apiClient.post(ROADVIEW_ENDPOINTS.PRACTICE.END, endData);
+      const practiceToken = sessionStorage.getItem('practiceToken');
+      const config = practiceToken ? {
+        headers: {
+          'X-Practice-Token': practiceToken
+        }
+      } : {};
       
+      const response = await apiClient.post(ROADVIEW_ENDPOINTS.PRACTICE.END, endData, config);
+      
+      if (practiceToken) {
+        sessionStorage.removeItem('practiceToken');
+        sessionStorage.removeItem('practiceGameId');
+      }
+
       console.log('✅ 연습 게임 종료 성공:', response.data);
       return response.data;
     } catch (error) {
@@ -282,7 +302,15 @@ class RoadViewApiService {
         console.log(`📤 좌표 재발급 요청 (시도 ${attempt}/${maxRetries}):`, { gameId });
         
         const endpoint = ROADVIEW_ENDPOINTS.REISSUE.replace('{gameId}', gameId);
-        const response = await apiClient.post(endpoint);
+        
+        const practiceToken = sessionStorage.getItem('practiceToken');
+        const config = practiceToken ? {
+          headers: {
+            'X-Practice-Token': practiceToken
+          }
+        } : {};
+        
+        const response = await apiClient.post(endpoint, null, config);
         
         if (response.data && response.data.isSuccess && response.data.result) {
           console.log(`✅ 좌표 재발급 성공 (시도 ${attempt}/${maxRetries}):`, response.data);
