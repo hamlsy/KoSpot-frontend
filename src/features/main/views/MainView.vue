@@ -601,9 +601,9 @@ function handleModeClick(route, isEnabled) {
     return;
   }
 
-  // 비로그인 사용자가 로드뷰 모드 클릭 시 연습 모드로 바로 진입 (지역 선택 단계 생략)
+  // 비로그인 사용자가 로드뷰 모드 클릭 시 RoadViewMainView로 이동
   if (!isLoggedIn.value && route === 'roadView/main') {
-    router.push('/roadView/practice?region=seoul');
+    router.push('/roadView/main');
     return;
   }
 

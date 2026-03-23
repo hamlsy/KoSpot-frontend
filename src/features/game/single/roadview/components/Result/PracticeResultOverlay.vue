@@ -4,6 +4,21 @@
       <!-- 브랜드 포인트 바 -->
       <div class="brand-bar"></div>
 
+      <!-- 손실 회피 CTA: 비회원에게만 표시 — 맨 위 배치 -->
+      <div v-if="!isLoggedIn" class="guest-save-cta">
+        <div class="guest-save-cta-icon">
+          <i class="fas fa-exclamation"></i>
+        </div>
+        <div class="guest-save-cta-text">
+          <p class="guest-save-title">앗! {{ score }}점이 저장되지 않아요!</p>
+          <p class="guest-save-desc">로그인하면 기록이 저장되고 전국 랭킹에 도전할 수 있어요.</p>
+        </div>
+        <button class="guest-save-btn" @click="goToLogin">
+          <i class="fas fa-sign-in-alt"></i>
+          로그인하기
+        </button>
+      </div>
+
       <!-- 헤더: 좌측 정렬, 컴팩트 -->
       <div class="result-header">
         <div class="header-icon">
@@ -82,21 +97,6 @@
         :currentLocation="currentLocation" :guessedLocation="guessedLocation" :score="score"
         :distanceText="formattedDistance" :elapsedTimeText="elapsedTimeText" :showElapsedTime="showElapsedTime"
         :hintsUsed="hintsUsed" :poiName="poiName" :fullAddress="fullAddress" @toast="onImageActionToast" />
-
-      <!-- 손실 회피 CTA: 비회원에게만 표시 -->
-      <div v-if="!isLoggedIn" class="guest-save-cta">
-        <div class="guest-save-cta-icon">
-          <i class="fas fa-exclamation"></i>
-        </div>
-        <div class="guest-save-cta-text">
-          <p class="guest-save-title">앗! {{ score }}점이 저장되지 않아요!</p>
-          <p class="guest-save-desc">로그인하면 기록이 저장되고 전국 랭킹에 도전할 수 있어요.</p>
-        </div>
-        <button class="guest-save-btn" @click="goToLogin">
-          <i class="fas fa-sign-in-alt"></i>
-          로그인하기
-        </button>
-      </div>
 
       <!-- 하단 버튼 행 -->
       <div class="action-row">
@@ -723,7 +723,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.85rem;
-  margin: 0.75rem 0;
+  margin: 0 0 0.75rem;
   padding: 0.9rem 1.1rem;
   background: rgba(239, 68, 68, 0.05);
   border: 1px solid rgba(239, 68, 68, 0.15);

@@ -120,27 +120,25 @@ const openTutorial = () => {
 .hero-content {
   max-width: 680px;
   width: 100%;
-  padding: 40px 24px;
+  padding: clamp(16px, 5vw, 40px) clamp(12px, 4vw, 24px);
   text-align: center;
   position: relative;
   z-index: 1;
 }
 
 .hero-title {
-  font-size: 2rem;
+  font-size: clamp(1.2rem, 5vw, 2rem);
   font-weight: 800;
   color: var(--color-text-primary);
-  /* TEXT.PRIMARY #111827 */
-  margin: 0 30px 12px;
+  margin: 0 0 clamp(6px, 2vw, 12px);
   letter-spacing: -0.02em;
   line-height: 1.2;
 }
 
 .hero-description {
-  font-size: 1rem;
+  font-size: clamp(0.82rem, 2.5vw, 1rem);
   color: var(--color-text-secondary);
-  /* TEXT.SECONDARY #6b7280 */
-  margin: 0 0 14px;
+  margin: 0 0 clamp(10px, 3vw, 14px);
   line-height: 1.6;
 }
 
@@ -149,30 +147,31 @@ const openTutorial = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  margin-bottom: 28px;
+  flex-wrap: nowrap;
+  gap: clamp(4px, 2.5vw, 16px);
+  margin-bottom: clamp(12px, 4vw, 28px);
 }
 
 .flow-step {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: clamp(4px, 1.5vw, 8px);
 }
 
 .flow-icon {
-  width: 52px;
-  height: 52px;
+  width: clamp(32px, 8vw, 52px);
+  height: clamp(32px, 8vw, 52px);
   background: var(--color-primary);
-  /* BRAND.PRIMARY #4cc9cf */
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: clamp(13px, 3.5vw, 20px);
   color: #ffffff;
   transition: transform 0.2s ease;
   box-shadow: 0 4px 12px rgba(76, 201, 207, 0.35);
+  flex-shrink: 0;
 }
 
 .flow-step:hover .flow-icon {
@@ -181,39 +180,41 @@ const openTutorial = () => {
 }
 
 .flow-label {
-  font-size: 12px;
+  font-size: clamp(9px, 2.2vw, 12px);
   font-weight: 600;
   color: var(--color-text-primary);
-  /* TEXT.PRIMARY #111827 */
   white-space: nowrap;
 }
 
 .flow-arrow {
   color: var(--color-text-secondary);
-  /* TEXT.SECONDARY #6b7280 */
-  font-size: 13px;
+  font-size: clamp(9px, 2vw, 13px);
   margin-bottom: 20px;
+  flex-shrink: 0;
 }
 
 /* CTA 버튼 */
 .hero-actions {
   display: flex;
+  flex-direction: row;
   justify-content: center;
-  gap: 12px;
-  margin-bottom: 28px;
+  gap: clamp(6px, 2vw, 12px);
+  margin-bottom: clamp(12px, 4vw, 28px);
+  flex-wrap: nowrap;
 }
 
 .hero-button {
-  padding: 11px 26px;
+  padding: clamp(7px, 1.8vw, 11px) clamp(12px, 3vw, 26px);
   border-radius: 50px;
-  font-size: 14px;
+  font-size: clamp(11px, 2.5vw, 14px);
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: clamp(4px, 1vw, 8px);
   border: none;
+  white-space: nowrap;
 }
 
 .hero-button.primary {
@@ -283,48 +284,12 @@ const openTutorial = () => {
 
 /* 모바일 */
 @media (max-width: 640px) {
-  .hero-title {
-    font-size: 1.4rem;
-  }
-
-  .hero-description {
-    font-size: 0.875rem;
-    margin-bottom: 20px;
-  }
-
-  .hero-flow {
-    flex-direction: column;
-    gap: 6px;
-    margin-bottom: 20px;
-  }
-
-  .flow-arrow {
-    transform: rotate(90deg);
-    margin-bottom: 0;
-  }
-
-  .hero-actions {
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .hero-button {
-    width: 100%;
-    max-width: 260px;
-    justify-content: center;
-  }
-
   .hero-stats {
     padding: 8px 12px;
   }
 
   .stat-item {
-    padding: 0 10px;
-  }
-
-  .stat-number {
-    font-size: 15px;
+    padding: 0 8px;
   }
 }
 </style>

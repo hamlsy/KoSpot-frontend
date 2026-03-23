@@ -126,6 +126,20 @@
             >
             <span v-else>힌트 사용 ({{ hintCount }}/3)</span>
           </button>
+
+          <!-- 힌트 말풍선: slot 내부 (phone-content 기준 absolute → 버튼 가림 방지) -->
+          <div v-if="tutorialShowHintHint" class="tutorial-hint tutorial-hint--hint-btn">
+            <i class="fas fa-lightbulb"></i>
+            <span>힌트를 사용해보세요!</span>
+            <button class="tutorial-hint-close" @click.stop="dismissHintHint">×</button>
+          </div>
+
+          <!-- 새로고침 말풍선: slot 내부 (phone-reload-button 아래) -->
+          <div v-if="tutorialShowReloadHint" class="tutorial-hint tutorial-hint--reload-btn">
+            <i class="fas fa-sync-alt"></i>
+            <span>맵이 나오지 않으면 새로고침해주세요!</span>
+            <button class="tutorial-hint-close" @click.stop="tutorialShowReloadHint = false">×</button>
+          </div>
         </template>
       </PhoneFrame>
 
@@ -223,7 +237,7 @@
         <!-- Step 3: 위치 찍기 (지도 열린 상태, 상단 배치) -->
         <div v-if="tutorialStep === 3 && isMapOpen" class="tutorial-hint tutorial-hint--phone-top tutorial-hint--no-pointer">
           <i class="fas fa-map-marker-alt"></i>
-          <span>지도에서 위치를 찍어보세요!</span>
+          <span>지도에서 정답 위치를 찍어보세요!</span>
         </div>
 
         <!-- Step 4: SPOT 제출 (지도 열린 상태) -->
@@ -232,11 +246,10 @@
           <i class="fas fa-arrow-down"></i>
         </div>
 
-        <!-- 보너스: 힌트 버튼 안내 -->
-        <div v-if="tutorialShowHintHint && isMapOpen" class="tutorial-hint tutorial-hint--hint-btn">
-          <i class="fas fa-lightbulb"></i>
-          <span>힌트를 사용해보세요!</span>
-          <button class="tutorial-hint-close" @click.stop="dismissHintHint">×</button>
+        <!-- 10초 후 자동 Spot 제출 안내 (PhoneFrame 아래, 위 화살표) -->
+        <div v-if="tutorialSpotAutoHint && isMapOpen" class="tutorial-hint tutorial-hint--spot-below">
+          <i class="fas fa-arrow-up tutorial-hint-bounce-arrow"></i>
+          <span>위치를 정했으면 정답을 제출하세요!</span>
         </div>
       </template>
     </div>
@@ -408,6 +421,10 @@ export default {
       tutorialStep: 0, // 0=비활성, 1=로드뷰, 2=지도열기, 3=위치찍기, 4=SPOT제출
       tutorialShowHintHint: false, // 힌트 버튼 안내 (독립적)
       tutorialHintHintShown: false, // 힌트 버튼 안내 이미 보여줬는지
+      tutorialShowReloadHint: false, // 새로고침 버튼 안내
+      tutorialReloadHintShown: false, // 새로고침 안내 이미 보여줬는지
+      tutorialSpotAutoHint: false, // 10초 후 Spot 제출 안내
+      tutorialSpotAutoTimer: null, // setTimeout ID
     };
   },
   computed: {
@@ -505,6 +522,12 @@ export default {
         this.tutorialStep = 3;
         this.showToastMessage('훌륭해요! 🗺️ 지도에서 위치를 찍어보세요.');
       }
+      // 처음 지도 열릴 때 새로고침 안내 (5초 후 자동 닫힘)
+      if (val && this.tutorialActive && !this.tutorialReloadHintShown) {
+        this.tutorialShowReloadHint = true;
+        this.tutorialReloadHintShown = true;
+        setTimeout(() => { this.tutorialShowReloadHint = false; }, 5000);
+      }
     },
     guessedLocation(val) {
       if (val && this.tutorialActive && this.tutorialStep === 3) {
@@ -540,6 +563,12 @@ export default {
       this.tutorialActive = false;
       this.tutorialStep = 0;
       this.tutorialShowHintHint = false;
+      this.tutorialShowReloadHint = false;
+      this.tutorialSpotAutoHint = false;
+      if (this.tutorialSpotAutoTimer) {
+        clearTimeout(this.tutorialSpotAutoTimer);
+        this.tutorialSpotAutoTimer = null;
+      }
       localStorage.setItem('kospot_practice_tutorial_done', '1');
     },
 
@@ -859,9 +888,12 @@ export default {
 
     // 모든 타이머 정리
     clearAllTimers() {
-      // 타이머 정리
       this.clearTimer();
       this.clearToastTimer();
+      if (this.tutorialSpotAutoTimer) {
+        clearTimeout(this.tutorialSpotAutoTimer);
+        this.tutorialSpotAutoTimer = null;
+      }
     },
 
     clearToastTimer() {
@@ -1376,6 +1408,9 @@ export default {
             // 지도 닫기
             this.isMapOpen = false;
 
+            // Spot 자동 힌트 닫기
+            this.tutorialSpotAutoHint = false;
+
             // 결과 확인
             this.$nextTick(() => {
               this.checkAnswer(markerPosition);
@@ -1637,6 +1672,14 @@ export default {
       // 튜토리얼 시작
       if (this.tutorialActive) {
         this.tutorialStep = 1;
+
+        // 10초 후 Spot 제출 안내 말풍선
+        if (this.tutorialSpotAutoTimer) clearTimeout(this.tutorialSpotAutoTimer);
+        this.tutorialSpotAutoTimer = setTimeout(() => {
+          if (!this.showResult) {
+            this.tutorialSpotAutoHint = true;
+          }
+        }, 10000);
       }
 
       // 게임 시작 시간 기록 (답변 시간 계산용)
@@ -2227,12 +2270,48 @@ export default {
   font-size: 0.85rem;
 }
 
-/* 힌트 버튼 위 */
+/* 힌트 버튼 위 — slot 내부 absolute (phone-content 기준) */
 .tutorial-hint--hint-btn {
-  bottom: 175px;
+  position: absolute;
+  bottom: 120px;
   left: 50%;
   transform: translateX(-50%);
   animation: tutorialFadeInSlide 0.4s ease;
+}
+
+/* PhoneFrame 아래 배치, 위 화살표로 Spot 버튼 가리킴 */
+.tutorial-hint--spot-below {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+  animation: tutorialFadeInUp 0.4s ease;
+}
+
+.tutorial-hint-bounce-arrow {
+  color: #4cc9cf;
+  font-size: 1rem;
+  animation: arrowBounceUp 0.8s ease-in-out infinite;
+}
+
+@keyframes arrowBounceUp {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+
+/* 새로고침 버튼 아래 — slot 내부 absolute */
+.tutorial-hint--reload-btn {
+  position: absolute;
+  top: 58px;
+  right: 8px;
+  left: auto;
+  transform: none;
+  white-space: nowrap;
+  animation: tutorialFadeInUp 0.4s ease;
 }
 
 .tutorial-hint-close {
@@ -2278,10 +2357,6 @@ export default {
 
   .tutorial-hint--spot-btn {
     bottom: 90px;
-  }
-
-  .tutorial-hint--hint-btn {
-    bottom: 155px;
   }
 
   .tutorial-hint {
