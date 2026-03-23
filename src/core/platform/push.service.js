@@ -92,6 +92,9 @@ export const initializePush = async ({ onNotificationReceived, onNotificationAct
 
   const registrationSub = await PushNotifications.addListener('registration', async (tokenPayload) => {
     const token = tokenPayload?.value
+    if (token) {
+      localStorage.setItem('fcmToken', token)
+    }
     await registerPushToken({ token, enabled: true })
   })
   subscriptions.push(registrationSub)

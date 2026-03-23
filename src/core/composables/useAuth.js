@@ -5,7 +5,7 @@ import { API_ENDPOINTS } from '@/core/api/endPoint.js'
 import { useRouter } from 'vue-router'
 import { tokenRefreshService } from '@/core/services/tokenRefresh.service.js'
 import { authStorage } from '@/core/auth/authStorage.service.js'
-import { registerPushIfPermitted } from '@/core/platform/push.service.js'
+import { registerPushIfPermitted, deletePushToken } from '@/core/platform/push.service.js'
 
 // 전역 상태 관리
 const authState = reactive({
@@ -90,10 +90,21 @@ export function useAuth() {
 
   // 로그아웃
   const logout = async () => {
+    // FCM 토큰 삭제 (실패해도 로그아웃 진행)
+    const fcmToken = localStorage.getItem('fcmToken')
+    if (fcmToken) {
+      try {
+        await deletePushToken(fcmToken)
+      } catch (e) {
+        console.warn('[push] 로그아웃 시 토큰 삭제 실패 (무시):', e)
+      }
+      localStorage.removeItem('fcmToken')
+    }
+
     try {
       const refreshToken = localStorage.getItem('refreshToken')
       const isBotUser = isBot()
-      
+
       // refreshToken이 있고 봇이 아닌 경우에만 서버에 로그아웃 요청
       if (refreshToken && !isBotUser) {
         await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT, {

@@ -6,7 +6,9 @@
 export const NOTIFICATION_TYPE = {
     ADMIN_MESSAGE: 'ADMIN_MESSAGE',   // 관리자 메시지
     NOTICE: 'NOTICE',                 // 공지사항 업로드 알림
-    FRIEND_REQUEST: 'FRIEND_REQUEST', // 친구 요청 알림 (추후 연동)
+    FRIEND_REQUEST: 'FRIEND_REQUEST', // 친구 요청 알림
+    GAME_INVITE: 'GAME_INVITE',       // 게임 초대 알림
+    LEVEL_UP: 'LEVEL_UP',             // 레벨업 알림 (추후 연동)
 };
 
 /**
@@ -30,6 +32,18 @@ export const NOTIFICATION_TYPE_META = {
         icon: 'fas fa-user-plus',
         color: '#10b981',
         bgColor: 'rgba(16, 185, 129, 0.1)',
+    },
+    [NOTIFICATION_TYPE.GAME_INVITE]: {
+        label: '게임 초대',
+        icon: 'fas fa-gamepad',
+        color: '#f59e0b',
+        bgColor: 'rgba(245, 158, 11, 0.1)',
+    },
+    [NOTIFICATION_TYPE.LEVEL_UP]: {
+        label: '레벨 업',
+        icon: 'fas fa-star',
+        color: '#8b5cf6',
+        bgColor: 'rgba(139, 92, 246, 0.1)',
     },
 };
 

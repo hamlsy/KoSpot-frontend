@@ -14,8 +14,10 @@ import { connectAll, disconnectAll } from '@/core/services/appWebSocket.service.
 import { authStorage } from '@/core/auth/authStorage.service.js';
 import { registerDeepLinkListener, resolveDeepLinkTarget } from '@/core/platform/deeplink.service.js';
 import { initializePush } from '@/core/platform/push.service.js';
+import { useNotificationStore } from '@/store/modules/notificationStore.js';
 
 const router = useRouter()
+const notificationStore = useNotificationStore()
 let removeDeepLinkListener = null
 let removePushListeners = null
 
@@ -60,6 +62,18 @@ const handleStorageChange = (e) => {
 
 // ─── 라이프사이클 ──────────────────────────────────────────────────────────
 
+const handlePushReceived = (notification) => {
+  const data = notification?.data || {}
+  notificationStore.addNotification({
+    notificationId: null,
+    type: data.type || 'ADMIN_MESSAGE',
+    title: notification.title,
+    content: notification.body,
+    isRead: false,
+    createdAt: new Date().toISOString(),
+  })
+}
+
 const handlePushAction = (actionPayload) => {
   const targetPath = resolveDeepLinkTarget(actionPayload?.notification?.data?.deeplink)
   if (!targetPath) {
@@ -84,6 +98,7 @@ onMounted(async () => {
 
   removeDeepLinkListener = await registerDeepLinkListener(router)
   removePushListeners = await initializePush({
+    onNotificationReceived: handlePushReceived,
     onNotificationActionPerformed: handlePushAction
   })
 });
