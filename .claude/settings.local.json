@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(head -100 /c/kospot-frontend/.github/workflows/*.yml)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git revert:*)",
+      "Bash(find C:kospot-frontendsrcfeaturesgamesingleroadviewviews -type f -name *.vue -o -name *.js -o -name *.ts)",
+      "Bash(xargs grep:*)",
+      "Bash(find . -name *.config.json -o -name firebase*.json -o -name *google*.json)",
+      "Bash(xargs ls:*)",
+      "Bash(grep -r \"PUSH\\\\|FCM\\\\|FIREBASE\" .env*)",
+      "Bash(cat .github/workflows/mobile-*.yml)"
+    ]
+  }
+}
