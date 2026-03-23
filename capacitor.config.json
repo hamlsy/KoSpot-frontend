@@ -3,6 +3,7 @@
   "appName": "KoSpot",
   "webDir": "dist",
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "iosScheme": "https"
   }
 }
