@@ -725,8 +725,8 @@ export default {
   gap: 0.85rem;
   margin: 0.75rem 0;
   padding: 0.9rem 1.1rem;
-  background: linear-gradient(135deg, rgba(76, 201, 207, 0.12) 0%, rgba(238, 229, 233, 0.15) 100%);
-  border: 1.5px solid rgba(76, 201, 207, 0.35);
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.15);
   border-radius: 14px;
   flex-wrap: wrap;
 }
@@ -760,7 +760,7 @@ export default {
 .guest-save-desc {
   margin: 0;
   font-size: 0.75rem;
-  color: #6b7280;
+  color: rgba(17, 24, 39, 0.6);
   line-height: 1.4;
 }
 
@@ -770,18 +770,57 @@ export default {
   gap: 5px;
   padding: 0.5rem 1rem;
   background: #4cc9cf;
-  color: #111827;
+  color: #ffffff;
   border: none;
   border-radius: 9px;
   font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
-  transition: transform 0.17s ease, box-shadow 0.17s ease;
+  min-height: 44px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .guest-save-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(76, 201, 207, 0.40);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(76, 201, 207, 0.20);
+}
+
+.guest-save-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+@media (max-width: 768px) {
+  .guest-save-cta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.65rem;
+  }
+
+  .guest-save-btn {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.85rem;
+  }
+
+  .guest-save-btn:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .guest-save-cta {
+    padding: 0.8rem 0.9rem;
+  }
+
+  .guest-save-title {
+    font-size: 0.84rem;
+  }
+
+  .guest-save-desc {
+    font-size: 0.72rem;
+  }
 }
 </style>
