@@ -107,6 +107,7 @@ export const connectFriendSocket = () => {
                 onWebSocketError: () => {
                     console.warn('💬 친구 채팅 WebSocket: 연결 실패');
                     _connectingPromise = null; // 연결 실패 → 플래그 해제
+                    resolve(); // 연결 실패는 non-fatal — hang 방지
                 },
             });
 
