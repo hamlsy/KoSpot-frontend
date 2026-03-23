@@ -7,11 +7,7 @@
           <i class="fas fa-arrow-left"></i>
         </button>
         <div class="logo-container">
-          <img
-            src="/images/logo/kospot_logo_1-removebg.png"
-            alt="KoSpot"
-            class="header-logo"
-          />
+          <img src="/images/logo/kospot_logo_1-removebg.png" alt="KoSpot" class="header-logo" />
         </div>
         <div class="header-right">
           <h3>로드뷰 모드</h3>
@@ -27,19 +23,14 @@
 
       <!-- Game Modes Section -->
       <section class="game-modes">
-        
+
         <!-- Daily MVP Section -->
         <div class="daily-mvp-section">
           <daily-mvp-card @show-player-details="handleShowPlayerDetails" />
         </div>
 
         <div class="game-mode-list">
-          <game-mode-card
-            v-for="mode in gameModes"
-            :key="mode.id"
-            :mode="mode"
-            @select="openGameModePopup"
-          />
+          <game-mode-card v-for="mode in gameModes" :key="mode.id" :mode="mode" @select="openGameModePopup" />
         </div>
       </section>
 
@@ -47,11 +38,7 @@
       <section class="stats-section">
         <div class="section-header">
           <h2 class="section-title">나의 랭크 통계</h2>
-          <button
-            class="view-all-button"
-            @click="showRankingModal = true"
-            v-if="rankInfo"
-          >
+          <button class="view-all-button" @click="showRankingModal = true" v-if="rankInfo" F>
             전체 랭킹 보기
             <i class="fas fa-arrow-right"></i>
           </button>
@@ -63,7 +50,7 @@
           </div>
           <div class="guest-cta-text">
             <p class="guest-cta-title">나의 통계를 기록해보세요!</p>
-            <p class="guest-cta-desc">로그인하면 를크 통계, 최근 기록, 전체 랭킹을 확인할 수 있어요.</p>
+            <p class="guest-cta-desc">로그인하면 랭크 통계, 최근 기록, 전체 랭킹을 확인할 수 있어요.</p>
           </div>
           <button class="guest-cta-btn" @click="$router.push('/loginPage')">
             <i class="fas fa-sign-in-alt"></i>
@@ -85,36 +72,22 @@
       <section class="records-section">
         <div class="section-header">
           <h2 class="section-title">최근 기록</h2>
-          <button
-            class="view-all-button"
-            @click="showHistoryModal = true"
-            v-if="recentRecords.length > 0"
-          >
+          <button class="view-all-button" @click="showHistoryModal = true" v-if="recentRecords.length > 0">
             전체 기록 보기
             <i class="fas fa-arrow-right"></i>
           </button>
         </div>
         <div class="records-list">
-          <div
-            v-for="(record, index) in recentRecords"
-            :key="record.id"
-            class="record-item"
-            :class="{
-              'with-border': index !== recentRecords.length - 1,
-              'record-item-hover': hoverRecord === record.id,
-            }"
-            @mouseenter="hoverRecord = record.id"
-            @mouseleave="hoverRecord = null"
-          >
+          <div v-for="(record, index) in recentRecords" :key="record.id" class="record-item" :class="{
+            'with-border': index !== recentRecords.length - 1,
+            'record-item-hover': hoverRecord === record.id,
+          }" @mouseenter="hoverRecord = record.id" @mouseleave="hoverRecord = null">
             <div class="record-info">
-              <div
-                class="record-mode-badge"
-                :class="{
-                  'rank-mode': record.mode === '랭크',
-                  'practice-mode': record.mode === '연습',
-                  // 'theme-mode': record.mode === '테마',
-                }"
-              >
+              <div class="record-mode-badge" :class="{
+                'rank-mode': record.mode === '랭크',
+                'practice-mode': record.mode === '연습',
+                // 'theme-mode': record.mode === '테마',
+              }">
                 {{ record.mode }}
               </div>
               <span class="record-poi">{{ record.poiName }}</span>
@@ -137,11 +110,7 @@
 
     <!-- Game Mode Popup -->
     <transition name="popup-slide">
-      <div
-        v-if="selectedGameMode"
-        class="game-mode-popup"
-        @click.self="closeGameModePopup"
-      >
+      <div v-if="selectedGameMode" class="game-mode-popup" @click.self="closeGameModePopup">
         <div class="popup-content">
           <div class="popup-header">
             <h2>{{ selectedGameMode.title }}</h2>
@@ -150,37 +119,24 @@
             </button>
           </div>
 
-          <div
-            v-if="!showPracticeTutorial || selectedGameMode.id !== 'practice'"
-            class="popup-description"
-          >
+          <div v-if="!showPracticeTutorial || selectedGameMode.id !== 'practice'" class="popup-description">
             <p>{{ selectedGameMode.fullDescription }}</p>
           </div>
 
-          <div
-            v-if="selectedGameMode.id === 'practice' && !showPracticeTutorial"
-            class="practice-mode-options"
-          >
+          <div v-if="selectedGameMode.id === 'practice' && !showPracticeTutorial" class="practice-mode-options">
             <h3>지역 선택</h3>
             <div class="region-selector">
-              <button
-                v-for="(value, key) in regions"
-                :key="key"
-                :class="{ selected: selectedRegion === value }"
-                @click="selectRegion(value)"
-              >
+              <button v-for="(value, key) in regions" :key="key" :class="{ selected: selectedRegion === value }"
+                @click="selectRegion(value)">
                 {{ key }}
               </button>
             </div>
           </div>
 
-          <div
-            v-if="
-              selectedGameMode.id === 'rank' &&
-              (!showPracticeTutorial || selectedGameMode.id !== 'practice')
-            "
-            class="rank-mode-options"
-          >
+          <div v-if="
+            selectedGameMode.id === 'rank' &&
+            (!showPracticeTutorial || selectedGameMode.id !== 'practice')
+          " class="rank-mode-options">
             <!-- 비회원: 로그인 유도 패널 -->
             <div v-if="!isLoggedIn" class="rank-guest-panel">
               <div class="rank-guest-icon">
@@ -219,9 +175,7 @@
                   </div>
                   <div class="rating-item">
                     <span class="rating-label">상위 순위</span>
-                    <span class="rating-value"
-                      >{{ rankInfo.rankPercentage }}%</span
-                    >
+                    <span class="rating-value">{{ rankInfo.rankPercentage }}%</span>
                   </div>
                 </div>
               </div>
@@ -239,13 +193,8 @@
             </div>
           </div>
 
-          <button
-            v-if="!showPracticeTutorial || selectedGameMode.id !== 'practice'"
-            class="start-game-button"
-            @click="startGame"
-            :disabled="!isGameStartReady"
-            :class="selectedGameMode ? selectedGameMode.color : ''"
-          >
+          <button v-if="!showPracticeTutorial || selectedGameMode.id !== 'practice'" class="start-game-button"
+            @click="startGame" :disabled="!isGameStartReady" :class="selectedGameMode ? selectedGameMode.color : ''">
             게임 시작
           </button>
         </div>
@@ -254,41 +203,26 @@
 
     <!-- 연습 게임 튜토리얼 모달 (독립 오버레이) -->
     <transition name="tutorial-fade">
-      <practice-tutorial-modal
-        v-if="selectedGameMode?.id === 'practice' && showPracticeTutorial"
-        :show="showPracticeTutorial"
-        @close="showPracticeTutorial = false"
-        @complete="handleTutorialComplete"
-      />
+      <practice-tutorial-modal v-if="selectedGameMode?.id === 'practice' && showPracticeTutorial"
+        :show="showPracticeTutorial" @close="showPracticeTutorial = false" @complete="handleTutorialComplete" />
     </transition>
 
     <!-- Theme Mode Popup -->
     <transition name="popup-slide">
-      <theme-mode-popup
-        v-if="showThemeModePopup"
-        :show="showThemeModePopup"
-        @close="closeThemeModePopup"
-        @start-game="startThemeGame"
-      />
+      <theme-mode-popup v-if="showThemeModePopup" :show="showThemeModePopup" @close="closeThemeModePopup"
+        @start-game="startThemeGame" />
     </transition>
 
     <!-- History Modal -->
     <history-modal :show="showHistoryModal" @close="showHistoryModal = false" />
 
     <!-- Ranking Modal -->
-    <ranking-modal
-      :show="showRankingModal"
-      :game-mode="'ROADVIEW'"
-      :initial-rank-tier="rankInfo?.rankTier || 'BRONZE'"
-      @close="showRankingModal = false"
-    />
+    <ranking-modal :show="showRankingModal" :game-mode="'ROADVIEW'" :initial-rank-tier="rankInfo?.rankTier || 'BRONZE'"
+      @close="showRankingModal = false" />
 
     <!-- Player Details Modal (for Daily MVP) -->
-    <player-details-modal
-      :is-active="showPlayerDetailsModal"
-      :player="selectedMvpPlayer"
-      @close="showPlayerDetailsModal = false"
-    />
+    <player-details-modal :is-active="showPlayerDetailsModal" :player="selectedMvpPlayer"
+      @close="showPlayerDetailsModal = false" />
   </div>
 </template>
 
@@ -494,8 +428,8 @@ const recentRecords = computed(() => {
       game.gameType === "RANK"
         ? "랭크"
         : game.gameType === "PRACTICE"
-        ? "연습"
-        : "테마",
+          ? "연습"
+          : "테마",
     score: game.score,
     date: formatDateShort(game.playedAt),
     region: game.practiceSido
@@ -717,9 +651,9 @@ function closeGameModePopup() {
 
 // MVP 카드 클릭 핸들러
 function handleShowPlayerDetails(mvpData) {
-  selectedMvpPlayer.value = { 
-    id: mvpData.memberId, 
-    ...mvpData 
+  selectedMvpPlayer.value = {
+    id: mvpData.memberId,
+    ...mvpData
   };
   showPlayerDetailsModal.value = true;
 }
@@ -927,7 +861,7 @@ function startThemeGame(gameData) {
   gap: 6px;
   padding: 0.6rem 1.2rem;
   background: var(--color-primary);
-  color: #111827;
+  color: white;
   border: none;
   border-radius: 10px;
   font-size: 0.85rem;
@@ -963,7 +897,7 @@ function startThemeGame(gameData) {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #111827;
+  color: white;
   font-size: 1.5rem;
 }
 
@@ -987,7 +921,7 @@ function startThemeGame(gameData) {
   gap: 6px;
   padding: 0.65rem 1.5rem;
   background: var(--color-primary);
-  color: #111827;
+  color: white;
   border: none;
   border-radius: 10px;
   font-size: 0.9rem;
@@ -1022,7 +956,7 @@ function startThemeGame(gameData) {
     padding: 0 var(--spacing-md);
     margin: var(--spacing-lg) 0;
   }
-  
+
   .daily-mvp-section {
     margin-bottom: var(--spacing-xl);
   }

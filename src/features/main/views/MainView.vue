@@ -8,9 +8,9 @@
     />
 
     <!-- 인트로 튜토리얼 모달 -->
-    <IntroTutorialModal 
+    <IntroTutorialModal
       :show="showTutorial"
-      @close="showTutorial = false"
+      @close="handleTutorialClose"
       @complete="handleTutorialComplete"
     />
 
@@ -36,40 +36,37 @@
       
       <!-- 중앙 컨텐츠 -->
       <main class="main-content-wrapper">
-        <!-- 히어로 섹션과 배너 래퍼 -->
-        <div class="hero-banner-wrapper" :class="{ 'has-banner': bannersLoaded && displayBanners && displayBanners.length > 0 }">
-          <!-- 히어로 섹션 -->
-          <!-- <HeroSection @open-tutorial="showTutorial = false" /> -->
-
-          <!-- Featured Challenge Banner Carousel -->
+        <!-- 히어로 + 배너 래퍼: HeroSection이 배너 위에 오버레이로 표시됨 -->
+        <div class="hero-banner-wrapper" :class="{ 'no-banner': !bannersLoaded || !displayBanners.length, 'logged-in': isLoggedIn }">
+          <!-- 배너: 서버 데이터 있을 때만 -->
           <div v-if="bannersLoaded && displayBanners && displayBanners.length > 0" class="banner-carousel">
-        <div
-          class="banner-container"
-          :style="{ transform: `translateX(-${currentBanner * 100}%)` }"
-        >
-          <div
-            v-for="(banner, index) in displayBanners"
-            :key="banner.id || index"
-            class="main-banner"
-            :style="{ backgroundImage: `url(${banner.image})` }"
-            @click="onBannerClick(banner)"
-            :class="{ 'clickable': banner.link }"
-          >
+            <div
+              class="banner-container"
+              :style="{ transform: `translateX(-${currentBanner * 100}%)` }"
+            >
+              <div
+                v-for="(banner, index) in displayBanners"
+                :key="banner.id || index"
+                class="main-banner"
+                :style="{ backgroundImage: `url(${banner.image})` }"
+                @click="onBannerClick(banner)"
+                :class="{ 'clickable': banner.link }"
+              ></div>
+            </div>
+            <div class="banner-dots">
+              <button
+                v-for="(banner, index) in displayBanners"
+                :key="banner.id || index"
+                class="banner-dot"
+                :class="{ active: currentBanner === index }"
+                @click="setCurrentBanner(index)"
+                @mouseenter="setCurrentBanner(index)"
+              ></button>
+            </div>
           </div>
-        </div>
 
-        <!-- Banner Navigation Dots -->
-        <div class="banner-dots">
-          <button
-            v-for="(banner, index) in displayBanners"
-            :key="banner.id || index"
-            class="banner-dot"
-            :class="{ active: currentBanner === index }"
-            @click="setCurrentBanner(index)"
-            @mouseenter="setCurrentBanner(index)"
-          ></button>
-        </div>
-        </div>
+          <!-- HeroSection: 비로그인 유저에게 배너 위 오버레이로 노출 -->
+          <HeroSection @open-tutorial="showTutorial = true" />
         </div>
 
       <!-- 인라인 광고 1: 배너 아래 (모바일/태블릿만) -->
@@ -106,16 +103,12 @@
             <div class="mode-info">
               <h3>로드뷰 모드</h3>
               <p>실제 거리를 둘러보며 위치를 맞춰보세요</p>
-              <div class="mode-stats">
-                <span class="active-players">
-                  <!-- <i class="fas fa-user"></i> 
-                  {{ gameModeStatus.roadviewEnabled ? '328명 플레이 중' : '준비 중' }} -->
-                </span>
-                <!-- <span class="difficulty">
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star-half"></i>
-                </span> -->
+              <div class="mode-tagline">
+                <span>로드뷰 관찰</span>
+                <i class="fas fa-arrow-right"></i>
+                <span>위치 추리</span>
+                <i class="fas fa-arrow-right"></i>
+                <span>점수 획득</span>
               </div>
             </div>
             <!-- <div v-if="!gameModeStatus.roadviewEnabled" class="mode-overlay">
@@ -167,16 +160,12 @@
             <div class="mode-info">
               <h3>멀티플레이어</h3>
               <p>다른 플레이어들과 함께 게임하세요</p>
-              <div class="mode-stats">
-                <span class="active-players">
-                  <!-- <i class="fas fa-user"></i> 
-                  {{ gameModeStatus.multiplayEnabled ? '124명 플레이 중' : '준비 중' }} -->
-                </span>
-                <!-- <span class="difficulty">
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                </span> -->
+              <div class="mode-tagline">
+                <span>실시간 대결</span>
+                <i class="fas fa-arrow-right"></i>
+                <span>순위 겨루기</span>
+                <i class="fas fa-arrow-right"></i>
+                <span>승리</span>
               </div>
             </div>
             <div v-if="!gameModeStatus.multiplayEnabled" class="mode-overlay">
@@ -393,6 +382,7 @@ const showNicknameModal = ref(false);
 const showTutorial = ref(false);
 const isFirstVisited = ref(false);
 
+
 // 사용자 프로필 정보
 const userProfile = ref({
   name: "사용자",
@@ -557,7 +547,11 @@ onMounted(() => {
   loadMainPageData();
   startBannerRotation();
   window.addEventListener('resize', handleResize);
-  // 친구 소켓 및 구독은 App.vue에서 전역으로 관리됨
+
+  // 최초 방문 시 튜토리얼 자동 표시 (localStorage 기반, 최초 1회)
+  if (!localStorage.getItem('kospot_tutorial_seen')) {
+    showTutorial.value = true;
+  }
 });
 
 // 컴포넌트 언마운트 전 실행
@@ -710,9 +704,14 @@ function handleNicknameComplete(nickname) {
 }
 
 // 튜토리얼 완료 핸들러
+function handleTutorialClose() {
+  localStorage.setItem('kospot_tutorial_seen', '1');
+  showTutorial.value = false;
+}
+
 function handleTutorialComplete() {
-  // 필요 시 백엔드에 튜토리얼 완료 상태 전송 가능
-  // await mainService.markTutorialComplete();
+  localStorage.setItem('kospot_tutorial_seen', '1');
+  showTutorial.value = false;
 }
 
 // 에러 토스트 표시 함수
@@ -806,10 +805,28 @@ async function handleLogout() {
   position: relative;
   width: 100%;
   margin-bottom: var(--spacing-xl);
+  min-height: 360px;
+  border-radius: 20px;
+  overflow: hidden;
 }
 
-.hero-banner-wrapper:not(.has-banner) {
-  min-height: 400px;
+/* 배너 있으면 배너 높이로 대체 */
+.hero-banner-wrapper .banner-carousel {
+  position: relative;
+  z-index: 1;
+}
+
+/* 로그인 유저는 배너 없으면 공간 없애기 */
+.hero-banner-wrapper.no-banner.logged-in {
+  min-height: 0;
+  margin-bottom: 0;
+}
+
+/* 모바일: HeroSection 높이 축소 */
+@media (max-width: 640px) {
+  .hero-banner-wrapper {
+    min-height: 480px;
+  }
 }
 
 /* 반응형 인라인 광고 스타일 */
@@ -1030,7 +1047,7 @@ async function handleLogout() {
 }
 
 .roadview .mode-icon {
-  background: var(--color-primary);
+  background: rgba(255, 255, 255, 0.25);
   color: white;
 }
 
@@ -1040,8 +1057,65 @@ async function handleLogout() {
 }
 
 .multiplayer .mode-icon {
-  background: var(--color-primary);
+  background: rgba(255, 255, 255, 0.25);
   color: white;
+}
+
+/* 카드 배경 — BRAND.PRIMARY / BRAND.INFO rgba 연하게 */
+.mode-card.roadview {
+  background: rgba(76, 201, 207, 0.08); /* BRAND.PRIMARY rgba */
+  border-color: rgba(76, 201, 207, 0.25);
+}
+
+.mode-card.multiplayer {
+  background: rgba(59, 130, 246, 0.08); /* BRAND.INFO rgba */
+  border-color: rgba(59, 130, 246, 0.25);
+}
+
+.mode-card.roadview:hover {
+  border-color: var(--color-primary); /* BRAND.PRIMARY */
+}
+
+.mode-card.multiplayer:hover {
+  border-color: var(--color-info); /* BRAND.INFO */
+}
+
+/* 카드 아이콘 색상 */
+.roadview .mode-icon {
+  background: var(--color-primary); /* BRAND.PRIMARY */
+  color: #ffffff;
+}
+
+.multiplayer .mode-icon {
+  background: var(--color-info); /* BRAND.INFO */
+  color: #ffffff;
+}
+
+/* 카드 텍스트 검은색 */
+.mode-card.roadview .mode-info h3,
+.mode-card.roadview .mode-info p,
+.mode-card.multiplayer .mode-info h3,
+.mode-card.multiplayer .mode-info p {
+  color: #111827;
+}
+
+/* 태그라인 배지 */
+.mode-tagline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-border); /* BRAND.SECONDARY #EEE5E9 */
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 11px;
+  color: var(--color-text-primary); /* TEXT.PRIMARY #111827 */
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.mode-tagline .fa-arrow-right {
+  font-size: 9px;
+  color: var(--color-text-secondary); /* TEXT.SECONDARY #6b7280 */
 }
 
 .mode-card:hover .mode-icon {

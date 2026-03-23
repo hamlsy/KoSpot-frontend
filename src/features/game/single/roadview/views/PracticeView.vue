@@ -59,7 +59,10 @@
     <!-- 메인 게임 영역 -->
     <div class="game-content">
       <!-- 로드뷰 화면 -->
-      <div class="road-view-container">
+      <div class="road-view-container"
+        @mousedown.capture="onTutorialRoadviewInteract"
+        @touchstart.capture="onTutorialRoadviewInteract"
+      >
         <RoadViewGame
           v-if="currentLocation"
           ref="roadViewGameRef"
@@ -202,6 +205,40 @@
       <div class="toast-message" v-if="showToast">
         {{ toastMessage }}
       </div>
+
+      <!-- 인게임 튜토리얼 힌트 -->
+      <template v-if="tutorialActive && !showResult">
+        <!-- Step 1: 로드뷰 둘러보기 -->
+        <div v-if="tutorialStep === 1 && gameStarted" class="tutorial-hint tutorial-hint--center">
+          <i class="fas fa-hand-pointer"></i>
+          <span>로드뷰를 둘러보세요!</span>
+        </div>
+
+        <!-- Step 2: 지도 열기 -->
+        <div v-if="tutorialStep === 2" class="tutorial-hint tutorial-hint--map-open">
+          <span>지도를 열어보세요!</span>
+          <i class="fas fa-arrow-down"></i>
+        </div>
+
+        <!-- Step 3: 위치 찍기 (지도 열린 상태, 상단 배치) -->
+        <div v-if="tutorialStep === 3 && isMapOpen" class="tutorial-hint tutorial-hint--phone-top tutorial-hint--no-pointer">
+          <i class="fas fa-map-marker-alt"></i>
+          <span>지도에서 위치를 찍어보세요!</span>
+        </div>
+
+        <!-- Step 4: SPOT 제출 (지도 열린 상태) -->
+        <div v-if="tutorialStep === 4 && isMapOpen" class="tutorial-hint tutorial-hint--spot-btn">
+          <span>SPOT으로 제출하세요!</span>
+          <i class="fas fa-arrow-down"></i>
+        </div>
+
+        <!-- 보너스: 힌트 버튼 안내 -->
+        <div v-if="tutorialShowHintHint && isMapOpen" class="tutorial-hint tutorial-hint--hint-btn">
+          <i class="fas fa-lightbulb"></i>
+          <span>힌트를 사용해보세요!</span>
+          <button class="tutorial-hint-close" @click.stop="dismissHintHint">×</button>
+        </div>
+      </template>
     </div>
   </div>
 </template>
@@ -365,6 +402,12 @@ export default {
       // TODO: 백엔드 endPracticeGame 응답에 nickname 필드 추가 시 이 값을 사용
       // API 응답(endGameWithApi)에서 받아온 플레이어 닉네임. 없으면 null.
       playerNickname: null,
+
+      // 인게임 튜토리얼
+      tutorialActive: false,
+      tutorialStep: 0, // 0=비활성, 1=로드뷰, 2=지도열기, 3=위치찍기, 4=SPOT제출
+      tutorialShowHintHint: false, // 힌트 버튼 안내 (독립적)
+      tutorialHintHintShown: false, // 힌트 버튼 안내 이미 보여줬는지
     };
   },
   computed: {
@@ -448,6 +491,7 @@ export default {
     }
 
     // 게임 위치 데이터는 실제 "시작하기" 클릭 시 로드 (endIntro에서 호출)
+    this.initTutorial();
   },
   beforeUnmount() {
     this.isComponentActive = false;
@@ -455,7 +499,50 @@ export default {
     this.clearShareCopiedTimer();
     this.clearToastTimer();
   },
+  watch: {
+    isMapOpen(val) {
+      if (val && this.tutorialStep === 2) {
+        this.tutorialStep = 3;
+        this.showToastMessage('훌륭해요! 🗺️ 지도에서 위치를 찍어보세요.');
+      }
+    },
+    guessedLocation(val) {
+      if (val && this.tutorialActive && this.tutorialStep === 3) {
+        this.tutorialStep = 4;
+      }
+    },
+    hintAvailable(val) {
+      if (val && this.tutorialActive && this.tutorialStep >= 2 && !this.tutorialHintHintShown) {
+        this.tutorialShowHintHint = true;
+      }
+    },
+    showResult(val) {
+      if (val && this.tutorialActive) {
+        this.completeTutorial();
+      }
+    },
+  },
   methods: {
+    // 인게임 튜토리얼
+    initTutorial() {
+      this.tutorialActive = true;
+    },
+    onTutorialRoadviewInteract() {
+      if (this.tutorialStep === 1) {
+        this.tutorialStep = 2;
+      }
+    },
+    dismissHintHint() {
+      this.tutorialShowHintHint = false;
+      this.tutorialHintHintShown = true;
+    },
+    completeTutorial() {
+      this.tutorialActive = false;
+      this.tutorialStep = 0;
+      this.tutorialShowHintHint = false;
+      localStorage.setItem('kospot_practice_tutorial_done', '1');
+    },
+
     // 소요시간 토글
     togglePlaytime() {
       this.showPlaytime = !this.showPlaytime;
@@ -820,6 +907,11 @@ export default {
     useHint() {
       if (!this.hintAvailable || this.hintCount <= 0 || !this.currentLocation)
         return;
+
+      // 힌트 버튼 튜토리얼 힌트 닫기
+      if (this.tutorialShowHintHint) {
+        this.dismissHintHint();
+      }
 
       // 지도가 열려있지 않으면 먼저 지도를 열기
       if (!this.isMapOpen) {
@@ -1542,6 +1634,11 @@ export default {
       this.showCountdown = false;
       this.gameStarted = true;
 
+      // 튜토리얼 시작
+      if (this.tutorialActive) {
+        this.tutorialStep = 1;
+      }
+
       // 게임 시작 시간 기록 (답변 시간 계산용)
       this.gameStartTime = Date.now();
 
@@ -2053,5 +2150,143 @@ export default {
 
 .phone-hint-button i {
   font-size: 0.9rem;
+}
+
+/* ── 인게임 튜토리얼 힌트 ── */
+.tutorial-hint {
+  position: fixed;
+  z-index: 26;
+  background: rgba(17, 24, 39, 0.90);
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+  pointer-events: auto;
+}
+
+.tutorial-hint i {
+  color: #4cc9cf;
+  font-size: 1rem;
+}
+
+/* 화면 중앙 */
+.tutorial-hint--center {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: tutorialFadeInCenter 0.4s ease;
+}
+
+.tutorial-hint--no-pointer {
+  pointer-events: none;
+}
+
+/* PhoneFrame 상단 (지도 위, 맵을 가리지 않음) */
+.tutorial-hint--phone-top {
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: tutorialFadeInSlide 0.4s ease;
+}
+
+/* 지도 열기 버튼 위 */
+.tutorial-hint--map-open {
+  bottom: 90px;
+  right: 30px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  animation: tutorialFadeInUp 0.4s ease;
+}
+
+.tutorial-hint--map-open i {
+  color: #ffffff;
+  font-size: 0.85rem;
+}
+
+/* SPOT 버튼 위 */
+.tutorial-hint--spot-btn {
+  bottom: 105px;
+  left: 50%;
+  transform: translateX(-50%);
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+  animation: tutorialFadeInSlide 0.4s ease;
+}
+
+.tutorial-hint--spot-btn i {
+  color: #ffffff;
+  font-size: 0.85rem;
+}
+
+/* 힌트 버튼 위 */
+.tutorial-hint--hint-btn {
+  bottom: 175px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: tutorialFadeInSlide 0.4s ease;
+}
+
+.tutorial-hint-close {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 0 2px;
+  line-height: 1;
+  margin-left: 4px;
+}
+
+.tutorial-hint-close:hover {
+  color: #ffffff;
+}
+
+@keyframes tutorialFadeInCenter {
+  from { opacity: 0; transform: translate(-50%, calc(-50% + 8px)); }
+  to   { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+@keyframes tutorialFadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes tutorialFadeInSlide {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+@media (max-width: 480px) {
+  .tutorial-hint--map-open {
+    bottom: 75px;
+    right: 20px;
+  }
+
+  .tutorial-hint--phone-top {
+    top: 64px;
+    font-size: 0.82rem;
+  }
+
+  .tutorial-hint--spot-btn {
+    bottom: 90px;
+  }
+
+  .tutorial-hint--hint-btn {
+    bottom: 155px;
+  }
+
+  .tutorial-hint {
+    font-size: 0.85rem;
+    padding: 9px 14px;
+  }
 }
 </style>

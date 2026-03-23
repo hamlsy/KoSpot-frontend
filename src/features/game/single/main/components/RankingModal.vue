@@ -11,16 +11,11 @@
 
         <!-- 티어 탭 -->
         <div class="tier-tabs">
-          <button
-            v-for="tier in tierList"
-            :key="tier.value"
-            @click="selectTier(tier.value)"
-            :class="[
-              'tier-tab',
-              { active: selectedTier === tier.value },
-              `tier-${tier.value.toLowerCase()}`,
-            ]"
-          >
+          <button v-for="tier in tierList" :key="tier.value" @click="selectTier(tier.value)" :class="[
+            'tier-tab',
+            { active: selectedTier === tier.value },
+            `tier-${tier.value.toLowerCase()}`,
+          ]">
             <span class="tier-icon">
               <i :class="getTierIcon(tier.value)"></i>
             </span>
@@ -61,15 +56,10 @@
               </div>
               <div class="my-rank-info">
                 <div class="my-rank-tier">
-                  <div
-                    class="rank-badge"
-                    :class="`tier-${myRank.rankTier.toLowerCase()}`"
-                  >
+                  <div class="rank-badge" :class="`tier-${myRank.rankTier.toLowerCase()}`">
                     <i :class="getTierIcon(myRank.rankTier)"></i>
-                    <span
-                      >{{ formatTierName(myRank.rankTier) }}
-                      {{ formatLevel(myRank.rankLevel) }}</span
-                    >
+                    <span>{{ formatTierName(myRank.rankTier) }}
+                      {{ formatLevel(myRank.rankLevel) }}</span>
                   </div>
                 </div>
                 <div class="my-rank-details">
@@ -89,36 +79,21 @@
 
             <!-- 플레이어 리스트 -->
             <div class="players-list">
-              <div
-                v-for="(player, index) in players"
-                :key="player.memberId"
-                class="player-item"
-                :class="{
-                  'with-border': index !== players.length - 1,
-                  'is-me': myRank && player.nickname === myRank.nickname,
-                }"
-                @click="showPlayerDetails(player)"
-              >
+              <div v-for="(player, index) in players" :key="player.memberId" class="player-item" :class="{
+                'with-border': index !== players.length - 1,
+                'is-me': myRank && player.nickname === myRank.nickname,
+              }" @click="showPlayerDetails(player)">
                 <div class="player-rank">
                   {{ currentPage * 20 + index + 1 }}
                 </div>
                 <div class="player-info">
-                  <div
-                    class="player-tier-badge"
-                    :class="`tier-${player.rankTier.toLowerCase()}`"
-                  >
+                  <div class="player-tier-badge" :class="`tier-${player.rankTier.toLowerCase()}`">
                     <i :class="getTierIcon(player.rankTier)"></i>
-                    <span
-                      >{{ formatTierName(player.rankTier) }}
-                      {{ formatLevel(player.rankLevel) }}</span
-                    >
+                    <span>{{ formatTierName(player.rankTier) }}
+                      {{ formatLevel(player.rankLevel) }}</span>
                   </div>
                   <span class="player-nickname">{{ player.nickname }}</span>
-                  <span
-                    v-if="myRank && player.nickname === myRank.nickname"
-                    class="my-badge"
-                    >나</span
-                  >
+                  <span v-if="myRank && player.nickname === myRank.nickname" class="my-badge">나</span>
                 </div>
                 <div class="player-rating">
                   {{ formatNumber(player.ratingScore) }}
@@ -135,31 +110,18 @@
         <!-- 페이징 -->
         <div v-if="!loading && !error && hasPagination" class="modal-footer">
           <div class="pagination">
-            <button
-              @click="goToPage(currentPage - 1)"
-              :disabled="currentPage === 0"
-              class="page-button"
-            >
+            <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 0" class="page-button">
               <i class="fas fa-chevron-left"></i>
             </button>
 
             <div class="page-numbers">
-              <button
-                v-for="page in visiblePages"
-                :key="page"
-                @click="goToPage(page - 1)"
-                :class="{ active: currentPage === page - 1 }"
-                class="page-number"
-              >
+              <button v-for="page in visiblePages" :key="page" @click="goToPage(page - 1)"
+                :class="{ active: currentPage === page - 1 }" class="page-number">
                 {{ page }}
               </button>
             </div>
 
-            <button
-              @click="goToPage(currentPage + 1)"
-              :disabled="!hasNextPage"
-              class="page-button"
-            >
+            <button @click="goToPage(currentPage + 1)" :disabled="!hasNextPage" class="page-button">
               <i class="fas fa-chevron-right"></i>
             </button>
           </div>
@@ -171,13 +133,8 @@
   </transition>
 
   <!-- 플레이어 상세 정보 모달 -->
-  <PlayerDetailsModal
-    :is-active="isPlayerDetailsOpen"
-    :player="selectedPlayer"
-    :is-host="false"
-    :current-user-id="currentUserId"
-    @close="closePlayerDetails"
-  />
+  <PlayerDetailsModal :is-active="isPlayerDetailsOpen" :player="selectedPlayer" :is-host="false"
+    :current-user-id="currentUserId" @close="closePlayerDetails" />
 </template>
 
 <script setup>
@@ -645,11 +602,9 @@ watch(
 }
 
 .player-item.is-me {
-  background: linear-gradient(
-    135deg,
-    rgba(59, 130, 246, 0.1) 0%,
-    rgba(147, 197, 253, 0.05) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(59, 130, 246, 0.1) 0%,
+      rgba(147, 197, 253, 0.05) 100%);
   border: 2px solid var(--color-primary);
 }
 
@@ -689,61 +644,49 @@ watch(
 }
 
 .player-tier-badge.tier-bronze {
-  background: linear-gradient(
-    135deg,
-    rgba(146, 64, 14, 0.15) 0%,
-    rgba(180, 83, 9, 0.1) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(146, 64, 14, 0.15) 0%,
+      rgba(180, 83, 9, 0.1) 100%);
   color: #92400e;
   border: 1px solid rgba(146, 64, 14, 0.3);
 }
 
 .player-tier-badge.tier-silver {
-  background: linear-gradient(
-    135deg,
-    rgba(100, 116, 139, 0.15) 0%,
-    rgba(148, 163, 184, 0.1) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(100, 116, 139, 0.15) 0%,
+      rgba(148, 163, 184, 0.1) 100%);
   color: #64748b;
   border: 1px solid rgba(100, 116, 139, 0.3);
 }
 
 .player-tier-badge.tier-gold {
-  background: linear-gradient(
-    135deg,
-    rgba(202, 138, 4, 0.15) 0%,
-    rgba(251, 191, 36, 0.1) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(202, 138, 4, 0.15) 0%,
+      rgba(251, 191, 36, 0.1) 100%);
   color: #ca8a04;
   border: 1px solid rgba(202, 138, 4, 0.3);
 }
 
 .player-tier-badge.tier-platinum {
-  background: linear-gradient(
-    135deg,
-    rgba(8, 145, 178, 0.15) 0%,
-    rgba(6, 182, 212, 0.1) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(8, 145, 178, 0.15) 0%,
+      rgba(6, 182, 212, 0.1) 100%);
   color: #0891b2;
   border: 1px solid rgba(8, 145, 178, 0.3);
 }
 
 .player-tier-badge.tier-diamond {
-  background: linear-gradient(
-    135deg,
-    rgba(14, 165, 233, 0.15) 0%,
-    rgba(59, 130, 246, 0.1) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(14, 165, 233, 0.15) 0%,
+      rgba(59, 130, 246, 0.1) 100%);
   color: #0ea5e9;
   border: 1px solid rgba(14, 165, 233, 0.3);
 }
 
 .player-tier-badge.tier-master {
-  background: linear-gradient(
-    135deg,
-    rgba(124, 58, 237, 0.15) 0%,
-    rgba(168, 85, 247, 0.1) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(124, 58, 237, 0.15) 0%,
+      rgba(168, 85, 247, 0.1) 100%);
   color: #7c3aed;
   border: 1px solid rgba(124, 58, 237, 0.3);
 }
@@ -929,6 +872,7 @@ watch(
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .modal-fade-enter-active,
   .modal-fade-leave-active,
   .modal-fade-enter-active .ranking-modal-content,
@@ -1039,7 +983,7 @@ watch(
   gap: 6px;
   padding: 0.6rem 1.2rem;
   background: #4cc9cf;
-  color: #111827;
+  color: white;
   border: none;
   border-radius: 10px;
   font-size: 0.85rem;
