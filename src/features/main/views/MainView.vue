@@ -606,14 +606,20 @@ function handleModeClick(route, isEnabled) {
     showLockedMessage();
     return;
   }
-  
-  // 로드뷰 모드와 상점은 비회원도 접근 가능
-  const guestAllowedRoutes = ['roadView/main', 'shop'];
+
+  // 비로그인 사용자가 로드뷰 모드 클릭 시 연습 모드로 바로 진입 (지역 선택 단계 생략)
+  if (!isLoggedIn.value && route === 'roadView/main') {
+    router.push('/roadView/practice?region=seoul');
+    return;
+  }
+
+  // 상점은 비회원도 접근 가능
+  const guestAllowedRoutes = ['shop'];
   if (!isLoggedIn.value && !guestAllowedRoutes.includes(route)) {
     showLoginRequiredMessage();
     return;
   }
-  
+
   // 로그인되어 있거나 허용된 경로이면 이동
   navigateTo(route);
 }
