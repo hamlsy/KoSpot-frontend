@@ -123,22 +123,22 @@ export function useKakaoMapControls(props, emit) {
   };
   
   const resizeMap = () => {
+    console.log("resize");
     if (map.value) {
-      // requestAnimationFrame으로 브라우저 렌더링 완료 후 relayout 실행
-      requestAnimationFrame(() => {
-        if (!map.value) return;
+      // 지도 크기가 변경되었을 때 호출
+      setTimeout(() => {
         map.value.relayout();
-
+        
         // 센터 위치 재설정
         if (window.kakao && window.kakao.maps) {
           map.value.setCenter(new window.kakao.maps.LatLng(
-            props.centerLocation.lat,
+            props.centerLocation.lat, 
             props.centerLocation.lng
           ));
         }
-
+        
         isLoading.value = false;
-      });
+      }, 100);
     }
   };
   

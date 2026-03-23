@@ -792,26 +792,23 @@ export default {
 
       if (this.isMapOpen) {
         this.$nextTick(() => {
-          // 지도가 초기화되지 않았으면 초기화 시도 (내부에서 resizeMap도 호출됨)
+          // 지도가 초기화되지 않았으면 초기화 시도
           if (this.$refs.phoneFrame) {
             this.$refs.phoneFrame.ensureMapInitialized();
           }
 
-          // Kakao API 재시도(500ms)보다 긴 타임아웃으로 relayout 보장
+          // 지도가 초기화될 때까지 기다린 후 리사이즈
           setTimeout(() => {
-            if (!this.$refs.phoneFrame) return;
             const mapInstance = this.$refs.phoneFrame.getMapInstance();
             if (mapInstance) {
-              requestAnimationFrame(() => {
-                mapInstance.relayout();
+              mapInstance.relayout();
 
-                // 힌트 원 재표시
-                if (this.hintCircle) {
-                  this.hintCircle.setMap(mapInstance);
-                }
-              });
+              // 힌트 원 재표시
+              if (this.hintCircle) {
+                this.hintCircle.setMap(mapInstance);
+              }
             }
-          }, 600);
+          }, 200);
         });
       } else {
         // 지도를 닫을 때는 인라인 스타일에서 자동으로 z-index가 -1로 설정됨

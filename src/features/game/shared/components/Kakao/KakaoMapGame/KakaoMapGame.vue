@@ -161,7 +161,7 @@ const ensureMapInitialized = () => {
   if (!isInitialized.value || !map.value) {
     initMap();
   } else {
-    resizeMap();
+    // resizeMap();
   }
 };
 
