@@ -1,6 +1,7 @@
 import { ref, readonly } from "vue";
 import SockJS from "sockjs-client";
 import { Stomp } from "@stomp/stompjs";
+import { resolveSockJsUrl } from "@/core/platform/websocketUrl.js";
 
 /**
  * WebSocket 코어 기능
@@ -71,25 +72,9 @@ const connect = (endpoint = "/ws", onConnectCallback = null) => {
 
   try {
     // WebSocket URL 구성
-    let wsUrl;
-    // endpoint 정규화: 항상 "/"로 시작
-    const normalizedEndpoint = endpoint?.startsWith("/")
-      ? endpoint
-      : `/${endpoint || ""}`;
-
+    const wsUrl = resolveSockJsUrl();
     if (isDevelopment) {
-      // 개발 환경: localhost:8080 사용
-      wsUrl = `${process.env.VUE_APP_WS_URL}${endpoint}`;
-      log("🔵 개발 환경 WebSocket URL:", wsUrl);
-      log(process.env.VUE_APP_WS_URL);
-    } else {
-      // 프로덕션 환경: 환경 변수 또는 현재 호스트 사용
-      if (process.env.VUE_APP_WS_URL) {
-        wsUrl = `${process.env.VUE_APP_WS_URL}${endpoint}`;
-      } else {
-        // 환경 변수가 없으면 현재 페이지의 호스트 사용
-        wsUrl = `${window.location.protocol}//${window.location.host}${normalizedEndpoint}`;
-      }
+      log("🔵 WebSocket URL:", wsUrl);
     }
 
 
