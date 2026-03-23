@@ -61,9 +61,15 @@ export function useKakaoMapControls(props, emit) {
       
       isLoading.value = false;
       isInitialized.value = true;
-      
+
       // 지도 로드 완료 이벤트 발생
       emit('map-loaded', map.value);
+
+      // 생성 직후 relayout으로 숨겨진 상태에서 생성된 경우 타일 렌더링 보장
+      // setCenter 없이 relayout만 호출하여 사용자 상태(마커·줌·위치) 보존
+      requestAnimationFrame(() => {
+        if (map.value) map.value.relayout();
+      });
     
     } else {
       console.error('Kakao Maps API가 로드되지 않았습니다.');

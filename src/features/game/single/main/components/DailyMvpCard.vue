@@ -151,6 +151,8 @@ import { BRAND, TEXT, BACKGROUND } from '@/core/constants/colors.js'
 const emit = defineEmits(['show-player-details']);
 const router = useRouter();
 
+const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'));
+
 // ─── State ───────────────────────────────────────────────────────────
 const todayMvp = ref(null)
 const yesterdayMvp = ref(null)
@@ -215,6 +217,12 @@ function handleYesterdayClick() {
 }
 
 function goToRankPlay() {
+  if (!isLoggedIn.value) {
+    if (confirm("랭크 게임은 로그인이 필요합니다. 로그인 페이지로 이동할까요?")) {
+      router.push('/loginPage');
+    }
+    return;
+  }
   // 랭크 게임 라우팅 (경로에 맞게 수정)
   router.push('/roadView/rank')
 }

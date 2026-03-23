@@ -94,6 +94,7 @@ const ROADVIEW_ENDPOINTS = {
  * @property {string} message - 응답 메시지
  * @property {Object} result - 결과 데이터
  * @property {string} result.gameId - 게임 ID
+ * @property {string} [result.practiceToken] - 익명 사용자용 연습 토큰
  * @property {string} result.targetLat - 목표 위도
  * @property {string} result.targetLng - 목표 경도
  * @property {string} result.markerImageUrl - 마커 이미지 URL
@@ -148,7 +149,7 @@ class RoadViewApiService {
    */
   async endRankGame(endData) {
     try {
-      
+
       const response = await apiClient.post(ROADVIEW_ENDPOINTS.RANK.END, endData);
       return response.data;
     } catch (error) {
@@ -167,17 +168,24 @@ class RoadViewApiService {
    */
   async startPracticeGame(sido, maxRetries = 5) {
     let lastError = null;
-    
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         console.log(`📤 연습 게임 시작 요청 (시도 ${attempt}/${maxRetries}):`, { sido });
-        
+
         const response = await apiClient.post(ROADVIEW_ENDPOINTS.PRACTICE.START, null, {
           params: { sido }
         });
-        
+
         if (response.data && response.data.isSuccess && response.data.result) {
           console.log(`✅ 연습 게임 시작 성공 (시도 ${attempt}/${maxRetries}):`, response.data);
+
+          const { gameId, practiceToken } = response.data.result;
+          if (practiceToken) {
+            sessionStorage.setItem('practiceToken', practiceToken);
+            sessionStorage.setItem('practiceGameId', gameId);
+          }
+
           return response.data;
         } else {
           throw new Error(response.data?.message || '연습 게임 시작 응답이 유효하지 않습니다.');
@@ -185,7 +193,7 @@ class RoadViewApiService {
       } catch (error) {
         lastError = error;
         console.error(`❌ 연습 게임 시작 실패 (시도 ${attempt}/${maxRetries}):`, error);
-        
+
         // 마지막 시도가 아니면 잠시 대기 후 재시도
         if (attempt < maxRetries) {
           const waitTime = attempt * 500; // 점진적 대기 (500ms, 1000ms, 1500ms, 2000ms)
@@ -194,7 +202,7 @@ class RoadViewApiService {
         }
       }
     }
-    
+
     // 모든 시도 실패
     console.error(`❌ 연습 게임 시작 최종 실패 (${maxRetries}회 시도):`, lastError);
     this._handleApiError(lastError, `연습 게임 시작에 실패했습니다. (${maxRetries}회 시도)`);
@@ -209,9 +217,21 @@ class RoadViewApiService {
   async endPracticeGame(endData) {
     try {
       console.log('📤 연습 게임 종료 요청:', endData);
-      
-      const response = await apiClient.post(ROADVIEW_ENDPOINTS.PRACTICE.END, endData);
-      
+
+      const practiceToken = sessionStorage.getItem('practiceToken');
+      const config = practiceToken ? {
+        headers: {
+          'X-Practice-Token': practiceToken
+        }
+      } : {};
+
+      const response = await apiClient.post(ROADVIEW_ENDPOINTS.PRACTICE.END, endData, config);
+
+      if (practiceToken) {
+        sessionStorage.removeItem('practiceToken');
+        sessionStorage.removeItem('practiceGameId');
+      }
+
       console.log('✅ 연습 게임 종료 성공:', response.data);
       return response.data;
     } catch (error) {
@@ -276,14 +296,22 @@ class RoadViewApiService {
    */
   async reissueCoordinate(gameId, maxRetries = 5) {
     let lastError = null;
-    
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         console.log(`📤 좌표 재발급 요청 (시도 ${attempt}/${maxRetries}):`, { gameId });
-        
+
         const endpoint = ROADVIEW_ENDPOINTS.REISSUE.replace('{gameId}', gameId);
-        const response = await apiClient.post(endpoint);
-        
+
+        const practiceToken = sessionStorage.getItem('practiceToken');
+        const config = practiceToken ? {
+          headers: {
+            'X-Practice-Token': practiceToken
+          }
+        } : {};
+
+        const response = await apiClient.post(endpoint, null, config);
+
         if (response.data && response.data.isSuccess && response.data.result) {
           console.log(`✅ 좌표 재발급 성공 (시도 ${attempt}/${maxRetries}):`, response.data);
           return response.data;
@@ -293,7 +321,7 @@ class RoadViewApiService {
       } catch (error) {
         lastError = error;
         console.error(`❌ 좌표 재발급 실패 (시도 ${attempt}/${maxRetries}):`, error);
-        
+
         // 마지막 시도가 아니면 잠시 대기 후 재시도
         if (attempt < maxRetries) {
           const waitTime = attempt * 500; // 점진적 대기 (500ms, 1000ms, 1500ms, 2000ms)
@@ -302,7 +330,7 @@ class RoadViewApiService {
         }
       }
     }
-    
+
     // 모든 시도 실패
     console.error(`❌ 좌표 재발급 최종 실패 (${maxRetries}회 시도):`, lastError);
     throw new Error(`좌표 재발급에 실패했습니다. (${maxRetries}회 시도)`);
@@ -319,7 +347,7 @@ class RoadViewApiService {
       // 서버에서 응답을 받았지만 에러 상태코드인 경우
       const { status, data } = error.response;
       console.error(`HTTP ${status} 에러:`, data);
-      
+
       // 서버에서 제공하는 에러 메시지가 있으면 사용
       if (data?.message) {
         throw new Error(data.message);
@@ -329,7 +357,7 @@ class RoadViewApiService {
       console.error('네트워크 에러:', error.request);
       throw new Error('서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.');
     }
-    
+
     // 기본 에러 메시지
     throw new Error(defaultMessage);
   }
@@ -342,22 +370,22 @@ class RoadViewApiService {
    */
   _validateGameData(gameData) {
     const { gameId, targetLat, targetLng } = gameData;
-    
+
     if (!gameId || typeof gameId !== 'string') {
       console.error('유효하지 않은 gameId:', gameId);
       return false;
     }
-    
+
     if (!targetLat || typeof targetLat !== 'string') {
       console.error('유효하지 않은 targetLat:', targetLat);
       return false;
     }
-    
+
     if (!targetLng || typeof targetLng !== 'string') {
       console.error('유효하지 않은 targetLng:', targetLng);
       return false;
     }
-    
+
     return true;
   }
 
@@ -401,10 +429,10 @@ class RoadViewApiService {
       // 환경변수에서 암호화 키 가져오기
       // 로컬 테스트 시에는 "1234567890123456" 사용, 배포 시에는 env에서 가져오기
       const isDevelopment = process.env.NODE_ENV === 'development';
-      const encryptKey = isDevelopment 
+      const encryptKey = isDevelopment
         ? (process.env.VUE_APP_AES_SECRET_KEY || '1234567890123456')
         : process.env.VUE_APP_AES_SECRET_KEY;
-      
+
       if (!encryptKey) {
         console.warn('⚠️ VUE_APP_ENCRYPT_KEY가 설정되지 않았습니다. 암호화된 좌표를 복호화할 수 없습니다.');
         // 키가 없으면 원본 값을 숫자로 변환하여 반환

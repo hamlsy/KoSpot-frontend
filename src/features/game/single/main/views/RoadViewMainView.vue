@@ -7,11 +7,7 @@
           <i class="fas fa-arrow-left"></i>
         </button>
         <div class="logo-container">
-          <img
-            src="/images/logo/kospot_logo_1-removebg.png"
-            alt="KoSpot"
-            class="header-logo"
-          />
+          <img src="/images/logo/kospot_logo_1-removebg.png" alt="KoSpot" class="header-logo" />
         </div>
         <div class="header-right">
           <h3>로드뷰 모드</h3>
@@ -27,19 +23,14 @@
 
       <!-- Game Modes Section -->
       <section class="game-modes">
-        
+
         <!-- Daily MVP Section -->
         <div class="daily-mvp-section">
           <daily-mvp-card @show-player-details="handleShowPlayerDetails" />
         </div>
 
         <div class="game-mode-list">
-          <game-mode-card
-            v-for="mode in gameModes"
-            :key="mode.id"
-            :mode="mode"
-            @select="openGameModePopup"
-          />
+          <game-mode-card v-for="mode in gameModes" :key="mode.id" :mode="mode" @select="openGameModePopup" />
         </div>
       </section>
 
@@ -47,16 +38,26 @@
       <section class="stats-section">
         <div class="section-header">
           <h2 class="section-title">나의 랭크 통계</h2>
-          <button
-            class="view-all-button"
-            @click="showRankingModal = true"
-            v-if="rankInfo"
-          >
+          <button class="view-all-button" @click="showRankingModal = true" v-if="rankInfo" F>
             전체 랭킹 보기
             <i class="fas fa-arrow-right"></i>
           </button>
         </div>
-        <div class="stats-grid">
+        <!-- 비회원 안내 CTA -->
+        <div v-if="!isLoggedIn" class="guest-stats-cta">
+          <div class="guest-cta-icon">
+            <i class="fas fa-trophy"></i>
+          </div>
+          <div class="guest-cta-text">
+            <p class="guest-cta-title">나의 통계를 기록해보세요!</p>
+            <p class="guest-cta-desc">로그인하면 랭크 통계, 최근 기록, 전체 랭킹을 확인할 수 있어요.</p>
+          </div>
+          <button class="guest-cta-btn" @click="$router.push('/loginPage')">
+            <i class="fas fa-sign-in-alt"></i>
+            로그인하기
+          </button>
+        </div>
+        <div v-else class="stats-grid">
           <div v-for="stat in stats" :key="stat.label" class="stat-card">
             <div class="stat-header">
               <i :class="stat.icon"></i>
@@ -71,36 +72,22 @@
       <section class="records-section">
         <div class="section-header">
           <h2 class="section-title">최근 기록</h2>
-          <button
-            class="view-all-button"
-            @click="showHistoryModal = true"
-            v-if="recentRecords.length > 0"
-          >
+          <button class="view-all-button" @click="showHistoryModal = true" v-if="recentRecords.length > 0">
             전체 기록 보기
             <i class="fas fa-arrow-right"></i>
           </button>
         </div>
         <div class="records-list">
-          <div
-            v-for="(record, index) in recentRecords"
-            :key="record.id"
-            class="record-item"
-            :class="{
-              'with-border': index !== recentRecords.length - 1,
-              'record-item-hover': hoverRecord === record.id,
-            }"
-            @mouseenter="hoverRecord = record.id"
-            @mouseleave="hoverRecord = null"
-          >
+          <div v-for="(record, index) in recentRecords" :key="record.id" class="record-item" :class="{
+            'with-border': index !== recentRecords.length - 1,
+            'record-item-hover': hoverRecord === record.id,
+          }" @mouseenter="hoverRecord = record.id" @mouseleave="hoverRecord = null">
             <div class="record-info">
-              <div
-                class="record-mode-badge"
-                :class="{
-                  'rank-mode': record.mode === '랭크',
-                  'practice-mode': record.mode === '연습',
-                  // 'theme-mode': record.mode === '테마',
-                }"
-              >
+              <div class="record-mode-badge" :class="{
+                'rank-mode': record.mode === '랭크',
+                'practice-mode': record.mode === '연습',
+                // 'theme-mode': record.mode === '테마',
+              }">
                 {{ record.mode }}
               </div>
               <span class="record-poi">{{ record.poiName }}</span>
@@ -123,11 +110,7 @@
 
     <!-- Game Mode Popup -->
     <transition name="popup-slide">
-      <div
-        v-if="selectedGameMode"
-        class="game-mode-popup"
-        @click.self="closeGameModePopup"
-      >
+      <div v-if="selectedGameMode" class="game-mode-popup" @click.self="closeGameModePopup">
         <div class="popup-content">
           <div class="popup-header">
             <h2>{{ selectedGameMode.title }}</h2>
@@ -136,38 +119,38 @@
             </button>
           </div>
 
-          <div
-            v-if="!showPracticeTutorial || selectedGameMode.id !== 'practice'"
-            class="popup-description"
-          >
+          <div v-if="!showPracticeTutorial || selectedGameMode.id !== 'practice'" class="popup-description">
             <p>{{ selectedGameMode.fullDescription }}</p>
           </div>
 
-          <div
-            v-if="selectedGameMode.id === 'practice' && !showPracticeTutorial"
-            class="practice-mode-options"
-          >
+          <div v-if="selectedGameMode.id === 'practice' && !showPracticeTutorial" class="practice-mode-options">
             <h3>지역 선택</h3>
             <div class="region-selector">
-              <button
-                v-for="(value, key) in regions"
-                :key="key"
-                :class="{ selected: selectedRegion === value }"
-                @click="selectRegion(value)"
-              >
+              <button v-for="(value, key) in regions" :key="key" :class="{ selected: selectedRegion === value }"
+                @click="selectRegion(value)">
                 {{ key }}
               </button>
             </div>
           </div>
 
-          <div
-            v-if="
-              selectedGameMode.id === 'rank' &&
-              (!showPracticeTutorial || selectedGameMode.id !== 'practice')
-            "
-            class="rank-mode-options"
-          >
-            <div class="rank-info-card">
+          <div v-if="
+            selectedGameMode.id === 'rank' &&
+            (!showPracticeTutorial || selectedGameMode.id !== 'practice')
+          " class="rank-mode-options">
+            <!-- 비회원: 로그인 유도 패널 -->
+            <div v-if="!isLoggedIn" class="rank-guest-panel">
+              <div class="rank-guest-icon">
+                <i class="fas fa-trophy"></i>
+              </div>
+              <p class="rank-guest-title">전국 랭킹에 도전하세요!</p>
+              <p class="rank-guest-desc">로그인하고 다른 플레이어와 경쟁하며 나만의 랭크를 만들어보세요.</p>
+              <button class="rank-guest-login-btn" @click="$router.push('/loginPage')">
+                <i class="fas fa-sign-in-alt"></i>
+                로그인하기
+              </button>
+            </div>
+            <!-- 회원: 랭크 정보 -->
+            <div v-else class="rank-info-card">
               <div v-if="rankInfo" class="rank-info-content">
                 <!-- 랭크 아이콘 (중앙 배치) -->
                 <div class="rank-icon-container">
@@ -192,9 +175,7 @@
                   </div>
                   <div class="rating-item">
                     <span class="rating-label">상위 순위</span>
-                    <span class="rating-value"
-                      >{{ rankInfo.rankPercentage }}%</span
-                    >
+                    <span class="rating-value">{{ rankInfo.rankPercentage }}%</span>
                   </div>
                 </div>
               </div>
@@ -206,19 +187,14 @@
             </div>
 
             <!-- 참고 안내 메시지 -->
-            <div class="info-note">
+            <div v-if="isLoggedIn" class="info-note">
               <i class="fas fa-info-circle"></i>
               <span>게임 중 이탈 시 랭크 포인트가 차감될 수 있어요.</span>
             </div>
           </div>
 
-          <button
-            v-if="!showPracticeTutorial || selectedGameMode.id !== 'practice'"
-            class="start-game-button"
-            @click="startGame"
-            :disabled="!isGameStartReady"
-            :class="selectedGameMode ? selectedGameMode.color : ''"
-          >
+          <button v-if="!showPracticeTutorial || selectedGameMode.id !== 'practice'" class="start-game-button"
+            @click="startGame" :disabled="!isGameStartReady" :class="selectedGameMode ? selectedGameMode.color : ''">
             게임 시작
           </button>
         </div>
@@ -227,41 +203,26 @@
 
     <!-- 연습 게임 튜토리얼 모달 (독립 오버레이) -->
     <transition name="tutorial-fade">
-      <practice-tutorial-modal
-        v-if="selectedGameMode?.id === 'practice' && showPracticeTutorial"
-        :show="showPracticeTutorial"
-        @close="showPracticeTutorial = false"
-        @complete="handleTutorialComplete"
-      />
+      <practice-tutorial-modal v-if="selectedGameMode?.id === 'practice' && showPracticeTutorial"
+        :show="showPracticeTutorial" @close="showPracticeTutorial = false" @complete="handleTutorialComplete" />
     </transition>
 
     <!-- Theme Mode Popup -->
     <transition name="popup-slide">
-      <theme-mode-popup
-        v-if="showThemeModePopup"
-        :show="showThemeModePopup"
-        @close="closeThemeModePopup"
-        @start-game="startThemeGame"
-      />
+      <theme-mode-popup v-if="showThemeModePopup" :show="showThemeModePopup" @close="closeThemeModePopup"
+        @start-game="startThemeGame" />
     </transition>
 
     <!-- History Modal -->
     <history-modal :show="showHistoryModal" @close="showHistoryModal = false" />
 
     <!-- Ranking Modal -->
-    <ranking-modal
-      :show="showRankingModal"
-      :game-mode="'ROADVIEW'"
-      :initial-rank-tier="rankInfo?.rankTier || 'BRONZE'"
-      @close="showRankingModal = false"
-    />
+    <ranking-modal :show="showRankingModal" :game-mode="'ROADVIEW'" :initial-rank-tier="rankInfo?.rankTier || 'BRONZE'"
+      @close="showRankingModal = false" />
 
     <!-- Player Details Modal (for Daily MVP) -->
-    <player-details-modal
-      :is-active="showPlayerDetailsModal"
-      :player="selectedMvpPlayer"
-      @close="showPlayerDetailsModal = false"
-    />
+    <player-details-modal :is-active="showPlayerDetailsModal" :player="selectedMvpPlayer"
+      @close="showPlayerDetailsModal = false" />
   </div>
 </template>
 
@@ -281,6 +242,9 @@ import { BRAND, TEXT, BACKGROUND } from "@/core/constants/colors.js";
 
 // 라우터 설정
 const router = useRouter();
+
+// 로그인 여부
+const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'));
 
 // 반응형 상태 정의
 const selectedGameMode = ref(null);
@@ -464,8 +428,8 @@ const recentRecords = computed(() => {
       game.gameType === "RANK"
         ? "랭크"
         : game.gameType === "PRACTICE"
-        ? "연습"
-        : "테마",
+          ? "연습"
+          : "테마",
     score: game.score,
     date: formatDateShort(game.playedAt),
     region: game.practiceSido
@@ -491,13 +455,9 @@ onMounted(async () => {
   document.documentElement.scrollTop = 0;
   document.body.scrollTop = 0;
 
-  // 로그인 여부 확인
-  const isLoggedIn = !!localStorage.getItem("accessToken");
-
-  if (!isLoggedIn) {
-    // 로그인하지 않은 경우 메인 페이지로 리다이렉션
-    alert("로그인한 사용자만 접근할 수 있습니다.");
-    router.push("/");
+  // 비회원은 더미 데이터 표시로 처리 (API 호출 없음)
+  if (!isLoggedIn.value) {
+    useDummyData();
     return;
   }
 
@@ -512,6 +472,14 @@ function selectRegion(region) {
 // 게임 시작 함수
 async function startGame() {
   if (!isGameStartReady.value) return;
+
+  // 랭크 게임은 로그인 필수
+  if (selectedGameMode.value.id === "rank" && !isLoggedIn.value) {
+    if (confirm("랭크 게임은 로그인이 필요합니다. 로그인 페이지로 이동할까요?")) {
+      router.push('/loginPage');
+    }
+    return;
+  }
 
   try {
     if (selectedGameMode.value.id === "practice") {
@@ -683,9 +651,9 @@ function closeGameModePopup() {
 
 // MVP 카드 클릭 핸들러
 function handleShowPlayerDetails(mvpData) {
-  selectedMvpPlayer.value = { 
-    id: mvpData.memberId, 
-    ...mvpData 
+  selectedMvpPlayer.value = {
+    id: mvpData.memberId,
+    ...mvpData
   };
   showPlayerDetailsModal.value = true;
 }
@@ -843,6 +811,132 @@ function startThemeGame(gameData) {
   flex-shrink: 0;
 }
 
+/* ── 비회원 통계 CTA ── */
+.guest-stats-cta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, rgba(var(--roadview-primary-rgb), 0.08) 0%, rgba(var(--roadview-primary-rgb), 0.03) 100%);
+  border: 1.5px solid rgba(var(--roadview-primary-rgb), 0.25);
+  border-radius: 16px;
+  flex-wrap: wrap;
+}
+
+.guest-cta-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.guest-cta-text {
+  flex: 1;
+  min-width: 150px;
+}
+
+.guest-cta-title {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.guest-cta-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.guest-cta-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.6rem 1.2rem;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  white-space: nowrap;
+}
+
+.guest-cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(var(--roadview-primary-rgb), 0.38);
+}
+
+/* ── 랭크 팝업 비회원 패널 ── */
+.rank-guest-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, rgba(var(--roadview-primary-rgb), 0.08) 0%, rgba(var(--roadview-primary-rgb), 0.02) 100%);
+  border: 1.5px solid rgba(var(--roadview-primary-rgb), 0.25);
+  border-radius: 16px;
+  text-align: center;
+}
+
+.rank-guest-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+}
+
+.rank-guest-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.rank-guest-desc {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.rank-guest-login-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.65rem 1.5rem;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.rank-guest-login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(var(--roadview-primary-rgb), 0.38);
+}
+
+
+
 .popup-header {
   margin: 8px;
 }
@@ -862,7 +956,7 @@ function startThemeGame(gameData) {
     padding: 0 var(--spacing-md);
     margin: var(--spacing-lg) 0;
   }
-  
+
   .daily-mvp-section {
     margin-bottom: var(--spacing-xl);
   }

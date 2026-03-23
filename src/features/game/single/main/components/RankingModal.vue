@@ -11,16 +11,11 @@
 
         <!-- 티어 탭 -->
         <div class="tier-tabs">
-          <button
-            v-for="tier in tierList"
-            :key="tier.value"
-            @click="selectTier(tier.value)"
-            :class="[
-              'tier-tab',
-              { active: selectedTier === tier.value },
-              `tier-${tier.value.toLowerCase()}`,
-            ]"
-          >
+          <button v-for="tier in tierList" :key="tier.value" @click="selectTier(tier.value)" :class="[
+            'tier-tab',
+            { active: selectedTier === tier.value },
+            `tier-${tier.value.toLowerCase()}`,
+          ]">
             <span class="tier-icon">
               <i :class="getTierIcon(tier.value)"></i>
             </span>
@@ -39,23 +34,32 @@
           </div>
 
           <div v-else class="ranking-content">
-            <!-- 내 랭크 정보 -->
-            <div v-if="myRank" class="my-rank-card">
+            <!-- 비회원: 랭킹 등록 CTA -->
+            <div v-if="!isLoggedIn" class="ranking-guest-cta">
+              <div class="ranking-guest-cta-inner">
+                <i class="fas fa-user-lock ranking-guest-icon"></i>
+                <div class="ranking-guest-text">
+                  <p class="ranking-guest-title">나의 랭킹을 등록하고 싶다면?</p>
+                  <p class="ranking-guest-desc">로그인하고 랭크 게임을 플레이하면 자동으로 랭킹에 등록됩니다.</p>
+                </div>
+                <button class="ranking-guest-btn" @click="goToLogin">
+                  <i class="fas fa-sign-in-alt"></i>
+                  3초만에 로그인
+                </button>
+              </div>
+            </div>
+            <!-- 회원: 내 랭크 정보 -->
+            <div v-else-if="myRank" class="my-rank-card">
               <div class="my-rank-header">
                 <i class="fas fa-user"></i>
                 <span>내 랭크</span>
               </div>
               <div class="my-rank-info">
                 <div class="my-rank-tier">
-                  <div
-                    class="rank-badge"
-                    :class="`tier-${myRank.rankTier.toLowerCase()}`"
-                  >
+                  <div class="rank-badge" :class="`tier-${myRank.rankTier.toLowerCase()}`">
                     <i :class="getTierIcon(myRank.rankTier)"></i>
-                    <span
-                      >{{ formatTierName(myRank.rankTier) }}
-                      {{ formatLevel(myRank.rankLevel) }}</span
-                    >
+                    <span>{{ formatTierName(myRank.rankTier) }}
+                      {{ formatLevel(myRank.rankLevel) }}</span>
                   </div>
                 </div>
                 <div class="my-rank-details">
@@ -75,36 +79,21 @@
 
             <!-- 플레이어 리스트 -->
             <div class="players-list">
-              <div
-                v-for="(player, index) in players"
-                :key="player.memberId"
-                class="player-item"
-                :class="{
-                  'with-border': index !== players.length - 1,
-                  'is-me': myRank && player.nickname === myRank.nickname,
-                }"
-                @click="showPlayerDetails(player)"
-              >
+              <div v-for="(player, index) in players" :key="player.memberId" class="player-item" :class="{
+                'with-border': index !== players.length - 1,
+                'is-me': myRank && player.nickname === myRank.nickname,
+              }" @click="showPlayerDetails(player)">
                 <div class="player-rank">
                   {{ currentPage * 20 + index + 1 }}
                 </div>
                 <div class="player-info">
-                  <div
-                    class="player-tier-badge"
-                    :class="`tier-${player.rankTier.toLowerCase()}`"
-                  >
+                  <div class="player-tier-badge" :class="`tier-${player.rankTier.toLowerCase()}`">
                     <i :class="getTierIcon(player.rankTier)"></i>
-                    <span
-                      >{{ formatTierName(player.rankTier) }}
-                      {{ formatLevel(player.rankLevel) }}</span
-                    >
+                    <span>{{ formatTierName(player.rankTier) }}
+                      {{ formatLevel(player.rankLevel) }}</span>
                   </div>
                   <span class="player-nickname">{{ player.nickname }}</span>
-                  <span
-                    v-if="myRank && player.nickname === myRank.nickname"
-                    class="my-badge"
-                    >나</span
-                  >
+                  <span v-if="myRank && player.nickname === myRank.nickname" class="my-badge">나</span>
                 </div>
                 <div class="player-rating">
                   {{ formatNumber(player.ratingScore) }}
@@ -121,31 +110,18 @@
         <!-- 페이징 -->
         <div v-if="!loading && !error && hasPagination" class="modal-footer">
           <div class="pagination">
-            <button
-              @click="goToPage(currentPage - 1)"
-              :disabled="currentPage === 0"
-              class="page-button"
-            >
+            <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 0" class="page-button">
               <i class="fas fa-chevron-left"></i>
             </button>
 
             <div class="page-numbers">
-              <button
-                v-for="page in visiblePages"
-                :key="page"
-                @click="goToPage(page - 1)"
-                :class="{ active: currentPage === page - 1 }"
-                class="page-number"
-              >
+              <button v-for="page in visiblePages" :key="page" @click="goToPage(page - 1)"
+                :class="{ active: currentPage === page - 1 }" class="page-number">
                 {{ page }}
               </button>
             </div>
 
-            <button
-              @click="goToPage(currentPage + 1)"
-              :disabled="!hasNextPage"
-              class="page-button"
-            >
+            <button @click="goToPage(currentPage + 1)" :disabled="!hasNextPage" class="page-button">
               <i class="fas fa-chevron-right"></i>
             </button>
           </div>
@@ -157,13 +133,8 @@
   </transition>
 
   <!-- 플레이어 상세 정보 모달 -->
-  <PlayerDetailsModal
-    :is-active="isPlayerDetailsOpen"
-    :player="selectedPlayer"
-    :is-host="false"
-    :current-user-id="currentUserId"
-    @close="closePlayerDetails"
-  />
+  <PlayerDetailsModal :is-active="isPlayerDetailsOpen" :player="selectedPlayer" :is-host="false"
+    :current-user-id="currentUserId" @close="closePlayerDetails" />
 </template>
 
 <script setup>
@@ -189,6 +160,9 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["close"]);
+
+// 로그인 여부
+const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'));
 
 // 티어 목록
 const tierList = [
@@ -287,6 +261,18 @@ function goToPage(page) {
 // 모달 닫기
 function close() {
   emit("close");
+}
+
+// 로그인 페이지로 이동
+function goToLogin() {
+  close();
+  import('vue-router').then(({ useRouter }) => {
+    // eslint-disable-next-line no-unused-vars
+    const router = useRouter();
+    router.push('/loginPage');
+  }).catch(() => {
+    window.location.href = '/loginPage';
+  });
 }
 
 // 플레이어 상세 정보 표시
@@ -616,11 +602,9 @@ watch(
 }
 
 .player-item.is-me {
-  background: linear-gradient(
-    135deg,
-    rgba(59, 130, 246, 0.1) 0%,
-    rgba(147, 197, 253, 0.05) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(59, 130, 246, 0.1) 0%,
+      rgba(147, 197, 253, 0.05) 100%);
   border: 2px solid var(--color-primary);
 }
 
@@ -660,61 +644,49 @@ watch(
 }
 
 .player-tier-badge.tier-bronze {
-  background: linear-gradient(
-    135deg,
-    rgba(146, 64, 14, 0.15) 0%,
-    rgba(180, 83, 9, 0.1) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(146, 64, 14, 0.15) 0%,
+      rgba(180, 83, 9, 0.1) 100%);
   color: #92400e;
   border: 1px solid rgba(146, 64, 14, 0.3);
 }
 
 .player-tier-badge.tier-silver {
-  background: linear-gradient(
-    135deg,
-    rgba(100, 116, 139, 0.15) 0%,
-    rgba(148, 163, 184, 0.1) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(100, 116, 139, 0.15) 0%,
+      rgba(148, 163, 184, 0.1) 100%);
   color: #64748b;
   border: 1px solid rgba(100, 116, 139, 0.3);
 }
 
 .player-tier-badge.tier-gold {
-  background: linear-gradient(
-    135deg,
-    rgba(202, 138, 4, 0.15) 0%,
-    rgba(251, 191, 36, 0.1) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(202, 138, 4, 0.15) 0%,
+      rgba(251, 191, 36, 0.1) 100%);
   color: #ca8a04;
   border: 1px solid rgba(202, 138, 4, 0.3);
 }
 
 .player-tier-badge.tier-platinum {
-  background: linear-gradient(
-    135deg,
-    rgba(8, 145, 178, 0.15) 0%,
-    rgba(6, 182, 212, 0.1) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(8, 145, 178, 0.15) 0%,
+      rgba(6, 182, 212, 0.1) 100%);
   color: #0891b2;
   border: 1px solid rgba(8, 145, 178, 0.3);
 }
 
 .player-tier-badge.tier-diamond {
-  background: linear-gradient(
-    135deg,
-    rgba(14, 165, 233, 0.15) 0%,
-    rgba(59, 130, 246, 0.1) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(14, 165, 233, 0.15) 0%,
+      rgba(59, 130, 246, 0.1) 100%);
   color: #0ea5e9;
   border: 1px solid rgba(14, 165, 233, 0.3);
 }
 
 .player-tier-badge.tier-master {
-  background: linear-gradient(
-    135deg,
-    rgba(124, 58, 237, 0.15) 0%,
-    rgba(168, 85, 247, 0.1) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(124, 58, 237, 0.15) 0%,
+      rgba(168, 85, 247, 0.1) 100%);
   color: #7c3aed;
   border: 1px solid rgba(124, 58, 237, 0.3);
 }
@@ -900,6 +872,7 @@ watch(
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .modal-fade-enter-active,
   .modal-fade-leave-active,
   .modal-fade-enter-active .ranking-modal-content,
@@ -960,5 +933,68 @@ watch(
   .page-numbers {
     overflow-x: auto;
   }
+}
+
+/* ── 비회원 랭킹 CTA ── */
+.ranking-guest-cta {
+  margin-bottom: 24px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(76, 201, 207, 0.10) 0%, rgba(238, 229, 233, 0.18) 100%);
+  border: 1.5px solid rgba(76, 201, 207, 0.30);
+  overflow: hidden;
+}
+
+.ranking-guest-cta-inner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  flex-wrap: wrap;
+}
+
+.ranking-guest-icon {
+  font-size: 1.6rem;
+  color: #4cc9cf;
+  flex-shrink: 0;
+}
+
+.ranking-guest-text {
+  flex: 1;
+  min-width: 160px;
+}
+
+.ranking-guest-title {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.ranking-guest-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.ranking-guest-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.6rem 1.2rem;
+  background: #4cc9cf;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.ranking-guest-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(76, 201, 207, 0.38);
 }
 </style>

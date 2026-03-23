@@ -115,11 +115,15 @@
               한국의 관광지를 탐험해보세요!
             </p>
             <div class="start-options">
-              <!-- 로그인 중이 아닐 때는 로그인하러가기 버튼 표시 -->
+              <!-- 비로그인: 바로 체험하기(주) + 로그인(부) -->
               <template v-if="!isLoggedIn">
-                <button class="start-button primary" @click="goToLogin">
+                <button class="start-button primary" @click="startPractice">
+                  <i class="fas fa-street-view"></i>
+                  <span>바로 체험하기</span>
+                </button>
+                <button class="start-button secondary" @click="goToLogin">
                   <i class="fas fa-sign-in-alt"></i>
-                  <span>로그인하러 가기</span>
+                  <span>로그인하고 랭킹 등록</span>
                 </button>
               </template>
               <!-- 로그인 중일 때는 게임 시작 버튼 표시 -->
@@ -221,7 +225,14 @@ const goToSlide = (index) => {
 };
 
 const skipTutorial = () => {
+  emit('complete');
   emit('close');
+};
+
+const startPractice = () => {
+  emit('complete');
+  emit('close');
+  router.push({ path: '/roadView/practice', query: { sido: 'SEOUL' } });
 };
 
 const closeTutorial = () => {

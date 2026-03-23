@@ -4,6 +4,21 @@
       <!-- 브랜드 포인트 바 -->
       <div class="brand-bar"></div>
 
+      <!-- 손실 회피 CTA: 비회원에게만 표시 — 맨 위 배치 -->
+      <div v-if="!isLoggedIn" class="guest-save-cta">
+        <div class="guest-save-cta-icon">
+          <i class="fas fa-exclamation"></i>
+        </div>
+        <div class="guest-save-cta-text">
+          <p class="guest-save-title">앗! {{ score }}점이 저장되지 않아요!</p>
+          <p class="guest-save-desc">로그인하면 기록이 저장되고 전국 랭킹에 도전할 수 있어요.</p>
+        </div>
+        <button class="guest-save-btn" @click="goToLogin">
+          <i class="fas fa-sign-in-alt"></i>
+          로그인하기
+        </button>
+      </div>
+
       <!-- 헤더: 좌측 정렬, 컴팩트 -->
       <div class="result-header">
         <div class="header-icon">
@@ -167,6 +182,7 @@ export default {
   data() {
     return {
       isMapExpanded: false,
+      isLoggedIn: !!localStorage.getItem('accessToken'),
     };
   },
   computed: {
@@ -177,6 +193,9 @@ export default {
   methods: {
     onImageActionToast(message, duration) {
       this.$emit('toast', message, duration);
+    },
+    goToLogin() {
+      this.$router.push('/loginPage');
     },
   },
 };
@@ -696,6 +715,112 @@ export default {
   .btn-restart,
   .btn-exit {
     transition: none;
+  }
+}
+
+/* ── 비회원 손실 회피 CTA ── */
+.guest-save-cta {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin: 0 0 0.75rem;
+  padding: 0.9rem 1.1rem;
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  border-radius: 14px;
+  flex-wrap: wrap;
+}
+
+.guest-save-cta-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+.guest-save-cta-text {
+  flex: 1;
+  min-width: 130px;
+}
+
+.guest-save-title {
+  margin: 0 0 2px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.guest-save-desc {
+  margin: 0;
+  font-size: 0.75rem;
+  color: rgba(17, 24, 39, 0.6);
+  line-height: 1.4;
+}
+
+.guest-save-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0.5rem 1rem;
+  background: #4cc9cf;
+  color: #ffffff;
+  border: none;
+  border-radius: 9px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 44px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.guest-save-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(76, 201, 207, 0.20);
+}
+
+.guest-save-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+@media (max-width: 768px) {
+  .guest-save-cta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.65rem;
+  }
+
+  .guest-save-btn {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.85rem;
+  }
+
+  .guest-save-btn:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .guest-save-cta {
+    padding: 0.8rem 0.9rem;
+  }
+
+  .guest-save-title {
+    font-size: 0.84rem;
+  }
+
+  .guest-save-desc {
+    font-size: 0.72rem;
   }
 }
 </style>
