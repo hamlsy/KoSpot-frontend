@@ -49,12 +49,16 @@
       </div>
     </div>
 
-    <!-- 로그인되지 않은 경우 로그인 버튼 표시 -->
+    <!-- 로그인되지 않은 경우 체험/로그인 버튼 표시 -->
     <div v-else class="login-section">
-      <h3>로그인하고 게임을 즐겨보세요!</h3>
-      <p>랭킹 등록, 기록 저장 등 다양한 기능</p>
+      <div class="login-section-accent"></div>
+      <h3>로그인 없이 바로 체험해보세요!</h3>
+      <p>점수·랭킹은 로그인 후 저장됩니다</p>
+      <button class="try-button" @click="goToTry">
+        지금 바로 체험하기 →
+      </button>
       <button class="login-button" @click="goToLogin">
-        로그인하러 가기
+        로그인하기
       </button>
     </div>
   </div>
@@ -113,6 +117,9 @@ export default {
     },
     socialLogin(provider) {
       this.$emit('social-login', provider);
+    },
+    goToTry() {
+      this.$router.push('/roadView/practice?region=seoul');
     },
     goToLogin() {
       this.$emit('navigate', 'loginPage');
@@ -295,45 +302,75 @@ export default {
   align-items: center;
   text-align: center;
   padding: var(--spacing-md);
+  position: relative;
+}
+
+.login-section-accent {
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(135deg, #52DEE5 0%, #EEE5E9 100%);
+  border-radius: 2px;
+  margin-bottom: var(--spacing-md);
 }
 
 .login-section h3 {
   font-family: var(--font-heading);
   font-size: var(--font-size-h3);
-  font-weight: 600;
-  margin: 0 0 var(--spacing-sm) 0;
-  color: var(--color-text-primary);
+  font-weight: 700;
+  margin: 0 0 var(--spacing-xs) 0;
+  color: #111827;
 }
 
 .login-section p {
-  color: var(--color-text-secondary);
+  color: #111827;
+  opacity: 0.55;
   margin: 0 0 var(--spacing-lg) 0;
   font-size: var(--font-size-small);
 }
 
-.login-button {
-  background: var(--color-primary);
-  color: white;
+.try-button {
+  background: #4cc9cf;
+  color: #ffffff;
   border: none;
   border-radius: var(--radius-lg);
   padding: var(--spacing-md) var(--spacing-xl);
+  font-weight: 700;
+  font-size: var(--font-size-body);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+  margin-bottom: var(--spacing-sm);
+}
+
+.try-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(76, 201, 207, 0.20);
+}
+
+.try-button:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.login-button {
+  background: transparent;
+  color: #111827;
+  border: 1.5px solid #e5e7eb;
+  border-radius: var(--radius-lg);
+  padding: calc(var(--spacing-md) - 2px) var(--spacing-xl);
   font-weight: 600;
   font-size: var(--font-size-body);
   cursor: pointer;
-  transition: all var(--transition-normal);
-  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s ease;
   width: 100%;
 }
 
 .login-button:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-  background: var(--color-primary-dark);
+  border-color: #4cc9cf;
 }
 
 .login-button:active {
-  transform: translateY(0);
-  box-shadow: var(--shadow-sm);
+  border-color: #4cc9cf;
 }
 
 @media (max-width: 768px) {
@@ -341,14 +378,42 @@ export default {
     width: 48px;
     height: 48px;
   }
-  
+
   .user-name-level h3 {
     font-size: var(--font-size-body);
     max-width: 100px;
   }
-  
+
   .user-highlights {
     flex-direction: column;
+  }
+
+  .try-button,
+  .login-button {
+    min-height: 44px;
+  }
+
+  .try-button:hover,
+  .login-button:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: #e5e7eb;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-section h3 {
+    font-size: 15px;
+  }
+
+  .login-section p {
+    font-size: 13px;
+  }
+
+  .try-button,
+  .login-button {
+    font-size: 14px;
+    padding: 12px 16px;
   }
 }
 </style>
