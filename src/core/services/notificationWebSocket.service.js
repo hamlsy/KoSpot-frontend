@@ -11,20 +11,20 @@
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { NOTIFICATION_WS_CHANNELS } from '@/core/constants/notificationTypes.js';
+import { resolveSockJsUrl } from '@/core/platform/websocketUrl.js';
+import { authStorage } from '@/core/auth/authStorage.service.js';
 
 let stompClient = null;
 const subscriptions = new Map(); // channelKey → STOMP subscription
 let onNotificationCallback = null;
 let _connectingPromise = null; // 연결 중(connecting) 상태 추적 — Race Condition 방지용
 
-const WS_ENDPOINT = '/ws';
-
 /**
  * STOMP 연결 및 알림 채널 구독
  * @param {Function} onNotification - 알림 수신 시 호출될 콜백 (notification 객체 전달)
  */
 export const connectNotificationSocket = (onNotification) => {
-    const token = localStorage.getItem('accessToken');
+    const token = authStorage.getAccessToken();
     if (!token) {
         console.log('🔔 알림 WebSocket: 토큰 없음, 연결 건너뜀');
         return;
@@ -56,12 +56,7 @@ export const connectNotificationSocket = (onNotification) => {
     }
 
     try {
-        const baseUrl =
-            typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL
-                ? import.meta.env.VITE_API_BASE_URL
-                : process.env.VUE_APP_API_BASE_URL || '';
-
-        const wsUrl = `${baseUrl}${WS_ENDPOINT}`;
+        const wsUrl = resolveSockJsUrl();
 
         stompClient = new Client({
             webSocketFactory: () => new SockJS(wsUrl),

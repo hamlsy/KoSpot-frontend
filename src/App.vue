@@ -6,10 +6,20 @@
 
 <script setup>
 import { onMounted, onBeforeUnmount } from 'vue';
+import { useRouter } from 'vue-router';
 import { tokenRefreshService } from '@/core/services/tokenRefresh.service.js';
 import { useTheme } from '@/core/composables/useTheme.js';
 import NotificationToast from '@/core/components/NotificationToast.vue';
 import { connectAll, disconnectAll } from '@/core/services/appWebSocket.service.js';
+import { authStorage } from '@/core/auth/authStorage.service.js';
+import { registerDeepLinkListener, resolveDeepLinkTarget } from '@/core/platform/deeplink.service.js';
+import { initializePush } from '@/core/platform/push.service.js';
+import { useNotificationStore } from '@/store/modules/notificationStore.js';
+
+const router = useRouter()
+const notificationStore = useNotificationStore()
+let removeDeepLinkListener = null
+let removePushListeners = null
 
 // 테마 초기화
 useTheme();
@@ -17,8 +27,8 @@ useTheme();
 // ─── 토큰 서비스 ──────────────────────────────────────────────────────────
 
 const checkAndStartTokenService = () => {
-  const accessToken = localStorage.getItem('accessToken');
-  const refreshToken = localStorage.getItem('refreshToken');
+  const accessToken = authStorage.getAccessToken();
+  const refreshToken = authStorage.getRefreshToken();
 
   if (accessToken && refreshToken) {
     if (tokenRefreshService.refreshInterval) return;
@@ -52,6 +62,31 @@ const handleStorageChange = (e) => {
 
 // ─── 라이프사이클 ──────────────────────────────────────────────────────────
 
+const handlePushReceived = (notification) => {
+  const data = notification?.data || {}
+  notificationStore.addNotification({
+    notificationId: null,
+    type: data.type || 'ADMIN_MESSAGE',
+    title: notification.title,
+    content: notification.body,
+    isRead: false,
+    createdAt: new Date().toISOString(),
+  })
+}
+
+const handlePushAction = (actionPayload) => {
+  const targetPath = resolveDeepLinkTarget(actionPayload?.notification?.data?.deeplink)
+  if (!targetPath) {
+    return
+  }
+
+  router.replace(targetPath).catch((error) => {
+    if (error?.name !== 'NavigationDuplicated') {
+      console.warn('[push] Failed to route deeplink:', error)
+    }
+  })
+}
+
 onMounted(async () => {
   checkAndStartTokenService();
 
@@ -60,12 +95,26 @@ onMounted(async () => {
   await connectAll();
 
   window.addEventListener('storage', handleStorageChange);
+
+  removeDeepLinkListener = await registerDeepLinkListener(router)
+  removePushListeners = await initializePush({
+    onNotificationReceived: handlePushReceived,
+    onNotificationActionPerformed: handlePushAction
+  })
 });
 
 onBeforeUnmount(() => {
   tokenRefreshService.stop();
   disconnectAll();
   window.removeEventListener('storage', handleStorageChange);
+
+  if (typeof removeDeepLinkListener === 'function') {
+    removeDeepLinkListener()
+  }
+
+  if (typeof removePushListeners === 'function') {
+    removePushListeners()
+  }
 });
 </script>
 

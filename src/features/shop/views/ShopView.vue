@@ -1,10 +1,7 @@
 <template>
   <div class="shop-page">
-    <NavigationBar
-      :is-logged-in="!!navUserInfo.name"
-      :user-info="navUserInfo"
-    />
-    
+    <NavigationBar :is-logged-in="isLoggedIn" :user-info="navUserInfo" />
+
     <div class="shop-layout">
       <!-- 페이지 헤더 -->
       <div class="shop-header">
@@ -13,11 +10,12 @@
           <p class="shop-subtitle">포인트로 특별한 아이템을 획득하세요</p>
         </div>
         <div class="header-right">
-          <div class="points-display">
+          <div class="points-display" :class="{ 'disabled-points': !isLoggedIn }">
             <i class="fas fa-coins points-icon"></i>
             <div class="points-text">
               <span class="points-label">보유 포인트</span>
-              <span class="points-value">{{ formatNumber(userCoins) }}</span>
+              <span v-if="isLoggedIn" class="points-value">{{ formatNumber(userCoins) }}</span>
+              <span v-else class="points-value" style="font-size: 0.9rem; color: var(--color-text-tertiary);">로그인 필요</span>
             </div>
           </div>
         </div>
@@ -26,16 +24,10 @@
       <!-- 카테고리 탭 + 필터 -->
       <div class="shop-toolbar">
         <nav class="category-tabs">
-          <button
-            v-for="category in categories"
-            :key="category.id"
-            class="tab-btn"
-            :class="{ 
-              active: currentCategory === category.id,
-              disabled: category.disabled 
-            }"
-            @click="!category.disabled && setCategory(category.id)"
-          >
+          <button v-for="category in categories" :key="category.id" class="tab-btn" :class="{
+            active: currentCategory === category.id,
+            disabled: category.disabled
+          }" @click="!category.disabled && setCategory(category.id)">
             <i :class="category.icon"></i>
             <span>{{ category.name }}</span>
             <span v-if="category.disabled" class="soon-tag">준비중</span>
@@ -43,13 +35,8 @@
         </nav>
 
         <div class="filter-group">
-          <button
-            v-for="filter in filters"
-            :key="filter.id"
-            class="filter-btn"
-            :class="{ active: currentFilter === filter.id }"
-            @click="setFilter(filter.id)"
-          >
+          <button v-for="filter in filters" :key="filter.id" class="filter-btn"
+            :class="{ active: currentFilter === filter.id }" @click="setFilter(filter.id)">
             {{ filter.name }}
           </button>
         </div>
@@ -65,13 +52,8 @@
 
         <!-- 아이템 그리드 -->
         <div v-else-if="filteredItems.length > 0" class="items-grid">
-          <div
-            v-for="(item, index) in filteredItems"
-            :key="item.itemId || item.id"
-            class="item-card"
-            :class="{ owned: item.owned, equipped: item.equipped }"
-            :style="{ animationDelay: `${index * 50}ms` }"
-          >
+          <div v-for="(item, index) in filteredItems" :key="item.itemId || item.id" class="item-card"
+            :class="{ owned: item.owned, equipped: item.equipped }" :style="{ animationDelay: `${index * 50}ms` }">
             <!-- 이미지 영역 -->
             <div class="card-image">
               <img :src="item.image" :alt="item.name" @error="handleImageError" />
@@ -103,12 +85,11 @@
                   <i class="fas fa-coins"></i>
                   <span>{{ formatNumber(item.price) }}</span>
                 </div>
-                <button
-                  class="action-btn buy-btn"
-                  :class="{ 'cant-afford': !canAfford(item) }"
-                  :disabled="!canAfford(item) || loading"
-                  @click="buyItem(item)"
-                >
+                <button v-if="!isLoggedIn" class="action-btn buy-btn cant-afford" disabled>
+                  <i class="fas fa-lock"></i> 로그인 필요
+                </button>
+                <button v-else class="action-btn buy-btn" :class="{ 'cant-afford': !canAfford(item) }"
+                  :disabled="!canAfford(item) || loading" @click="buyItem(item)">
                   <i class="fas fa-shopping-cart"></i>
                   {{ canAfford(item) ? '구매하기' : '포인트 부족' }}
                 </button>
@@ -118,15 +99,11 @@
                   <i class="fas fa-check-circle"></i>
                   <span>보유중</span>
                 </div>
-                <button
-                  v-if="isEquippableCategory"
-                  class="action-btn equip-btn"
-                  :class="{ active: item.equipped }"
-                  :disabled="loading || !item.memberItemId"
-                  :title="!item.memberItemId ? '장착 가능한 보유 아이템 정보가 없습니다.' : ''"
-                  @click="equipItem(item)"
-                >
-                  <i :class="item.equipped ? 'fas fa-check' : (item.memberItemId ? 'fas fa-hand-pointer' : 'fas fa-ban')"></i>
+                <button v-if="isEquippableCategory" class="action-btn equip-btn" :class="{ active: item.equipped }"
+                  :disabled="loading || !item.memberItemId" :title="!item.memberItemId ? '장착 가능한 보유 아이템 정보가 없습니다.' : ''"
+                  @click="equipItem(item)">
+                  <i
+                    :class="item.equipped ? 'fas fa-check' : (item.memberItemId ? 'fas fa-hand-pointer' : 'fas fa-ban')"></i>
                   {{ item.equipped ? '장착중' : (item.memberItemId ? '장착하기' : '장착 불가') }}
                 </button>
               </template>
@@ -148,23 +125,13 @@
     </div>
 
     <!-- 구매 확인 모달 -->
-    <PurchaseModal
-      v-if="showPurchaseModal"
-      :item="selectedItem"
-      :userCoins="userCoins"
-      @confirm="confirmPurchase"
-      @cancel="cancelPurchase"
-    />
+    <PurchaseModal v-if="showPurchaseModal" :item="selectedItem" :userCoins="userCoins" @confirm="confirmPurchase"
+      @cancel="cancelPurchase" />
 
     <!-- 구매 완료 모달 -->
-    <PurchaseCompleteModal
-      v-if="showCompleteModal"
-      :item="completedItem"
-      :remainingCoins="userCoins"
+    <PurchaseCompleteModal v-if="showCompleteModal" :item="completedItem" :remainingCoins="userCoins"
       :canEquip="isEquippableCategory && completedItem && !completedItem.equipped && !!completedItem.memberItemId"
-      @close="closeCompleteModal"
-      @equip="equipFromCompleteModal"
-    />
+      @close="closeCompleteModal" @equip="equipFromCompleteModal" />
   </div>
 </template>
 
@@ -177,7 +144,7 @@ import { mainService } from '@/features/main/services/main.service.js'
 
 export default {
   name: 'ShopView',
-  components: { 
+  components: {
     PurchaseModal,
     PurchaseCompleteModal,
     NavigationBar
@@ -221,6 +188,9 @@ export default {
     },
     isEquippableCategory() {
       return shopService.isEquippableCategory(this.currentCategory)
+    },
+    isLoggedIn() {
+      return !!this.navUserInfo.name
     }
   },
 
@@ -474,6 +444,11 @@ export default {
   box-shadow: var(--shadow-md);
 }
 
+.disabled-points {
+  opacity: 0.6;
+  filter: grayscale(1);
+}
+
 .points-icon {
   font-size: 1.25rem;
   color: var(--color-accent);
@@ -623,7 +598,9 @@ export default {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .empty-icon {
@@ -688,8 +665,15 @@ export default {
 }
 
 @keyframes cardIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* 카드 이미지 */

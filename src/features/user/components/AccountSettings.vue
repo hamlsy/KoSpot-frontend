@@ -137,47 +137,67 @@
         <!-- 알림 설정 -->
         <div class="settings-section">
           <h3>알림 설정</h3>
+
+          <div class="toggle-group">
+            <div class="toggle-label">
+              <span>앱 푸시 알림</span>
+              <p>
+                모바일 앱 푸시 알림 수신 여부를 설정합니다.
+                <strong class="permission-badge">{{ mobilePushStatusLabel }}</strong>
+              </p>
+              <p v-if="!mobilePush.supported" class="input-hint">현재 환경에서는 모바일 푸시를 지원하지 않습니다.</p>
+            </div>
+            <label class="toggle">
+              <input
+                type="checkbox"
+                :checked="mobilePush.enabled"
+                :disabled="!mobilePush.supported || mobilePush.loading"
+                @change="handleMobilePushToggle"
+              >
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
           
           <div class="toggle-group">
             <div class="toggle-label">
               <span>게임 초대 알림</span>
-              <p>친구가 게임에 초대했을 때 알림을 받습니다.</p>
+              <p>친구가 게임에 초대했을 때 알림을 받습니다. <span class="badge-coming-soon">준비중</span></p>
             </div>
             <label class="toggle">
-              <input type="checkbox" v-model="userSettings.notifications.gameInvites">
+              <input type="checkbox" disabled>
               <span class="toggle-slider"></span>
             </label>
           </div>
-          
+
           <div class="toggle-group">
             <div class="toggle-label">
               <span>레벨 업 알림</span>
-              <p>레벨이 올랐을 때 알림을 받습니다.</p>
+              <p>레벨이 올랐을 때 알림을 받습니다. <span class="badge-coming-soon">준비중</span></p>
             </div>
             <label class="toggle">
-              <input type="checkbox" v-model="userSettings.notifications.levelUp">
+              <input type="checkbox" disabled>
               <span class="toggle-slider"></span>
             </label>
           </div>
-          
+
           <div class="toggle-group">
             <div class="toggle-label">
               <span>새 친구 알림</span>
-              <p>새로운 친구 요청이 있을 때 알림을 받습니다.</p>
+              <p>새로운 친구 요청이 있을 때 알림을 받습니다. <span class="badge-coming-soon">준비중</span></p>
             </div>
             <label class="toggle">
-              <input type="checkbox" v-model="userSettings.notifications.friendRequests">
+              <input type="checkbox" disabled>
               <span class="toggle-slider"></span>
             </label>
           </div>
-          
+
           <div class="toggle-group">
             <div class="toggle-label">
               <span>이메일 마케팅</span>
-              <p>새로운 이벤트, 기능 또는 혜택에 대한 이메일을 받습니다.</p>
+              <p>새로운 이벤트, 기능 또는 혜택에 대한 이메일을 받습니다. <span class="badge-coming-soon">준비중</span></p>
             </div>
             <label class="toggle">
-              <input type="checkbox" v-model="userSettings.notifications.marketing">
+              <input type="checkbox" disabled>
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -254,6 +274,15 @@
 
 <script>
 import NavigationBar from '@/core/components/NavigationBar.vue';
+import { isNativeApp } from '@/core/platform/runtime.js';
+import {
+  getPushPermissionStatus,
+  getServerPushPreference,
+  requestPushPermission,
+  registerPushIfPermitted,
+  setPushPreference
+} from '@/core/platform/push.service.js';
+import { useNotificationStore } from '@/store/modules/notificationStore.js';
 
 export default {
   name: 'AccountSettings',
@@ -282,8 +311,18 @@ export default {
       editingNickname: false,
       editingEmail: false,
       showDeleteAccountModal: false,
-      deleteConfirmText: ''
+      deleteConfirmText: '',
+      mobilePush: {
+        supported: false,
+        enabled: false,
+        loading: false,
+        permissionStatus: 'unsupported'
+      }
     };
+  },
+
+  async mounted() {
+    await this.initializeMobilePushSettings();
   },
   
   computed: {
@@ -342,10 +381,33 @@ export default {
         this.passwordForm.newPassword === this.passwordForm.confirmPassword &&
         this.passwordStrength.percentage >= 50
       );
+    },
+
+    mobilePushStatusLabel() {
+      const statusMap = {
+        granted: '권한 허용',
+        denied: '권한 거부',
+        prompt: '권한 미요청',
+        unsupported: '지원 안됨'
+      };
+
+      return statusMap[this.mobilePush.permissionStatus] || '알 수 없음';
     }
   },
   
   methods: {
+    showWarningToast(message) {
+      const store = useNotificationStore();
+      store.addNotification({
+        notificationId: null,
+        type: 'ADMIN_MESSAGE',
+        title: message,
+        content: '',
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      });
+    },
+
     startEditNickname() {
       this.editingNickname = true;
     },
@@ -362,6 +424,80 @@ export default {
     saveEmail() {
       // 실제 구현에서는 API를 통해 서버에 저장
       this.editingEmail = false;
+    },
+
+    async initializeMobilePushSettings() {
+      if (!isNativeApp() || process.env.VUE_APP_ENABLE_PUSH !== 'true') {
+        this.mobilePush = {
+          ...this.mobilePush,
+          supported: false,
+          permissionStatus: 'unsupported',
+          enabled: false
+        };
+        return;
+      }
+
+      try {
+        const status = await getPushPermissionStatus();
+        let serverEnabled = null;
+
+        try {
+          serverEnabled = await getServerPushPreference();
+        } catch (error) {
+          console.warn('서버 푸시 선호도 조회 실패(초기 상태 기본값 사용):', error);
+        }
+
+        this.mobilePush.supported = true;
+        this.mobilePush.permissionStatus = status;
+
+        if (status !== 'granted') {
+          this.mobilePush.enabled = false;
+          return;
+        }
+
+        this.mobilePush.enabled = typeof serverEnabled === 'boolean' ? serverEnabled : true;
+      } catch (error) {
+        console.error('모바일 푸시 설정 초기화 실패:', error);
+        this.mobilePush.supported = false;
+        this.mobilePush.permissionStatus = 'unsupported';
+      }
+    },
+
+    async handleMobilePushToggle(event) {
+      const nextEnabled = !!event.target.checked;
+      const previousEnabled = this.mobilePush.enabled;
+
+      this.mobilePush.loading = true;
+
+      try {
+        if (!nextEnabled) {
+          await setPushPreference(false);
+          this.mobilePush.enabled = false;
+          return;
+        }
+
+        let permissionStatus = this.mobilePush.permissionStatus;
+        if (permissionStatus !== 'granted') {
+          permissionStatus = await requestPushPermission();
+          this.mobilePush.permissionStatus = permissionStatus;
+        }
+
+        if (permissionStatus !== 'granted') {
+          this.mobilePush.enabled = false;
+          this.showWarningToast('푸시 권한이 허용되지 않았습니다. 기기 설정에서 권한을 허용해 주세요.');
+          return;
+        }
+
+        await registerPushIfPermitted();
+        await setPushPreference(true);
+        this.mobilePush.enabled = true;
+      } catch (error) {
+        console.error('모바일 푸시 설정 변경 실패:', error);
+        this.mobilePush.enabled = previousEnabled;
+        this.showWarningToast('푸시 설정 변경에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+      } finally {
+        this.mobilePush.loading = false;
+      }
     },
     
     changePassword() {
@@ -622,6 +758,22 @@ export default {
   margin: 0;
   font-size: 0.85rem;
   color: #666;
+}
+
+.permission-badge {
+  margin-left: 8px;
+  color: #1a73e8;
+  font-weight: 600;
+}
+
+.badge-coming-soon {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  background-color: #f0f2f5;
+  color: #999;
+  font-size: 0.75rem;
+  border-radius: 4px;
 }
 
 .toggle {

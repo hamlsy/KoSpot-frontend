@@ -1,0 +1,9 @@
+{
+  "appId": "com.kospot.app",
+  "appName": "KoSpot",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "https"
+  }
+}

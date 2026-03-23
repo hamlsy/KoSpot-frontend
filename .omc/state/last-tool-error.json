@@ -1,0 +1,7 @@
+{
+  "tool_name": "Read",
+  "tool_input_preview": "{\"file_path\":\"/C:/kospot-frontend/android/app/src/main/AndroidManifest.xml\"}",
+  "error": "File does not exist. Note: your current working directory is C:\\kospot-frontend.",
+  "timestamp": "2026-03-23T06:43:02.702Z",
+  "retry_count": 5
+}

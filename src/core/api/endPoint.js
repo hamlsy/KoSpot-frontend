@@ -8,6 +8,7 @@ export const API_ENDPOINTS = {
     LOGOUT: '/auth/logout',
     REGISTER: '/auth/register',
     RE_ISSUE: '/auth/reIssue',
+    MOBILE_EXCHANGE: '/auth/mobile/exchange',
     VERIFY_EMAIL: '/auth/verify-email',
     FORGOT_PASSWORD: '/auth/forgot-password',
     RESET_PASSWORD: '/auth/reset-password'
@@ -90,6 +91,12 @@ export const API_ENDPOINTS = {
     UNREAD_COUNT: '/notifications/unread-count',
     READ: (notificationId) => `/notifications/${notificationId}/read`,
     READ_ALL: '/notifications/read-all',
+  },
+
+  // 모바일
+  MOBILE: {
+    PUSH_TOKENS: '/mobile/push-tokens',
+    PUSH_PREFERENCE: '/mobile/push-preference'
   }
 }
 

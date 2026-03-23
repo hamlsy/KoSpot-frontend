@@ -4,17 +4,19 @@
  */
 import { apiClient } from '@/core/api/apiClient.js'
 import { API_ENDPOINTS } from '@/core/api/endPoint.js'
+import { authStorage } from '@/core/auth/authStorage.service.js'
+import { hardRedirect } from '@/core/platform/navigation.service.js'
 
 class TokenRefreshService {
   constructor() {
     this.refreshInterval = null
     this.isRefreshing = false
     this.refreshTimer = null
-    
+
     // 토큰 만료 전 갱신 시간 (밀리초)
     // 예: 5분 전에 갱신 (5 * 60 * 1000 = 300000ms)
     this.REFRESH_BEFORE_EXPIRY = 5 * 60 * 1000 // 5분
-    
+
     // 토큰 갱신 주기 체크 (밀리초)
     // 예: 1분마다 체크 (1 * 60 * 1000 = 60000ms)
     this.CHECK_INTERVAL = 1 * 60 * 1000 // 1분
@@ -27,20 +29,20 @@ class TokenRefreshService {
    */
   getTokenExpiry(token) {
     if (!token) return null
-    
+
     try {
       // JWT 토큰은 base64로 인코딩된 3부분으로 구성: header.payload.signature
       const parts = token.split('.')
       if (parts.length !== 3) return null
-      
+
       // payload 부분을 디코딩
       const payload = JSON.parse(atob(parts[1]))
-      
+
       // exp는 초 단위이므로 밀리초로 변환
       if (payload.exp) {
         return payload.exp * 1000
       }
-      
+
       return null
     } catch (error) {
       console.error('토큰 만료 시간 추출 실패:', error)
@@ -56,10 +58,10 @@ class TokenRefreshService {
   isTokenExpiringSoon(token) {
     const expiry = this.getTokenExpiry(token)
     if (!expiry) return true // 만료 시간을 알 수 없으면 갱신
-    
+
     const now = Date.now()
     const timeUntilExpiry = expiry - now
-    
+
     // 만료 시간이 REFRESH_BEFORE_EXPIRY 이내면 곧 만료됨
     return timeUntilExpiry <= this.REFRESH_BEFORE_EXPIRY
   }
@@ -72,7 +74,7 @@ class TokenRefreshService {
   isTokenExpired(token) {
     const expiry = this.getTokenExpiry(token)
     if (!expiry) return true // 만료 시간을 알 수 없으면 만료된 것으로 간주
-    
+
     const now = Date.now()
     return now >= expiry
   }
@@ -88,8 +90,8 @@ class TokenRefreshService {
       return false
     }
 
-    const refreshToken = localStorage.getItem('refreshToken')
-    
+    const refreshToken = authStorage.getRefreshToken()
+
     if (!refreshToken) {
       console.warn('⚠️ 리프레시 토큰이 없습니다.')
       this.handleTokenExpired()
@@ -106,7 +108,7 @@ class TokenRefreshService {
     try {
       this.isRefreshing = true
       console.log('🔄 토큰 재발급 요청 중...')
-      
+
       const response = await apiClient.post(API_ENDPOINTS.AUTH.RE_ISSUE, {
         refreshToken: refreshToken
       })
@@ -114,29 +116,29 @@ class TokenRefreshService {
       // 응답 형식 확인: ApiResponseDto<JwtToken>
       if (response.data?.isSuccess && response.data?.result) {
         const { accessToken, refreshToken: newRefreshToken } = response.data.result
-        
+
         // 새 토큰 저장
         if (accessToken) {
-          localStorage.setItem('accessToken', accessToken)
+          authStorage.setAccessToken(accessToken)
           console.log('✅ 액세스 토큰 갱신 완료')
         }
-        
+
         // 새로운 리프레시 토큰이 있으면 저장
         if (newRefreshToken) {
-          localStorage.setItem('refreshToken', newRefreshToken)
+          authStorage.setRefreshToken(newRefreshToken)
           console.log('✅ 리프레시 토큰 갱신 완료')
         }
-        
+
         return true
       } else {
         throw new Error(response.data?.message || '토큰 재발급 실패')
       }
     } catch (error) {
       console.error('❌ 토큰 재발급 실패:', error)
-      
+
       // 에러 발생 시 무조건 모든 토큰 제거 및 메인 페이지로 리다이렉션
       this.handleTokenExpired()
-      
+
       return false
     } finally {
       this.isRefreshing = false
@@ -147,8 +149,8 @@ class TokenRefreshService {
    * 토큰 갱신 체크 및 실행
    */
   async checkAndRefreshToken() {
-    const accessToken = localStorage.getItem('accessToken')
-    
+    const accessToken = authStorage.getAccessToken()
+
     if (!accessToken) {
       // 토큰이 없으면 갱신 중지
       this.stop()
@@ -167,18 +169,16 @@ class TokenRefreshService {
    */
   handleTokenExpired() {
     console.log('🔒 토큰이 만료되어 로그아웃 처리합니다.')
-    
+
     // 저장된 토큰 제거
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
-    localStorage.removeItem('memberId')
-    
+    authStorage.clearAuth()
+
     // 갱신 중지
     this.stop()
-    
+
     // 메인 페이지로 리다이렉션
     // window.location을 사용하여 강제 리다이렉션 (라우터 상태 초기화)
-    window.location.href = '/'
+    hardRedirect('/')
   }
 
   /**
@@ -192,10 +192,10 @@ class TokenRefreshService {
     }
 
     console.log('🚀 토큰 갱신 서비스 시작')
-    
+
     // 즉시 한 번 체크
     this.checkAndRefreshToken()
-    
+
     // 주기적으로 체크
     this.refreshInterval = setInterval(() => {
       this.checkAndRefreshToken()
@@ -211,7 +211,7 @@ class TokenRefreshService {
       this.refreshInterval = null
       console.log('🛑 토큰 갱신 서비스 중지')
     }
-    
+
     if (this.refreshTimer) {
       clearTimeout(this.refreshTimer)
       this.refreshTimer = null

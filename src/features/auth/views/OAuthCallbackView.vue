@@ -12,10 +12,26 @@
 
 <script setup>
 import { onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
+import apiClient from '@/core/api/apiClient.js';
+import { API_ENDPOINTS } from '@/core/api/endPoint.js';
 import { tokenRefreshService } from '@/core/services/tokenRefresh.service.js';
+import { authStorage } from '@/core/auth/authStorage.service.js';
+import { isMobileOAuthEnabled } from '@/core/auth/oauth.service.js';
+import { getPlatform, isNativeApp } from '@/core/platform/runtime.js';
+import { connectAll } from '@/core/services/appWebSocket.service.js';
+import { registerPushIfPermitted } from '@/core/platform/push.service.js';
 
 const route = useRoute();
+const router = useRouter();
+
+const parseQueryStringValue = (value) => {
+  if (Array.isArray(value)) {
+    return value[0] || null
+  }
+
+  return value ?? null
+}
 
 // JWT 토큰에서 memberId 추출 (간단한 디코딩)
 const decodeJWT = (token) => {
@@ -32,42 +48,82 @@ const decodeJWT = (token) => {
   }
 };
 
-onMounted(() => {
+const persistTokens = ({ accessToken, refreshToken, memberId }) => {
+  authStorage.setTokens({
+    accessToken,
+    refreshToken,
+    memberId
+  })
+
+  if (!memberId && accessToken) {
+    const decodedToken = decodeJWT(accessToken)
+    if (decodedToken?.memberId) {
+      authStorage.setMemberId(decodedToken.memberId)
+    }
+  }
+}
+
+const navigateAfterLogin = async () => {
+  tokenRefreshService.start()
+  await connectAll()
+
   try {
-    // 쿼리 파라미터에서 토큰 추출
-    const accessToken = route.query.accessToken;
-    const refreshToken = route.query.refreshToken;
-    const provider = route.query.provider;
+    await registerPushIfPermitted()
+  } catch (pushError) {
+    console.warn('OAuth 이후 푸시 등록 스킵:', pushError)
+  }
 
-    // 토큰이 없으면 에러
-    if (!accessToken || !refreshToken) {
-      console.error('토큰이 없습니다.');
-      window.location.href = '/loginPage';
-      return;
+  await router.replace('/main')
+}
+
+const exchangeMobileCode = async ({ code, state }) => {
+  const response = await apiClient.post(API_ENDPOINTS.AUTH.MOBILE_EXCHANGE, {
+    code,
+    state,
+    platform: isNativeApp() ? getPlatform() : 'web'
+  })
+
+  const tokenResult = response.data?.result || {}
+
+  if (!response.data?.isSuccess || !tokenResult.accessToken || !tokenResult.refreshToken) {
+    throw new Error(response.data?.message || '모바일 OAuth 토큰 교환 실패')
+  }
+
+  persistTokens({
+    accessToken: tokenResult.accessToken,
+    refreshToken: tokenResult.refreshToken,
+    memberId: tokenResult.memberId
+  })
+}
+
+const handleLegacyQueryTokens = ({ accessToken, refreshToken }) => {
+  if (!accessToken || !refreshToken) {
+    throw new Error('토큰이 없습니다.')
+  }
+
+  persistTokens({ accessToken, refreshToken })
+}
+
+onMounted(async () => {
+  try {
+    const accessToken = parseQueryStringValue(route.query.accessToken)
+    const refreshToken = parseQueryStringValue(route.query.refreshToken)
+    const code = parseQueryStringValue(route.query.code)
+    const state = parseQueryStringValue(route.query.state)
+
+    const shouldUseMobileExchange = isMobileOAuthEnabled() && !!code && (!accessToken || !refreshToken)
+
+    if (shouldUseMobileExchange) {
+      await exchangeMobileCode({ code, state })
+    } else {
+      handleLegacyQueryTokens({ accessToken, refreshToken })
     }
 
-    // 토큰 저장 (기존 로직 활용)
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
-
-    // JWT 토큰에서 memberId 추출하여 저장
-    const decodedToken = decodeJWT(accessToken);
-    if (decodedToken && decodedToken.memberId) {
-      const memberIdString = String(decodedToken.memberId);
-      localStorage.setItem('memberId', memberIdString);
-    }
-
-    // 토큰 갱신 서비스 시작
-    console.log('🚀 OAuth 로그인 성공: 토큰 갱신 서비스 시작');
-    tokenRefreshService.start();
-
-    // 로그인 성공 후 메인 페이지로 리다이렉트 (새로고침)
-    setTimeout(() => {
-      window.location.href = '/main';
-    }, 1000); // 1초 후 리다이렉트 (로딩 애니메이션을 보여주기 위해)
+    console.log('🚀 OAuth 로그인 성공: 토큰 갱신 서비스 시작')
+    await navigateAfterLogin()
   } catch (error) {
-    console.error('로그인 처리 중 오류:', error);
-    window.location.href = '/loginPage';
+    console.error('로그인 처리 중 오류:', error)
+    await router.replace('/loginPage')
   }
 });
 </script>

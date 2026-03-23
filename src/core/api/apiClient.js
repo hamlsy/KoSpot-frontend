@@ -1,5 +1,7 @@
 // core/api/client.js
 import axios from 'axios'
+import { authStorage } from '@/core/auth/authStorage.service.js'
+import { hardRedirect } from '@/core/platform/navigation.service.js'
 
 // API 클라이언트 인스턴스 생성
 // 개발환경: /api prefix를 사용하여 proxy로 요청
@@ -16,7 +18,7 @@ export const apiClient = axios.create({
 // 요청 인터셉터 - JWT 토큰 자동 첨부
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken')
+    const token = authStorage.getAccessToken()
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -43,15 +45,13 @@ apiClient.interceptors.response.use(
       if (originalRequest.url?.includes('/auth/reIssue')) {
         // 토큰 재발급 실패 시 로그아웃 처리
         console.error('❌ reIssue API 호출 실패 - 로그아웃 처리')
-        localStorage.removeItem('accessToken')
-        localStorage.removeItem('refreshToken')
-        localStorage.removeItem('memberId')
-        window.location.href = '/'
+        authStorage.clearAuth()
+        hardRedirect('/')
         return Promise.reject(error)
       }
       
       try {
-        const refreshToken = localStorage.getItem('refreshToken')
+        const refreshToken = authStorage.getRefreshToken()
         if (refreshToken) {
           // 토큰 재발급 API 호출
           const response = await apiClient.post('/auth/reIssue', {
@@ -64,12 +64,12 @@ apiClient.interceptors.response.use(
             
             // 새 토큰 저장
             if (accessToken) {
-              localStorage.setItem('accessToken', accessToken)
+              authStorage.setAccessToken(accessToken)
             }
             
             // 새로운 리프레시 토큰이 있으면 저장
             if (newRefreshToken) {
-              localStorage.setItem('refreshToken', newRefreshToken)
+              authStorage.setRefreshToken(newRefreshToken)
             }
             
             // 원래 요청 재시도
@@ -80,10 +80,8 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         // reIssue API 에러 발생 시 무조건 모든 토큰 제거 및 메인 페이지로 리다이렉션
         console.error('❌ 토큰 재발급 실패 - 로그아웃 처리:', refreshError)
-        localStorage.removeItem('accessToken')
-        localStorage.removeItem('refreshToken')
-        localStorage.removeItem('memberId')
-        window.location.href = '/'
+        authStorage.clearAuth()
+        hardRedirect('/')
         return Promise.reject(refreshError)
       }
     }

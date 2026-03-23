@@ -810,7 +810,7 @@ onMounted(async () => {
         const message = accessCheck.message || "이 방에 접근할 수 없습니다.";
         console.warn("⚠️ 방 접근 권한 없음:", message);
         alert(message);
-        window.location.href = "/lobby";
+        await router.replace("/lobby");
         return;
       }
 
@@ -890,7 +890,7 @@ onMounted(async () => {
         error?.response?.data?.message || "이 방에 접근할 수 없습니다.";
       console.warn("⚠️ 방 접근 권한 없음:", message);
       alert(message);
-      window.location.href = "/lobby";
+      await router.replace("/lobby");
       return;
     }
 
@@ -901,13 +901,13 @@ onMounted(async () => {
       alert(
         "방을 조회할 수 없거나 인터넷 연결이 끊겼습니다. 로비로 이동합니다.",
       );
-      window.location.href = "/lobby";
+      await router.replace("/lobby");
       return;
     }
 
     // 기타 에러는 사용자에게 알림
     alert("방 정보를 불러오는 중 오류가 발생했습니다. 로비로 이동합니다.");
-    window.location.href = "/lobby";
+    await router.replace("/lobby");
   }
 });
 

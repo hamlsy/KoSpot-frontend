@@ -119,6 +119,19 @@ axios 요청: GET /api/users
 |--------|------|------|
 | `VUE_APP_KAKAO_CLIENT_ID` | 카카오 로그인 클라이언트 ID | `your_kakao_client_id` |
 | `VUE_APP_GOOGLE_CLIENT_ID` | 구글 OAuth 클라이언트 ID | `your_google_client_id` |
+| `VUE_APP_OAUTH_AUTHORIZE_BASE_URL` | OAuth 인가 서버 URL(옵션) | `https://api.kospot.com/api` |
+| `VUE_APP_OAUTH_REDIRECT_WEB` | 웹 OAuth 리다이렉트 URI | `https://kospot.com/login/oauth2/callback` |
+| `VUE_APP_OAUTH_REDIRECT_APP` | 앱 OAuth 리다이렉트 URI | `https://app.kospot.com/auth/callback` |
+| `VUE_APP_OAUTH_MOBILE_ENABLED` | 모바일 OAuth2 분기 활성화 | `false` |
+
+### 모바일 앱 설정
+
+| 변수명 | 설명 | 예시 |
+|--------|------|------|
+| `VUE_APP_PLATFORM_TARGET` | 빌드 타겟 구분 | `web` 또는 `app` |
+| `VUE_APP_ENABLE_PUSH` | 모바일 푸시 사용 여부 | `false` |
+| `VUE_APP_APP_DEEPLINK_SCHEME` | 앱 딥링크 스킴 | `kospot` |
+| `VUE_APP_APP_ID` | 앱 패키지/번들 ID | `com.kospot.app` |
 
 ### AWS 설정
 

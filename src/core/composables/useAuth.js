@@ -4,6 +4,8 @@ import apiClient from 'src/core/api/apiClient.js'
 import { API_ENDPOINTS } from '@/core/api/endPoint.js'
 import { useRouter } from 'vue-router'
 import { tokenRefreshService } from '@/core/services/tokenRefresh.service.js'
+import { authStorage } from '@/core/auth/authStorage.service.js'
+import { registerPushIfPermitted, deletePushToken } from '@/core/platform/push.service.js'
 
 // 전역 상태 관리
 const authState = reactive({
@@ -43,12 +45,11 @@ export function useAuth() {
       const { memberId, accessToken, refreshToken } = response.data
       
       // 토큰 저장
-      localStorage.setItem('accessToken', accessToken)
-      localStorage.setItem('refreshToken', refreshToken)
-      
-      // memberId 저장 (채팅 메시지 소유권 판단용) - String으로 변환하여 저장
-      const memberIdString = String(memberId);
-      localStorage.setItem('memberId', memberIdString);
+      authStorage.setTokens({
+        accessToken,
+        refreshToken,
+        memberId
+      })
       
       // 최소한의 사용자 정보 저장 (memberId만으로 구성)
       authState.user = {
@@ -58,6 +59,13 @@ export function useAuth() {
       
       // 토큰 갱신 서비스 시작 (로그인 후 자동 갱신 시작)
       tokenRefreshService.restart()
+
+      // 모바일 앱 + 권한 허용 상태에서만 푸시 등록
+      try {
+        await registerPushIfPermitted()
+      } catch (pushError) {
+        console.warn('푸시 등록 스킵:', pushError)
+      }
       
       return { success: true, memberId }
     } catch (error) {
@@ -82,10 +90,21 @@ export function useAuth() {
 
   // 로그아웃
   const logout = async () => {
+    // FCM 토큰 삭제 (실패해도 로그아웃 진행)
+    const fcmToken = localStorage.getItem('fcmToken')
+    if (fcmToken) {
+      try {
+        await deletePushToken(fcmToken)
+      } catch (e) {
+        console.warn('[push] 로그아웃 시 토큰 삭제 실패 (무시):', e)
+      }
+      localStorage.removeItem('fcmToken')
+    }
+
     try {
       const refreshToken = localStorage.getItem('refreshToken')
       const isBotUser = isBot()
-      
+
       // refreshToken이 있고 봇이 아닌 경우에만 서버에 로그아웃 요청
       if (refreshToken && !isBotUser) {
         await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT, {
@@ -97,9 +116,7 @@ export function useAuth() {
       // API 호출 실패해도 로컬 상태는 정리
     } finally {
       // 로컬 상태 정리
-      localStorage.removeItem('accessToken')
-      localStorage.removeItem('refreshToken')
-      localStorage.removeItem('memberId')
+      authStorage.clearAuth()
       localStorage.removeItem('isBot') // 봇 정보도 삭제
       authState.user = null
       authState.isAuthenticated = false
@@ -140,19 +157,17 @@ export function useAuth() {
       return true
     }
     
-    const token = localStorage.getItem('accessToken')
+    const token = authStorage.getAccessToken()
     if (!token) return false
     
     try {
-      const response = await apiClient.get(API_ENDPOINTS.USER.PROFILE)
+      const response = await apiClient.get(API_ENDPOINTS.MEMBER.PROFILE)
       authState.user = response.data
       authState.isAuthenticated = true
       return true
     } catch (error) {
       // 토큰이 유효하지 않은 경우
-      localStorage.removeItem('accessToken')
-      localStorage.removeItem('refreshToken')
-      localStorage.removeItem('memberId') // memberId도 삭제
+      authStorage.clearAuth()
       return false
     }
   }

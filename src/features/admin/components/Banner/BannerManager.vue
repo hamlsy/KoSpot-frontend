@@ -277,6 +277,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { bannerAdminService } from '@/features/admin/services/bannerAdmin.service.js'
+import { openExternalUrl, hardRedirect } from '@/core/platform/navigation.service.js'
 
 const loading = ref(false)
 const showAddModal = ref(false)
@@ -465,13 +466,13 @@ const removeImage = () => {
 }
 
 // 미리보기 클릭
-const previewClick = () => {
+const previewClick = async () => {
   if (bannerForm.linkUrl) {
     const url = bannerForm.linkUrl.startsWith('http') ? bannerForm.linkUrl : `https://${bannerForm.linkUrl}`
     if (bannerForm.openInNewTab) {
-      window.open(url, '_blank')
+      await openExternalUrl(url)
     } else {
-      window.location.href = url
+      hardRedirect(url)
     }
   }
 }

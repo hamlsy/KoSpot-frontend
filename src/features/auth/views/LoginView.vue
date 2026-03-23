@@ -49,6 +49,8 @@
           </div>
           <span class="google-btn-text">Google로 로그인</span>
         </button> -->
+        
+        <span class="privacy-notice">이메일을 제외한 어떤 정보도 받지 않습니다</span>
       </div>
     </div>
   </div>
@@ -56,20 +58,21 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
+import { buildOAuthAuthorizeUrl, isMobileOAuthEnabled } from '@/core/auth/oauth.service.js';
+import { hardRedirect, openExternalUrl } from '@/core/platform/navigation.service.js';
+import { isNativeApp } from '@/core/platform/runtime.js';
 
 const isLoggedIn = ref(false);
 
-// API Base URL 가져오기 (apiClient.js와 동일한 방식)
-const getBaseURL = () => {
-  return process.env.VUE_APP_API_BASE_URL || 'http:localhost:8080/api';
-};
-
 // 소셜 로그인 리다이렉트
-const socialLogin = (platform) => {
-  const baseURL = getBaseURL();
-  const oauthUrl = `${baseURL}/oauth2/authorization/${platform}`;
-  // const oauthUrl = `http://localhost:8080/login/oauth2/code/${platform}`;
-  window.location.href = oauthUrl;
+const socialLogin = async (platform) => {
+  const oauthUrl = buildOAuthAuthorizeUrl(platform);
+  if (isNativeApp() && isMobileOAuthEnabled()) {
+    await openExternalUrl(oauthUrl);
+    return;
+  }
+
+  hardRedirect(oauthUrl);
 };
 
 // Google Sign-In handling
@@ -297,6 +300,15 @@ onMounted(() => {
 /* Remove the old Google button styles */
 #gSignInWrapper, #customBtn, .icon, .buttonText {
   display: none;
+}
+
+.privacy-notice {
+  font-size: 11px;
+  color: #747775;
+  margin-top: 4px;
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  letter-spacing: -0.3px;
 }
 
 @keyframes fadeIn {

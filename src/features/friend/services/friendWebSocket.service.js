@@ -15,13 +15,14 @@
  */
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+import { resolveSockJsUrl } from '@/core/platform/websocketUrl.js';
+import { authStorage } from '@/core/auth/authStorage.service.js';
 
 let stompClient = null;
 const subscriptions = new Map(); // roomId → STOMP subscription
 let currentRoomId = null;
 let _connectingPromise = null; // 연결 중(connecting) 상태 추적 — Race Condition 방지용
 
-const WS_ENDPOINT = '/ws';
 // roomId는 destination에 포함: /app/chat-rooms.{roomId}.chat
 const SEND_ENDPOINT_TEMPLATE = (roomId) => `/app/chat-rooms.${roomId}.chat`;
 // 서버의 FriendChatChannelConstants: /topic/friends/chat-rooms/{roomId}
@@ -32,7 +33,7 @@ const SUBSCRIBE_TOPIC_PREFIX = '/topic/friend/chat-rooms/';
  * 앱 로드 또는 사용자 로그인 시 호출할 수 있으며, 또는 특정 채팅방 입장 시 호출해도 무방합니다.
  */
 export const connectFriendSocket = () => {
-    const token = localStorage.getItem('accessToken');
+    const token = authStorage.getAccessToken();
     if (!token) {
         return Promise.reject(new Error('토큰 없음'));
     }
@@ -60,12 +61,7 @@ export const connectFriendSocket = () => {
 
     _connectingPromise = new Promise((resolve, reject) => {
         try {
-            const baseUrl =
-                typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL
-                    ? import.meta.env.VITE_API_BASE_URL
-                    : process.env.VUE_APP_API_BASE_URL || '';
-
-            const wsUrl = `${baseUrl}${WS_ENDPOINT}`;
+            const wsUrl = resolveSockJsUrl();
 
             stompClient = new Client({
                 webSocketFactory: () => new SockJS(wsUrl),

@@ -89,11 +89,21 @@ npm run serve
 # 개발 환경 빌드
 npm run build:dev
 
-# 스테이징 환경 빌드
-npm run build:staging
-
 # 프로덕션 환경 빌드
 npm run build:prod
+```
+
+### 모바일(WebView) 빌드
+
+```bash
+# Capacitor 웹자산 동기화
+npm run mobile:sync
+
+# Android Studio 열기
+npm run mobile:android
+
+# Xcode 열기 (macOS)
+npm run mobile:ios
 ```
 
 ### 코드 품질 관리

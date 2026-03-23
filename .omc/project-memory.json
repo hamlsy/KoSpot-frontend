@@ -1,0 +1,523 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1774224358013,
+  "projectRoot": "C:\\kospot-frontend",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "JavaScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "jsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "vue",
+        "version": "3.5.17",
+        "category": "frontend"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "npm run build",
+    "testCommand": null,
+    "lintCommand": "npm run lint",
+    "devCommand": null,
+    "scripts": {
+      "serve": "vue-cli-service serve",
+      "serve:dev": "node scripts/setup-env.js development setup && vue-cli-service serve",
+      "build": "vue-cli-service build",
+      "build:dev": "node scripts/setup-env.js development setup && vue-cli-service build --mode development",
+      "build:prod": "node scripts/setup-env.js production setup && vue-cli-service build --mode production",
+      "lint": "vue-cli-service lint",
+      "mobile:sync": "npm run build:prod && npx cap sync",
+      "mobile:android": "npm run mobile:sync && npx cap open android",
+      "mobile:ios": "npm run mobile:sync && npx cap open ios",
+      "fix-imports": "node scripts/fix-imports.js",
+      "dedup": "node scripts/deduplicator.js",
+      "restore": "node scripts/restore-imports.js",
+      "optimize": "npm run fix-imports && npm run dedup",
+      "env:setup": "node scripts/setup-env.js",
+      "env:validate": "node scripts/setup-env.js development validate",
+      "env:show": "node scripts/setup-env.js development show"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": "feature-based"
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs",
+      "public",
+      "scripts",
+      "src"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "android": {
+      "path": "android",
+      "purpose": null,
+      "fileCount": 8,
+      "lastAccessed": 1774224357917,
+      "keyFiles": [
+        "build.gradle",
+        "capacitor.settings.gradle",
+        "gradle.properties",
+        "gradlew",
+        "gradlew.bat"
+      ]
+    },
+    "config": {
+      "path": "config",
+      "purpose": "Configuration files",
+      "fileCount": 1,
+      "lastAccessed": 1774224357919,
+      "keyFiles": [
+        "env.template"
+      ]
+    },
+    "dist": {
+      "path": "dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 4,
+      "lastAccessed": 1774224357945,
+      "keyFiles": [
+        "index.html",
+        "robots.txt",
+        "SEO-SETUP.md",
+        "sitemap.xml"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 13,
+      "lastAccessed": 1774224357946,
+      "keyFiles": [
+        "API_CONFIG_GUIDE.md",
+        "DEPLOY_SECRETS.md",
+        "ENVIRONMENT_SETUP.md",
+        "kospot-score-system-refactor-plan.md",
+        "KoSpot_논문.md"
+      ]
+    },
+    "ios": {
+      "path": "ios",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1774224357946,
+      "keyFiles": []
+    },
+    "KoSpot-frontend-private": {
+      "path": "KoSpot-frontend-private",
+      "purpose": null,
+      "fileCount": 8,
+      "lastAccessed": 1774224357947,
+      "keyFiles": [
+        "development.env",
+        "production.env",
+        "README.md"
+      ]
+    },
+    "plans": {
+      "path": "plans",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1774224357947,
+      "keyFiles": [
+        "mobile-app-release-10step-execution-plan.md",
+        "regression-baseline-checklist.md"
+      ]
+    },
+    "public": {
+      "path": "public",
+      "purpose": "Public files",
+      "fileCount": 4,
+      "lastAccessed": 1774224357948,
+      "keyFiles": [
+        "index.html",
+        "robots.txt",
+        "SEO-SETUP.md",
+        "sitemap.xml"
+      ]
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 7,
+      "lastAccessed": 1774224357948,
+      "keyFiles": [
+        "deduplicator.js",
+        "deploy.ps1",
+        "deploy.sh",
+        "fix-imports.js",
+        "README.md"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 2,
+      "lastAccessed": 1774224357949,
+      "keyFiles": [
+        "App.vue",
+        "main.js"
+      ]
+    },
+    "android\\app": {
+      "path": "android\\app",
+      "purpose": "Application code",
+      "fileCount": 4,
+      "lastAccessed": 1774224357950,
+      "keyFiles": [
+        "build.gradle",
+        "capacitor.build.gradle",
+        "proguard-rules.pro"
+      ]
+    },
+    "ios\\App": {
+      "path": "ios\\App",
+      "purpose": "Application code",
+      "fileCount": 1,
+      "lastAccessed": 1774224357952,
+      "keyFiles": [
+        "Podfile"
+      ]
+    },
+    "src\\config": {
+      "path": "src\\config",
+      "purpose": "Configuration files",
+      "fileCount": 1,
+      "lastAccessed": 1774224357953,
+      "keyFiles": [
+        "seo.js"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "src\\features\\game\\single\\roadview\\views\\PracticeView.vue",
+      "accessCount": 87,
+      "lastAccessed": 1774243386096,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\main\\views\\MainView.vue",
+      "accessCount": 51,
+      "lastAccessed": 1774243599296,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\intro\\components\\HeroSection.vue",
+      "accessCount": 21,
+      "lastAccessed": 1774244478444,
+      "type": "file"
+    },
+    {
+      "path": "plans\\push-notification-frontend-plan.md",
+      "accessCount": 17,
+      "lastAccessed": 1774254074348,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 13,
+      "lastAccessed": 1774230265865,
+      "type": "directory"
+    },
+    {
+      "path": "src\\features\\main\\components\\UserLoginCard.vue",
+      "accessCount": 11,
+      "lastAccessed": 1774228355567,
+      "type": "file"
+    },
+    {
+      "path": "plans\\onboarding-improvement.md",
+      "accessCount": 11,
+      "lastAccessed": 1774241742988,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\game\\single\\roadview\\components\\Result\\PracticeResultOverlay.vue",
+      "accessCount": 11,
+      "lastAccessed": 1774242444051,
+      "type": "file"
+    },
+    {
+      "path": "plans\\push-notification-backend-tasks.md",
+      "accessCount": 9,
+      "lastAccessed": 1774253511116,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\user\\components\\AccountSettings.vue",
+      "accessCount": 7,
+      "lastAccessed": 1774254024296,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\intro\\components\\IntroTutorialModal.vue",
+      "accessCount": 6,
+      "lastAccessed": 1774229314462,
+      "type": "file"
+    },
+    {
+      "path": "src\\App.vue",
+      "accessCount": 6,
+      "lastAccessed": 1774253966893,
+      "type": "file"
+    },
+    {
+      "path": "plans\\onboarding-anonymous-user-funnel.md",
+      "accessCount": 5,
+      "lastAccessed": 1774227251698,
+      "type": "file"
+    },
+    {
+      "path": "android\\app\\src\\main\\AndroidManifest.xml",
+      "accessCount": 4,
+      "lastAccessed": 1774253891858,
+      "type": "file"
+    },
+    {
+      "path": "src\\core\\constants\\notificationTypes.js",
+      "accessCount": 4,
+      "lastAccessed": 1774253980831,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\game\\shared\\components\\Kakao\\KakaoMapGame\\KakaoMapGame.vue",
+      "accessCount": 3,
+      "lastAccessed": 1774227945136,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\game\\shared\\components\\Kakao\\KakaoMapGame\\composables\\useKakaoMapControls.js",
+      "accessCount": 3,
+      "lastAccessed": 1774229176415,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\game\\shared\\components\\Phone\\PhoneFrame.vue",
+      "accessCount": 3,
+      "lastAccessed": 1774233680850,
+      "type": "directory"
+    },
+    {
+      "path": "capacitor.config.json",
+      "accessCount": 3,
+      "lastAccessed": 1774253897243,
+      "type": "file"
+    },
+    {
+      "path": "src\\core\\platform\\push.service.js",
+      "accessCount": 3,
+      "lastAccessed": 1774253925179,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\main\\components\\GameModeUserCard.vue",
+      "accessCount": 2,
+      "lastAccessed": 1774228356185,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\game\\single\\roadview\\views\\RankView.vue",
+      "accessCount": 2,
+      "lastAccessed": 1774231713057,
+      "type": "file"
+    },
+    {
+      "path": "src",
+      "accessCount": 2,
+      "lastAccessed": 1774241763732,
+      "type": "directory"
+    },
+    {
+      "path": "src\\core\\services\\notificationWebSocket.service.js",
+      "accessCount": 2,
+      "lastAccessed": 1774249810380,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\auth\\services\\auth.service.js",
+      "accessCount": 2,
+      "lastAccessed": 1774253869504,
+      "type": "file"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 1,
+      "lastAccessed": 1774224379042,
+      "type": "file"
+    },
+    {
+      "path": "README.md",
+      "accessCount": 1,
+      "lastAccessed": 1774224379089,
+      "type": "file"
+    },
+    {
+      "path": "CLAUDE.md",
+      "accessCount": 1,
+      "lastAccessed": 1774226056761,
+      "type": "file"
+    },
+    {
+      "path": "src\\router\\index.js",
+      "accessCount": 1,
+      "lastAccessed": 1774226161008,
+      "type": "file"
+    },
+    {
+      "path": "src\\router\\roadViewRoutes.js",
+      "accessCount": 1,
+      "lastAccessed": 1774226166885,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\main",
+      "accessCount": 1,
+      "lastAccessed": 1774227177335,
+      "type": "directory"
+    },
+    {
+      "path": "src\\features\\main\\services\\main.service.js",
+      "accessCount": 1,
+      "lastAccessed": 1774228356337,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\friend\\services\\friendWebSocket.service.js",
+      "accessCount": 1,
+      "lastAccessed": 1774230270571,
+      "type": "file"
+    },
+    {
+      "path": "src\\core\\services\\appWebSocket.service.js",
+      "accessCount": 1,
+      "lastAccessed": 1774230270879,
+      "type": "file"
+    },
+    {
+      "path": "src\\core\\platform\\websocketUrl.js",
+      "accessCount": 1,
+      "lastAccessed": 1774230276629,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\game\\single\\roadview\\components\\gameplay\\RoadViewGame.vue",
+      "accessCount": 1,
+      "lastAccessed": 1774241752735,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\game\\single\\roadview\\components\\gameplay\\RoadViewContainer.vue",
+      "accessCount": 1,
+      "lastAccessed": 1774241752813,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\game\\single\\photo\\views\\PracticeView.vue",
+      "accessCount": 1,
+      "lastAccessed": 1774241757950,
+      "type": "file"
+    },
+    {
+      "path": "src\\core\\api\\mobile.api.js",
+      "accessCount": 1,
+      "lastAccessed": 1774249788526,
+      "type": "file"
+    },
+    {
+      "path": "src\\core\\api\\endPoint.js",
+      "accessCount": 1,
+      "lastAccessed": 1774249810847,
+      "type": "file"
+    },
+    {
+      "path": "src\\core\\auth\\authStorage.service.js",
+      "accessCount": 1,
+      "lastAccessed": 1774249811380,
+      "type": "file"
+    },
+    {
+      "path": "src\\store\\modules\\notificationStore.js",
+      "accessCount": 1,
+      "lastAccessed": 1774250059153,
+      "type": "file"
+    },
+    {
+      "path": "src\\core\\platform\\deeplink.service.js",
+      "accessCount": 1,
+      "lastAccessed": 1774250059487,
+      "type": "file"
+    },
+    {
+      "path": "plans\\mobile-app-release-10step-execution-plan.md",
+      "accessCount": 1,
+      "lastAccessed": 1774250355995,
+      "type": "file"
+    },
+    {
+      "path": "plans\\regression-baseline-checklist.md",
+      "accessCount": 1,
+      "lastAccessed": 1774250365971,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\auth\\views\\LoginView.vue",
+      "accessCount": 1,
+      "lastAccessed": 1774251607360,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\auth\\views\\OAuthCallbackView.vue",
+      "accessCount": 1,
+      "lastAccessed": 1774251607448,
+      "type": "file"
+    },
+    {
+      "path": "src\\core\\platform\\navigation.service.js",
+      "accessCount": 1,
+      "lastAccessed": 1774251614685,
+      "type": "file"
+    },
+    {
+      "path": "src\\core\\platform\\runtime.js",
+      "accessCount": 1,
+      "lastAccessed": 1774251614895,
+      "type": "file"
+    },
+    {
+      "path": "src\\core\\auth\\oauth.service.js",
+      "accessCount": 1,
+      "lastAccessed": 1774251619904,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}
