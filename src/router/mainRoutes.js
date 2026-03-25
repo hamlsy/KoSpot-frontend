@@ -4,11 +4,11 @@ import OAuthCallbackView from '@/features/auth/views/OAuthCallbackView.vue'
 
 const mainRoutes = [
     {
-        path:'/',
+        path: '/',
         redirect: "/main",
     },
     {
-        path:'/main',
+        path: '/main',
         name: "MainView",
         component: MainView
     },
