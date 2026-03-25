@@ -22,20 +22,22 @@
         <button @click="socialLogin('kakao')" class="social-button kakao">
           <div class="social-icon-wrapper kakao">
             <svg width="18" height="17" viewBox="0 0 18 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path fill-rule="evenodd" clip-rule="evenodd" d="M9 0C4.0294 0 0 3.09942 0 6.92154C0 9.39376 1.55882 11.5561 3.93382 12.7458L2.93382 16.5171C2.88235 16.6777 3.05147 16.8128 3.19118 16.7259L7.5 13.9056C8.00147 13.9623 8.49853 14 9 14C13.9706 14 18 10.9006 18 7.07846C18 3.25635 13.9706 0 9 0Z" fill="black"/>
+              <path fill-rule="evenodd" clip-rule="evenodd"
+                d="M9 0C4.0294 0 0 3.09942 0 6.92154C0 9.39376 1.55882 11.5561 3.93382 12.7458L2.93382 16.5171C2.88235 16.6777 3.05147 16.8128 3.19118 16.7259L7.5 13.9056C8.00147 13.9623 8.49853 14 9 14C13.9706 14 18 10.9006 18 7.07846C18 3.25635 13.9706 0 9 0Z"
+                fill="black" />
             </svg>
           </div>
           <span class="social-text kakao">카카오 로그인</span>
         </button>
-        
+
         <!-- Naver Login Button -->
         <button @click="socialLogin('naver')" class="social-button naver">
           <div class="social-icon-wrapper naver">
             <span class="naver-icon">N</span>
           </div>
           <span class="social-text naver">네이버 로그인</span>
-        </button> 
-        
+        </button>
+
         <!-- Google Login Button -->
         <!-- <button @click="handleGoogleSignIn" class="google-btn">
           <div class="google-icon-wrapper">
@@ -49,8 +51,8 @@
           </div>
           <span class="google-btn-text">Google로 로그인</span>
         </button> -->
-        
-        <span class="privacy-notice">이메일을 제외한 어떤 정보도 받지 않습니다</span>
+
+        <span class="privacy-notice">※이메일을 제외한 그 어떤 정보도 받지 않습니다.</span>
       </div>
     </div>
   </div>
@@ -168,11 +170,9 @@ onMounted(() => {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    45deg,
-    rgba(255, 255, 255, 0.1),
-    rgba(255, 255, 255, 0.2)
-  );
+  background: linear-gradient(45deg,
+      rgba(255, 255, 255, 0.1),
+      rgba(255, 255, 255, 0.2));
   transform: translateX(-100%);
   transition: transform 0.6s ease;
 }
@@ -298,7 +298,10 @@ onMounted(() => {
 }
 
 /* Remove the old Google button styles */
-#gSignInWrapper, #customBtn, .icon, .buttonText {
+#gSignInWrapper,
+#customBtn,
+.icon,
+.buttonText {
   display: none;
 }
 
@@ -316,6 +319,7 @@ onMounted(() => {
     opacity: 0;
     transform: translateY(-5px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
