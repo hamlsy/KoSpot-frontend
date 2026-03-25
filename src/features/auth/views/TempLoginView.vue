@@ -11,14 +11,8 @@
         <form @submit.prevent="handleTempLogin" class="login-form">
           <div class="form-group">
             <label for="username">임시 사용자명</label>
-            <input
-              id="username"
-              v-model="username"
-              type="text"
-              placeholder="테스트용 사용자명을 입력하세요"
-              required
-              :disabled="loading"
-            />
+            <input id="username" v-model="username" type="text" placeholder="테스트용 사용자명을 입력하세요" required
+              :disabled="loading" />
           </div>
           <button type="submit" :disabled="loading || !username.trim()" class="login-btn">
             {{ loading ? '로그인 중...' : '임시 로그인' }}
@@ -92,8 +86,8 @@ const handleTempLogin = async () => {
 
     // GET 요청으로 임시 로그인
     const response = await apiClient.get(`/auth/tempLogin/${username.value}`)
-    
-    
+
+
     // API 응답 성공 여부 확인
     if (!response.data.isSuccess || response.data.code !== 2000) {
       throw new Error(response.data.message || '로그인 처리 중 오류가 발생했습니다.')
@@ -106,13 +100,13 @@ const handleTempLogin = async () => {
     localStorage.setItem('accessToken', accessToken)
     localStorage.setItem('refreshToken', refreshToken)
     localStorage.setItem('memberId', memberId)
-    
+
     // 토큰 갱신 서비스 시작
     console.log('🚀 임시 로그인 성공: 토큰 갱신 서비스 시작')
     tokenRefreshService.start()
-    
+
     successMessage.value = '임시 로그인에 성공했습니다!'
-    
+
     // 3초 후 메인페이지로 이동
     setTimeout(() => {
       router.push('/main')
@@ -142,7 +136,7 @@ const handleLogout = async () => {
     await apiClient.post('/auth/logout', {
       refreshToken: refreshToken
     })
-    
+
     successMessage.value = '로그아웃되었습니다.'
   } catch (err) {
     console.error('로그아웃 실패:', err)
@@ -151,7 +145,7 @@ const handleLogout = async () => {
     // 토큰 갱신 서비스 중지
     console.log('🛑 로그아웃: 토큰 갱신 서비스 중지')
     tokenRefreshService.stop()
-    
+
     // 로컬 스토리지 정리
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
@@ -178,7 +172,7 @@ const handleReissueToken = async () => {
     const response = await apiClient.post('/auth/reIssue', {
       refreshToken: refreshToken
     })
-    
+
     // API 응답 성공 여부 확인
     if (!response.data.isSuccess || response.data.code !== 2000) {
       throw new Error(response.data.message || '토큰 재발급 중 오류가 발생했습니다.')
@@ -198,7 +192,7 @@ const handleReissueToken = async () => {
   } catch (err) {
     console.error('토큰 재발급 실패:', err)
     error.value = err.response?.data?.message || err.message || '토큰 재발급에 실패했습니다.'
-    
+
     // 리프레시 토큰이 만료되었거나 유효하지 않은 경우
     if (err.response?.status === 401) {
       localStorage.removeItem('accessToken')
@@ -257,7 +251,8 @@ onMounted(() => {
   font-size: 0.875rem;
 }
 
-.login-section, .management-section {
+.login-section,
+.management-section {
   margin-bottom: 2rem;
 }
 
@@ -291,7 +286,9 @@ onMounted(() => {
   cursor: not-allowed;
 }
 
-.login-btn, .reissue-btn, .logout-btn {
+.login-btn,
+.reissue-btn,
+.logout-btn {
   width: 100%;
   padding: 0.75rem;
   border: none;
@@ -403,9 +400,9 @@ onMounted(() => {
   .temp-login-container {
     padding: 1rem;
   }
-  
+
   .temp-login-card {
     padding: 1.5rem;
   }
 }
-</style> 
+</style>

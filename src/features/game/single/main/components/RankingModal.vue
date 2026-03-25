@@ -702,9 +702,11 @@ watch(() => props.show, (newVal) => {
 }
 
 /* ── 애니메이션 ── */
-.modal-fade-enter-active,
-.modal-fade-leave-active {
+.modal-fade-enter-active {
   transition: opacity 0.22s ease;
+}
+.modal-fade-leave-active {
+  transition: opacity 0.2s ease;
 }
 
 .modal-fade-enter-from,
@@ -712,14 +714,19 @@ watch(() => props.show, (newVal) => {
   opacity: 0;
 }
 
-.modal-fade-enter-active .ranking-modal,
-.modal-fade-leave-active .ranking-modal {
+.modal-fade-enter-active .ranking-modal {
   transition: transform 0.25s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.22s ease;
 }
+.modal-fade-leave-active .ranking-modal {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
 
-.modal-fade-enter-from .ranking-modal,
-.modal-fade-leave-to .ranking-modal {
+.modal-fade-enter-from .ranking-modal {
   transform: scale(0.96) translateY(10px);
+  opacity: 0;
+}
+.modal-fade-leave-to .ranking-modal {
+  transform: scale(0.96);
   opacity: 0;
 }
 

@@ -222,16 +222,112 @@
   },
   "hotPaths": [
     {
+      "path": "src\\features\\main\\views\\MainView.vue",
+      "accessCount": 18,
+      "lastAccessed": 1774419826110,
+      "type": "file"
+    },
+    {
       "path": "src\\features\\game\\single\\roadview\\views\\PracticeView.vue",
-      "accessCount": 8,
-      "lastAccessed": 1774403348523,
+      "accessCount": 17,
+      "lastAccessed": 1774412264785,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\game\\single\\main\\views\\RoadViewMainView.vue",
+      "accessCount": 17,
+      "lastAccessed": 1774425616460,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\intro\\components\\HeroSection.vue",
+      "accessCount": 11,
+      "lastAccessed": 1774418628271,
+      "type": "file"
+    },
+    {
+      "path": "KoSpot-frontend-private\\development.env",
+      "accessCount": 9,
+      "lastAccessed": 1774423883587,
+      "type": "directory"
+    },
+    {
+      "path": "src\\features\\game\\single\\main\\components\\HistoryModal.vue",
+      "accessCount": 7,
+      "lastAccessed": 1774426788342,
+      "type": "directory"
+    },
+    {
+      "path": "",
+      "accessCount": 6,
+      "lastAccessed": 1774418256729,
+      "type": "directory"
+    },
+    {
+      "path": ".env.development",
+      "accessCount": 5,
+      "lastAccessed": 1774423884492,
+      "type": "file"
+    },
+    {
+      "path": ".env",
+      "accessCount": 5,
+      "lastAccessed": 1774423885459,
       "type": "file"
     },
     {
       "path": "src\\features\\game\\single\\main\\components\\RankingModal.vue",
-      "accessCount": 2,
-      "lastAccessed": 1774404238108,
+      "accessCount": 5,
+      "lastAccessed": 1774425040865,
       "type": "file"
+    },
+    {
+      "path": "src\\features\\game\\multiplayer\\room\\components\\player\\PlayerDetailsModal.vue",
+      "accessCount": 4,
+      "lastAccessed": 1774425056072,
+      "type": "file"
+    },
+    {
+      "path": "vue.config.js",
+      "accessCount": 3,
+      "lastAccessed": 1774423009693,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\friend\\services\\friendWebSocket.service.js",
+      "accessCount": 3,
+      "lastAccessed": 1774423009904,
+      "type": "directory"
+    },
+    {
+      "path": "src\\core\\services\\notificationWebSocket.service.js",
+      "accessCount": 3,
+      "lastAccessed": 1774423400977,
+      "type": "directory"
+    },
+    {
+      "path": "src\\shared\\assets\\styles\\main_page\\notice-section\\notice.css",
+      "accessCount": 2,
+      "lastAccessed": 1774419862694,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\notice\\views\\NoticeListView.vue",
+      "accessCount": 2,
+      "lastAccessed": 1774420013129,
+      "type": "file"
+    },
+    {
+      "path": "src\\core\\platform\\websocketUrl.js",
+      "accessCount": 2,
+      "lastAccessed": 1774423018133,
+      "type": "file"
+    },
+    {
+      "path": "src",
+      "accessCount": 2,
+      "lastAccessed": 1774424352509,
+      "type": "directory"
     },
     {
       "path": "src\\core\\api\\apiClient.js",
@@ -246,15 +342,27 @@
       "type": "file"
     },
     {
-      "path": "vue.config.js",
+      "path": "src\\shared\\assets\\styles\\main_page\\banner\\main-banner.css",
       "accessCount": 1,
-      "lastAccessed": 1774404532125,
+      "lastAccessed": 1774415856045,
       "type": "file"
     },
     {
-      "path": "KoSpot-frontend-private\\development.env",
+      "path": "src\\features\\game\\multiplayer\\lobby\\services\\useGlobalLobbyWebSocketService.js",
       "accessCount": 1,
-      "lastAccessed": 1774404547078,
+      "lastAccessed": 1774423401293,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\game\\multiplayer\\shared\\services\\websocket\\composables\\core.js",
+      "accessCount": 1,
+      "lastAccessed": 1774423455696,
+      "type": "file"
+    },
+    {
+      "path": "src\\shared\\assets\\styles\\game\\roadView\\roadview-main.css",
+      "accessCount": 1,
+      "lastAccessed": 1774425607059,
       "type": "directory"
     }
   ],
