@@ -21,11 +21,7 @@
       </div>
       <div v-if="gameStarted" class="game-status">
         <!-- 랭크 모드 타이머 -->
-        <div
-          v-if="isRankMode"
-          class="timer"
-          :class="{ warning: timeRemaining <= 30 }"
-        >
+        <div v-if="isRankMode" class="timer" :class="{ warning: timeRemaining <= 30 }">
           <i class="fas fa-clock"></i>
           <span>{{ formatTime(timeRemaining) }}</span>
         </div>
@@ -38,14 +34,9 @@
             <span v-if="showPlaytime" class="tabular-nums">{{ formattedPlaytime }}</span>
             <span v-else class="timer-hidden-text">--:--.--</span>
           </div>
-          
+
           <div class="hints">
-            <div
-              v-for="n in 3"
-              :key="`hint-${n}`"
-              class="hint-indicator"
-              :class="{ active: n <= hintsLeft }"
-            >
+            <div v-for="n in 3" :key="`hint-${n}`" class="hint-indicator" :class="{ active: n <= hintsLeft }">
               <i class="fas fa-lightbulb"></i>
             </div>
             <div v-if="!hintAvailable && hintsLeft > 0" class="hint-timer">
@@ -59,78 +50,44 @@
     <!-- 메인 게임 영역 -->
     <div class="game-content">
       <!-- 로드뷰 화면 -->
-      <div class="road-view-container"
-        @mousedown.capture="onTutorialRoadviewInteract"
-        @touchstart.capture="onTutorialRoadviewInteract"
-      >
-        <RoadViewGame
-          v-if="currentLocation"
-          ref="roadViewGameRef"
-          :initialPosition="currentLocation"
-          :showControls="false"
-          :showCompass="false"
-          :preventInteraction="false"
-          @load-complete="onRoadViewLoaded"
-          @load-error="onRoadViewError"
-        />
+      <div class="road-view-container" @mousedown.capture="onTutorialRoadviewInteract"
+        @touchstart.capture="onTutorialRoadviewInteract">
+        <RoadViewGame v-if="currentLocation" ref="roadViewGameRef" :initialPosition="currentLocation"
+          :showControls="false" :showCompass="false" :preventInteraction="false" @load-complete="onRoadViewLoaded"
+          @load-error="onRoadViewError" />
 
         <!-- 초기 위치로 돌아가기 버튼 (헤더 바로 밑, 우측 상단) -->
-        <button
-          v-if="currentLocation && !showResult"
-          class="road-reset-btn"
-          :style="{ top: resetBtnTop }"
-          @click="resetRoadViewPosition"
-          title="초기 위치로 돌아가기"
-        >
+        <button v-if="currentLocation && !showResult" class="road-reset-btn" :style="{ top: resetBtnTop }"
+          @click="resetRoadViewPosition" title="초기 위치로 돌아가기">
           <i class="fas fa-rotate-right"></i>
         </button>
 
         <!-- 지도 버튼 -->
         <button class="map-toggle" @click="toggleMap">
-          <i
-            class="fas"
-            :class="isMapOpen ? 'fa-street-view' : 'fa-map-marked-alt'"
-          ></i>
+          <i class="fas" :class="isMapOpen ? 'fa-street-view' : 'fa-map-marked-alt'"></i>
           {{ isMapOpen ? "로드뷰로 돌아가기" : "지도 열기" }}
         </button>
       </div>
 
       <!-- 휴대폰 프레임 -->
-      <PhoneFrame
-        :showReloadButton="isMapOpen && !showResult"
-        :style="{ zIndex: isMapOpen ? 21 : -1 }"
-        :centerLocation="{ lat: 36.5, lng: 127.5 }"
-        :showHintCircles="false"
-        :disabled="showResult"
-        :showDistance="false"
-        :showActionButton="false"
-        :gameMode="'single'"
-        :markerImageUrl="markerImageUrl"
-        @close="toggleMap"
-        @check-answer="checkAnswer"
-        @spot-answer="checkSpotAnswer"
-        @error="showToastMessage"
-        ref="phoneFrame"
-      >
+      <PhoneFrame :showReloadButton="isMapOpen && !showResult" :style="{ zIndex: isMapOpen ? 21 : -1 }"
+        :centerLocation="{ lat: 36.5, lng: 127.5 }" :showHintCircles="false" :disabled="showResult"
+        :showDistance="false" :showActionButton="false" :gameMode="'single'" :markerImageUrl="markerImageUrl"
+        @close="toggleMap" @check-answer="checkAnswer" @spot-answer="checkSpotAnswer" @error="showToastMessage"
+        ref="phoneFrame">
         <template v-slot:buttons>
           <!-- 힌트 버튼 (휴대폰 프레임 내부) -->
-          <button
-            v-if="!showResult"
-            class="phone-hint-button"
-            @click="useHint"
-            :disabled="!hintAvailable || hintCount <= 0"
-          >
+          <button v-if="!showResult" class="phone-hint-button" @click="useHint"
+            :disabled="!hintAvailable || hintCount <= 0">
             <i class="fas fa-lightbulb"></i>
-            <span v-if="hintCount > 0 && !hintAvailable"
-              >{{ nextHintTime }}초 후 사용 가능</span
-            >
+            <span v-if="hintCount > 0 && !hintAvailable">{{ nextHintTime }}초 후 사용 가능</span>
             <span v-else>힌트 사용 ({{ hintCount }}/3)</span>
           </button>
 
           <!-- 힌트 말풍선: slot 내부 (phone-content 기준 absolute → 버튼 가림 방지) -->
           <div v-if="tutorialShowHintHint" class="tutorial-hint tutorial-hint--hint-btn">
             <i class="fas fa-lightbulb"></i>
-            <span>힌트를 사용해보세요!</span>
+            <span>힌트를 사용할 수 있어요!</span>
             <button class="tutorial-hint-close" @click.stop="dismissHintHint">×</button>
           </div>
 
@@ -143,63 +100,25 @@
         </template>
       </PhoneFrame>
 
-      <IntroOverlay
-        :showIntro="showIntro"
-        :gameTitle="gameTitle"
-        :gameContent="gameContent"
-        :gameDescription="gameDescription"
-        mode="practice"
-        @end-intro="endIntro"
-        @exit-intro="exitGame"
-      />
+      <IntroOverlay :showIntro="showIntro" :gameTitle="gameTitle" :gameContent="gameContent"
+        :gameDescription="gameDescription" mode="practice" @end-intro="endIntro" @exit-intro="exitGame" />
 
       <!-- 카운트다운 화면 -->
-      <CountdownOverlay
-        :show="showCountdown"
-        :initial-count="3"
-        @countdown-complete="onCountdownComplete"
-      />
+      <CountdownOverlay :show="showCountdown" :initial-count="3" @countdown-complete="onCountdownComplete" />
 
-      <PracticeResultOverlay
-        v-if="showResult && !isSharedRecipientMode"
-        :show="showResult"
-        :distance="distance"
-        :score="score"
-        :hintsUsed="usedHints"
-        :poiName="poiName"
-        :fullAddress="fullAddress"
-        :currentLocation="currentLocation"
-        :guessedLocation="guessedLocation"
-        :markerImageUrl="markerImageUrl"
-        :showElapsedTime="true"
-        :elapsedTimeText="formattedPlaytime"
-        :shareLoading="isShareLoading"
-        :shareButtonText="isShareCopied ? '복사완료!' : '대전 링크 생성'"
-        @share="shareGame"
-        @restart="nextRound"
-        @exit="exitGame"
-        @toast="showToastMessage"
-      />
+      <PracticeResultOverlay v-if="showResult && !isSharedRecipientMode" :show="showResult" :distance="distance"
+        :score="score" :hintsUsed="usedHints" :poiName="poiName" :fullAddress="fullAddress"
+        :currentLocation="currentLocation" :guessedLocation="guessedLocation" :markerImageUrl="markerImageUrl"
+        :showElapsedTime="true" :elapsedTimeText="formattedPlaytime" :shareLoading="isShareLoading"
+        :shareButtonText="isShareCopied ? '복사완료!' : '대전 링크 생성'" @share="shareGame" @restart="nextRound" @exit="exitGame"
+        @toast="showToastMessage" />
 
-      <SharedPracticeResultOverlay
-        v-if="showResult && isSharedRecipientMode"
-        :show="showResult"
-        :sharerNickname="sharedSource.nickname"
-        :sharerScore="sharedSource.score"
-        :sharerHintsUsed="sharedSource.hintsUsed"
-        :sharerPlaytime="sharedSource.playtimeMs"
-        :myScore="score"
-        :myHintsUsed="usedHints"
-        :myPlaytime="elapsedTimeMs"
-        :currentLocation="currentLocation"
-        :guessedLocation="guessedLocation"
-        :markerImageUrl="markerImageUrl"
-        :poiName="poiName"
-        :fullAddress="fullAddress"
-        @login="goToLogin"
-        @restart="nextRound"
-        @toast="showToastMessage"
-      />
+      <SharedPracticeResultOverlay v-if="showResult && isSharedRecipientMode" :show="showResult"
+        :sharerNickname="sharedSource.nickname" :sharerScore="sharedSource.score"
+        :sharerHintsUsed="sharedSource.hintsUsed" :sharerPlaytime="sharedSource.playtimeMs" :myScore="score"
+        :myHintsUsed="usedHints" :myPlaytime="elapsedTimeMs" :currentLocation="currentLocation"
+        :guessedLocation="guessedLocation" :markerImageUrl="markerImageUrl" :poiName="poiName"
+        :fullAddress="fullAddress" @login="goToLogin" @restart="nextRound" @toast="showToastMessage" />
 
       <!-- 종료 확인 모달 -->
       <div v-if="showExitConfirmation" class="modal-overlay">
@@ -235,15 +154,10 @@
         </div>
 
         <!-- Step 3: 위치 찍기 (지도 열린 상태, 상단 배치) -->
-        <div v-if="tutorialStep === 3 && isMapOpen" class="tutorial-hint tutorial-hint--phone-top tutorial-hint--no-pointer">
+        <div v-if="tutorialStep === 3 && isMapOpen"
+          class="tutorial-hint tutorial-hint--phone-top tutorial-hint--no-pointer">
           <i class="fas fa-map-marker-alt"></i>
           <span>지도에서 정답 위치를 찍어보세요!</span>
-        </div>
-
-        <!-- Step 4: SPOT 제출 (지도 열린 상태) -->
-        <div v-if="tutorialStep === 4 && isMapOpen" class="tutorial-hint tutorial-hint--spot-btn">
-          <span>SPOT으로 제출하세요!</span>
-          <i class="fas fa-arrow-down"></i>
         </div>
 
         <!-- 10초 후 자동 Spot 제출 안내 (PhoneFrame 아래, 위 화살표) -->
@@ -418,7 +332,7 @@ export default {
 
       // 인게임 튜토리얼
       tutorialActive: false,
-      tutorialStep: 0, // 0=비활성, 1=로드뷰, 2=지도열기, 3=위치찍기, 4=SPOT제출
+      tutorialStep: 0, // 0=비활성, 1=로드뷰, 2=지도열기, 3=위치찍기
       tutorialShowHintHint: false, // 힌트 버튼 안내 (독립적)
       tutorialHintHintShown: false, // 힌트 버튼 안내 이미 보여줬는지
       tutorialShowReloadHint: false, // 새로고침 버튼 안내
@@ -444,12 +358,12 @@ export default {
     // 고정밀 게임 시간 포맷팅 (MM:SS.ms)
     formattedPlaytime() {
       if (this.elapsedTimeMs === 0) return "00:00.00";
-      
+
       const totalSeconds = this.elapsedTimeMs / 1000;
       const mins = Math.floor(totalSeconds / 60);
       const secs = Math.floor(totalSeconds % 60);
       const ms = Math.floor((this.elapsedTimeMs % 1000) / 10); // 소수점 둘째 자리까지 표시
-      
+
       return `${mins.toString().padStart(2, "0")}:${secs
         .toString()
         .padStart(2, "0")}.${ms.toString().padStart(2, "0")}`;
@@ -519,24 +433,26 @@ export default {
   watch: {
     isMapOpen(val) {
       if (val && this.tutorialStep === 2) {
-        this.tutorialStep = 3;
+        // 토스트 즉시 표시 (3초간 유지)
         this.showToastMessage('훌륭해요! 🗺️ 지도에서 위치를 찍어보세요.');
+        // 토스트 사라진 후 1초 뒤(총 4초) Step 3 힌트 표시
+        setTimeout(() => {
+          if (this.tutorialActive && this.tutorialStep === 2) {
+            this.tutorialStep = 3;
+            // Step 3 힌트 표시 후 3초 뒤 힌트 말풍선 표시
+            setTimeout(() => {
+              if (this.tutorialActive && !this.tutorialHintHintShown) {
+                this.tutorialShowHintHint = true;
+              }
+            }, 3000);
+          }
+        }, 4000);
       }
       // 처음 지도 열릴 때 새로고침 안내 (5초 후 자동 닫힘)
       if (val && this.tutorialActive && !this.tutorialReloadHintShown) {
         this.tutorialShowReloadHint = true;
         this.tutorialReloadHintShown = true;
         setTimeout(() => { this.tutorialShowReloadHint = false; }, 5000);
-      }
-    },
-    guessedLocation(val) {
-      if (val && this.tutorialActive && this.tutorialStep === 3) {
-        this.tutorialStep = 4;
-      }
-    },
-    hintAvailable(val) {
-      if (val && this.tutorialActive && this.tutorialStep >= 2 && !this.tutorialHintHintShown) {
-        this.tutorialShowHintHint = true;
       }
     },
     showResult(val) {
@@ -1018,7 +934,7 @@ export default {
         this.currentLocation.lng +
         (randomDistance /
           (111000 * Math.cos(this.deg2rad(this.currentLocation.lat)))) *
-          Math.sin(this.deg2rad(randomAngle));
+        Math.sin(this.deg2rad(randomAngle));
 
       // 랜덤한 원의 중심점
       const circleCenter = new kakao.maps.LatLng(randomLat, randomLng);
@@ -1325,7 +1241,7 @@ export default {
             ),
             hintsUsed: Number(
               response.result.sharerHintUsedCount ||
-                this.sharedSource.hintsUsed,
+              this.sharedSource.hintsUsed,
             ),
           };
           if (typeof response.result.score === "number") {
@@ -1348,8 +1264,8 @@ export default {
 
       try {
         // 답변 소요 시간 계산 (초 단위, ms 정밀도 사용)
-        const answerTime = this.elapsedTimeMs > 0 
-          ? this.elapsedTimeMs / 1000 
+        const answerTime = this.elapsedTimeMs > 0
+          ? this.elapsedTimeMs / 1000
           : (Date.now() - this.gameStartTime) / 1000;
 
         const endData = {
@@ -1447,7 +1363,7 @@ export default {
         this.elapsedTimeMs = timestamp - startMs;
         this.timerFrame = requestAnimationFrame(updateMsTimer);
       };
-      
+
       this.timerFrame = requestAnimationFrame(updateMsTimer);
     },
 
@@ -1467,7 +1383,7 @@ export default {
         clearInterval(this.hintTimer);
         this.hintTimer = null;
       }
-      
+
       if (this.timerFrame) {
         cancelAnimationFrame(this.timerFrame);
         this.timerFrame = null;
@@ -1652,9 +1568,9 @@ export default {
       const a =
         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
         Math.cos(this.deg2rad(lat1)) *
-          Math.cos(this.deg2rad(lat2)) *
-          Math.sin(dLon / 2) *
-          Math.sin(dLon / 2);
+        Math.cos(this.deg2rad(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       return R * c; // 킬로미터 단위
     },
@@ -1783,7 +1699,8 @@ export default {
 .road-reset-btn {
   position: absolute;
   /* 헤더 바로 밑에 위치 (광고 유무에 따라 동적 계산 필요) */
-  top: 68px; /* 기본: 헤더 높이(56px) + 여백(12px) */
+  top: 68px;
+  /* 기본: 헤더 높이(56px) + 여백(12px) */
   right: 12px;
   width: 40px;
   height: 40px;
@@ -1884,9 +1801,11 @@ export default {
   0% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.7;
   }
+
   100% {
     opacity: 1;
   }
@@ -2010,7 +1929,8 @@ export default {
   cursor: pointer;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
-  z-index: 25; /* PhoneFrame(21)보다 높고 IntroOverlay(30)보다 낮게 설정 */
+  z-index: 25;
+  /* PhoneFrame(21)보다 높고 IntroOverlay(30)보다 낮게 설정 */
 }
 
 .map-toggle:hover {
@@ -2093,8 +2013,7 @@ export default {
 }
 
 /* 반응형 디자인 */
-@media (max-width: 768px) {
-}
+@media (max-width: 768px) {}
 
 @media (max-width: 768px) {
   .top-ads-container {
@@ -2146,6 +2065,7 @@ export default {
   0% {
     opacity: 0;
   }
+
   100% {
     opacity: 1;
   }
@@ -2299,8 +2219,15 @@ export default {
 }
 
 @keyframes arrowBounceUp {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-6px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
 }
 
 /* 새로고침 버튼 아래 — slot 내부 absolute */
@@ -2330,18 +2257,39 @@ export default {
 }
 
 @keyframes tutorialFadeInCenter {
-  from { opacity: 0; transform: translate(-50%, calc(-50% + 8px)); }
-  to   { opacity: 1; transform: translate(-50%, -50%); }
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 8px));
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
 }
 
 @keyframes tutorialFadeInUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes tutorialFadeInSlide {
-  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 @media (max-width: 480px) {
