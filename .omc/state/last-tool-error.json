@@ -1,7 +1,7 @@
 {
   "tool_name": "Read",
-  "tool_input_preview": "{\"file_path\":\"/C:/kospot-frontend/android/app/src/main/AndroidManifest.xml\"}",
-  "error": "File does not exist. Note: your current working directory is C:\\kospot-frontend.",
-  "timestamp": "2026-03-23T06:43:02.702Z",
-  "retry_count": 5
+  "tool_input_preview": "{\"file_path\":\"C:\\\\KoSpot-frontend\\\\src\\\\features\\\\game\\\\single\\\\roadview\\\\views\\\\PracticeView.vue\"}",
+  "error": "File content (25007 tokens) exceeds maximum allowed tokens (10000). Use offset and limit parameters to read specific portions of the file, or search for specific content instead of reading the whole file.",
+  "timestamp": "2026-03-25T01:36:33.076Z",
+  "retry_count": 1
 }
