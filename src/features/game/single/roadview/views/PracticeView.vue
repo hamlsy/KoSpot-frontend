@@ -155,7 +155,7 @@
         </div>
 
         <!-- Step 2: 지도 열기 -->
-        <div v-if="tutorialStep === 2" class="tutorial-hint tutorial-hint--map-open">
+        <div v-if="tutorialStep === 2 && !isMapOpen" class="tutorial-hint tutorial-hint--map-open">
           <span>지도를 열어보세요!</span>
           <i class="fas fa-arrow-down"></i>
         </div>
@@ -1598,13 +1598,9 @@ export default {
       if (this.tutorialActive) {
         this.tutorialStep = 1;
 
-        // 2초 후 초기화 버튼 안내, 5초간 표시
-        setTimeout(() => {
-          if (this.tutorialActive && this.tutorialStep === 1 && !this.showResult) {
-            this.tutorialShowResetHint = true;
-            setTimeout(() => { this.tutorialShowResetHint = false; }, 5000);
-          }
-        }, 2000);
+        // 초기화 버튼 안내 (로드뷰 둘러보세요와 동시 표시, 5초 후 자동 닫힘)
+        this.tutorialShowResetHint = true;
+        setTimeout(() => { this.tutorialShowResetHint = false; }, 5000);
 
         // 10초 후 Spot 제출 안내 말풍선
         if (this.tutorialSpotAutoTimer) clearTimeout(this.tutorialSpotAutoTimer);
