@@ -308,6 +308,89 @@ const formatJoinDate = (dateString) => {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.14), 0 0 0 1px rgba(76, 201, 207, 0.15);
 }
 
+/* ── 데스크톱: 여유로운 크기 ── */
+@media (min-width: 640px) {
+  .player-details-modal {
+    max-width: 480px;
+  }
+
+  .profile-header {
+    padding: 26px 28px 20px;
+  }
+
+  .marker-wrapper {
+    width: 68px;
+    height: 68px;
+  }
+
+  .nickname {
+    font-size: 19px;
+  }
+
+  .streak-badge {
+    font-size: 12px;
+    padding: 4px 11px;
+  }
+
+  .rank-card-header {
+    padding: 12px 28px 0;
+  }
+
+  .rank-card-body {
+    padding: 12px 28px 16px;
+  }
+
+  .tier-icon {
+    width: 42px;
+    height: 42px;
+    font-size: 16px;
+  }
+
+  .tier-name {
+    font-size: 15px;
+  }
+
+  .tier-level {
+    font-size: 13px;
+  }
+
+  .rank-stat-item {
+    padding: 0 16px;
+  }
+
+  .rank-stat-item .stat-value {
+    font-size: 17px;
+  }
+
+  .rank-stat-item .stat-label {
+    font-size: 11px;
+  }
+
+  .multi-stat-card {
+    padding: 16px 28px;
+    gap: 12px;
+  }
+
+  .multi-stat-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 14px;
+  }
+
+  .multi-stat-value {
+    font-size: 20px;
+  }
+
+  .multi-stat-label {
+    font-size: 11px;
+  }
+
+  .join-date-section {
+    padding: 13px 28px;
+    font-size: 13px;
+  }
+}
+
 /* ── 닫기 버튼 ── */
 .close-btn {
   position: absolute;
