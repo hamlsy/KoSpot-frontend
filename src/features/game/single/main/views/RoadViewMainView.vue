@@ -543,7 +543,7 @@ function getRankIcon(rank) {
 function getDummyData() {
   return {
     rankInfo: {
-      rankTier: "GOLD",
+      rankTier: "BRONZE",
       rankLevel: "THREE",
       ratingScore: 1250,
       rankPercentage: 35.5,
@@ -574,11 +574,13 @@ async function fetchMainPageData() {
       recentGamesData.value = result.recentGames;
 
       // userRank도 업데이트 (랭크 모드 팝업에서 사용)
-      const tier =
-        tierMap[result.rankInfo.rankTier] || result.rankInfo.rankTier;
-      const level =
-        levelMap[result.rankInfo.rankLevel] || result.rankInfo.rankLevel;
-      userRank.value = `${tier} ${level}`;
+      if (result.rankInfo) {
+        const tier =
+          tierMap[result.rankInfo.rankTier] || result.rankInfo.rankTier;
+        const level =
+          levelMap[result.rankInfo.rankLevel] || result.rankInfo.rankLevel;
+        userRank.value = `${tier} ${level}`;
+      }
 
       console.log("메인 페이지 데이터 로드 완료:", result);
     } else {

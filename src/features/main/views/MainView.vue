@@ -548,10 +548,6 @@ onMounted(() => {
   startBannerRotation();
   window.addEventListener('resize', handleResize);
 
-  // 최초 방문 시 튜토리얼 자동 표시 (localStorage 기반, 최초 1회)
-  if (!localStorage.getItem('kospot_tutorial_seen')) {
-    showTutorial.value = true;
-  }
 });
 
 // 컴포넌트 언마운트 전 실행
@@ -822,10 +818,11 @@ async function handleLogout() {
   margin-bottom: 0;
 }
 
-/* 모바일: HeroSection 높이 축소 */
-@media (max-width: 640px) {
+/* 모바일: 배너와 동일한 높이 */
+@media (max-width: 768px) {
   .hero-banner-wrapper {
-    min-height: 480px;
+    min-height: 0;
+    height: 150px;
   }
 }
 
