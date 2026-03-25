@@ -147,6 +147,13 @@
           <span>로드뷰를 둘러보세요!</span>
         </div>
 
+        <!-- Step 1: 초기화 버튼 안내 (우측 상단 버튼 옆) -->
+        <div v-if="tutorialShowResetHint && tutorialStep === 1 && !isMapOpen" class="tutorial-hint tutorial-hint--reset-btn tutorial-hint--no-pointer">
+          <i class="fas fa-rotate-right"></i>
+          <span>로드뷰를 초기화할 수 있어요!</span>
+          <i class="fas fa-arrow-right tutorial-hint-arrow-right"></i>
+        </div>
+
         <!-- Step 2: 지도 열기 -->
         <div v-if="tutorialStep === 2" class="tutorial-hint tutorial-hint--map-open">
           <span>지도를 열어보세요!</span>
@@ -337,6 +344,7 @@ export default {
       tutorialHintHintShown: false, // 힌트 버튼 안내 이미 보여줬는지
       tutorialShowReloadHint: false, // 새로고침 버튼 안내
       tutorialReloadHintShown: false, // 새로고침 안내 이미 보여줬는지
+      tutorialShowResetHint: false, // 초기화 버튼 안내
       tutorialSpotAutoHint: false, // 10초 후 Spot 제출 안내
       tutorialSpotAutoTimer: null, // setTimeout ID
     };
@@ -480,6 +488,7 @@ export default {
       this.tutorialStep = 0;
       this.tutorialShowHintHint = false;
       this.tutorialShowReloadHint = false;
+      this.tutorialShowResetHint = false;
       this.tutorialSpotAutoHint = false;
       if (this.tutorialSpotAutoTimer) {
         clearTimeout(this.tutorialSpotAutoTimer);
@@ -1589,6 +1598,14 @@ export default {
       if (this.tutorialActive) {
         this.tutorialStep = 1;
 
+        // 2초 후 초기화 버튼 안내, 5초간 표시
+        setTimeout(() => {
+          if (this.tutorialActive && this.tutorialStep === 1 && !this.showResult) {
+            this.tutorialShowResetHint = true;
+            setTimeout(() => { this.tutorialShowResetHint = false; }, 5000);
+          }
+        }, 2000);
+
         // 10초 후 Spot 제출 안내 말풍선
         if (this.tutorialSpotAutoTimer) clearTimeout(this.tutorialSpotAutoTimer);
         this.tutorialSpotAutoTimer = setTimeout(() => {
@@ -2156,6 +2173,18 @@ export default {
   left: 50%;
   transform: translateX(-50%);
   animation: tutorialFadeInSlide 0.4s ease;
+}
+
+/* 초기화 버튼 왼쪽 (우측 상단) */
+.tutorial-hint--reset-btn {
+  top: 72px;
+  right: 62px;
+  flex-direction: row;
+}
+
+.tutorial-hint-arrow-right {
+  color: #ffffff;
+  font-size: 0.85rem;
 }
 
 /* 지도 열기 버튼 위 */
