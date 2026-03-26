@@ -23,7 +23,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { useStore } from 'vuex'
+import { useAuth } from '@/core/composables/useAuth'
 import MvpCommentToggle from './MvpCommentToggle.vue'
 import MvpCommentList from './MvpCommentList.vue'
 import MvpCommentInput from './MvpCommentInput.vue'
@@ -34,15 +34,13 @@ const props = defineProps({
   commentCount: { type: Number, default: 0 },
 })
 
-const store = useStore()
+const { user } = useAuth()
 const isOpen = ref(false)
 
 const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'))
 
-// useAuth의 user는 로그인 시 { id } 만 보유 — nickname은 Vuex user.profile에서 조회
-const currentNickname = computed(
-  () => store.state.user.profile?.nickname ?? null
-)
+// checkAuth() 실행 후 user에는 MEMBER.PROFILE 전체 응답(nickname 포함)이 저장됨
+const currentNickname = computed(() => user.value?.nickname ?? null)
 
 const {
   comments, isLoading, hasNext, totalElements,
