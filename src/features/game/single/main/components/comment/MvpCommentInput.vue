@@ -8,13 +8,13 @@
       maxlength="300"
       rows="2"
       @keydown.ctrl.enter.prevent="handleSubmit"
-    />
+    ></textarea>
     <button
       class="submit-btn"
       :disabled="!isLoggedIn || isSubmitting || !text.trim()"
       @click.stop="handleSubmit"
     >
-      <i v-if="isSubmitting" class="fas fa-spinner fa-spin"></i>
+      <span v-if="isSubmitting" class="spinner-wrapper"><i class="fas fa-spinner fa-spin"></i></span>
       <span v-else>등록</span>
     </button>
   </div>

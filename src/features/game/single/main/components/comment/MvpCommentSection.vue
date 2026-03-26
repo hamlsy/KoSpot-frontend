@@ -11,7 +11,7 @@
         @delete="removeComment"
         @load-more="loadMore"
       />
-      <div class="divider" />
+      <div class="divider"></div>
       <MvpCommentInput
         :is-logged-in="isLoggedIn"
         :is-submitting="isSubmitting"

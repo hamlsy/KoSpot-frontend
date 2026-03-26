@@ -5,7 +5,7 @@
       <i v-else class="fas fa-user avatar-fallback"></i>
     </div>
     <div class="body">
-      <div class="header">
+      <div class="comment-header">
         <span class="nickname">{{ comment.nickname }}</span>
         <span class="time">{{ relativeTime }}</span>
         <button v-if="canDelete" class="delete-btn" title="삭제" @click.stop="$emit('delete', comment.commentId)">
@@ -74,7 +74,7 @@ function onImgError(e) {
   min-width: 0;
 }
 
-.header {
+.comment-header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
