@@ -1,5 +1,7 @@
 <template>
-  <div class="mvp-root" :style="mvpColorVars" :class="{ 'is-loaded': isLoaded, 'is-empty': !todayMvp && isLoaded }"
+  <div class="mvp-wrapper">
+  <div class="mvp-root" :style="mvpColorVars"
+    :class="{ 'is-loaded': isLoaded, 'is-empty': !todayMvp && isLoaded, 'has-comments': todayMvp && isLoaded }"
     @click="handleCardClick">
     <!-- 로딩 상태 -->
     <transition name="fade">
@@ -139,6 +141,13 @@
       </div>
     </transition>
   </div>
+
+  <MvpCommentSection
+    v-if="todayMvp && isLoaded"
+    :mvp-id="todayMvp.mvpId"
+    :comment-count="todayMvp.commentCount ?? 0"
+  />
+  </div>
 </template>
 
 <script setup>
@@ -146,6 +155,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { fetchDailyMvp } from '../services/dailyMvp.service.js'
 import { BRAND, TEXT, BACKGROUND } from '@/core/constants/colors.js'
+import MvpCommentSection from './comment/MvpCommentSection.vue'
 
 // ─── Emits ────────────────────────────────────────────────────────────
 const emit = defineEmits(['show-player-details']);
@@ -844,6 +854,16 @@ onMounted(async () => {
   50% {
     opacity: 0.5;
   }
+}
+
+/* ─── Wrapper ─────────────────────────────────────────────────────── */
+.mvp-wrapper {
+  width: 100%;
+}
+
+/* 댓글 섹션이 붙을 때 카드 하단 모서리를 직각으로 */
+.mvp-root.has-comments {
+  border-radius: 20px 20px 0 0;
 }
 
 /* ─── Responsive ──────────────────────────────────────────────────── */
