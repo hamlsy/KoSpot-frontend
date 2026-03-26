@@ -78,7 +78,7 @@
         <!-- 중앙: 프로필 및 티어 섹션 -->
         <div class="hz-section section-center">
           <div class="marker-wrapper">
-            <div class="marker-frame">
+            <div class="marker-frame marker-frame--clickable" @click.stop="openPlayerModal(todayMvp)">
               <img v-if="todayMvp.equippedMarkerImageUrl" :src="todayMvp.equippedMarkerImageUrl"
                 :alt="todayMvp.nickname" class="marker-img" @error="onImgError" />
               <div v-else class="marker-placeholder">
@@ -148,6 +148,12 @@
     :comment-count="todayMvp.commentCount ?? 0"
   />
   </div>
+
+  <PlayerDetailsModal
+    :is-active="showPlayerModal"
+    :player="selectedPlayer"
+    @close="showPlayerModal = false"
+  />
 </template>
 
 <script setup>
@@ -156,10 +162,20 @@ import { useRouter } from 'vue-router'
 import { fetchDailyMvp } from '../services/dailyMvp.service.js'
 import { BRAND, TEXT, BACKGROUND } from '@/core/constants/colors.js'
 import MvpCommentSection from './comment/MvpCommentSection.vue'
+import PlayerDetailsModal from '@/features/game/multiplayer/room/components/player/PlayerDetailsModal.vue'
 
 // ─── Emits ────────────────────────────────────────────────────────────
 const emit = defineEmits(['show-player-details']);
 const router = useRouter();
+
+// ─── Player Modal ──────────────────────────────────────────────────────
+const showPlayerModal = ref(false)
+const selectedPlayer = ref(null)
+
+function openPlayerModal(mvpData) {
+  selectedPlayer.value = { memberId: mvpData.memberId }
+  showPlayerModal.value = true
+}
 
 const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'));
 
@@ -539,6 +555,16 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.marker-frame--clickable {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.marker-frame--clickable:hover {
+  transform: scale(1.05);
+  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.15);
 }
 
 .marker-img {
