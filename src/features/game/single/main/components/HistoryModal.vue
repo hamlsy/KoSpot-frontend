@@ -504,9 +504,11 @@ watch(() => props.show, (newVal) => {
 }
 
 /* 애니메이션 */
-.modal-fade-enter-active,
+.modal-fade-enter-active {
+  transition: opacity 0.22s ease;
+}
 .modal-fade-leave-active {
-  transition: opacity 0.3s;
+  transition: opacity 0.2s ease;
 }
 
 .modal-fade-enter-from,
@@ -514,14 +516,29 @@ watch(() => props.show, (newVal) => {
   opacity: 0;
 }
 
-.modal-fade-enter-active .history-modal-content,
+.modal-fade-enter-active .history-modal-content {
+  transition: transform 0.25s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.22s ease;
+}
 .modal-fade-leave-active .history-modal-content {
-  transition: transform 0.3s;
+  transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
-.modal-fade-enter-from .history-modal-content,
+.modal-fade-enter-from .history-modal-content {
+  transform: scale(0.96) translateY(10px);
+  opacity: 0;
+}
 .modal-fade-leave-to .history-modal-content {
-  transform: scale(0.9);
+  transform: scale(0.96);
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-fade-enter-active,
+  .modal-fade-leave-active,
+  .modal-fade-enter-active .history-modal-content,
+  .modal-fade-leave-active .history-modal-content {
+    transition-duration: 0.01ms;
+  }
 }
 
 /* 반응형 */

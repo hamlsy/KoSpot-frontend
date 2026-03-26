@@ -14,7 +14,11 @@ const toSockJsHttpProtocol = (url) => {
 
 export const resolveSockJsUrl = () => {
   const raw = process.env.VUE_APP_WS_URL || '/ws'
-  const normalized = trimTrailingSlash(raw)
+  let normalized = trimTrailingSlash(raw)
+
+  if (!normalized.endsWith('/ws')) {
+    normalized += '/ws'
+  }
 
   return toSockJsHttpProtocol(normalized)
 }

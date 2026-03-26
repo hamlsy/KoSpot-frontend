@@ -50,3 +50,9 @@ node_modules
 # rules
 .windsurfrules
 ./cursor/rules
+
+# envs
+.env
+.env.development
+.env.production
+.env.staging

@@ -283,453 +283,522 @@ const formatJoinDate = (dateString) => {
 </script>
 
 <style scoped>
-/* 모달 오버레이 */
+/* ── 오버레이 ── */
 .player-details-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
-  padding: 1rem;
-  transform: translateZ(0);
-  contain: paint;
+  padding: 16px;
 }
 
-/* 모달 컨테이너 */
+/* ── 모달 컨테이너 ── */
 .player-details-modal {
   position: relative;
-  background: #ffffff;
+  background: #fff;
   border-radius: 20px;
   width: 100%;
   max-width: 400px;
-  max-height: 85vh;
-  overflow-y: auto;
-  box-shadow: 
-    0 25px 50px -12px rgba(0, 0, 0, 0.25),
-    0 0 0 1px rgba(255, 255, 255, 0.1);
-  transform: translate3d(0, 0, 0);
-  backface-visibility: hidden;
-  contain: layout paint;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.14), 0 0 0 1px rgba(76, 201, 207, 0.15);
 }
 
-/* 닫기 버튼 */
+/* ── 데스크톱: 여유로운 크기 ── */
+@media (min-width: 640px) {
+  .player-details-modal {
+    max-width: 480px;
+  }
+
+  .profile-header {
+    padding: 26px 28px 20px;
+  }
+
+  .marker-wrapper {
+    width: 68px;
+    height: 68px;
+  }
+
+  .nickname {
+    font-size: 19px;
+  }
+
+  .streak-badge {
+    font-size: 12px;
+    padding: 4px 11px;
+  }
+
+  .rank-card-header {
+    padding: 12px 28px 0;
+  }
+
+  .rank-card-body {
+    padding: 12px 28px 16px;
+  }
+
+  .tier-icon {
+    width: 42px;
+    height: 42px;
+    font-size: 16px;
+  }
+
+  .tier-name {
+    font-size: 15px;
+  }
+
+  .tier-level {
+    font-size: 13px;
+  }
+
+  .rank-stat-item {
+    padding: 0 16px;
+  }
+
+  .rank-stat-item .stat-value {
+    font-size: 17px;
+  }
+
+  .rank-stat-item .stat-label {
+    font-size: 11px;
+  }
+
+  .multi-stat-card {
+    padding: 16px 28px;
+    gap: 12px;
+  }
+
+  .multi-stat-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 14px;
+  }
+
+  .multi-stat-value {
+    font-size: 20px;
+  }
+
+  .multi-stat-label {
+    font-size: 11px;
+  }
+
+  .join-date-section {
+    padding: 13px 28px;
+    font-size: 13px;
+  }
+}
+
+/* ── 닫기 버튼 ── */
 .close-btn {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
-  width: 36px;
-  height: 36px;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.88);
   border: none;
-  color: #64748b;
+  color: #6b7280;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  font-size: 11px;
+  transition: background 0.18s, color 0.18s;
   z-index: 10;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
 .close-btn:hover {
-  background: #ffffff;
-  color: #1f2937;
-  transform: scale(1.05);
+  background: #fff;
+  color: #111827;
 }
 
-/* 로딩 상태 */
+/* ── 로딩 상태 ── */
 .loading-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4rem 2rem;
-  gap: 1rem;
+  padding: 48px 24px;
+  gap: 12px;
 }
 
 .loading-spinner {
-  font-size: 2.5rem;
-  color: var(--color-primary, #0ea5e9);
+  font-size: 26px;
+  color: #4cc9cf;
 }
 
 .loading-text {
-  color: #64748b;
-  font-size: 0.95rem;
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
 }
 
-/* 에러 상태 */
+/* ── 에러 상태 ── */
 .error-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4rem 2rem;
-  gap: 1rem;
+  padding: 48px 24px;
+  gap: 12px;
   text-align: center;
 }
 
 .error-icon {
-  font-size: 2.5rem;
+  font-size: 26px;
   color: #f59e0b;
 }
 
 .error-text {
-  color: #64748b;
-  font-size: 0.95rem;
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
 }
 
 .retry-btn {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: var(--color-primary, #0ea5e9);
-  color: white;
+  gap: 6px;
+  padding: 8px 20px;
+  background: #4cc9cf;
+  color: #fff;
   border: none;
-  border-radius: 12px;
-  font-weight: 600;
+  border-radius: 50px;
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.18s, box-shadow 0.18s;
 }
 
 .retry-btn:hover {
-  background: var(--color-primary-dark, #0284c7);
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(76, 201, 207, 0.4);
 }
 
-/* 프로필 헤더 */
+/* ── 프로필 헤더 ── */
 .profile-header {
   position: relative;
-  padding: 2rem 1.5rem 1.5rem;
-  overflow: hidden;
+  padding: 22px 20px 16px;
 }
 
+/* accent bar: profile-header-bg 재활용 */
 .profile-header-bg {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 50%, #0284c7 100%);
-  opacity: 0.95;
+  height: 4px;
+  background: linear-gradient(90deg, #52DEE5 0%, #EEE5E9 100%);
 }
 
 .profile-header-bg::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: 
-    radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 40%);
+  display: none;
 }
 
 .profile-content {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
   position: relative;
   z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
 }
 
-/* 마커 이미지 */
+/* ── 마커 이미지 ── */
 .marker-wrapper {
   position: relative;
-  width: 90px;
-  height: 90px;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
 }
 
 .marker-image {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.1));
 }
 
 .host-crown {
   position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 28px;
-  height: 28px;
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  top: -5px;
+  right: -5px;
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
-  border: 2px solid white;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);
+  border: 2px solid #fff;
 }
 
 .host-crown i {
-  font-size: 0.75rem;
-  color: white;
+  font-size: 9px;
+  color: #fff;
 }
 
-/* 프로필 정보 */
+/* ── 프로필 정보 ── */
 .profile-info {
-  text-align: center;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
 }
 
 .nickname {
-  font-size: 1.5rem;
+  font-size: 17px;
   font-weight: 700;
-  color: white;
-  margin: 0 0 0.5rem;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: #111827;
+  margin: 0 28px 5px 0; /* right margin for close btn */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .streak-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.8rem;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(4px);
+  gap: 4px;
+  padding: 3px 9px;
+  background: rgba(76, 201, 207, 0.08);
+  border: 1px solid rgba(76, 201, 207, 0.22);
   border-radius: 20px;
-  font-size: 0.85rem;
+  font-size: 11px;
   font-weight: 600;
-  color: white;
+  color: #0891b2;
 }
 
 .streak-badge i {
-  color: #fbbf24;
+  color: #f59e0b;
+  font-size: 10px;
 }
 
-/* 랭크 카드 */
+/* ── 랭크 카드 ── */
 .rank-card {
-  margin: 1.25rem;
-  background: #f8fafc;
-  border-radius: 16px;
-  overflow: hidden;
-  border: 1px solid #e2e8f0;
+  margin: 0;
+  background: rgba(76, 201, 207, 0.03);
+  border-top: 1px solid rgba(76, 201, 207, 0.1);
+  border-bottom: 1px solid rgba(76, 201, 207, 0.1);
+  border-radius: 0;
+  overflow: visible;
 }
 
 .rank-card-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 1rem 1.25rem;
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(6, 182, 212, 0.05) 100%);
-  border-bottom: 1px solid #e2e8f0;
+  gap: 6px;
+  padding: 10px 20px 0;
 }
 
 .rank-mode-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: var(--color-primary, #0ea5e9);
-  color: white;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: #4cc9cf;
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  font-size: 9px;
+  flex-shrink: 0;
 }
 
 .rank-mode-title {
-  font-weight: 600;
-  font-size: 1rem;
-  color: #1f2937;
+  font-size: 10px;
+  font-weight: 700;
+  color: #4cc9cf;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
 }
 
+/* rank-card-body: tier badge + stats 한 줄 */
 .rank-card-body {
-  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  padding: 10px 20px 14px;
+  gap: 0;
 }
 
-/* 티어 뱃지 */
+/* ── 티어 배지 ── */
 .tier-badge {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: white;
-  border-radius: 12px;
-  margin-bottom: 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  margin-bottom: 0;
 }
 
 .tier-icon {
-  width: 48px;
-  height: 48px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
-  color: white;
+  font-size: 14px;
+  color: #fff;
   flex-shrink: 0;
 }
 
 .tier-info {
   display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 4px;
 }
 
 .tier-name {
-  font-size: 1.1rem;
+  font-size: 14px;
   font-weight: 700;
-  color: #1f2937;
+  color: #111827;
 }
 
 .tier-level {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
 }
 
-/* 티어별 색상 */
-.tier-bronze .tier-icon {
-  background: linear-gradient(135deg, #92400e 0%, #b45309 100%);
-}
+/* 티어별 아이콘 색상 */
+.tier-bronze .tier-icon  { background: linear-gradient(135deg, #92400e, #b45309); }
+.tier-silver .tier-icon  { background: linear-gradient(135deg, #64748b, #94a3b8); }
+.tier-gold .tier-icon    { background: linear-gradient(135deg, #ca8a04, #eab308); }
+.tier-platinum .tier-icon{ background: linear-gradient(135deg, #0891b2, #06b6d4); }
+.tier-diamond .tier-icon { background: linear-gradient(135deg, #0ea5e9, #38bdf8); }
+.tier-master .tier-icon  { background: linear-gradient(135deg, #7c3aed, #a855f7); }
 
-.tier-silver .tier-icon {
-  background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
-}
-
-.tier-gold .tier-icon {
-  background: linear-gradient(135deg, #ca8a04 0%, #eab308 100%);
-}
-
-.tier-platinum .tier-icon {
-  background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
-}
-
-.tier-diamond .tier-icon {
-  background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
-}
-
-.tier-master .tier-icon {
-  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
-}
-
-/* 랭크 통계 그리드 */
+/* ── 랭크 통계 (tier badge 우측) ── */
 .rank-stats-grid {
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: white;
-  border-radius: 12px;
-  padding: 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  flex: 1;
+  justify-content: flex-end;
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0;
 }
 
 .rank-stat-item {
-  flex: 1;
+  flex: none;
   text-align: center;
+  padding: 0 14px;
 }
 
 .rank-stat-divider {
   width: 1px;
-  height: 40px;
-  background: #e2e8f0;
-  margin: 0 1rem;
+  height: 26px;
+  background: rgba(76, 201, 207, 0.2);
+  margin: 0;
 }
 
 .rank-stat-item .stat-value {
-  font-size: 1.35rem;
+  font-size: 15px;
   font-weight: 700;
-  color: #1f2937;
+  color: #111827;
   line-height: 1.2;
 }
 
 .rank-stat-item .stat-label {
-  font-size: 0.8rem;
-  color: #64748b;
-  margin-top: 0.25rem;
+  font-size: 10px;
+  color: #9ca3af;
+  margin-top: 2px;
+  white-space: nowrap;
 }
 
-/* 멀티플레이 통계 */
+/* ── 멀티 통계 ── */
 .multi-stats {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-  margin: 0 1.25rem 1.25rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  margin: 0;
 }
 
 .multi-stat-card {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
-  background: #f8fafc;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  gap: 10px;
+  padding: 14px 20px;
+  background: #fff;
+  border-radius: 0;
+  border: none;
+}
+
+.multi-stat-card:first-child {
+  border-right: 1px solid rgba(76, 201, 207, 0.1);
 }
 
 .multi-stat-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  font-size: 12px;
   flex-shrink: 0;
 }
 
 .multi-stat-icon.games {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%);
-  color: #6366f1;
+  background: rgba(76, 201, 207, 0.1);
+  color: #4cc9cf;
 }
 
 .multi-stat-icon.wins {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(251, 191, 36, 0.1) 100%);
+  background: rgba(245, 158, 11, 0.1);
   color: #f59e0b;
 }
 
-.multi-stat-content {
-  flex: 1;
-  min-width: 0;
-}
+.multi-stat-content { flex: 1; min-width: 0; }
 
 .multi-stat-value {
-  font-size: 1.25rem;
+  font-size: 17px;
   font-weight: 700;
-  color: #1f2937;
+  color: #111827;
   line-height: 1.2;
 }
 
 .multi-stat-label {
-  font-size: 0.75rem;
-  color: #64748b;
-  margin-top: 0.15rem;
+  font-size: 10px;
+  color: #9ca3af;
+  margin-top: 1px;
 }
 
-/* 가입일 섹션 */
+/* ── 가입일 ── */
 .join-date-section {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 1rem;
-  margin: 0 1.25rem 1.25rem;
-  background: #f1f5f9;
-  border-radius: 10px;
-  font-size: 0.9rem;
-  color: #64748b;
+  gap: 6px;
+  padding: 11px 20px;
+  margin: 0;
+  border-top: 1px solid rgba(76, 201, 207, 0.1);
+  background: #fff;
+  font-size: 12px;
+  color: #9ca3af;
+  border-radius: 0;
 }
 
 .join-date-section i {
-  color: var(--color-primary, #0ea5e9);
+  color: #4cc9cf;
+  font-size: 11px;
 }
 
-/* 모달 애니메이션 */
-.modal-fade-enter-active,
-.modal-fade-leave-active {
+/* ── 애니메이션 ── */
+.modal-fade-enter-active {
   transition: opacity 0.22s ease;
-  will-change: opacity;
+}
+.modal-fade-leave-active {
+  transition: opacity 0.2s ease;
 }
 
 .modal-fade-enter-from,
@@ -737,22 +806,20 @@ const formatJoinDate = (dateString) => {
   opacity: 0;
 }
 
-.modal-fade-enter-active .player-details-modal,
+.modal-fade-enter-active .player-details-modal {
+  transition: transform 0.25s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.22s ease;
+}
 .modal-fade-leave-active .player-details-modal {
-  transition: transform 0.24s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.22s ease;
-  will-change: transform, opacity;
+  transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
-.modal-fade-enter-from .player-details-modal,
-.modal-fade-leave-to .player-details-modal {
-  transform: translate3d(0, 10px, 0) scale(0.96);
+.modal-fade-enter-from .player-details-modal {
+  transform: scale(0.96) translateY(10px);
   opacity: 0;
 }
-
-.modal-fade-enter-to .player-details-modal,
-.modal-fade-leave-from .player-details-modal {
-  transform: translate3d(0, 0, 0) scale(1);
-  opacity: 1;
+.modal-fade-leave-to .player-details-modal {
+  transform: scale(0.96);
+  opacity: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -764,144 +831,69 @@ const formatJoinDate = (dateString) => {
   }
 }
 
-/* 스크롤바 스타일링 */
-.player-details-modal::-webkit-scrollbar {
-  width: 6px;
-}
-
-.player-details-modal::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.player-details-modal::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
-}
-
-.player-details-modal::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* 반응형 - 태블릿 */
-@media (max-width: 768px) {
-  .player-details-modal {
-    max-width: 360px;
-  }
-
-  .marker-wrapper {
-    width: 80px;
-    height: 80px;
-  }
-
-  .nickname {
-    font-size: 1.35rem;
-  }
-
-  .tier-icon {
-    width: 44px;
-    height: 44px;
-  }
-
-  .tier-name {
-    font-size: 1rem;
-  }
-
-  .rank-stat-item .stat-value {
-    font-size: 1.2rem;
-  }
-}
-
-/* 반응형 - 모바일 */
+/* ── 모바일 (≤480px) ── */
 @media (max-width: 480px) {
   .player-details-overlay {
-    padding: 0.75rem;
-  }
-
-  .player-details-modal {
-    max-width: 100%;
-    max-height: 90vh;
-    border-radius: 16px;
+    padding: 12px;
   }
 
   .profile-header {
-    padding: 1.5rem 1rem 1.25rem;
+    padding: 20px 16px 14px;
   }
 
   .marker-wrapper {
-    width: 72px;
-    height: 72px;
+    width: 48px;
+    height: 48px;
   }
 
   .nickname {
-    font-size: 1.25rem;
-  }
-
-  .streak-badge {
-    font-size: 0.8rem;
-    padding: 0.35rem 0.7rem;
-  }
-
-  .rank-card {
-    margin: 1rem;
+    font-size: 15px;
   }
 
   .rank-card-header {
-    padding: 0.85rem 1rem;
+    padding: 10px 16px 0;
   }
 
   .rank-card-body {
-    padding: 1rem;
+    padding: 10px 16px 12px;
   }
 
-  .tier-badge {
-    padding: 0.85rem;
-    gap: 0.75rem;
-  }
-
-  .tier-icon {
-    width: 40px;
-    height: 40px;
-    font-size: 1.1rem;
-  }
-
-  .tier-name {
-    font-size: 0.95rem;
-  }
-
-  .rank-stats-grid {
-    padding: 0.85rem;
+  .rank-stat-item {
+    padding: 0 10px;
   }
 
   .rank-stat-item .stat-value {
-    font-size: 1.1rem;
-  }
-
-  .multi-stats {
-    margin: 0 1rem 1rem;
-    gap: 0.6rem;
+    font-size: 13px;
   }
 
   .multi-stat-card {
-    padding: 0.85rem;
-    gap: 0.6rem;
-  }
-
-  .multi-stat-icon {
-    width: 38px;
-    height: 38px;
-    font-size: 0.9rem;
-  }
-
-  .multi-stat-value {
-    font-size: 1.1rem;
+    padding: 12px 16px;
   }
 
   .join-date-section {
-    margin: 0 1rem 1rem;
-    padding: 0.85rem;
-    font-size: 0.85rem;
+    padding: 10px 16px;
   }
 }
 
-/* 다크모드에서도 모달은 항상 라이트 테마 유지 */
+/* ── 소형 모바일 (≤359px): rank row wrap ── */
+@media (max-width: 359px) {
+  .rank-card-body {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .rank-stats-grid {
+    width: 100%;
+    justify-content: flex-start;
+    padding-left: 44px;
+  }
+}
+
+/* ── landscape 안전망 ── */
+@media (max-height: 500px) {
+  .player-details-modal {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
 </style>

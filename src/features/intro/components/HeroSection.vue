@@ -1,5 +1,10 @@
 <template>
-  <section v-if="!isLoggedIn" class="hero-section">
+  <section v-if="!isLoggedIn && !dismissed" class="hero-section">
+    <!-- 닫기 버튼 -->
+    <button class="hero-close-button" @click="dismissed = true" title="닫기">
+      <i class="fas fa-times"></i>
+    </button>
+
     <div class="hero-content">
       <h1 class="hero-title">로드뷰로 대한민국을 탐험하세요</h1>
       <p class="hero-description">
@@ -63,6 +68,8 @@ import { useRouter } from 'vue-router';
 
 const emit = defineEmits(['open-tutorial']);
 
+const dismissed = ref(false);
+
 const router = useRouter();
 
 const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'));
@@ -82,7 +89,7 @@ const openTutorial = () => {
   position: absolute;
   inset: 0;
   z-index: 5;
-  background: linear-gradient(135deg, #52DEE5 0%, #EEE5E9 100%);
+  background: linear-gradient(135deg, rgba(82, 222, 229, 0.92) 0%, rgba(238, 229, 233, 0.92) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -282,14 +289,51 @@ const openTutorial = () => {
   flex-shrink: 0;
 }
 
+/* 닫기 버튼 */
+.hero-close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.15);
+  border: none;
+  color: #111827;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: background 0.2s ease;
+}
+
+.hero-close-button:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
 /* 모바일 */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
+
+  .hero-description,
+  .hero-flow,
   .hero-stats {
+    display: none;
+  }
+
+  .hero-content {
     padding: 8px 12px;
   }
 
-  .stat-item {
-    padding: 0 8px;
+  .hero-title {
+    font-size: clamp(0.9rem, 3.5vw, 1.1rem);
+    margin: 0 0 8px;
+  }
+
+  .hero-actions {
+    margin-bottom: 0;
+    gap: 6px;
   }
 }
 </style>

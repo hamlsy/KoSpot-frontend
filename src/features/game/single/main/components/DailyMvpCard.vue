@@ -1,5 +1,7 @@
 <template>
-  <div class="mvp-root" :style="mvpColorVars" :class="{ 'is-loaded': isLoaded, 'is-empty': !todayMvp && isLoaded }"
+  <div class="mvp-wrapper">
+  <div class="mvp-root" :style="mvpColorVars"
+    :class="{ 'is-loaded': isLoaded, 'is-empty': !todayMvp && isLoaded, 'has-comments': todayMvp && isLoaded }"
     @click="handleCardClick">
     <!-- 로딩 상태 -->
     <transition name="fade">
@@ -76,7 +78,7 @@
         <!-- 중앙: 프로필 및 티어 섹션 -->
         <div class="hz-section section-center">
           <div class="marker-wrapper">
-            <div class="marker-frame">
+            <div class="marker-frame marker-frame--clickable" @click.stop="openPlayerModal(todayMvp)">
               <img v-if="todayMvp.equippedMarkerImageUrl" :src="todayMvp.equippedMarkerImageUrl"
                 :alt="todayMvp.nickname" class="marker-img" @error="onImgError" />
               <div v-else class="marker-placeholder">
@@ -139,6 +141,19 @@
       </div>
     </transition>
   </div>
+
+  <MvpCommentSection
+    v-if="todayMvp && isLoaded"
+    :mvp-id="todayMvp.mvpId"
+    :comment-count="todayMvp.commentCount ?? 0"
+  />
+  </div>
+
+  <PlayerDetailsModal
+    :is-active="showPlayerModal"
+    :player="selectedPlayer"
+    @close="showPlayerModal = false"
+  />
 </template>
 
 <script setup>
@@ -146,10 +161,21 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { fetchDailyMvp } from '../services/dailyMvp.service.js'
 import { BRAND, TEXT, BACKGROUND } from '@/core/constants/colors.js'
+import MvpCommentSection from './comment/MvpCommentSection.vue'
+import PlayerDetailsModal from '@/features/game/multiplayer/room/components/player/PlayerDetailsModal.vue'
 
 // ─── Emits ────────────────────────────────────────────────────────────
 const emit = defineEmits(['show-player-details']);
 const router = useRouter();
+
+// ─── Player Modal ──────────────────────────────────────────────────────
+const showPlayerModal = ref(false)
+const selectedPlayer = ref(null)
+
+function openPlayerModal(mvpData) {
+  selectedPlayer.value = { memberId: mvpData.memberId }
+  showPlayerModal.value = true
+}
 
 const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'));
 
@@ -531,6 +557,16 @@ onMounted(async () => {
   justify-content: center;
 }
 
+.marker-frame--clickable {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.marker-frame--clickable:hover {
+  transform: scale(1.05);
+  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.15);
+}
+
 .marker-img {
   width: 100%;
   height: 100%;
@@ -844,6 +880,16 @@ onMounted(async () => {
   50% {
     opacity: 0.5;
   }
+}
+
+/* ─── Wrapper ─────────────────────────────────────────────────────── */
+.mvp-wrapper {
+  width: 100%;
+}
+
+/* 댓글 섹션이 붙을 때 카드 하단 모서리를 직각으로 */
+.mvp-root.has-comments {
+  border-radius: 20px 20px 0 0;
 }
 
 /* ─── Responsive ──────────────────────────────────────────────────── */

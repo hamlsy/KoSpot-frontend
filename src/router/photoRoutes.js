@@ -19,7 +19,7 @@ const photoModeRoutes = [
     //         totalRounds: Number(route.query.totalRounds) || 5
     //     })
     // },
-    
+
     // {
     //     path: '/photoModeRank',
     //     name: "PhotoModeRank",
