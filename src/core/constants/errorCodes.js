@@ -96,3 +96,17 @@ export const getErrorMessage = (errorCode) => {
 export const getErrorAction = (errorCode) => {
   return ERROR_ACTIONS[errorCode] || null;
 };
+
+/**
+ * 인증(Auth) 전용 에러 코드 — /auth/signup, /auth/login
+ * 기존 ERROR_CODES(41xx)와 번호가 겹치지만 의미가 다르므로 별도 네임스페이스로 분리
+ * code 필드 타입: 백엔드 확인 후 숫자/문자열 통일 필요
+ */
+export const AUTH_ERROR_CODES = {
+  NICKNAME_DUPLICATE:  '4101',  // 닉네임 중복 (signup)
+  EMAIL_DUPLICATE:     '4102',  // 이메일 중복 (signup)
+  EMAIL_NOT_FOUND:     '4103',  // 가입되지 않은 이메일 (login)
+  PASSWORD_MISMATCH:   '4104',  // 비밀번호 불일치 (login)
+  SOCIAL_ONLY_ACCOUNT: '4105',  // 소셜 전용 계정으로 이메일 로그인 시도 (login)
+};
+

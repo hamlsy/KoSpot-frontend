@@ -101,7 +101,7 @@ router.afterEach((to, from) => {
   // 최초 진입 시 연결은 App.vue onMounted가 담당
   if (!from.name) return;
 
-  const comingFromLogin = from.path === '/loginPage' || from.path === '/login';
+  const comingFromLogin = from.path === '/loginPage' || from.path === '/login' || from.path === '/signup';
   const goingToLoginOrSameLogin = to.path === '/loginPage' || to.path === '/login';
 
   if (comingFromLogin && !goingToLoginOrSameLogin) {
