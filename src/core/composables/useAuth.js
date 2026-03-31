@@ -7,14 +7,6 @@ import { tokenRefreshService } from '@/core/services/tokenRefresh.service.js'
 import { authStorage } from '@/core/auth/authStorage.service.js'
 import { registerPushIfPermitted, deletePushToken } from '@/core/platform/push.service.js'
 
-// JWT payload 디코딩 헬퍼 (OAuthCallbackView 동일 패턴)
-const decodeJwtPayload = (token) => {
-  try {
-    return JSON.parse(atob(token.split('.')[1]))
-  } catch (_) {
-    return null
-  }
-}
 
 // 전역 상태 관리
 const authState = reactive({
@@ -74,7 +66,9 @@ export function useAuth() {
 
       try {
         await registerPushIfPermitted()
-      } catch (_) {}
+      } catch (_) {
+        // ignore
+      }
 
       return { success: true }
     } catch (error) {
@@ -107,7 +101,9 @@ export function useAuth() {
       // connectAll()은 router afterEach에서 from.path === '/signup' 조건으로 처리
       try {
         await registerPushIfPermitted()
-      } catch (_) {}
+      } catch (_) {
+        // ignore
+      }
 
       return { success: true }
     } catch (error) {
