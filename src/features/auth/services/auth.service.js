@@ -49,12 +49,12 @@ const authService = {
   },
 
   /**
-   * 회원가입
-   * @param {Object} userData - 사용자 정보
-   * @returns {Promise} - 회원가입 응답
+   * 이메일 회원가입
+   * @param {Object} userData - { email, password, nickname }
+   * @returns {Promise} - 회원가입 응답 (accessToken, refreshToken, memberId 포함)
    */
-  register(userData) {
-    return apiClient.post('/auth/register', userData);
+  signup(userData) {
+    return apiClient.post('/auth/signup', userData);
   },
 
   /**

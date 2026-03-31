@@ -8,6 +8,9 @@
       </div>
     </div>
 
+    <!-- Toast 알림 (소셜 전용 계정 이메일 로그인 시도 등) -->
+    <div v-if="toast.show" class="toast-banner">{{ toast.message }}</div>
+
     <!-- Game Controls Section -->
     <div class="game-controls">
       <router-link to="/" custom v-slot="{ navigate }">
@@ -16,6 +19,34 @@
           <div class="button-effect"></div>
         </button>
       </router-link>
+
+      <!-- 이메일 로그인 폼 -->
+      <form v-if="!isLoggedIn" class="email-login-form" @submit.prevent="handleEmailLogin" novalidate>
+        <input
+          v-model="email"
+          type="email"
+          placeholder="이메일"
+          autocomplete="email"
+          class="login-input"
+        />
+        <input
+          v-model="password"
+          type="password"
+          placeholder="비밀번호"
+          autocomplete="current-password"
+          class="login-input"
+        />
+        <p v-if="loginError" class="login-error">{{ loginError }}</p>
+        <button type="submit" class="login-submit-btn" :disabled="loading">
+          {{ loading ? '로그인 중...' : '로그인' }}
+        </button>
+      </form>
+
+      <!-- 구분선 -->
+      <div v-if="!isLoggedIn" class="divider">
+        <span>또는 소셜 로그인</span>
+      </div>
+
       <!-- Social Login Buttons (shown when not logged in) -->
       <div v-if="!isLoggedIn" class="social-login-section">
         <!-- Kakao Login Button -->
@@ -52,6 +83,7 @@
           <span class="google-btn-text">Google로 로그인</span>
         </button> -->
 
+        <router-link to="/signup" class="signup-link">이메일로 가입하기</router-link>
         <span class="privacy-notice">※이메일을 제외한 그 어떤 정보도 받지 않습니다.</span>
       </div>
     </div>
@@ -59,12 +91,55 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, reactive, onMounted } from "vue";
+import { useRoute, useRouter } from 'vue-router';
 import { buildOAuthAuthorizeUrl, isMobileOAuthEnabled } from '@/core/auth/oauth.service.js';
 import { hardRedirect, openExternalUrl } from '@/core/platform/navigation.service.js';
 import { isNativeApp } from '@/core/platform/runtime.js';
+import { useAuth } from '@/core/composables/useAuth.js';
+import { AUTH_ERROR_CODES } from '@/core/constants/errorCodes.js';
+
+const route = useRoute();
+const router = useRouter();
+const { login, loading } = useAuth();
 
 const isLoggedIn = ref(false);
+
+// 이메일 로그인 상태
+const email = ref('');
+const password = ref('');
+const loginError = ref('');
+const toast = reactive({ show: false, message: '' });
+
+let toastTimer = null;
+const showToast = (message) => {
+  if (toastTimer) clearTimeout(toastTimer);
+  toast.show = true;
+  toast.message = message;
+  toastTimer = setTimeout(() => { toast.show = false; }, 3500);
+};
+
+const handleEmailLogin = async () => {
+  loginError.value = '';
+  if (!email.value || !password.value) {
+    loginError.value = '이메일과 비밀번호를 입력해주세요.';
+    return;
+  }
+
+  const result = await login({ email: email.value, password: password.value });
+
+  if (result.success) {
+    const redirect = route.query.redirect;
+    router.push(typeof redirect === 'string' ? redirect : '/main');
+    return;
+  }
+
+  if (result.code === AUTH_ERROR_CODES.SOCIAL_ONLY_ACCOUNT) {
+    showToast('소셜 계정입니다. 카카오 또는 네이버 로그인을 이용해주세요.');
+  } else {
+    loginError.value = result.message;
+  }
+};
 
 // 소셜 로그인 리다이렉트
 const socialLogin = async (platform) => {
@@ -312,6 +387,116 @@ onMounted(() => {
   text-align: center;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   letter-spacing: -0.3px;
+}
+
+/* ── 이메일 로그인 폼 ── */
+.email-login-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.login-input {
+  width: 100%;
+  height: 45px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1.5px solid #e5e7eb;
+  font-size: 15px;
+  color: #111827;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: #ffffff;
+}
+
+.login-input::placeholder {
+  color: #9ca3af;
+}
+
+.login-input:focus {
+  border-color: #4cc9cf;
+  box-shadow: 0 0 0 3px rgba(76, 201, 207, 0.15);
+}
+
+.login-error {
+  font-size: 12px;
+  color: #ef4444;
+  padding-left: 4px;
+  margin: 0;
+}
+
+.login-submit-btn {
+  width: 100%;
+  height: 45px;
+  border-radius: 12px;
+  border: none;
+  background: #4cc9cf;
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.login-submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.login-submit-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── 구분선 ── */
+.divider {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #9ca3af;
+  font-size: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e5e7eb;
+}
+
+/* ── 가입 링크 ── */
+.signup-link {
+  display: block;
+  text-align: center;
+  font-size: 13px;
+  color: #4cc9cf;
+  font-weight: 600;
+  text-decoration: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* ── 토스트 배너 ── */
+.toast-banner {
+  position: fixed;
+  top: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111827;
+  color: white;
+  padding: 0.6rem 1.25rem;
+  border-radius: 999px;
+  font-size: 13px;
+  z-index: 9999;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: fadeIn 0.2s ease;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 @keyframes fadeIn {
